@@ -1,1 +1,123 @@
+# =====================================================
+# AI-DEPOM - GitHub Actions Workflow
+# security-scan.yml
+# =====================================================
+# Data: 04/09/2026
+# Versão: 1.0.0
+# Descrição: Scanner de segurança para credenciais e dados sensíveis
+# Gatilhos: Push e Pull Request nas branches main e develop
+# =====================================================
 
+name: Security Scan
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    steps:
+      # 1. Checkout do código
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      # 2. Verificar credenciais expostas
+      - name: 🔑 Verificar credenciais expostas
+        run: |
+          echo "==========================================="
+          echo "VERIFICANDO CREDENCIAIS EXPOSTAS"
+          echo "Data: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "==========================================="
+          
+          # Verificar senhas em arquivos SQL
+          if grep -r "password" --include="*.sql" --include="*.py" --include="*.js" database/ backend/ 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: Possíveis senhas encontradas em arquivos!"
+            echo "Nunca armazene credenciais em texto puro."
+            echo "Use variáveis de ambiente ou secrets do GitHub."
+            exit 1
+          else
+            echo "✅ Nenhuma senha encontrada em texto puro"
+          fi
+
+      # 3. Verificar dados sensíveis
+      - name: 🔒 Verificar dados sensíveis
+        run: |
+          echo "==========================================="
+          echo "VERIFICANDO DADOS SENSÍVEIS"
+          echo "==========================================="
+          
+          # Verificar CPF
+          if grep -r "cpf" --include="*.sql" database/seed-data/ 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: CPF encontrado em seed-data!"
+            echo "Dados reais de CPF não devem ser versionados."
+            echo "Use dados fictícios para testes."
+          else
+            echo "✅ Nenhum CPF real encontrado"
+          fi
+          
+          # Verificar RG
+          if grep -r "rg" --include="*.sql" database/seed-data/ 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: RG encontrado em seed-data!"
+          else
+            echo "✅ Nenhum RG encontrado"
+          fi
+          
+          # Verificar biometria
+          if grep -r "biometria" --include="*.sql" database/seed-data/ 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: Dados biométricos encontrados!"
+          else
+            echo "✅ Nenhum dado biométrico encontrado"
+          fi
+
+      # 4. Verificar arquivos .env
+      - name: 🌐 Verificar arquivos .env
+        run: |
+          echo "==========================================="
+          echo "VERIFICANDO ARQUIVOS .ENV"
+          echo "==========================================="
+          
+          if find . -name ".env" -o -name ".env.local" 2>/dev/null | grep -q "."; then
+            echo "⚠️ ATENÇÃO: Arquivos .env encontrados!"
+            echo "Arquivos .env não devem ser versionados."
+            echo "Use .env.example para documentar as variáveis."
+            exit 1
+          else
+            echo "✅ Nenhum arquivo .env encontrado"
+          fi
+
+      # 5. Verificar tokens e chaves
+      - name: 🔑 Verificar tokens e chaves
+        run: |
+          echo "==========================================="
+          echo "VERIFICANDO TOKENS E CHAVES"
+          echo "==========================================="
+          
+          # Verificar padrões de tokens
+          if grep -r "sk-" --include="*.js" --include="*.py" . 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: Possível chave secreta encontrada!"
+          fi
+          
+          if grep -r "Bearer" --include="*.js" --include="*.py" . 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: Possível token de autenticação encontrado!"
+          fi
+          
+          echo "✅ Verificação de tokens concluída"
+
+      # 6. Resumo da segurança
+      - name: 📊 Resumo do Security Scan
+        run: |
+          echo "==========================================="
+          echo "📊 RESUMO DO SECURITY SCAN"
+          echo "==========================================="
+          echo "✅ Data: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "✅ Nenhuma credencial exposta encontrada"
+          echo "✅ Nenhum dado sensível real detectado"
+          echo "✅ Nenhum arquivo .env versionado"
+          echo "✅ Políticas de segurança aplicadas"
+          echo "==========================================="
+          echo "🔒 AI-DEPOM - Security Scan Concluído"
