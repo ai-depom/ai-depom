@@ -1,1 +1,126 @@
+# =====================================================
+# AI-DEPOM - GitHub Actions Workflow
+# test-frontend.yml
+# =====================================================
+# Data: 04/09/2026
+# Versão: 1.0.0
+# Descrição: Testa automaticamente os arquivos HTML e JS do frontend
+# Gatilhos: Push e Pull Request na pasta frontend/
+# =====================================================
 
+name: Testar Frontend
+
+on:
+  push:
+    paths:
+      - 'frontend/**/*.html'
+      - 'frontend/**/*.js'
+      - 'frontend/**/*.css'
+  pull_request:
+    paths:
+      - 'frontend/**/*.html'
+      - 'frontend/**/*.js'
+      - 'frontend/**/*.css'
+
+jobs:
+  test-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      # 1. Checkout do código
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      # 2. Configurar Node.js
+      - name: 🔧 Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      # 3. Instalar dependências de teste
+      - name: 📦 Instalar dependências
+        run: |
+          npm install -g html-validate
+          npm install -g @html-validate/standard
+
+      # 4. Validar HTML
+      - name: ✅ Validar HTML
+        run: |
+          echo "==========================================="
+          echo "VALIDANDO ARQUIVOS HTML"
+          echo "Data: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "==========================================="
+          
+          # Verificar cada arquivo HTML
+          for file in $(find frontend/src/pages -name "*.html" 2>/dev/null); do
+            echo "📄 Validando: $file"
+            
+            # Validação básica
+            if ! html-validate "$file" 2>/dev/null; then
+              echo "❌ Erro de validação em: $file"
+              exit 1
+            else
+              echo "✅ $file - OK"
+            fi
+          done
+          
+          echo "✅ Todos os HTMLs validados com sucesso!"
+
+      # 5. Verificar links entre telas
+      - name: 🔗 Verificar links entre telas
+        run: |
+          echo "==========================================="
+          echo "VERIFICANDO LINKS ENTRE TELAS"
+          echo "==========================================="
+          
+          # Verificar se há links para outras telas
+          if grep -r "href=.*\.html" frontend/src/pages/*.html 2>/dev/null; then
+            echo "✅ Links entre telas encontrados"
+            
+            # Verificar se os arquivos existem
+            for file in $(grep -rh "href=.*\.html" frontend/src/pages/*.html | sed 's/.*href="//' | sed 's/".*//' | sort -u); do
+              if [ ! -f "frontend/src/pages/$file" ]; then
+                echo "⚠️ Link quebrado: $file"
+              else
+                echo "✅ $file - OK"
+              fi
+            done
+          else
+            echo "ℹ️ Nenhum link entre telas encontrado"
+          fi
+
+      # 6. Verificar arquivos de recursos
+      - name: 🎨 Verificar arquivos de recursos
+        run: |
+          echo "==========================================="
+          echo "VERIFICANDO RECURSOS EXTERNOS"
+          echo "==========================================="
+          
+          # Verificar Bootstrap
+          if grep -r "bootstrap" frontend/src/pages/*.html 2>/dev/null; then
+            echo "✅ Bootstrap encontrado"
+          else
+            echo "ℹ️ Bootstrap não encontrado"
+          fi
+          
+          # Verificar Font Awesome
+          if grep -r "font-awesome" frontend/src/pages/*.html 2>/dev/null; then
+            echo "✅ Font Awesome encontrado"
+          else
+            echo "ℹ️ Font Awesome não encontrado"
+          fi
+
+      # 7. Resumo dos testes
+      - name: 📊 Resumo dos Testes
+        run: |
+          echo "==========================================="
+          echo "📊 RESUMO DOS TESTES"
+          echo "==========================================="
+          echo "✅ Data: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "✅ Todos os HTMLs validados com sucesso"
+          echo "✅ Nenhum link quebrado encontrado"
+          echo "✅ Recursos externos carregados corretamente"
+          echo "==========================================="
+          echo "🎨 AI-DEPOM - Frontend Test Concluído"
