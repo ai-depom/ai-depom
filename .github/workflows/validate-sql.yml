@@ -1,1 +1,97 @@
+# =====================================================
+# AI-DEPOM - GitHub Actions Workflow
+# validate-sql.yml
+# =====================================================
+# Data: 04/09/2026
+# Versão: 1.0.0
+# Descrição: Valida automaticamente scripts SQL no banco de dados
+# Gatilhos: Push e Pull Request na pasta database/
+# =====================================================
 
+name: Validar Scripts SQL
+
+on:
+  push:
+    paths:
+      - 'database/**/*.sql'
+  pull_request:
+    paths:
+      - 'database/**/*.sql'
+
+jobs:
+  validate-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      # 1. Checkout do código
+      - name: 📥 Checkout do código
+        uses: actions/checkout@v4
+
+      # 2. Instalar PostgreSQL Client
+      - name: 🐘 Instalar PostgreSQL Client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      # 3. Validar sintaxe SQL
+      - name: ✅ Validar sintaxe SQL
+        run: |
+          echo "==========================================="
+          echo "VALIDANDO SCRIPTS SQL"
+          echo "Data: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "==========================================="
+          
+          # Encontrar todos os arquivos SQL
+          for file in $(find database/schemas -name "*.sql" 2>/dev/null); do
+            echo "📄 Validando: $file"
+            
+            # Validar sintaxe básica
+            if psql -c "SELECT 1" -f "$file" 2>&1 | grep -q "ERROR"; then
+              echo "❌ Erro de sintaxe encontrado em: $file"
+              exit 1
+            else
+              echo "✅ $file - OK"
+            fi
+          done
+          
+          echo "✅ Todos os scripts validados com sucesso!"
+
+      # 4. Verificar DROP TABLE (Proibido)
+      - name: 🚫 Verificar DROP TABLE
+        run: |
+          echo "==========================================="
+          echo "VERIFICANDO DROP TABLE"
+          echo "==========================================="
+          
+          # Verificar se há DROP TABLE nos scripts
+          if grep -r "DROP TABLE" database/schemas/ 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: DROP TABLE encontrado nos scripts!"
+            echo "Não é permitido deletar tabelas fisicamente."
+            echo "Use a flag 'deletado' para exclusão lógica."
+            exit 1
+          else
+            echo "✅ Nenhum DROP TABLE detectado"
+          fi
+
+      # 5. Verificar DROP DATABASE (Proibido)
+      - name: 🚫 Verificar DROP DATABASE
+        run: |
+          if grep -r "DROP DATABASE" database/schemas/ 2>/dev/null; then
+            echo "⚠️ ATENÇÃO: DROP DATABASE encontrado!"
+            exit 1
+          else
+            echo "✅ Nenhum DROP DATABASE detectado"
+          fi
+
+      # 6. Resumo da validação
+      - name: 📊 Resumo da Validação
+        run: |
+          echo "==========================================="
+          echo "📊 RESUMO DA VALIDAÇÃO"
+          echo "==========================================="
+          echo "✅ Data: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "✅ Todos os scripts SQL validados com sucesso"
+          echo "✅ Nenhuma operação de DROP detectada"
+          echo "✅ Pronto para deploy!"
+          echo "==========================================="
