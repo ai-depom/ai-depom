@@ -1,0 +1,74 @@
+
+---
+
+## 🚀 Tecnologias Utilizadas
+
+| Componente | Tecnologia | Versão |
+|------------|------------|--------|
+| **Banco de Dados** | PostgreSQL | 15+ |
+| **Backend API** | Python (FastAPI) / Node.js | - |
+| **Frontend** | HTML5, CSS3, Bootstrap | 5.3+ |
+| **Segurança** | AES-256, TDE, JWT, MFA | - |
+| **CI/CD** | GitHub Actions | - |
+| **Versionamento** | Git, GitHub | - |
+
+---
+
+## 📊 Fases do Projeto
+
+O desenvolvimento está dividido em **10 fases**:
+
+| Fase | Descrição | Status |
+|------|-----------|--------|
+| ✅ FASE 1 | Modelagem Estrutural + Telas | Em Desenvolvimento |
+| ⬜ FASE 2 | Segurança e Criptografia | Pendente |
+| ⬜ FASE 3 | Armazenamento de Mídias | Pendente |
+| ⬜ FASE 4 | Cadastro de Suspeitos | Pendente |
+| ⬜ FASE 5 | Investigações e Ocorrências | Pendente |
+| ⬜ FASE 6 | Mandados e Alertas | Pendente |
+| ⬜ FASE 7 | Pesquisa Avançada e IA | Pendente |
+| ⬜ FASE 8 | Relatórios e Exportação | Pendente |
+| ⬜ FASE 9 | Integração Internacional | Pendente |
+| ⬜ FASE 10 | Testes, Deploy e Treinamento | Pendente |
+
+---
+
+## 🔒 Regras de Ouro do Sistema
+
+### 🚫 REGRA 1: NUNCA DELETAR DADOS FISICAMENTE
+> Todas as exclusões são **lógicas** (flag `deletado = TRUE`). Os dados permanecem no banco para sempre.
+
+### 👑 REGRA 2: APENAS ADMINISTRADOR MASTER CADASTRA USUÁRIOS
+> Somente o usuário com perfil `ADMINISTRADOR_MASTER` pode criar, editar ou remover usuários.
+
+### 🔐 REGRA 3: CRIPTOGRAFIA OBRIGATÓRIA
+> Todos os dados sensíveis (CPF, RG, biometria) são criptografados com AES-256.
+
+### 📋 REGRA 4: AUDITORIA COMPLETA
+> Todas as ações são registradas em log com IP, data, hora e usuário.
+
+### 🔑 REGRA 5: MFA OBRIGATÓRIA
+> Todos os usuários devem utilizar autenticação de dois fatores.
+
+---
+
+## 🖥️ Telas do Sistema
+
+| Tela | Descrição | Status |
+|------|-----------|--------|
+| 🏠 **Apresentação** | Landing page institucional | ✅ Concluída |
+| 🔐 **Login** | Autenticação com MFA e biometria | ✅ Concluída |
+| 📊 **Dashboard** | Painel com estatísticas e alertas | ✅ Concluída |
+| 👤 **Cadastro Usuário** | Apenas Administrador Master | ✅ Concluída |
+| 🔍 **Cadastro Suspeito** | Formulário completo com mídias | ✅ Concluída |
+| 🔎 **Consulta** | Busca avançada com filtros | ✅ Concluída |
+| 📈 **Relatórios** | Múltiplos formatos e agendamento | ✅ Concluída |
+
+---
+
+## 🚀 Como Começar
+
+### 1. Clonar o Repositório
+```bash
+git clone https://github.com/ai-depom/ai-depom.git
+cd ai-depom
