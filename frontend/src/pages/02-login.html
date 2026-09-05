@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,6 +16,7 @@
             --police-gold: #c9a84c;
             --police-gold-light: #e8d5a3;
             --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+            --control-size: 36px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -31,12 +32,84 @@
         }
 
         /* ============================================
-           CONTAINER
+           CONTROLES BAR
+           ============================================ */
+        .controls-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(6, 13, 26, 0.85);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            padding: 6px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+            min-height: 48px;
+        }
+
+        .controls-left {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .controls-right {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls-center .system-title {
+            color: var(--police-gold);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .control-btn {
+            width: var(--control-size);
+            height: var(--control-size);
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--police-gold);
+        }
+
+        .control-btn:active { transform: scale(0.92); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.05); margin: 0 6px; }
+        .user-info { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.3); font-size: 12px; }
+        .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-gold); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: var(--police-dark); }
+
+        /* ============================================
+           CONTAINER LOGIN
            ============================================ */
         .login-container {
             max-width: 480px;
             width: 100%;
-            margin: 40px 20px;
+            margin: 70px 20px 40px;
             background: rgba(10, 46, 92, 0.92);
             backdrop-filter: blur(20px);
             border-radius: 24px;
@@ -48,29 +121,10 @@
         /* ============================================
            LOGO
            ============================================ */
-        .logo { text-align: center; margin-bottom: 35px; }
-
-        .logo i {
-            font-size: 64px;
-            color: #c9a84c;
-            background: rgba(201, 168, 76, 0.1);
-            padding: 20px;
-            border-radius: 50%;
-        }
-
-        .logo h1 {
-            color: #c9a84c;
-            font-weight: 700;
-            letter-spacing: 3px;
-            margin-top: 15px;
-            text-shadow: 0 0 40px rgba(201, 168, 76, 0.2);
-        }
-
-        .logo span {
-            color: #8a9bb5;
-            font-size: 14px;
-            letter-spacing: 2px;
-        }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo i { font-size: 64px; color: #c9a84c; background: rgba(201,168,76,0.1); padding: 20px; border-radius: 50%; }
+        .logo h1 { color: #c9a84c; font-weight: 700; letter-spacing: 3px; margin-top: 15px; text-shadow: 0 0 40px rgba(201,168,76,0.2); }
+        .logo span { color: #8a9bb5; font-size: 14px; letter-spacing: 2px; }
 
         /* ============================================
            FORMULÁRIO
@@ -91,15 +145,27 @@
             color: #fff;
         }
 
-        .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.35);
+        .form-control::placeholder { color: rgba(255, 255, 255, 0.35); }
+        .form-label { font-size: 13px; font-weight: 600; color: #8a9bb5; letter-spacing: 0.5px; }
+
+        /* ============================================
+           OTP INPUT
+           ============================================ */
+        .otp-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-align: center;
+            font-size: 28px;
+            letter-spacing: 12px;
+            border-radius: 14px;
+            padding: 12px;
+            font-weight: 300;
         }
 
-        .form-label {
-            font-size: 13px;
-            font-weight: 600;
-            color: #8a9bb5;
-            letter-spacing: 0.5px;
+        .otp-input:focus {
+            border-color: var(--police-gold);
+            box-shadow: 0 0 0 4px rgba(201,168,76,0.15);
         }
 
         /* ============================================
@@ -121,21 +187,6 @@
         .btn-login:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 30px rgba(201, 168, 76, 0.3);
-        }
-
-        /* ============================================
-           MFA INPUT
-           ============================================ */
-        .mfa-input {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            text-align: center;
-            font-size: 28px;
-            letter-spacing: 12px;
-            border-radius: 14px;
-            padding: 12px;
-            font-weight: 300;
         }
 
         /* ============================================
@@ -172,39 +223,67 @@
 
         .security-badge i { margin-right: 5px; color: #4caf50; }
 
-        .divider {
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            margin: 25px 0;
-        }
-
-        .version {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.15);
-            letter-spacing: 1px;
-        }
+        .divider { border-top: 1px solid rgba(255,255,255,0.05); margin: 25px 0; }
+        .version { text-align: center; margin-top: 20px; font-size: 11px; color: rgba(255,255,255,0.15); letter-spacing: 1px; }
 
         /* ============================================
            RESPONSIVE
            ============================================ */
+        @media (max-width: 768px) {
+            .controls-center .system-title { font-size: 12px; }
+            .control-btn { width: 32px; height: 32px; font-size: 14px; }
+            .user-info .name { display: none; }
+            .login-container { padding: 30px 20px; margin-top: 65px; }
+        }
+
         @media (max-width: 480px) {
-            .login-container {
-                padding: 30px 20px;
-            }
-            .logo i {
-                font-size: 48px;
-                padding: 15px;
-            }
-            .mfa-input {
-                font-size: 22px;
-                letter-spacing: 8px;
-            }
+            .login-container { padding: 25px 15px; }
+            .logo i { font-size: 48px; padding: 15px; }
+            .otp-input { font-size: 22px; letter-spacing: 8px; }
+            .controls-center .system-title { font-size: 10px; }
+            .control-btn { width: 28px; height: 28px; font-size: 12px; }
+            .controls-divider { margin: 0 3px; }
         }
     </style>
 </head>
 <body>
 
+<!-- ============================================
+   CONTROLES BAR
+   ============================================ -->
+<header class="controls-bar">
+    <div class="controls-left">
+        <button class="control-btn" onclick="window.history.back()" title="Voltar">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <button class="control-btn" onclick="window.history.forward()" title="Avançar">
+            <i class="fas fa-arrow-right"></i>
+        </button>
+        <div class="controls-divider"></div>
+        <button class="control-btn" onclick="minimizeWindow()" title="Minimizar">
+            <i class="fas fa-window-minimize"></i>
+        </button>
+        <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="controls-center">
+        <span class="system-title">
+            <i class="fas fa-shield-halved" style="color: var(--police-gold);"></i>
+            AI-DEPOM
+        </span>
+    </div>
+    <div class="controls-right">
+        <div class="user-info">
+            <div class="avatar">AM</div>
+            <span class="name">Admin Master</span>
+        </div>
+    </div>
+</header>
+
+<!-- ============================================
+   LOGIN CONTAINER
+   ============================================ -->
 <div class="login-container">
     <!-- LOGO -->
     <div class="logo">
@@ -230,11 +309,17 @@
             <input type="password" class="form-control" name="senha" placeholder="Digite sua senha" required>
         </div>
 
-        <!-- MFA -->
+        <!-- CÓDIGO OTP - OBRIGATÓRIO SEMPRE -->
         <div class="mb-3">
-            <label class="form-label"><i class="fas fa-qrcode me-2 text-warning"></i>CÓDIGO MFA</label>
-            <input type="text" class="mfa-input form-control" name="mfa_code" placeholder="000000" maxlength="6" required>
-            <small class="text-muted" style="font-size:11px;">Digite o código do autenticador</small>
+            <label class="form-label">
+                <i class="fas fa-qrcode me-2 text-warning"></i>CÓDIGO OTP
+                <span class="badge bg-danger ms-2" style="font-size:10px;">OBRIGATÓRIO</span>
+            </label>
+            <input type="text" class="otp-input form-control" name="otp_code" placeholder="000000" maxlength="6" required>
+            <small class="text-muted" style="font-size:11px;">
+                <i class="fas fa-info-circle me-1"></i>
+                Código OTP (One-Time Password) gerado pelo seu autenticador - obrigatório em todo login
+            </small>
         </div>
 
         <!-- Biometria -->
@@ -261,7 +346,7 @@
         </button>
     </form>
 
-    <!-- BADGES DE SEGURANÇA -->
+    <!-- BADGES -->
     <div class="divider"></div>
     <div class="security-badge">
         <span><i class="fas fa-shield"></i> FIPS 140-2</span>
@@ -276,11 +361,29 @@
    SCRIPTS
    ============================================ -->
 <script>
-    /**
-     * startBiometric - Ativa a câmera para validação facial
-     * Data: 04/09/2026
-     * Versão: 1.0.0
-     */
+    // ============================================
+    // CONTROLES DE JANELA
+    // ============================================
+    function minimizeWindow() {
+        try {
+            if (window.moveTo && window.resizeTo) {
+                window.moveTo(0, 0);
+                window.resizeTo(screen.width / 2, screen.height / 2);
+            } else {
+                alert('Use o botão de minimizar do seu navegador.');
+            }
+        } catch (e) { console.warn('Minimizar não suportado:', e); }
+    }
+
+    function closeWindow() {
+        if (confirm('Deseja realmente fechar o sistema?')) {
+            try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
+        }
+    }
+
+    // ============================================
+    // BIOMETRIA
+    // ============================================
     function startBiometric() {
         const video = document.getElementById('video');
         const status = document.getElementById('biometricStatus');
@@ -292,47 +395,73 @@
                 video.style.display = 'block';
                 status.style.display = 'none';
                 result.style.display = 'block';
-
-                // Simular validação após 2 segundos
                 setTimeout(() => {
                     result.innerHTML = '<span class="badge bg-success"><i class="fas fa-check"></i> Biometria Validada</span>';
                 }, 2000);
             })
             .catch(err => {
-                alert('Erro ao acessar a câmera. Use o código MFA para autenticação.');
+                alert('Erro ao acessar a câmera. Use o código OTP para autenticação.');
                 console.error('Erro na biometria:', err);
             });
     }
 
-    /**
-     * Validação do formulário de login
-     * Data: 04/09/2026
-     */
+    // ============================================
+    // SUBMIT - VALIDAÇÃO OBRIGATÓRIA
+    // ============================================
     document.getElementById('loginForm').addEventListener('submit', function(e) {
         e.preventDefault();
 
         const matricula = this.querySelector('input[name="matricula"]').value;
         const senha = this.querySelector('input[name="senha"]').value;
-        const mfa = this.querySelector('input[name="mfa_code"]').value;
+        const otp = this.querySelector('input[name="otp_code"]').value;
 
-        if (!matricula || !senha || !mfa) {
-            alert('⚠️ Preencha todos os campos!');
+        // Validação de campos obrigatórios
+        if (!matricula || !senha || !otp) {
+            alert('⚠️ Todos os campos são obrigatórios!\n\n' +
+                  'Preencha:\n' +
+                  '✓ Matrícula\n' +
+                  '✓ Senha\n' +
+                  '✓ Código OTP');
             return;
         }
 
-        if (mfa.length < 6) {
-            alert('⚠️ O código MFA deve ter 6 dígitos!');
+        // Validação do OTP
+        if (otp.length < 6) {
+            alert('⚠️ O código OTP deve ter 6 dígitos!');
+            return;
+        }
+
+        // Validação se é número
+        if (!/^\d{6}$/.test(otp)) {
+            alert('⚠️ O código OTP deve conter apenas números!');
             return;
         }
 
         // Simular autenticação
-        alert('✅ Autenticação realizada com sucesso!\n\n' +
+        alert('✅ AUTENTICAÇÃO REALIZADA COM SUCESSO!\n\n' +
               '📋 Matrícula: ' + matricula + '\n' +
-              '🔐 MFA: ' + mfa + '\n\n' +
+              '🔐 OTP: ' + otp + '\n' +
+              '🛡️ 3 fatores validados: Matrícula + Senha + OTP\n\n' +
               'Redirecionando para o dashboard...');
 
-        // Redirecionar para o dashboard
         window.location.href = '03-dashboard.html';
+    });
+
+    // ============================================
+    // ATALHOS DO TECLADO
+    // ============================================
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 'v') { e.preventDefault(); window.history.back(); }
+        if (e.altKey && e.key === 'a') { e.preventDefault(); window.history.forward(); }
+        if (e.altKey && e.key === 'm') { e.preventDefault(); minimizeWindow(); }
+        if (e.altKey && e.key === 'f') { e.preventDefault(); closeWindow(); }
+    });
+
+    // ============================================
+    // MASCARA PARA OTP (APENAS NÚMEROS)
+    // ============================================
+    document.querySelector('input[name="otp_code"]').addEventListener('input', function() {
+        this.value = this.value.replace(/\D/g, '').slice(0, 6);
     });
 </script>
 
