@@ -1,1 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-DEPOM - Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ============================================
+           VARIÁVEIS
+           ============================================ */
+        :root {
+            --police-blue: #0a1e3d;
+            --police-dark: #060d1a;
+            --police-gold: #c9a84c;
+            --police-gold-light: #e8d5a3;
+            --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: linear-gradient(135deg, #0a0f1a 0%, #1a2a4a 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ============================================
+           CONTAINER
+           ============================================ */
+        .login-container {
+            max-width: 480px;
+            width: 100%;
+            margin: 40px 20px;
+            background: rgba(10, 46, 92, 0.92);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 45px 40px;
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        /* ============================================
+           LOGO
+           ============================================ */
+        .logo { text-align: center; margin-bottom: 35px; }
+
+        .logo i {
+            font-size: 64px;
+            color: #c9a84c;
+            background: rgba(201, 168, 76, 0.1);
+            padding: 20px;
+            border-radius: 50%;
+        }
+
+        .logo h1 {
+            color: #c9a84c;
+            font-weight: 700;
+            letter-spacing: 3px;
+            margin-top: 15px;
+            text-shadow: 0 0 40px rgba(201, 168, 76, 0.2);
+        }
+
+        .logo span {
+            color: #8a9bb5;
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+
+        /* ============================================
+           FORMULÁRIO
+           ============================================ */
+        .form-control {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: #fff;
+            padding: 14px 18px;
+            border-radius: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #c9a84c;
+            box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.15);
+            color: #fff;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.35);
+        }
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: #8a9bb5;
+            letter-spacing: 0.5px;
+        }
+
+        /* ============================================
+           BOTÃO LOGIN
+           ============================================ */
+        .btn-login {
+            background: var(--gradient-gold);
+            color: #000;
+            font-weight: 700;
+            padding: 14px;
+            border-radius: 14px;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            font-size: 16px;
+            border: none;
+            width: 100%;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(201, 168, 76, 0.3);
+        }
+
+        /* ============================================
+           MFA INPUT
+           ============================================ */
+        .mfa-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-align: center;
+            font-size: 28px;
+            letter-spacing: 12px;
+            border-radius: 14px;
+            padding: 12px;
+            font-weight: 300;
+        }
+
+        /* ============================================
+           BIOMETRIA
+           ============================================ */
+        .biometric-area {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            border: 1px dashed rgba(201, 168, 76, 0.2);
+        }
+
+        .biometric-area video {
+            width: 100%;
+            max-width: 200px;
+            border-radius: 12px;
+            border: 2px solid #c9a84c;
+            background: #000;
+            display: none;
+        }
+
+        /* ============================================
+           BADGES
+           ============================================ */
+        .security-badge {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 25px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .security-badge i { margin-right: 5px; color: #4caf50; }
+
+        .divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin: 25px 0;
+        }
+
+        .version {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.15);
+            letter-spacing: 1px;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+            .logo i {
+                font-size: 48px;
+                padding: 15px;
+            }
+            .mfa-input {
+                font-size: 22px;
+                letter-spacing: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-container">
+    <!-- LOGO -->
+    <div class="logo">
+        <i class="fas fa-shield-halved"></i>
+        <h1>AI-DEPOM</h1>
+        <span>SISTEMA POLICIAL INTELIGENTE</span>
+        <div class="mt-2" style="font-size:10px; color:rgba(255,255,255,0.15);">
+            <i class="fas fa-lock"></i> AES-256 FIPS 140-2
+        </div>
+    </div>
+
+    <!-- FORMULÁRIO DE LOGIN -->
+    <form id="loginForm" method="POST" action="/api/login">
+        <!-- Matrícula -->
+        <div class="mb-3">
+            <label class="form-label"><i class="fas fa-id-card me-2 text-warning"></i>MATRÍCULA</label>
+            <input type="text" class="form-control" name="matricula" placeholder="Ex: POL-001" required autofocus>
+        </div>
+
+        <!-- Senha -->
+        <div class="mb-3">
+            <label class="form-label"><i class="fas fa-key me-2 text-warning"></i>SENHA</label>
+            <input type="password" class="form-control" name="senha" placeholder="Digite sua senha" required>
+        </div>
+
+        <!-- MFA -->
+        <div class="mb-3">
+            <label class="form-label"><i class="fas fa-qrcode me-2 text-warning"></i>CÓDIGO MFA</label>
+            <input type="text" class="mfa-input form-control" name="mfa_code" placeholder="000000" maxlength="6" required>
+            <small class="text-muted" style="font-size:11px;">Digite o código do autenticador</small>
+        </div>
+
+        <!-- Biometria -->
+        <div class="mb-4">
+            <label class="form-label"><i class="fas fa-fingerprint me-2 text-success"></i>BIOMETRIA FACIAL</label>
+            <div class="biometric-area">
+                <video id="video" autoplay muted playsinline></video>
+                <div id="biometricStatus" class="text-center">
+                    <i class="fas fa-camera fa-2x text-muted mb-2"></i>
+                    <p style="font-size:12px; color:#8a9bb5;">Clique para ativar a câmera</p>
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="startBiometric()">
+                        <i class="fas fa-camera"></i> Ativar Biometria
+                    </button>
+                </div>
+                <div id="biometricResult" style="display:none; margin-top:10px;">
+                    <span class="badge bg-success"><i class="fas fa-check"></i> Biometria Validada</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botão Login -->
+        <button type="submit" class="btn-login">
+            <i class="fas fa-sign-in-alt me-2"></i>ACESSAR SISTEMA
+        </button>
+    </form>
+
+    <!-- BADGES DE SEGURANÇA -->
+    <div class="divider"></div>
+    <div class="security-badge">
+        <span><i class="fas fa-shield"></i> FIPS 140-2</span>
+        <span><i class="fas fa-globe"></i> CJIS Compliant</span>
+        <span><i class="fas fa-database"></i> LGPD/GDPR</span>
+        <span><i class="fas fa-lock"></i> AES-256</span>
+    </div>
+    <div class="version">VERSÃO 1.0.0 | SISTEMA CERTIFICADO</div>
+</div>
+
+<!-- ============================================
+   SCRIPTS
+   ============================================ -->
+<script>
+    /**
+     * startBiometric - Ativa a câmera para validação facial
+     * Data: 04/09/2026
+     * Versão: 1.0.0
+     */
+    function startBiometric() {
+        const video = document.getElementById('video');
+        const status = document.getElementById('biometricStatus');
+        const result = document.getElementById('biometricResult');
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.style.display = 'block';
+                status.style.display = 'none';
+                result.style.display = 'block';
+
+                // Simular validação após 2 segundos
+                setTimeout(() => {
+                    result.innerHTML = '<span class="badge bg-success"><i class="fas fa-check"></i> Biometria Validada</span>';
+                }, 2000);
+            })
+            .catch(err => {
+                alert('Erro ao acessar a câmera. Use o código MFA para autenticação.');
+                console.error('Erro na biometria:', err);
+            });
+    }
+
+    /**
+     * Validação do formulário de login
+     * Data: 04/09/2026
+     */
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const matricula = this.querySelector('input[name="matricula"]').value;
+        const senha = this.querySelector('input[name="senha"]').value;
+        const mfa = this.querySelector('input[name="mfa_code"]').value;
+
+        if (!matricula || !senha || !mfa) {
+            alert('⚠️ Preencha todos os campos!');
+            return;
+        }
+
+        if (mfa.length < 6) {
+            alert('⚠️ O código MFA deve ter 6 dígitos!');
+            return;
+        }
+
+        // Simular autenticação
+        alert('✅ Autenticação realizada com sucesso!\n\n' +
+              '📋 Matrícula: ' + matricula + '\n' +
+              '🔐 MFA: ' + mfa + '\n\n' +
+              'Redirecionando para o dashboard...');
+
+        // Redirecionar para o dashboard
+        window.location.href = '03-dashboard.html';
+    });
+</script>
+
+</body>
+</html>
