@@ -1,1 +1,517 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-DEPOM - Sistema Policial Inteligente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ============================================
+           VARIÁVEIS E RESET
+           ============================================ */
+        :root {
+            --police-blue: #0a1e3d;
+            --police-dark: #060d1a;
+            --police-gold: #c9a84c;
+            --police-gold-light: #e8d5a3;
+            --shadow-gold: rgba(201, 168, 76, 0.15);
+            --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
+            --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+            background: var(--police-dark);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ============================================
+           ANIMAÇÃO DE FUNDO
+           ============================================ */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--gradient-primary);
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .animated-bg .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(201, 168, 76, 0.03);
+            animation: float linear infinite;
+        }
+
+        .animated-bg .particle:nth-child(1) { width: 300px; height: 300px; top: -100px; left: -100px; animation-duration: 25s; }
+        .animated-bg .particle:nth-child(2) { width: 500px; height: 500px; bottom: -200px; right: -200px; animation-duration: 35s; }
+        .animated-bg .particle:nth-child(3) { width: 200px; height: 200px; top: 50%; left: 50%; animation-duration: 20s; }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
+            50% { transform: translate(50px, -50px) scale(1.2); opacity: 0.6; }
+            100% { transform: translate(-50px, 50px) scale(1); opacity: 0.3; }
+        }
+
+        /* ============================================
+           SCROLL INDICATOR
+           ============================================ */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            cursor: pointer;
+            z-index: 10;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .scroll-indicator:hover { opacity: 1; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-15px); }
+        }
+
+        /* ============================================
+           HERO SECTION
+           ============================================ */
+        .hero {
+            position: relative;
+            z-index: 1;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(201, 168, 76, 0.15);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            padding: 8px 24px;
+            border-radius: 50px;
+            font-size: 13px;
+            color: var(--police-gold-light);
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-badge i {
+            margin-right: 8px;
+            color: var(--police-gold);
+        }
+
+        .hero-logo {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 30px;
+            background: var(--gradient-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 60px var(--shadow-gold);
+            position: relative;
+        }
+
+        .hero-logo::after {
+            content: '';
+            position: absolute;
+            inset: -8px;
+            border-radius: 50%;
+            border: 2px solid rgba(201, 168, 76, 0.2);
+            animation: pulse-ring 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse-ring {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.6; }
+        }
+
+        .hero-logo i { font-size: 56px; color: var(--police-dark); }
+
+        .hero h1 {
+            font-size: clamp(2.5rem, 7vw, 5rem);
+            font-weight: 800;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 4px;
+            text-shadow: 0 0 80px rgba(201, 168, 76, 0.1);
+            margin-bottom: 15px;
+        }
+
+        .hero h1 .highlight {
+            -webkit-text-fill-color: #fff;
+            background: none;
+            position: relative;
+        }
+
+        .hero h1 .highlight::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--gradient-gold);
+            border-radius: 2px;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(1.1rem, 2vw, 1.6rem);
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 10px;
+        }
+
+        .hero-description {
+            font-size: clamp(0.95rem, 1.2vw, 1.15rem);
+            color: rgba(255, 255, 255, 0.5);
+            max-width: 600px;
+            margin: 0 auto 40px;
+            line-height: 1.8;
+            letter-spacing: 0.5px;
+        }
+
+        /* ============================================
+           BOTÕES
+           ============================================ */
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 50px;
+        }
+
+        .btn-hero-primary {
+            background: var(--gradient-gold);
+            color: var(--police-dark);
+            padding: 16px 45px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 30px rgba(201, 168, 76, 0.25);
+        }
+
+        .btn-hero-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(201, 168, 76, 0.4);
+            color: var(--police-dark);
+            background: linear-gradient(135deg, #dbb95c 0%, #b8984a 100%);
+        }
+
+        .btn-hero-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            padding: 16px 45px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 1px;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-hero-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--police-gold);
+            color: #fff;
+            transform: translateY(-3px);
+        }
+
+        /* ============================================
+           BADGES DE SEGURANÇA
+           ============================================ */
+        .security-badges {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .security-badge-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        .security-badge-item i {
+            color: var(--police-gold);
+            font-size: 18px;
+        }
+
+        .security-badge-item .lock-icon {
+            color: #4caf50;
+        }
+
+        /* ============================================
+           STATS SECTION
+           ============================================ */
+        .stats-section {
+            position: relative;
+            z-index: 1;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            padding: 50px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--police-gold);
+            display: block;
+        }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 14px;
+            letter-spacing: 1px;
+            margin-top: 5px;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            .hero-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            .btn-hero-primary, .btn-hero-secondary {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+            .security-badges {
+                gap: 15px;
+            }
+            .hero-logo {
+                width: 80px;
+                height: 80px;
+            }
+            .hero-logo i {
+                font-size: 36px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            .hero-subtitle {
+                font-size: 0.9rem;
+            }
+            .hero-description {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================
+   ANIMAÇÃO DE FUNDO
+   ============================================ -->
+<div class="animated-bg">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+</div>
+
+<!-- ============================================
+   HERO SECTION
+   ============================================ -->
+<section class="hero">
+    <div class="hero-content">
+        <!-- Badge -->
+        <div class="hero-badge">
+            <i class="fas fa-shield-halved"></i>
+            SISTEMA CERTIFICADO · FIPS 140-2 · CJIS COMPLIANT
+        </div>
+
+        <!-- Logo -->
+        <div class="hero-logo">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+
+        <!-- Título -->
+        <h1>
+            <span class="highlight">AI</span>-DEPOM
+        </h1>
+        <div class="hero-subtitle">
+            <i class="fas fa-robot me-2" style="color: var(--police-gold); opacity: 0.5;"></i>
+            Inteligência Artificial para Dados Policiais
+        </div>
+
+        <!-- Descrição -->
+        <p class="hero-description">
+            Sistema integrado de gestão policial com criptografia de nível militar,
+            reconhecimento biométrico e análise preditiva baseada em IA.
+            Padrão FBI, Interpol e Polícia Federal.
+        </p>
+
+        <!-- Botões -->
+        <div class="hero-buttons">
+            <a href="02-login.html" class="btn-hero-primary">
+                <i class="fas fa-sign-in-alt"></i>
+                ACESSAR SISTEMA
+            </a>
+            <a href="#demo" class="btn-hero-secondary">
+                <i class="fas fa-play-circle"></i>
+                VER DEMONSTRAÇÃO
+            </a>
+        </div>
+
+        <!-- Badges de Segurança -->
+        <div class="security-badges">
+            <span class="security-badge-item">
+                <i class="fas fa-shield"></i>
+                AES-256
+            </span>
+            <span class="security-badge-item">
+                <i class="fas fa-fingerprint"></i>
+                Biometria
+            </span>
+            <span class="security-badge-item">
+                <i class="fas fa-lock lock-icon"></i>
+                TDE Ativo
+            </span>
+            <span class="security-badge-item">
+                <i class="fas fa-database"></i>
+                LGPD/GDPR
+            </span>
+            <span class="security-badge-item">
+                <i class="fas fa-globe"></i>
+                Interpol I-24/7
+            </span>
+        </div>
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator" onclick="document.querySelector('.stats-section').scrollIntoView({ behavior: 'smooth' })">
+        <i class="fas fa-chevron-down fa-2x" style="color: rgba(255,255,255,0.2);"></i>
+    </div>
+</section>
+
+<!-- ============================================
+   STATS SECTION
+   ============================================ -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number" data-count="1247">0</span>
+                    <span class="stat-label">SUSPEITOS CADASTRADOS</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number" data-count="342">0</span>
+                    <span class="stat-label">INVESTIGAÇÕES</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number" data-count="89">0</span>
+                    <span class="stat-label">MANDADOS CUMPRIDOS</span>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="stat-item">
+                    <span class="stat-number" data-count="2.4">0</span>
+                    <span class="stat-label">TB DE DADOS CRIPTOGRAFADOS</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+   SCRIPTS
+   ============================================ -->
+<script>
+    // Animação dos números
+    document.addEventListener('DOMContentLoaded', function() {
+        const counters = document.querySelectorAll('.stat-number');
+        const speed = 200;
+
+        const animateCounter = (counter) => {
+            const target = parseFloat(counter.getAttribute('data-count'));
+            const isDecimal = target % 1 !== 0;
+            const increment = target / speed;
+            let current = 0;
+
+            const updateCounter = () => {
+                current += increment;
+                if (current < target) {
+                    counter.textContent = isDecimal ? current.toFixed(1) : Math.ceil(current);
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    counter.textContent = isDecimal ? target.toFixed(1) : target;
+                }
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        updateCounter();
+                        observer.unobserve(counter);
+                    }
+                });
+            }, { threshold: 0.5 });
+
+            observer.observe(counter);
+        };
+
+        counters.forEach(animateCounter);
+    });
+</script>
+
+</body>
+</html>
