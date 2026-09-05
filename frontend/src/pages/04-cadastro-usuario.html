@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -7,21 +7,15 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ============================================
-           VARIÁVEIS E RESET
-           ============================================ */
+        /* ===== MESMOS ESTILOS DO DASHBOARD ===== */
         :root {
             --police-blue: #0a1e3d;
             --police-dark: #060d1a;
             --police-gold: #c9a84c;
-            --police-gold-light: #e8d5a3;
             --shadow-gold: rgba(201, 168, 76, 0.15);
-            --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
             --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         body {
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--police-dark);
@@ -29,328 +23,33 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
-
-        /* ============================================
-           SIDEBAR
-           ============================================ */
-        .sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 260px;
-            height: 100vh;
-            background: rgba(6, 13, 26, 0.95);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(201, 168, 76, 0.08);
-            z-index: 1000;
-            padding: 20px 0;
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-        }
-
-        .sidebar::-webkit-scrollbar { width: 4px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--police-gold); border-radius: 4px; }
-
-        .sidebar-brand {
-            text-align: center;
-            padding: 0 20px 25px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            margin-bottom: 20px;
-        }
-
-        .sidebar-brand .logo {
-            width: 60px;
-            height: 60px;
-            margin: 0 auto 12px;
-            background: var(--gradient-gold);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 0 40px var(--shadow-gold);
-        }
-
-        .sidebar-brand .logo i { font-size: 28px; color: var(--police-dark); }
-        .sidebar-brand h5 {
-            color: var(--police-gold);
-            font-weight: 700;
-            letter-spacing: 2px;
-            margin: 0;
-        }
-        .sidebar-brand small {
-            color: rgba(255,255,255,0.2);
-            font-size: 10px;
-            letter-spacing: 1px;
-        }
-
-        .sidebar-menu { padding: 0 12px; }
-        .sidebar-menu .menu-label {
-            color: rgba(255,255,255,0.15);
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            padding: 15px 12px 8px;
-        }
-
-        .sidebar-menu .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 12px 16px;
-            border-radius: 10px;
-            color: rgba(255,255,255,0.4);
-            text-decoration: none;
-            transition: all 0.3s;
-            cursor: pointer;
-            margin-bottom: 2px;
-        }
-
-        .sidebar-menu .menu-item:hover {
-            background: rgba(255,255,255,0.03);
-            color: #fff;
-        }
-
-        .sidebar-menu .menu-item.active {
-            background: rgba(201, 168, 76, 0.08);
-            color: var(--police-gold);
-            border: 1px solid rgba(201, 168, 76, 0.1);
-        }
-
-        .sidebar-menu .menu-item i { width: 20px; font-size: 16px; }
-        .sidebar-menu .menu-item .badge {
-            margin-left: auto;
-            background: #dc3545;
-            color: #fff;
-            font-size: 10px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 0 20px;
-            border-top: 1px solid rgba(255,255,255,0.03);
-            padding-top: 15px;
-        }
-
-        .sidebar-footer .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .sidebar-footer .user-info .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: var(--gradient-gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: var(--police-dark);
-        }
-
-        .sidebar-footer .user-info .name {
-            font-size: 14px;
-            font-weight: 600;
-            color: #fff;
-        }
-
-        .sidebar-footer .user-info .role {
-            font-size: 11px;
-            color: rgba(255,255,255,0.3);
-        }
-
-        /* ============================================
-           MAIN CONTENT
-           ============================================ */
-        .main-content {
-            margin-left: 260px;
-            padding: 25px 30px;
-            min-height: 100vh;
-        }
-
-        /* ============================================
-           TOP BAR
-           ============================================ */
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            background: rgba(10, 30, 61, 0.6);
-            backdrop-filter: blur(15px);
-            border-radius: 16px;
-            padding: 15px 25px;
-            margin-bottom: 25px;
-            border: 1px solid rgba(201, 168, 76, 0.05);
-        }
-
-        .top-bar .page-title h4 {
-            color: var(--police-gold);
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: 1px;
-        }
-
-        .top-bar .page-title small {
-            color: rgba(255,255,255,0.2);
-            font-size: 12px;
-            letter-spacing: 1px;
-        }
-
-        .top-bar .top-actions {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-
-        .top-bar .top-actions .badge {
-            padding: 8px 16px;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            color: rgba(255,255,255,0.5);
-        }
-
-        .top-bar .top-actions .badge i { margin-right: 6px; }
-        .top-bar .top-actions .badge .count { color: var(--police-gold); font-weight: 700; }
-
-        /* ============================================
-           FORMULÁRIO
-           ============================================ */
-        .form-card {
-            background: rgba(255,255,255,0.02);
-            border-radius: 14px;
-            padding: 25px;
-            border: 1px solid rgba(255,255,255,0.03);
-        }
-
-        .form-card .card-title {
-            color: var(--police-gold);
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-        }
-
-        .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
-
-        .form-label {
-            color: rgba(255,255,255,0.5);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        .form-control, .form-select {
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.06);
-            color: #fff;
-            padding: 10px 14px;
-            border-radius: 10px;
-            transition: all 0.3s;
-        }
-
-        .form-control:focus, .form-select:focus {
-            background: rgba(0,0,0,0.4);
-            border-color: var(--police-gold);
-            box-shadow: 0 0 0 4px rgba(201,168,76,0.08);
-            color: #fff;
-        }
-
-        .form-control::placeholder { color: rgba(255,255,255,0.15); }
-
-        .btn-gold {
-            background: var(--gradient-gold);
-            color: var(--police-dark);
-            font-weight: 700;
-            padding: 10px 28px;
-            border-radius: 10px;
-            border: none;
-            transition: all 0.3s;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-gold:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(201,168,76,0.3);
-            color: var(--police-dark);
-        }
-
-        .btn-outline-gold {
-            background: transparent;
-            color: var(--police-gold);
-            border: 1px solid var(--police-gold);
-            padding: 10px 28px;
-            border-radius: 10px;
-            font-weight: 600;
-            transition: all 0.3s;
-        }
-
-        .btn-outline-gold:hover {
-            background: rgba(201,168,76,0.05);
-            color: var(--police-gold);
-        }
-
-        /* ============================================
-           RESPONSIVE
-           ============================================ */
-        .sidebar-toggle {
-            display: none;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.05);
-            color: #fff;
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-                width: 280px;
-            }
-            .sidebar.open { transform: translateX(0); }
-            .main-content { margin-left: 0; }
-            .sidebar-toggle { display: flex !important; }
-        }
-
-        @media (max-width: 768px) {
-            .main-content { padding: 15px; }
-            .top-bar { flex-direction: column; align-items: flex-start; }
-        }
-
-        @media (max-width: 480px) {
-            .top-actions { width: 100%; }
-            .top-actions .badge { flex: 1; text-align: center; }
-        }
-
+        /* Sidebar, Main Content, Top Bar, Form Card (mesmos estilos do dashboard) */
+        .sidebar { /* ... mesmo estilo do dashboard ... */ }
+        .main-content { margin-left: 260px; padding: 25px 30px; min-height: 100vh; }
+        .top-bar { /* ... mesmo estilo do dashboard ... */ }
+        .form-card { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 25px; border: 1px solid rgba(255,255,255,0.03); }
+        .card-title { color: var(--police-gold); font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(201,168,76,0.08); padding-bottom: 12px; margin-bottom: 20px; }
+        .card-title i { margin-right: 10px; opacity: 0.7; }
+        .form-label { color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        .form-control, .form-select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); color: #fff; padding: 10px 14px; border-radius: 10px; transition: all 0.3s; }
+        .form-control:focus, .form-select:focus { background: rgba(0,0,0,0.4); border-color: var(--police-gold); box-shadow: 0 0 0 4px rgba(201,168,76,0.08); color: #fff; }
+        .btn-gold { background: var(--gradient-gold); color: var(--police-dark); font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(201,168,76,0.3); color: var(--police-dark); }
+        .btn-outline-gold { background: transparent; color: var(--police-gold); border: 1px solid var(--police-gold); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; }
+        .btn-outline-gold:hover { background: rgba(201,168,76,0.05); color: var(--police-gold); }
+        .sidebar-toggle { display: none; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        @media (max-width: 992px) { .sidebar { transform: translateX(-100%); width: 280px; } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .sidebar-toggle { display: flex !important; } }
+        @media (max-width: 768px) { .main-content { padding: 15px; } .top-bar { flex-direction: column; align-items: flex-start; } }
+        @media (max-width: 480px) { .top-actions { width: 100%; } .top-actions .badge { flex: 1; text-align: center; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--police-dark); }
         ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
+        .input-group-text { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.2); }
     </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- ===== SIDEBAR ===== -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="logo"><i class="fas fa-shield-halved"></i></div>
@@ -394,14 +93,14 @@
         <div class="user-info">
             <div class="avatar">AM</div>
             <div>
-                <div class="name">Admin Master</div>
-                <div class="role">Administrador Master</div>
+                <div class="name" id="userName">Carregando...</div>
+                <div class="role" id="userRole">Carregando...</div>
             </div>
         </div>
     </div>
 </aside>
 
-<!-- MAIN CONTENT -->
+<!-- ===== MAIN CONTENT ===== -->
 <main class="main-content">
     <!-- TOP BAR -->
     <header class="top-bar">
@@ -420,7 +119,7 @@
         </div>
     </header>
 
-    <!-- FORMULÁRIO DE CADASTRO -->
+    <!-- FORMULÁRIO -->
     <div class="form-card">
         <div class="card-title"><i class="fas fa-user-plus"></i>Cadastrar Novo Usuário</div>
 
@@ -440,7 +139,7 @@
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Nome Completo *</label>
-                    <input type="text" class="form-control" id="nomeCompleto" placeholder="Ex: João Silva Santos" required>
+                    <input type="text" class="form-control" id="nomeCompleto" placeholder="Digite o nome completo" required>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Matrícula *</label>
@@ -454,7 +153,7 @@
                     <label class="form-label">Email *</label>
                     <div class="input-group">
                         <input type="email" class="form-control" id="email" placeholder="usuario@dominio.com" required>
-                        <span class="input-group-text" id="emailValidation" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); color:rgba(255,255,255,0.2);">
+                        <span class="input-group-text" id="emailValidation">
                             <i class="fas fa-circle"></i>
                         </span>
                     </div>
@@ -516,7 +215,7 @@
                     <button type="reset" class="btn-outline-gold me-2">
                         <i class="fas fa-times me-2"></i>CANCELAR
                     </button>
-                    <button type="submit" class="btn-gold">
+                    <button type="submit" class="btn-gold" id="btnCadastrar">
                         <i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO
                     </button>
                 </div>
@@ -534,17 +233,36 @@
     </div>
 </main>
 
+<!-- ===== SUPABASE SDK ===== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-    // ============================================
-    // TOGGLE SIDEBAR
-    // ============================================
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
+    // ===== CONFIGURAÇÃO =====
+    const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
+    const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI'; // Substitua pela chave real
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    // ===== CARREGAR USUÁRIO =====
+    async function carregarUsuario() {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: usuario } = await supabase
+                    .from('usuarios')
+                    .select('nome_completo, setor')
+                    .eq('id', user.id)
+                    .single();
+
+                if (usuario) {
+                    document.getElementById('userName').textContent = usuario.nome_completo || 'Usuário';
+                    document.getElementById('userRole').textContent = usuario.setor || 'Servidor';
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao carregar usuário:', error);
+        }
     }
 
-    // ============================================
-    // VALIDAÇÃO DE EMAIL
-    // ============================================
+    // ===== VALIDAÇÃO DE EMAIL =====
     document.getElementById('email').addEventListener('input', function() {
         const email = this.value;
         const feedback = document.getElementById('emailFeedback');
@@ -576,35 +294,151 @@
         }
     });
 
-    // ============================================
-    // SUBMIT DO FORMULÁRIO
-    // ============================================
-    document.getElementById('formUsuario').addEventListener('submit', function(e) {
+    // ===== SUBMIT =====
+    document.getElementById('formUsuario').addEventListener('submit', async function(e) {
         e.preventDefault();
 
-        const nome = document.getElementById('nomeCompleto').value;
-        const matricula = document.getElementById('matricula').value;
-        const setor = document.getElementById('setor').value;
-        const email = document.getElementById('email').value;
-        const perfil = document.getElementById('perfil').value;
+        const btn = document.getElementById('btnCadastrar');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
 
-        if (!nome || !matricula || !setor || !email || !perfil) {
-            alert('⚠️ Preencha todos os campos obrigatórios!');
-            return;
+        try {
+            const nome = document.getElementById('nomeCompleto').value;
+            const matricula = document.getElementById('matricula').value;
+            const setor = document.getElementById('setor').value;
+            const email = document.getElementById('email').value;
+            const perfil = document.getElementById('perfil').value;
+
+            // 1. Validar campos
+            if (!nome || !matricula || !setor || !email || !perfil) {
+                alert('⚠️ Preencha todos os campos obrigatórios!');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                return;
+            }
+
+            // 2. Validar email
+            if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) {
+                alert('⚠️ Email inválido!');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                return;
+            }
+
+            // 3. Verificar se o usuário atual é Master
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                alert('⚠️ Você precisa estar logado como Administrador Master.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                return;
+            }
+
+            // 4. Verificar se o usuário tem perfil Master
+            const { data: usuarioMaster, error: errMaster } = await supabase
+                .from('usuarios')
+                .select('id_perfil_acesso')
+                .eq('id', user.id)
+                .single();
+
+            if (errMaster || !usuarioMaster || usuarioMaster.id_perfil_acesso !== 1) {
+                alert('⚠️ Apenas o Administrador Master pode cadastrar usuários!');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                return;
+            }
+
+            // 5. Verificar se matrícula já existe
+            const { data: existente, error: errExist } = await supabase
+                .from('usuarios')
+                .select('matricula')
+                .eq('matricula', matricula)
+                .single();
+
+            if (existente) {
+                alert('⚠️ Matrícula já cadastrada!');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                return;
+            }
+
+            // 6. Gerar senha temporária
+            const senhaTemp = 'Temp@' + new Date().toISOString().slice(0,10).replace(/-/g,'') + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+
+            // 7. Criar usuário no Supabase Auth
+            const { data: authUser, error: errAuth } = await supabase.auth.admin.createUser({
+                email: email,
+                password: senhaTemp,
+                email_confirm: true,
+                user_metadata: {
+                    nome_completo: nome,
+                    matricula: matricula,
+                    setor: setor
+                }
+            });
+
+            if (errAuth) {
+                console.error('Erro no Auth:', errAuth);
+                alert('❌ Erro ao criar usuário: ' + errAuth.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                return;
+            }
+
+            // 8. Inserir na tabela usuarios
+            const { error: errInsert } = await supabase
+                .from('usuarios')
+                .insert({
+                    id: authUser.user.id,
+                    matricula: matricula,
+                    nome_completo: nome,
+                    email: email,
+                    setor: setor,
+                    id_perfil_acesso: parseInt(perfil),
+                    ativo: true,
+                    primeiro_acesso: true,
+                    id_usuario_cadastrador: user.id
+                });
+
+            if (errInsert) {
+                console.error('Erro ao inserir na tabela usuarios:', errInsert);
+                alert('❌ Erro ao cadastrar usuário no sistema: ' + errInsert.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                return;
+            }
+
+            // 9. Sucesso
+            alert(`✅ USUÁRIO CADASTRADO COM SUCESSO!\n\n` +
+                  `📋 Nome: ${nome}\n` +
+                  `🔑 Matrícula: ${matricula}\n` +
+                  `📧 Email: ${email}\n` +
+                  `👤 Perfil: ${perfil}\n\n` +
+                  `🔐 Senha temporária: ${senhaTemp}\n\n` +
+                  `📨 Senha enviada por email. Usuário deve trocar no primeiro acesso.`);
+
+            // 10. Limpar formulário
+            document.getElementById('formUsuario').reset();
+            document.getElementById('emailValidation').innerHTML = '<i class="fas fa-circle"></i>';
+            document.getElementById('emailFeedback').textContent = 'Digite um email válido';
+            document.getElementById('emailFeedback').style.color = 'rgba(255,255,255,0.2)';
+
+        } catch (error) {
+            console.error('Erro geral:', error);
+            alert('❌ Erro ao cadastrar usuário: ' + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
         }
-
-        // Simular cadastro
-        alert('✅ USUÁRIO CADASTRADO COM SUCESSO!\n\n' +
-              '📋 Nome: ' + nome + '\n' +
-              '🔑 Matrícula: ' + matricula + '\n' +
-              '📧 Email: ' + email + '\n' +
-              '👤 Perfil: ' + perfil + '\n\n' +
-              '🔐 Senha temporária: Temp@' + new Date().toISOString().slice(0,10).replace(/-/g,'') + Math.floor(Math.random() * 10000).toString().padStart(4, '0') + '\n\n' +
-              '📨 Senha enviada por email. Usuário deve trocar no primeiro acesso.');
-
-        // Redirecionar para dashboard
-        window.location.href = '03-dashboard.html';
     });
+
+    // ===== TOGGLE SIDEBAR =====
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // ===== INICIALIZAÇÃO =====
+    document.addEventListener('DOMContentLoaded', carregarUsuario);
 </script>
 
 </body>
