@@ -1,1 +1,101 @@
+# =====================================================
+# AI-DEPOM - DOCUMENTAÇÃO
+# =====================================================
+# Data: 04/09/2026
+# Versão: 1.0.0
+# Descrição: Pasta de documentação do projeto
+# =====================================================
 
+Esta pasta contém toda a documentação do sistema AI-DEPOM.
+
+## 📚 DOCUMENTOS DISPONÍVEIS
+
+### 1. MANUAL DO USUÁRIO
+- **Arquivo:** `manual-usuario.md`
+- **Descrição:** Guia completo para uso do sistema
+- **Seções:**
+  - Introdução ao AI-DEPOM
+  - Primeiros passos (login, dashboard)
+  - Cadastro de suspeitos
+  - Gerenciamento de investigações
+  - Emissão de mandados
+  - Consultas e relatórios
+  - Configurações do sistema
+
+### 2. GUIA DE INSTALAÇÃO
+- **Arquivo:** `guia-instalacao.md`
+- **Descrição:** Como instalar e configurar o sistema
+- **Seções:**
+  - Pré-requisitos
+  - Configuração do Supabase
+  - Configuração do frontend
+  - Configuração do backend
+  - Primeira execução
+
+### 3. ARQUITETURA DO SISTEMA
+- **Arquivo:** `arquitetura.md`
+- **Descrição:** Detalhamento técnico da arquitetura
+- **Seções:**
+  - Diagrama de arquitetura
+  - Banco de dados (modelo ER)
+  - Frontend (telas e componentes)
+  - Backend (API e serviços)
+  - Segurança (RLS, criptografia, auditoria)
+
+### 4. API REFERENCE
+- **Arquivo:** `api-reference.md`
+- **Descrição:** Documentação completa da API
+- **Seções:**
+  - Endpoints disponíveis
+  - Autenticação e autorização
+  - Parâmetros e respostas
+  - Exemplos de uso
+
+### 5. GUIA DE SEGURANÇA
+- **Arquivo:** `guia-seguranca.md`
+- **Descrição:** Boas práticas de segurança
+- **Seções:**
+  - Gerenciamento de usuários
+  - Políticas de RLS
+  - Criptografia de dados
+  - Auditoria e logs
+  - Backup e recuperação
+
+### 6. GUIA DE IMPLANTAÇÃO
+- **Arquivo:** `guia-implantacao.md`
+- **Descrição:** Como implantar em produção
+- **Seções:**
+  - Preparação do ambiente
+  - Configuração de variáveis
+  - Deploy no Supabase
+  - Deploy no frontend
+  - Monitoramento e manutenção
+
+---
+
+## 📝 COMO CONTRIBUIR COM A DOCUMENTAÇÃO
+
+1. Crie um novo arquivo na pasta `docs/`
+2. Siga o padrão de nomenclatura: `tipo-descricao.md`
+3. Use markdown para formatação
+4. Inclua cabeçalho com:
+   - Título
+   - Data de criação
+   - Versão
+   - Autor
+5. Faça commit e push para o GitHub
+
+---
+
+## 🔗 LINKS ÚTEIS
+
+- **Repositório:** https://github.com/ai-depom/ai-depom
+- **Project Board:** https://github.com/users/ai-depom/projects/1
+- **Supabase:** https://supabase.com/dashboard/project/szkgaqouivsvlyujfvmz
+- **Wiki:** https://github.com/ai-depom/ai-depom/wiki
+
+---
+
+**Última atualização:** 04/09/2026 - 15:35
+
+*"Segurança, Integridade e Inteligência a serviço da Justiça"* 🛡️
