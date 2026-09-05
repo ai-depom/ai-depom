@@ -1,1 +1,821 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-DEPOM - Consulta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ============================================
+           VARIÁVEIS E RESET
+           ============================================ */
+        :root {
+            --police-blue: #0a1e3d;
+            --police-dark: #060d1a;
+            --police-gold: #c9a84c;
+            --shadow-gold: rgba(201, 168, 76, 0.15);
+            --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
+            --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+        }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--police-dark);
+            color: #e0e0e0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ============================================
+           SIDEBAR
+           ============================================ */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: rgba(6, 13, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(201, 168, 76, 0.08);
+            z-index: 1000;
+            padding: 20px 0;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: var(--police-gold); border-radius: 4px; }
+
+        .sidebar-brand {
+            text-align: center;
+            padding: 0 20px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-brand .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 12px;
+            background: var(--gradient-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 40px var(--shadow-gold);
+        }
+
+        .sidebar-brand .logo i { font-size: 28px; color: var(--police-dark); }
+        .sidebar-brand h5 {
+            color: var(--police-gold);
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        .sidebar-brand small {
+            color: rgba(255,255,255,0.2);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-menu { padding: 0 12px; }
+        .sidebar-menu .menu-label {
+            color: rgba(255,255,255,0.15);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 15px 12px 8px;
+        }
+
+        .sidebar-menu .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 12px 16px;
+            border-radius: 10px;
+            color: rgba(255,255,255,0.4);
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-menu .menu-item:hover {
+            background: rgba(255,255,255,0.03);
+            color: #fff;
+        }
+
+        .sidebar-menu .menu-item.active {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--police-gold);
+            border: 1px solid rgba(201, 168, 76, 0.1);
+        }
+
+        .sidebar-menu .menu-item i { width: 20px; font-size: 16px; }
+        .sidebar-menu .menu-item .badge {
+            margin-left: auto;
+            background: #dc3545;
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            padding: 0 20px;
+            border-top: 1px solid rgba(255,255,255,0.03);
+            padding-top: 15px;
+        }
+
+        .sidebar-footer .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-footer .user-info .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: var(--police-dark);
+        }
+
+        .sidebar-footer .user-info .name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .sidebar-footer .user-info .role {
+            font-size: 11px;
+            color: rgba(255,255,255,0.3);
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            margin-left: 260px;
+            padding: 25px 30px;
+            min-height: 100vh;
+        }
+
+        /* ============================================
+           TOP BAR
+           ============================================ */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: rgba(10, 30, 61, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(201, 168, 76, 0.05);
+        }
+
+        .top-bar .page-title h4 {
+            color: var(--police-gold);
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 1px;
+        }
+
+        .top-bar .page-title small {
+            color: rgba(255,255,255,0.2);
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .top-bar .top-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .top-bar .top-actions .badge {
+            padding: 8px 16px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.5);
+        }
+
+        .top-bar .top-actions .badge i { margin-right: 6px; }
+        .top-bar .top-actions .badge .count { color: var(--police-gold); font-weight: 700; }
+
+        /* ============================================
+           FORMULÁRIO DE BUSCA
+           ============================================ */
+        .form-card {
+            background: rgba(255,255,255,0.02);
+            border-radius: 14px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+
+        .form-card .card-title {
+            color: var(--police-gold);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
+
+        .form-label {
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .form-control, .form-select {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.06);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            background: rgba(0,0,0,0.4);
+            border-color: var(--police-gold);
+            box-shadow: 0 0 0 4px rgba(201,168,76,0.08);
+            color: #fff;
+        }
+
+        .form-control::placeholder { color: rgba(255,255,255,0.15); }
+
+        .btn-gold {
+            background: var(--gradient-gold);
+            color: var(--police-dark);
+            font-weight: 700;
+            padding: 10px 28px;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(201,168,76,0.3);
+            color: var(--police-dark);
+        }
+
+        .btn-icon {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(201,168,76,0.05);
+            border-color: rgba(201,168,76,0.2);
+            color: #fff;
+        }
+
+        /* ============================================
+           TABELA DE RESULTADOS
+           ============================================ */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-custom th {
+            color: rgba(255,255,255,0.3);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
+            text-align: left;
+        }
+
+        .table-custom td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.02);
+            font-size: 14px;
+        }
+
+        .table-custom tr:hover td {
+            background: rgba(255,255,255,0.01);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.preso { background: #dc3545; color: #fff; }
+        .status-badge.procurado { background: #ffc107; color: #000; }
+        .status-badge.foragido { background: #dc3545; color: #fff; animation: pulse 1.5s infinite; }
+        .status-badge.investigado { background: #17a2b8; color: #fff; }
+        .status-badge.condicional { background: #28a745; color: #fff; }
+        .status-badge.liberado { background: #6c757d; color: #fff; }
+
+        .perigo-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .perigo-badge.baixo { background: #28a745; color: #fff; }
+        .perigo-badge.medio { background: #ffc107; color: #000; }
+        .perigo-badge.alto { background: #fd7e14; color: #fff; }
+        .perigo-badge.extremo { background: #dc3545; color: #fff; }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        .sidebar-toggle {
+            display: none;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.05);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: flex !important; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content { padding: 15px; }
+            .top-bar { flex-direction: column; align-items: flex-start; }
+        }
+
+        @media (max-width: 480px) {
+            .top-actions { width: 100%; }
+            .top-actions .badge { flex: 1; text-align: center; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--police-dark); }
+        ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="logo"><i class="fas fa-shield-halved"></i></div>
+        <h5>AI-DEPOM</h5>
+        <small>SISTEMA POLICIAL INTELIGENTE</small>
+    </div>
+    <nav class="sidebar-menu">
+        <div class="menu-label">Navegação</div>
+        <a class="menu-item" onclick="window.location.href='03-dashboard.html'">
+            <i class="fas fa-th-large"></i> Dashboard
+        </a>
+        <a class="menu-item" onclick="window.location.href='05-cadastro-suspeito.html'">
+            <i class="fas fa-user-plus"></i> Cadastro
+        </a>
+        <a class="menu-item active" onclick="window.location.href='06-consulta.html'">
+            <i class="fas fa-search"></i> Consulta
+        </a>
+        <a class="menu-item" onclick="window.location.href='07-relatorios.html'">
+            <i class="fas fa-chart-bar"></i> Relatórios
+        </a>
+        <div class="menu-label">Administração</div>
+        <a class="menu-item" onclick="window.location.href='04-cadastro-usuario.html'">
+            <i class="fas fa-users-cog"></i> Usuários
+            <span class="badge" style="background:var(--police-gold);color:var(--police-dark);">Master</span>
+        </a>
+        <a class="menu-item" onclick="alert('Abrindo módulo de mandados...')">
+            <i class="fas fa-gavel"></i> Mandados
+        </a>
+        <a class="menu-item" onclick="alert('Abrindo auditoria...')">
+            <i class="fas fa-clipboard-list"></i> Auditoria
+        </a>
+        <div class="menu-label">Sistema</div>
+        <a class="menu-item" onclick="alert('Abrindo configurações...')">
+            <i class="fas fa-cog"></i> Configurações
+        </a>
+        <a class="menu-item" onclick="alert('Saindo do sistema...')">
+            <i class="fas fa-sign-out-alt"></i> Sair
+        </a>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="avatar">AM</div>
+            <div>
+                <div class="name">Admin Master</div>
+                <div class="role">Administrador Master</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main-content">
+    <!-- TOP BAR -->
+    <header class="top-bar">
+        <div class="d-flex align-items-center gap-3">
+            <button class="sidebar-toggle" onclick="toggleSidebar()">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="page-title">
+                <h4><i class="fas fa-search me-2"></i>Consulta de Suspeitos</h4>
+                <small><i class="fas fa-database me-1"></i> 1.247 registros disponíveis</small>
+            </div>
+        </div>
+        <div class="top-actions">
+            <span class="badge"><i class="fas fa-user-check text-success"></i> Presos: <span class="count">156</span></span>
+            <span class="badge"><i class="fas fa-user-graduate text-warning"></i> Procurados: <span class="count">23</span></span>
+            <span class="badge"><i class="fas fa-user-slash text-danger"></i> Foragidos: <span class="count">12</span></span>
+        </div>
+    </header>
+
+    <!-- FORMULÁRIO DE CONSULTA -->
+    <div class="form-card">
+        <div class="card-title"><i class="fas fa-search"></i>Busca Avançada</div>
+
+        <!-- Busca Rápida -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); color:rgba(255,255,255,0.3);">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG, Número de Inquérito..." onkeyup="realizarBusca(this.value)">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <button class="btn-gold w-100" onclick="realizarBusca(document.getElementById('buscaGlobal').value)">
+                    <i class="fas fa-arrow-right me-2"></i>BUSCAR
+                </button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select class="form-select" id="filtroStatus" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="PRESO">Preso</option>
+                    <option value="PROCURADO">Procurado</option>
+                    <option value="FORAGIDO">Foragido</option>
+                    <option value="INVESTIGADO">Investigado</option>
+                    <option value="CONDICIONAL">Condicional</option>
+                    <option value="LIBERADO">Liberado</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Periculosidade</label>
+                <select class="form-select" id="filtroPericulosidade" onchange="aplicarFiltros()">
+                    <option value="">Todos</option>
+                    <option value="BAIXO">Baixo</option>
+                    <option value="MEDIO">Médio</option>
+                    <option value="ALTO">Alto</option>
+                    <option value="EXTREMO">Extremo</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Data Início</label>
+                <input type="date" class="form-control" id="filtroDataInicio" onchange="aplicarFiltros()">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Data Fim</label>
+                <input type="date" class="form-control" id="filtroDataFim" onchange="aplicarFiltros()">
+            </div>
+        </div>
+
+        <!-- Resultados -->
+        <div id="resultadosContainer">
+            <div class="table-container">
+                <table class="table-custom" id="tabelaResultados">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>CPF</th>
+                            <th>Status</th>
+                            <th>Periculosidade</th>
+                            <th>Cidade</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultadosConsulta">
+                        <tr>
+                            <td><strong>João Batista Silva</strong></td>
+                            <td>123.456.789-00</td>
+                            <td><span class="status-badge preso">🔒 PRESO</span></td>
+                            <td><span class="perigo-badge alto">ALTO</span></td>
+                            <td>São Paulo</td>
+                            <td>
+                                <button class="btn-icon" onclick="verDetalhes(1)"><i class="fas fa-eye"></i></button>
+                                <button class="btn-icon" onclick="imprimirFicha(1)"><i class="fas fa-print"></i></button>
+                                <button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta(1)"><i class="fas fa-bell"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Maria das Dores Oliveira</strong></td>
+                            <td>987.654.321-00</td>
+                            <td><span class="status-badge procurado">🔍 PROCURADO</span></td>
+                            <td><span class="perigo-badge extremo">EXTREMO</span></td>
+                            <td>Rio de Janeiro</td>
+                            <td>
+                                <button class="btn-icon" onclick="verDetalhes(2)"><i class="fas fa-eye"></i></button>
+                                <button class="btn-icon" onclick="imprimirFicha(2)"><i class="fas fa-print"></i></button>
+                                <button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta(2)"><i class="fas fa-bell"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>José Carlos Pereira</strong></td>
+                            <td>456.789.123-00</td>
+                            <td><span class="status-badge foragido">🏃 FORAGIDO</span></td>
+                            <td><span class="perigo-badge extremo">EXTREMO</span></td>
+                            <td>Belo Horizonte</td>
+                            <td>
+                                <button class="btn-icon" onclick="verDetalhes(3)"><i class="fas fa-eye"></i></button>
+                                <button class="btn-icon" onclick="imprimirFicha(3)"><i class="fas fa-print"></i></button>
+                                <button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta(3)"><i class="fas fa-bell"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ana Paula Santos</strong></td>
+                            <td>789.123.456-00</td>
+                            <td><span class="status-badge investigado">🔎 INVESTIGADO</span></td>
+                            <td><span class="perigo-badge medio">MÉDIO</span></td>
+                            <td>Curitiba</td>
+                            <td>
+                                <button class="btn-icon" onclick="verDetalhes(4)"><i class="fas fa-eye"></i></button>
+                                <button class="btn-icon" onclick="imprimirFicha(4)"><i class="fas fa-print"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>Carlos Eduardo Lima</strong></td>
+                            <td>321.654.987-00</td>
+                            <td><span class="status-badge preso">🔒 PRESO</span></td>
+                            <td><span class="perigo-badge alto">ALTO</span></td>
+                            <td>Porto Alegre</td>
+                            <td>
+                                <button class="btn-icon" onclick="verDetalhes(5)"><i class="fas fa-eye"></i></button>
+                                <button class="btn-icon" onclick="imprimirFicha(5)"><i class="fas fa-print"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginação -->
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <small class="text-muted" id="infoPagina">Mostrando 1-5 de 1.247 registros</small>
+                <div>
+                    <button class="btn-icon me-1" onclick="paginaAnterior()"><i class="fas fa-chevron-left"></i></button>
+                    <button class="btn-icon active" style="background:rgba(201,168,76,0.1); border-color:var(--police-gold); color:var(--police-gold);" onclick="irPagina(1)">1</button>
+                    <button class="btn-icon" onclick="irPagina(2)">2</button>
+                    <button class="btn-icon" onclick="irPagina(3)">3</button>
+                    <button class="btn-icon" onclick="irPagina(4)">4</button>
+                    <button class="btn-icon" onclick="irPagina(5)">5</button>
+                    <button class="btn-icon ms-1" onclick="proximaPagina()"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- ============================================
+   SCRIPTS
+   ============================================ -->
+<script>
+    // ============================================
+    // TOGGLE SIDEBAR
+    // ============================================
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
+
+    // ============================================
+    // DADOS SIMULADOS
+    // ============================================
+    const dadosSuspeitos = [
+        { id: 1, nome: 'João Batista Silva', cpf: '123.456.789-00', status: 'PRESO', periculosidade: 'ALTO', cidade: 'São Paulo', data: '2026-01-15' },
+        { id: 2, nome: 'Maria das Dores Oliveira', cpf: '987.654.321-00', status: 'PROCURADO', periculosidade: 'EXTREMO', cidade: 'Rio de Janeiro', data: '2026-02-01' },
+        { id: 3, nome: 'José Carlos Pereira', cpf: '456.789.123-00', status: 'FORAGIDO', periculosidade: 'EXTREMO', cidade: 'Belo Horizonte', data: '2026-03-10' },
+        { id: 4, nome: 'Ana Paula Santos', cpf: '789.123.456-00', status: 'INVESTIGADO', periculosidade: 'MEDIO', cidade: 'Curitiba', data: '2026-04-05' },
+        { id: 5, nome: 'Carlos Eduardo Lima', cpf: '321.654.987-00', status: 'PRESO', periculosidade: 'ALTO', cidade: 'Porto Alegre', data: '2026-05-20' },
+        { id: 6, nome: 'Fernanda Cristina Alves', cpf: '654.321.987-00', status: 'PROCURADO', periculosidade: 'MEDIO', cidade: 'Salvador', data: '2026-06-12' },
+        { id: 7, nome: 'Roberto Santos Silva', cpf: '987.123.654-00', status: 'FORAGIDO', periculosidade: 'ALTO', cidade: 'Fortaleza', data: '2026-07-08' },
+        { id: 8, nome: 'Patrícia Oliveira Costa', cpf: '159.753.486-00', status: 'CONDICIONAL', periculosidade: 'BAIXO', cidade: 'Brasília', data: '2026-08-01' },
+        { id: 9, nome: 'Marcos Vinícius Souza', cpf: '753.159.486-00', status: 'LIBERADO', periculosidade: 'BAIXO', cidade: 'Manaus', data: '2026-08-25' },
+        { id: 10, nome: 'Juliana Mendes Rocha', cpf: '486.753.159-00', status: 'INVESTIGADO', periculosidade: 'MEDIO', cidade: 'Recife', data: '2026-09-02' }
+    ];
+
+    let resultadosFiltrados = dadosSuspeitos;
+    let paginaAtual = 1;
+    const itensPorPagina = 5;
+
+    // ============================================
+    // FUNÇÕES DE BUSCA
+    // ============================================
+    function realizarBusca(termo) {
+        const status = document.getElementById('filtroStatus').value;
+        const periculosidade = document.getElementById('filtroPericulosidade').value;
+        const dataInicio = document.getElementById('filtroDataInicio').value;
+        const dataFim = document.getElementById('filtroDataFim').value;
+
+        resultadosFiltrados = dadosSuspeitos.filter(d => {
+            const matchTermo = termo.length < 2 || 
+                d.nome.toLowerCase().includes(termo.toLowerCase()) ||
+                d.cpf.includes(termo);
+
+            const matchStatus = !status || d.status === status;
+            const matchPericulosidade = !periculosidade || d.periculosidade === periculosidade;
+            const matchDataInicio = !dataInicio || d.data >= dataInicio;
+            const matchDataFim = !dataFim || d.data <= dataFim;
+
+            return matchTermo && matchStatus && matchPericulosidade && matchDataInicio && matchDataFim;
+        });
+
+        paginaAtual = 1;
+        renderizarResultados();
+    }
+
+    function aplicarFiltros() {
+        const termo = document.getElementById('buscaGlobal').value;
+        realizarBusca(termo);
+    }
+
+    // ============================================
+    // RENDERIZAR RESULTADOS
+    // ============================================
+    function renderizarResultados() {
+        const tbody = document.getElementById('resultadosConsulta');
+        const total = resultadosFiltrados.length;
+
+        if (total === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center py-4" style="color:rgba(255,255,255,0.2);">
+                        <i class="fas fa-search fa-2x d-block mb-2"></i>
+                        Nenhum resultado encontrado
+                    </td>
+                </tr>
+            `;
+            document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
+            return;
+        }
+
+        const inicio = (paginaAtual - 1) * itensPorPagina;
+        const fim = Math.min(inicio + itensPorPagina, total);
+        const itensPagina = resultadosFiltrados.slice(inicio, fim);
+
+        document.getElementById('infoPagina').textContent = `Mostrando ${inicio + 1}-${fim} de ${total} registros`;
+
+        let html = '';
+        itensPagina.forEach(d => {
+            const statusClass = d.status.toLowerCase();
+            const periculosidadeClass = d.periculosidade.toLowerCase();
+            const statusLabel = {
+                'PRESO': '🔒 PRESO',
+                'PROCURADO': '🔍 PROCURADO',
+                'FORAGIDO': '🏃 FORAGIDO',
+                'INVESTIGADO': '🔎 INVESTIGADO',
+                'CONDICIONAL': '⚖️ CONDICIONAL',
+                'LIBERADO': '✅ LIBERADO'
+            }[d.status] || d.status;
+
+            html += `
+                <tr>
+                    <td><strong>${d.nome}</strong></td>
+                    <td>${d.cpf}</td>
+                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                    <td><span class="perigo-badge ${periculosidadeClass}">${d.periculosidade}</span></td>
+                    <td>${d.cidade}</td>
+                    <td>
+                        <button class="btn-icon" onclick="verDetalhes(${d.id})"><i class="fas fa-eye"></i></button>
+                        <button class="btn-icon" onclick="imprimirFicha(${d.id})"><i class="fas fa-print"></i></button>
+                        ${d.status === 'PROCURADO' || d.status === 'FORAGIDO' ? 
+                            `<button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta(${d.id})"><i class="fas fa-bell"></i></button>` : ''
+                        }
+                    </td>
+                </tr>
+            `;
+        });
+
+        tbody.innerHTML = html;
+    }
+
+    // ============================================
+    // PAGINAÇÃO
+    // ============================================
+    function paginaAnterior() {
+        if (paginaAtual > 1) {
+            paginaAtual--;
+            renderizarResultados();
+        }
+    }
+
+    function proximaPagina() {
+        const total = resultadosFiltrados.length;
+        const totalPaginas = Math.ceil(total / itensPorPagina);
+        if (paginaAtual < totalPaginas) {
+            paginaAtual++;
+            renderizarResultados();
+        }
+    }
+
+    function irPagina(num) {
+        paginaAtual = num;
+        renderizarResultados();
+    }
+
+    // ============================================
+    // AÇÕES
+    // ============================================
+    function verDetalhes(id) {
+        const suspeito = dadosSuspeitos.find(d => d.id === id);
+        if (suspeito) {
+            alert(`📋 FICHA COMPLETA\n\n` +
+                  `Nome: ${suspeito.nome}\n` +
+                  `CPF: ${suspeito.cpf}\n` +
+                  `Status: ${suspeito.status}\n` +
+                  `Periculosidade: ${suspeito.periculosidade}\n` +
+                  `Cidade: ${suspeito.cidade}\n` +
+                  `Data Cadastro: ${suspeito.data}`);
+        }
+    }
+
+    function imprimirFicha(id) {
+        alert(`🖨️ Imprimindo ficha do registro ID: ${id}`);
+    }
+
+    function emitirAlerta(id) {
+        if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
+            alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
+        }
+    }
+
+    // ============================================
+    // ENTER PARA BUSCAR
+    // ============================================
+    document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            realizarBusca(this.value);
+        }
+    });
+
+    // ============================================
+    // INICIALIZAR
+    // ============================================
+    renderizarResultados();
+</script>
+
+</body>
+</html>
