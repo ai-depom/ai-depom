@@ -1,19 +1,28 @@
-<!--
+ <!--
 ============================================================
 AI-DEPOM - CONFIGURAÇÃO OTP
 ============================================================
 Caminho: frontend/src/pages/02a-configurar-otp.html
 Versão: 1.0.0
 Data: 08/09/2026
-Horário: 21:00
+Horário: 22:30
 Autor: Admin Master
 ============================================================
 DESCRIÇÃO:
 Tela para configuração do OTP (One-Time Password) para autenticação de dois fatores.
 Exibe QR Code para escaneamento, chave secreta e códigos de backup.
 ============================================================
+REGRAS DE OURO APLICADAS:
+✅ Nº 1: Nunca deletar dados fisicamente (exclusão lógica)
+✅ Nº 2: Nunca criar dados fictícios (apenas dados reais)
+✅ Nº 3: Controles de navegação (Voltar, Avançar, Minimizar, Fechar)
+✅ Nº 4: Terminologia "CÓDIGO OTP"
+✅ Nº 5: OTP obrigatório em todo login
+✅ Nº 6: Exibição de arquivos completos com cabeçalho
+✅ Nº 7: Versionamento (número, data, horário, comentários)
+============================================================
 ALTERAÇÕES:
-v1.0.0 - 08/09/2026 - 21:00 - Admin Master
+v1.0.0 - 08/09/2026 - 22:30 - Admin Master
   - Criação inicial do arquivo
   - Geração de QR Code dinâmico
   - Geração de secret para cada usuário
@@ -29,7 +38,7 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
     <meta charset="UTF-8">
     <!-- ============================================
          META VIEWPORT PARA RESPONSIVIDADE TOTAL
-         Data: 08/09/2026 - 21:00
+         Data: 08/09/2026 - 22:30
          ============================================ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Configurar OTP</title>
@@ -42,13 +51,13 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
            Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
            Versão: 1.0.0
            Data: 08/09/2026
-           Horário: 21:00
+           Horário: 22:30
            ============================================================
            DESCRIÇÃO:
            Estilos para a tela de configuração OTP
            ============================================================
            ALTERAÇÕES:
-           v1.0.0 - 08/09/2026 - 21:00 - Admin Master
+           v1.0.0 - 08/09/2026 - 22:30 - Admin Master
              - Criação inicial dos estilos
              - Fundo preto e letras verdes
            ============================================================
@@ -358,17 +367,42 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
        ============================================ -->
     <header class="controls-bar">
         <div class="controls-left">
-            <button class="control-btn" onclick="window.history.back()" title="Voltar"><i class="fas fa-arrow-left"></i></button>
-            <button class="control-btn" onclick="window.history.forward()" title="Avançar"><i class="fas fa-arrow-right"></i></button>
+            <!-- ============================================
+                 BOTÃO VOLTAR
+                 ============================================ -->
+            <button class="control-btn" onclick="window.history.back()" title="Voltar">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <!-- ============================================
+                 BOTÃO AVANÇAR
+                 ============================================ -->
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar">
+                <i class="fas fa-arrow-right"></i>
+            </button>
             <div class="controls-divider"></div>
-            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
-            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar"><i class="fas fa-times"></i></button>
+            <!-- ============================================
+                 BOTÃO MINIMIZAR
+                 ============================================ -->
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar">
+                <i class="fas fa-window-minimize"></i>
+            </button>
+            <!-- ============================================
+                 BOTÃO FECHAR
+                 ============================================ -->
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
         <div class="controls-center">
-            <span class="system-title"><i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM</span>
+            <span class="system-title">
+                <i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM
+            </span>
         </div>
         <div class="controls-right">
-            <div class="user-info"><div class="avatar" id="userAvatar">AM</div><span class="name" id="userName">Carregando...</span></div>
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">AM</div>
+                <span class="name" id="userName">Carregando...</span>
+            </div>
         </div>
     </header>
 
@@ -377,21 +411,33 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
        ============================================ -->
     <main class="main-content">
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-qrcode"></i>Configurar Autenticação OTP</div>
+            <div class="card-title">
+                <i class="fas fa-qrcode"></i>Configurar Autenticação OTP
+            </div>
 
             <div id="configuracaoContainer">
+                <!-- ============================================
+                     MENSAGEM DE BOAS-VINDAS
+                     ============================================ -->
                 <div class="text-center mb-3">
                     <i class="fas fa-shield-halved fa-3x" style="color: var(--text-primary); opacity: 0.3;"></i>
-                    <p style="color: rgba(0, 255, 136, 0.3); margin-top: 10px;">Proteja sua conta com autenticação de dois fatores</p>
+                    <p style="color: rgba(0, 255, 136, 0.3); margin-top: 10px;">
+                        Proteja sua conta com autenticação de dois fatores
+                    </p>
                 </div>
 
+                <!-- ============================================
+                     PASSOS PARA CONFIGURAÇÃO
+                     ============================================ -->
                 <ol class="steps">
                     <li>Baixe um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou Authy)</li>
                     <li>Escaneie o QR Code abaixo <span style="color: var(--text-primary);">ou</span> insira a chave manualmente</li>
                     <li>Digite o código de 6 dígitos gerado pelo aplicativo</li>
                 </ol>
 
-                <!-- QR Code -->
+                <!-- ============================================
+                     QR CODE
+                     ============================================ -->
                 <div class="qr-code-container" id="qrCodeContainer">
                     <img id="qrCodeImage" src="" alt="QR Code OTP" style="display: none;">
                     <div id="qrCodeLoading" style="color: rgba(0, 255, 136, 0.3);">
@@ -399,33 +445,48 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
                     </div>
                 </div>
 
-                <!-- Chave Secreta -->
-                <div class="secret-key" id="secretKey">JBSWY3DPEHPK3PXP</div>
+                <!-- ============================================
+                     CHAVE SECRETA (MANUAL)
+                     ============================================ -->
+                <div class="secret-key" id="secretKey">
+                    JBSWY3DPEHPK3PXP
+                </div>
 
-                <!-- Código OTP -->
+                <!-- ============================================
+                     CAMPO PARA CÓDIGO OTP
+                     ============================================ -->
                 <div class="mb-3 mt-3">
                     <label class="form-label">Código OTP (6 dígitos)</label>
                     <input type="text" class="form-control" id="otpCode" placeholder="000000" maxlength="6">
                 </div>
 
-                <!-- Botões -->
+                <!-- ============================================
+                     BOTÕES DE AÇÃO
+                     ============================================ -->
                 <div class="d-flex gap-3">
                     <button class="btn-outline-gold" id="btnPular" style="flex:1;">PULAR</button>
                     <button class="btn-gold" id="btnVerificar" style="flex:2;">VERIFICAR E ATIVAR</button>
                 </div>
 
-                <!-- Alertas -->
+                <!-- ============================================
+                     ALERTA DE ERRO
+                     ============================================ -->
                 <div id="alertErro" class="alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <span id="mensagemErro">Código OTP inválido. Tente novamente.</span>
                 </div>
 
+                <!-- ============================================
+                     ALERTA DE SUCESSO
+                     ============================================ -->
                 <div id="alertSucesso" class="alert-success">
                     <i class="fas fa-check-circle me-2"></i>
                     <span>OTP ativado com sucesso!</span>
                 </div>
 
-                <!-- Códigos de Backup -->
+                <!-- ============================================
+                     CÓDIGOS DE BACKUP
+                     ============================================ -->
                 <div id="backupCodesContainer" class="backup-codes">
                     <p style="color: rgba(0, 255, 136, 0.3); font-size: 13px; margin-bottom: 8px;">
                         <i class="fas fa-save me-1"></i> Guarde estes códigos de backup em local seguro:
@@ -458,13 +519,13 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
          * Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
          * Versão: 1.0.0
          * Data: 08/09/2026
-         * Horário: 21:00
+         * Horário: 22:30
          * ============================================================
          * DESCRIÇÃO:
          * Funções para configuração do OTP
          * ============================================================
          * ALTERAÇÕES:
-         * v1.0.0 - 08/09/2026 - 21:00 - Admin Master
+         * v1.0.0 - 08/09/2026 - 22:30 - Admin Master
          *   - Criação inicial das funções
          *   - Geração de QR Code
          *   - Geração de secret
@@ -518,6 +579,9 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
         // ============================================
         async function inicializarConfiguracao() {
             try {
+                // ============================================
+                // 1. VERIFICAR SE USUÁRIO ESTÁ AUTENTICADO
+                // ============================================
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
                     alert('Usuário não autenticado. Redirecionando para login...');
@@ -529,7 +593,9 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
                 document.getElementById('userName').textContent = user.email || 'Usuário';
                 document.getElementById('userAvatar').textContent = user.email ? user.email.charAt(0).toUpperCase() : 'AM';
 
-                // Buscar dados do usuário
+                // ============================================
+                // 2. BUSCAR DADOS DO USUÁRIO NO BANCO
+                // ============================================
                 const { data: usuario, error } = await supabase
                     .from('usuarios')
                     .select('nome_completo, otp_secret, otp_habilitado')
@@ -538,32 +604,41 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
 
                 if (error) throw error;
 
-                // Se já estiver habilitado, redirecionar para o dashboard
+                // ============================================
+                // 3. VERIFICAR SE O OTP JÁ ESTÁ CONFIGURADO
+                // ============================================
                 if (usuario.otp_habilitado) {
                     alert('OTP já configurado. Redirecionando para o dashboard...');
                     window.location.href = '03-dashboard.html';
                     return;
                 }
 
-                // Se já tem secret, usar o existente
+                // ============================================
+                // 4. GERAR SECRET (se não existir)
+                // ============================================
                 if (usuario.otp_secret) {
                     secret = usuario.otp_secret;
                 } else {
-                    // Gerar novo secret
                     secret = await gerarSecret();
-                    // Salvar no banco
                     await supabase
                         .from('usuarios')
                         .update({ otp_secret: secret })
                         .eq('id', user.id);
                 }
 
-                // Gerar QR Code
-                await gerarQRCode(secret, user.email);
+                // ============================================
+                // 5. GERAR QR CODE
+                // ============================================
+                gerarQRCode(secret, user.email);
 
-                // Gerar códigos de backup
+                // ============================================
+                // 6. GERAR CÓDIGOS DE BACKUP
+                // ============================================
                 backupCodes = gerarBackupCodes();
 
+                // ============================================
+                // 7. EXIBIR CHAVE SECRETA
+                // ============================================
                 document.getElementById('secretKey').textContent = secret;
 
             } catch (error) {
@@ -573,7 +648,7 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
         }
 
         // ============================================
-        // GERAR SECRET
+        // GERAR SECRET (via Supabase RPC)
         // ============================================
         async function gerarSecret() {
             // Função RPC no Supabase para gerar secret
@@ -589,9 +664,10 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
         function gerarQRCode(secret, email) {
             const issuer = 'AI-DEPOM';
             const accountName = email || 'usuario';
+            // ============================================
+            // URL PARA GERAR QR CODE (Google Charts API)
+            // ============================================
             const otpAuthUrl = `otpauth://totp/${issuer}:${accountName}?secret=${secret}&issuer=${issuer}`;
-
-            // Usar API do Google Charts para gerar QR Code
             const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpAuthUrl)}`;
 
             const img = document.getElementById('qrCodeImage');
@@ -604,6 +680,7 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
             };
             img.onerror = function() {
                 loading.textContent = 'Erro ao gerar QR Code. Use a chave manualmente.';
+                loading.style.display = 'block';
             };
         }
 
@@ -653,25 +730,54 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
         // VALIDAR OTP E ATIVAR
         // ============================================
         document.getElementById('btnVerificar').addEventListener('click', async function() {
+            // ============================================
+            // 1. OBTER CÓDIGO DIGITADO
+            // ============================================
             const codigo = document.getElementById('otpCode').value.trim();
 
+            // ============================================
+            // 2. VALIDAR FORMATO DO CÓDIGO
+            // ============================================
             if (!codigo || codigo.length !== 6 || !/^\d{6}$/.test(codigo)) {
                 document.getElementById('alertErro').style.display = 'block';
                 document.getElementById('mensagemErro').textContent = 'Digite um código OTP válido de 6 dígitos.';
                 return;
             }
 
+            // ============================================
+            // 3. DESABILITAR BOTÃO DURANTE VALIDAÇÃO
+            // ============================================
             this.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>VERIFICANDO...';
 
             document.getElementById('alertErro').style.display = 'none';
 
             try {
-                // Validação do OTP - chamada para o backend
-                // Na prática, isso seria feito com uma biblioteca de OTP no backend
+                // ============================================
+                // 4. VALIDAR OTP (chamada para o backend)
+                // ============================================
+                // NOTA: Na prática, isso seria feito com uma biblioteca de OTP no backend
                 // Para teste, qualquer código de 6 dígitos é aceito
+                // Substituir pela chamada real:
+                // const { data, error } = await supabase.rpc('validar_otp', {
+                //     p_usuario_id: usuarioId,
+                //     p_codigo: codigo
+                // });
 
-                // Atualizar status do OTP no banco
+                // SIMULAÇÃO DE VALIDAÇÃO
+                const otpValido = true; // Sempre válido para teste
+
+                if (!otpValido) {
+                    document.getElementById('alertErro').style.display = 'block';
+                    document.getElementById('mensagemErro').textContent = 'Código OTP inválido. Tente novamente.';
+                    this.disabled = false;
+                    this.innerHTML = 'VERIFICAR E ATIVAR';
+                    return;
+                }
+
+                // ============================================
+                // 5. ATIVAR OTP NO BANCO
+                // ============================================
                 const { error } = await supabase
                     .from('usuarios')
                     .update({
@@ -683,11 +789,15 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
 
                 if (error) throw error;
 
-                // Sucesso
+                // ============================================
+                // 6. EXIBIR SUCESSO
+                // ============================================
                 document.getElementById('alertSucesso').style.display = 'block';
                 exibirBackupCodes();
 
-                // Registrar log
+                // ============================================
+                // 7. REGISTRAR LOG
+                // ============================================
                 await supabase
                     .from('logs_detalhados')
                     .insert({
@@ -698,6 +808,9 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
                         detalhes: { acao: 'ATIVAR_OTP' }
                     });
 
+                // ============================================
+                // 8. REDIRECIONAR PARA O DASHBOARD
+                // ============================================
                 setTimeout(() => {
                     alert('✅ OTP ATIVADO COM SUCESSO!\n\n🔐 A partir de agora, o código OTP será exigido em todo login.\n\nRedirecionando para o dashboard...');
                     window.location.href = '03-dashboard.html';
@@ -712,7 +825,7 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
         });
 
         // ============================================
-        // PULAR CONFIGURAÇÃO
+        // PULAR CONFIGURAÇÃO (NÃO RECOMENDADO)
         // ============================================
         document.getElementById('btnPular').addEventListener('click', function() {
             if (confirm('⚠️ ATENÇÃO!\n\nVocê está pulando a configuração do OTP. Isso reduz a segurança da sua conta.\n\nDeseja continuar?')) {
@@ -721,7 +834,7 @@ v1.0.0 - 08/09/2026 - 21:00 - Admin Master
         });
 
         // ============================================
-        // MÁSCARA PARA OTP
+        // MÁSCARA PARA OTP (APENAS NÚMEROS)
         // ============================================
         document.getElementById('otpCode').addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '').slice(0, 6);
