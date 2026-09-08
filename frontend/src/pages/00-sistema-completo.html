@@ -1,11 +1,11 @@
-<!--
+ <!--
 ============================================================
 AI-DEPOM - SISTEMA COMPLETO
 ============================================================
 Caminho: frontend/src/pages/00-sistema-completo.html
-Versão: 1.0.2
+Versão: 1.0.3
 Data: 08/09/2026
-Horário: 17:00
+Horário: 17:15
 Autor: Admin Master
 ============================================================
 DESCRIÇÃO:
@@ -21,11 +21,25 @@ REGRAS DE OURO APLICADAS:
 ✅ Nº 6: Exibição de arquivos completos com cabeçalho
 ✅ Nº 7: Versionamento (número, data, horário, comentários)
 ============================================================
+ALTERAÇÕES:
+v1.0.0 - 04/09/2026 - 10:00 - Admin Master
+  - Criação inicial do arquivo
+  - Unificação de todas as telas
+
+v1.0.1 - 08/09/2026 - 16:35 - Admin Master
+  - Adicionado modo tela cheia automático
+  - Adicionado atalho F11 para alternar tela cheia
+  - Melhorada responsividade para dispositivos móveis
 
 v1.0.2 - 08/09/2026 - 17:00 - Admin Master
   - Adicionado cabeçalho com versionamento (Regra de Ouro Nº 7)
   - Adicionadas todas as Regras de Ouro no cabeçalho
   - Padronização do formato do cabeçalho
+
+v1.0.3 - 08/09/2026 - 17:15 - Admin Master
+  - ALTERAÇÃO: Cor das letras alterada para verde sistema (#00ff88)
+  - Atualizada variável --police-gold para #00ff88
+  - Atualizados todos os elementos que usavam a cor dourada
 ============================================================
 -->
 
@@ -33,10 +47,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <!-- ============================================
-         ALTERAÇÃO: Meta Viewport para responsividade total
-         Data: 08/09/2026 - 16:35
-         ============================================ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Sistema Policial Inteligente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -46,25 +56,27 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
            AI-DEPOM - ESTILOS DO SISTEMA COMPLETO
            ============================================================
            Caminho: frontend/src/pages/00-sistema-completo.html (interno)
-           Versão: 1.0.2
+           Versão: 1.0.3
            Data: 08/09/2026
-           Horário: 17:00
+           Horário: 17:15
            ============================================================
            DESCRIÇÃO:
            Estilos da tela completa do sistema AI-DEPOM
            ============================================================
            ALTERAÇÕES:
-           v1.0.2 - 08/09/2026 - 17:00 - Admin Master
-             - Adicionado cabeçalho com versionamento
+           v1.0.3 - 08/09/2026 - 17:15 - Admin Master
+             - ALTERAÇÃO: Cor das letras alterada para verde sistema (#00ff88)
+             - Atualizada variável --police-gold para #00ff88
+             - Atualizados todos os elementos que usavam a cor dourada
            ============================================================
         */
         :root {
             --police-blue: #0a1e3d;
             --police-dark: #060d1a;
-            --police-gold: #c9a84c;
-            --shadow-gold: rgba(201, 168, 76, 0.15);
+            --police-gold: #00ff88;
+            --shadow-gold: rgba(0, 255, 136, 0.15);
             --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
-            --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+            --gradient-gold: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
             --control-size: 36px;
         }
 
@@ -74,10 +86,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             box-sizing: border-box;
         }
 
-        /* ============================================
-           ALTERAÇÃO: html e body com altura total
-           Data: 08/09/2026 - 16:35
-           ============================================ */
         html, body {
             height: 100%;
             min-height: 100vh;
@@ -89,10 +97,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             overflow-x: hidden;
         }
 
-        /* ============================================
-           NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
-           Data: 08/09/2026 - 16:35
-           ============================================ */
         .controls-bar {
             position: fixed;
             top: 0;
@@ -101,7 +105,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             z-index: 1000;
             background: rgba(6, 13, 26, 0.85);
             backdrop-filter: blur(15px);
-            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.08);
             padding: 6px 15px;
             display: flex;
             justify-content: space-between;
@@ -151,7 +155,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
         }
 
         .control-btn:hover {
-            background: rgba(201, 168, 76, 0.08);
+            background: rgba(0, 255, 136, 0.08);
             color: var(--police-gold);
         }
 
@@ -197,9 +201,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: var(--police-dark);
         }
 
-        /* ============================================
-           SIDEBAR
-           ============================================ */
         .sidebar {
             position: fixed;
             top: 48px;
@@ -208,7 +209,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             height: calc(100vh - 48px);
             background: rgba(6, 13, 26, 0.95);
             backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(201, 168, 76, 0.08);
+            border-right: 1px solid rgba(0, 255, 136, 0.08);
             z-index: 999;
             padding: 20px 0;
             transition: transform 0.3s ease;
@@ -293,9 +294,9 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
         }
 
         .sidebar-menu .menu-item.active {
-            background: rgba(201, 168, 76, 0.08);
+            background: rgba(0, 255, 136, 0.08);
             color: var(--police-gold);
-            border: 1px solid rgba(201, 168, 76, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.1);
         }
 
         .sidebar-menu .menu-item i {
@@ -363,18 +364,12 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: rgba(255, 255, 255, 0.3);
         }
 
-        /* ============================================
-           MAIN CONTENT
-           ============================================ */
         .main-content {
             margin-left: 260px;
             padding: 70px 30px 30px;
             min-height: 100vh;
         }
 
-        /* ============================================
-           TOP BAR
-           ============================================ */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -386,7 +381,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             border-radius: 16px;
             padding: 15px 25px;
             margin-bottom: 25px;
-            border: 1px solid rgba(201, 168, 76, 0.05);
+            border: 1px solid rgba(0, 255, 136, 0.05);
         }
 
         .top-bar .page-title h4 {
@@ -423,9 +418,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             margin-right: 6px;
         }
 
-        /* ============================================
-           FORMULÁRIO E CARDS
-           ============================================ */
         .form-card {
             background: rgba(255, 255, 255, 0.02);
             border-radius: 14px;
@@ -440,7 +432,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             font-weight: 700;
             letter-spacing: 1px;
             text-transform: uppercase;
-            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.08);
             padding-bottom: 12px;
             margin-bottom: 20px;
         }
@@ -473,7 +465,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
         .form-select:focus {
             background: rgba(0, 0, 0, 0.4);
             border-color: var(--police-gold);
-            box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.08);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
             color: #fff;
         }
 
@@ -481,9 +473,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: rgba(255, 255, 255, 0.15);
         }
 
-        /* ============================================
-           STATS CARDS
-           ============================================ */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -501,7 +490,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
 
         .stat-card:hover {
             background: rgba(255, 255, 255, 0.04);
-            border-color: rgba(201, 168, 76, 0.1);
+            border-color: rgba(0, 255, 136, 0.1);
             transform: translateY(-2px);
         }
 
@@ -535,9 +524,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: #dc3545;
         }
 
-        /* ============================================
-           ALERTAS
-           ============================================ */
         .alert-item {
             display: flex;
             align-items: center;
@@ -583,9 +569,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: rgba(255, 255, 255, 0.3);
         }
 
-        /* ============================================
-           UPLOAD GRID
-           ============================================ */
         .upload-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -604,7 +587,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
 
         .upload-box:hover {
             border-color: var(--police-gold);
-            background: rgba(201, 168, 76, 0.03);
+            background: rgba(0, 255, 136, 0.03);
         }
 
         .upload-box i {
@@ -625,9 +608,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: rgba(255, 255, 255, 0.15);
         }
 
-        /* ============================================
-           TABELA
-           ============================================ */
         .table-container {
             overflow-x: auto;
         }
@@ -717,9 +697,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: #fff;
         }
 
-        /* ============================================
-           BOTÕES
-           ============================================ */
         .btn-gold {
             background: var(--gradient-gold);
             color: var(--police-dark);
@@ -734,7 +711,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
 
         .btn-gold:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(201, 168, 76, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
             color: var(--police-dark);
         }
 
@@ -756,7 +733,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
         }
 
         .btn-outline-gold:hover {
-            background: rgba(201, 168, 76, 0.05);
+            background: rgba(0, 255, 136, 0.05);
             color: var(--police-gold);
         }
 
@@ -770,9 +747,9 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
         }
 
         .btn-icon:hover {
-            background: rgba(201, 168, 76, 0.05);
-            border-color: rgba(201, 168, 76, 0.2);
-            color: #fff;
+            background: rgba(0, 255, 136, 0.05);
+            border-color: rgba(0, 255, 136, 0.2);
+            color: var(--police-gold);
         }
 
         .report-card {
@@ -788,7 +765,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
 
         .report-card:hover {
             background: rgba(255, 255, 255, 0.03);
-            border-color: rgba(201, 168, 76, 0.1);
+            border-color: rgba(0, 255, 136, 0.1);
             transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
         }
@@ -811,9 +788,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             color: rgba(255, 255, 255, 0.3);
         }
 
-        /* ============================================
-           RESPONSIVE
-           ============================================ */
         .sidebar-toggle {
             display: none;
             background: rgba(255, 255, 255, 0.03);
@@ -977,7 +951,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
             background: var(--police-dark);
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(201, 168, 76, 0.3);
+            background: rgba(0, 255, 136, 0.3);
             border-radius: 4px;
         }
     </style>
@@ -985,8 +959,7 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
 <body>
 
     <!-- ============================================
-       NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
-       Data: 08/09/2026 - 16:35
+       BARRA DE CONTROLES (Regra de Ouro Nº 3)
        ============================================ -->
     <header class="controls-bar">
         <div class="controls-left">
@@ -1691,9 +1664,9 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
          * AI-DEPOM - FUNÇÕES DO SISTEMA COMPLETO
          * ============================================================
          * Caminho: frontend/src/pages/00-sistema-completo.html (interno)
-         * Versão: 1.0.2
+         * Versão: 1.0.3
          * Data: 08/09/2026
-         * Horário: 17:00
+         * Horário: 17:15
          * ============================================================
          * DESCRIÇÃO:
          * Funções JavaScript para a tela completa do sistema
@@ -1708,6 +1681,9 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
          * 
          * v1.0.2 - 08/09/2026 - 17:00 - Admin Master
          *   - Adicionado cabeçalho com versionamento
+         * 
+         * v1.0.3 - 08/09/2026 - 17:15 - Admin Master
+         *   - ALTERAÇÃO: Cor das letras alterada para verde sistema
          * ============================================================
          */
 
@@ -1720,11 +1696,9 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
         const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
         // ============================================
-        // NOVO: MODO TELA CHEIA (Regra de Ouro Nº 3)
-        // Data: 08/09/2026 - 16:35
+        // MODO TELA CHEIA (Regra de Ouro Nº 3)
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
-            // Tentar entrar em tela cheia automaticamente
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen()
                     .then(() => {
@@ -1732,7 +1706,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
                     })
                     .catch(err => {
                         console.warn('⚠️ Não foi possível ativar tela cheia:', err);
-                        // Fallback: maximizar a janela
                         if (window.moveTo && window.resizeTo) {
                             window.moveTo(0, 0);
                             window.resizeTo(screen.width, screen.height);
@@ -1816,56 +1789,48 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
         // ============================================
         async function carregarEstatisticas() {
             try {
-                // Total de Suspeitos
-                const { count: totalSuspeitos, error: err1 } = await supabase
+                const { count: totalSuspeitos } = await supabase
                     .from('suspeito')
                     .select('*', { count: 'exact', head: true })
                     .eq('deletado', false);
 
-                // Total de Investigações Ativas
-                const { count: totalInvestigacoes, error: err2 } = await supabase
+                const { count: totalInvestigacoes } = await supabase
                     .from('investigacao')
                     .select('*', { count: 'exact', head: true })
                     .eq('deletado', false)
                     .in('status', ['INICIADA', 'EM_ANDAMENTO']);
 
-                // Total de Mandados Ativos
-                const { count: totalMandados, error: err3 } = await supabase
+                const { count: totalMandados } = await supabase
                     .from('mandado_prisao')
                     .select('*', { count: 'exact', head: true })
                     .eq('deletado', false)
                     .eq('status', 'ATIVO');
 
-                // Mandados Urgentes
-                const { count: mandadosUrgentes, error: err4 } = await supabase
+                const { count: mandadosUrgentes } = await supabase
                     .from('mandado_prisao')
                     .select('*', { count: 'exact', head: true })
                     .eq('deletado', false)
                     .eq('status', 'ATIVO')
                     .eq('prioridade', 'URGENTE');
 
-                // Total de Usuários
-                const { count: totalUsuarios, error: err5 } = await supabase
+                const { count: totalUsuarios } = await supabase
                     .from('usuarios')
                     .select('*', { count: 'exact', head: true })
                     .eq('deletado', false)
                     .eq('ativo', true);
 
-                // Total de Alertas
-                const { count: totalAlertas, error: err6 } = await supabase
+                const { count: totalAlertas } = await supabase
                     .from('alerta_seguranca')
                     .select('*', { count: 'exact', head: true })
                     .eq('deletado', false)
                     .eq('lido', false);
 
-                // Atualizar DOM
                 document.getElementById('totalSuspeitos').textContent = totalSuspeitos || 0;
                 document.getElementById('totalInvestigacoes').textContent = totalInvestigacoes || 0;
                 document.getElementById('totalMandados').textContent = totalMandados || 0;
                 document.getElementById('totalUsuarios').querySelector('.count').textContent = totalUsuarios || 0;
                 document.getElementById('totalAlertas').querySelector('.count').textContent = totalAlertas || 0;
 
-                // Calcular total de registros
                 const totalRegistros = (totalSuspeitos || 0) + (totalInvestigacoes || 0) + (totalMandados || 0);
                 document.getElementById('totalDados').textContent = totalRegistros > 0 ? (totalRegistros / 1000).toFixed(
                     1) : 0;
@@ -1877,7 +1842,6 @@ v1.0.2 - 08/09/2026 - 17:00 - Admin Master
                 document.getElementById('mandadosUrgentes').innerHTML =
                     `<i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> ${mandadosUrgentes || 0} urgentes`;
 
-                // Atualizar data
                 document.getElementById('ultimaAtualizacao').textContent = new Date().toLocaleString('pt-BR');
 
             } catch (error) {
