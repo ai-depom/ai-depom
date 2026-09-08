@@ -1,135 +1,158 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Sistema Policial Inteligente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ============================================
-           VARIÁVEIS E RESET
-           ============================================ */
+        /* ============================================================
+           AI-DEPOM - APRESENTAÇÃO
+           ============================================================
+           Caminho: frontend/src/pages/01-apresentacao.html
+           Versão: 1.0.1
+           Data: 08/09/2026 - 19:15
+           ============================================================
+           ALTERAÇÕES: Fundo preto e letras verdes
+           ============================================================
+        */
         :root {
-            --police-blue: #0a1e3d;
-            --police-dark: #060d1a;
-            --police-gold: #c9a84c;
-            --police-gold-light: #e8d5a3;
-            --shadow-gold: rgba(201, 168, 76, 0.15);
-            --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
-            --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc77;
+            --text-muted: #004d33;
+            --border-color: #003322;
+            --shadow-color: rgba(0, 255, 136, 0.08);
+            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+            --control-size: 36px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        body {
-            font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
-            background: var(--police-dark);
-            color: #e0e0e0;
+        html, body {
+            height: 100%;
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
             overflow-x: hidden;
         }
 
-        /* ============================================
-           ANIMAÇÃO DE FUNDO
-           ============================================ */
-        .animated-bg {
+        /* Controles Bar - mesmo estilo das demais telas */
+        .controls-bar {
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--gradient-primary);
-            z-index: 0;
-            overflow: hidden;
+            right: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+            min-height: 48px;
         }
 
-        .animated-bg .particle {
-            position: absolute;
-            border-radius: 50%;
-            background: rgba(201, 168, 76, 0.03);
-            animation: float linear infinite;
+        .controls-left { display: flex; gap: 4px; align-items: center; }
+        .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-center { display: flex; align-items: center; gap: 8px; }
+        .controls-center .system-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
         }
 
-        .animated-bg .particle:nth-child(1) { width: 300px; height: 300px; top: -100px; left: -100px; animation-duration: 25s; }
-        .animated-bg .particle:nth-child(2) { width: 500px; height: 500px; bottom: -200px; right: -200px; animation-duration: 35s; }
-        .animated-bg .particle:nth-child(3) { width: 200px; height: 200px; top: 50%; left: 50%; animation-duration: 20s; }
-
-        @keyframes float {
-            0% { transform: translate(0, 0) scale(1); opacity: 0.3; }
-            50% { transform: translate(50px, -50px) scale(1.2); opacity: 0.6; }
-            100% { transform: translate(-50px, 50px) scale(1); opacity: 0.3; }
-        }
-
-        /* ============================================
-           SCROLL INDICATOR
-           ============================================ */
-        .scroll-indicator {
-            position: absolute;
-            bottom: 40px;
-            left: 50%;
-            transform: translateX(-50%);
-            animation: bounce 2s infinite;
+        .control-btn {
+            width: var(--control-size);
+            height: var(--control-size);
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 16px;
             cursor: pointer;
-            z-index: 10;
-            opacity: 0.6;
-            transition: opacity 0.3s;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .scroll-indicator:hover { opacity: 1; }
+        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .control-btn:active { transform: scale(0.92); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
 
-        @keyframes bounce {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50% { transform: translateX(-50%) translateY(-15px); }
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 12px;
         }
 
-        /* ============================================
-           HERO SECTION
-           ============================================ */
+        .user-info .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: #000;
+        }
+
+        /* Hero Section */
         .hero {
-            position: relative;
-            z-index: 1;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 70px 20px 20px;
+            width: 100%;
         }
 
         .hero-content {
             text-align: center;
             max-width: 900px;
-            margin: 0 auto;
+            width: 100%;
+            padding: 20px;
         }
 
         .hero-badge {
             display: inline-block;
-            background: rgba(201, 168, 76, 0.15);
-            border: 1px solid rgba(201, 168, 76, 0.3);
+            background: rgba(0, 255, 136, 0.05);
+            border: 1px solid var(--border-color);
             padding: 8px 24px;
             border-radius: 50px;
-            font-size: 13px;
-            color: var(--police-gold-light);
+            font-size: 0.8rem;
+            color: var(--text-primary);
             letter-spacing: 2px;
             margin-bottom: 30px;
-            backdrop-filter: blur(10px);
         }
 
-        .hero-badge i {
-            margin-right: 8px;
-            color: var(--police-gold);
-        }
+        .hero-badge i { margin-right: 8px; }
 
         .hero-logo {
             width: 120px;
             height: 120px;
             margin: 0 auto 30px;
-            background: var(--gradient-gold);
+            background: var(--gradient-green);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 60px var(--shadow-gold);
+            box-shadow: 0 0 60px var(--shadow-color);
             position: relative;
         }
 
@@ -138,7 +161,7 @@
             position: absolute;
             inset: -8px;
             border-radius: 50%;
-            border: 2px solid rgba(201, 168, 76, 0.2);
+            border: 2px solid rgba(0, 255, 136, 0.1);
             animation: pulse-ring 3s ease-in-out infinite;
         }
 
@@ -147,26 +170,17 @@
             50% { transform: scale(1.1); opacity: 0.6; }
         }
 
-        .hero-logo i { font-size: 56px; color: var(--police-dark); }
+        .hero-logo i { font-size: 56px; color: #000; }
 
         .hero h1 {
             font-size: clamp(2.5rem, 7vw, 5rem);
             font-weight: 800;
-            background: var(--gradient-gold);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--text-primary);
             letter-spacing: 4px;
-            text-shadow: 0 0 80px rgba(201, 168, 76, 0.1);
             margin-bottom: 15px;
         }
 
-        .hero h1 .highlight {
-            -webkit-text-fill-color: #fff;
-            background: none;
-            position: relative;
-        }
-
+        .hero h1 .highlight { position: relative; }
         .hero h1 .highlight::after {
             content: '';
             position: absolute;
@@ -174,30 +188,26 @@
             left: 0;
             width: 100%;
             height: 4px;
-            background: var(--gradient-gold);
+            background: var(--gradient-green);
             border-radius: 2px;
         }
 
         .hero-subtitle {
-            font-size: clamp(1.1rem, 2vw, 1.6rem);
-            color: var(--police-gold-light);
+            font-size: clamp(1rem, 2vw, 1.6rem);
+            color: var(--text-secondary);
             font-weight: 300;
             letter-spacing: 3px;
             margin-bottom: 10px;
         }
 
         .hero-description {
-            font-size: clamp(0.95rem, 1.2vw, 1.15rem);
-            color: rgba(255, 255, 255, 0.5);
+            font-size: clamp(0.9rem, 1.2vw, 1.15rem);
+            color: rgba(0, 255, 136, 0.5);
             max-width: 600px;
             margin: 0 auto 40px;
             line-height: 1.8;
-            letter-spacing: 0.5px;
         }
 
-        /* ============================================
-           BOTÕES
-           ============================================ */
         .hero-buttons {
             display: flex;
             gap: 20px;
@@ -207,8 +217,8 @@
         }
 
         .btn-hero-primary {
-            background: var(--gradient-gold);
-            color: var(--police-dark);
+            background: var(--gradient-green);
+            color: #000;
             padding: 16px 45px;
             border-radius: 12px;
             font-weight: 700;
@@ -220,292 +230,168 @@
             align-items: center;
             gap: 12px;
             letter-spacing: 1px;
-            box-shadow: 0 8px 30px rgba(201, 168, 76, 0.25);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.25);
         }
 
         .btn-hero-primary:hover {
             transform: translateY(-3px);
-            box-shadow: 0 12px 40px rgba(201, 168, 76, 0.4);
-            color: var(--police-dark);
-            background: linear-gradient(135deg, #dbb95c 0%, #b8984a 100%);
+            box-shadow: 0 12px 40px rgba(0, 255, 136, 0.4);
+            color: #000;
         }
 
-        .btn-hero-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            color: #fff;
-            padding: 16px 45px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            letter-spacing: 1px;
-            backdrop-filter: blur(10px);
-        }
-
-        .btn-hero-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: var(--police-gold);
-            color: #fff;
-            transform: translateY(-3px);
-        }
-
-        /* ============================================
-           BADGES DE SEGURANÇA
-           ============================================ */
         .security-badges {
             display: flex;
             justify-content: center;
-            gap: 30px;
+            gap: 25px;
             flex-wrap: wrap;
-            margin-top: 20px;
         }
 
         .security-badge-item {
             display: flex;
             align-items: center;
-            gap: 10px;
-            color: rgba(255, 255, 255, 0.3);
+            gap: 8px;
+            color: rgba(0, 255, 136, 0.3);
             font-size: 13px;
             letter-spacing: 0.5px;
         }
 
-        .security-badge-item i {
-            color: var(--police-gold);
-            font-size: 18px;
-        }
+        .security-badge-item i { color: var(--text-primary); font-size: 18px; }
+        .security-badge-item .lock-icon { color: #28a745; }
 
-        .security-badge-item .lock-icon {
-            color: #4caf50;
-        }
-
-        /* ============================================
-           STATS SECTION
-           ============================================ */
         .stats-section {
-            position: relative;
-            z-index: 1;
-            background: rgba(255, 255, 255, 0.02);
-            backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255, 255, 255, 0.03);
-            padding: 50px 0;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border-color);
+            padding: 40px 0;
         }
 
-        .stat-item {
-            text-align: center;
-            padding: 20px;
-        }
-
+        .stat-item { text-align: center; padding: 20px; }
         .stat-number {
             font-size: 2.5rem;
             font-weight: 700;
-            color: var(--police-gold);
+            color: var(--text-primary);
             display: block;
         }
-
         .stat-label {
-            color: rgba(255, 255, 255, 0.4);
+            color: rgba(0, 255, 136, 0.3);
             font-size: 14px;
             letter-spacing: 1px;
             margin-top: 5px;
         }
 
-        /* ============================================
-           RESPONSIVE
-           ============================================ */
+        .scroll-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+        .scroll-indicator:hover { opacity: 1; }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-15px); }
+        }
+
         @media (max-width: 768px) {
-            .hero-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-            .btn-hero-primary {
-                width: 100%;
-                max-width: 300px;
-                justify-content: center;
-            }
-            .security-badges {
-                gap: 15px;
-            }
-            .hero-logo {
-                width: 80px;
-                height: 80px;
-            }
-            .hero-logo i {
-                font-size: 36px;
-            }
+            .hero-buttons { flex-direction: column; align-items: center; }
+            .btn-hero-primary { width: 100%; max-width: 300px; justify-content: center; }
+            .hero-logo { width: 80px; height: 80px; }
+            .hero-logo i { font-size: 36px; }
+            .security-badges { gap: 15px; }
         }
 
         @media (max-width: 480px) {
-            .hero h1 {
-                font-size: 2rem;
-            }
-            .hero-subtitle {
-                font-size: 0.9rem;
-            }
-            .hero-description {
-                font-size: 0.85rem;
-            }
+            .hero h1 { font-size: 2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1px; }
+            .hero-description { font-size: 0.8rem; }
+            .controls-center .system-title { font-size: 10px; }
+            .control-btn { width: 28px; height: 28px; font-size: 12px; }
         }
     </style>
 </head>
 <body>
 
-<!-- ============================================
-   ANIMAÇÃO DE FUNDO
-   ============================================ -->
-<div class="animated-bg">
-    <div class="particle"></div>
-    <div class="particle"></div>
-    <div class="particle"></div>
-</div>
-
-<!-- ============================================
-   HERO SECTION
-   ============================================ -->
-<section class="hero">
-    <div class="hero-content">
-        <!-- Badge -->
-        <div class="hero-badge">
-            <i class="fas fa-shield-halved"></i>
-            SISTEMA CERTIFICADO · FIPS 140-2 · CJIS COMPLIANT
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()" title="Voltar (Alt+V)"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar (Alt+A)"><i class="fas fa-arrow-right"></i></button>
+            <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar (Alt+M)"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar (Alt+F)"><i class="fas fa-times"></i></button>
         </div>
-
-        <!-- Logo -->
-        <div class="hero-logo">
-            <i class="fas fa-shield-halved"></i>
+        <div class="controls-center">
+            <span class="system-title"><i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM</span>
         </div>
-
-        <!-- Título -->
-        <h1>
-            <span class="highlight">AI</span>-DEPOM
-        </h1>
-        <div class="hero-subtitle">
-            <i class="fas fa-robot me-2" style="color: var(--police-gold); opacity: 0.5;"></i>
-            AGÊNCIA DE INTELIGÊNCIA DO DEPARTAMENTO DE POLÍCIA METROPOLITANA
+        <div class="controls-right">
+            <div class="user-info"><div class="avatar">AM</div><span class="name">Admin Master</span></div>
         </div>
+    </header>
 
-        <!-- Descrição -->
-        <p class="hero-description">
-            Sistema Integrado de Gestão Policial e persistência de dados e ativos com criptografia e análise preditiva.
-        </p>
-
-        <!-- Botões - REMOVIDO O BOTÃO "VER DEMONSTRAÇÃO" -->
-        <div class="hero-buttons">
-            <a href="02-login.html" class="btn-hero-primary">
-                <i class="fas fa-sign-in-alt"></i>
-                ACESSAR SISTEMA
-            </a>
-        </div>
-
-        <!-- Badges de Segurança -->
-        <div class="security-badges">
-            <span class="security-badge-item">
-                <i class="fas fa-shield"></i>
-                AES-256
-            </span>
-            <span class="security-badge-item">
-                <i class="fas fa-fingerprint"></i>
-                Biometria
-            </span>
-            <span class="security-badge-item">
-                <i class="fas fa-lock lock-icon"></i>
-                TDE Ativo
-            </span>
-            <span class="security-badge-item">
-                <i class="fas fa-database"></i>
-                LGPD/GDPR
-            </span>
-            <span class="security-badge-item">
-                <i class="fas fa-globe"></i>
-                Interpol I-24/7
-            </span>
-        </div>
-    </div>
-
-    <!-- Scroll Indicator -->
-    <div class="scroll-indicator" onclick="document.querySelector('.stats-section').scrollIntoView({ behavior: 'smooth' })">
-        <i class="fas fa-chevron-down fa-2x" style="color: rgba(255,255,255,0.2);"></i>
-    </div>
-</section>
-
-<!-- ============================================
-   STATS SECTION
-   ============================================ -->
-<section class="stats-section">
-    <div class="container">
-        <div class="row">
-            <div class="col-md-3 col-6">
-                <div class="stat-item">
-                    <span class="stat-number" data-count="1247">0</span>
-                    <span class="stat-label">SUSPEITOS CADASTRADOS</span>
-                </div>
+    <section class="hero" style="position:relative;">
+        <div class="hero-content">
+            <div class="hero-badge"><i class="fas fa-shield-halved"></i> SISTEMA CERTIFICADO · FIPS 140-2 · CJIS COMPLIANT</div>
+            <div class="hero-logo"><i class="fas fa-shield-halved"></i></div>
+            <h1><span class="highlight">AI</span>-DEPOM</h1>
+            <div class="hero-subtitle"><i class="fas fa-robot me-2" style="color: var(--text-primary); opacity: 0.5;"></i>AGÊNCIA DE INTELIGÊNCIA DO DEPARTAMENTO DE POLÍCIA METROPOLITANA</div>
+            <p class="hero-description">Sistema Integrado de Gestão Policial e persistência de dados e ativos com criptografia e análise preditiva.</p>
+            <div class="hero-buttons">
+                <a href="02-login.html" class="btn-hero-primary"><i class="fas fa-sign-in-alt"></i>ACESSAR SISTEMA</a>
             </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-item">
-                    <span class="stat-number" data-count="342">0</span>
-                    <span class="stat-label">INVESTIGAÇÕES</span>
-                </div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-item">
-                    <span class="stat-number" data-count="89">0</span>
-                    <span class="stat-label">MANDADOS CUMPRIDOS</span>
-                </div>
-            </div>
-            <div class="col-md-3 col-6">
-                <div class="stat-item">
-                    <span class="stat-number" data-count="2.4">0</span>
-                    <span class="stat-label">TB DE DADOS CRIPTOGRAFADOS</span>
-                </div>
+            <div class="security-badges">
+                <span class="security-badge-item"><i class="fas fa-shield"></i> AES-256</span>
+                <span class="security-badge-item"><i class="fas fa-fingerprint"></i> Biometria</span>
+                <span class="security-badge-item"><i class="fas fa-lock lock-icon"></i> TDE Ativo</span>
+                <span class="security-badge-item"><i class="fas fa-database"></i> LGPD/GDPR</span>
+                <span class="security-badge-item"><i class="fas fa-globe"></i> Interpol I-24/7</span>
             </div>
         </div>
-    </div>
-</section>
+        <div class="scroll-indicator" onclick="document.querySelector('.stats-section').scrollIntoView({ behavior: 'smooth' })">
+            <i class="fas fa-chevron-down fa-2x" style="color: rgba(0, 255, 136, 0.2);"></i>
+        </div>
+    </section>
 
-<!-- ============================================
-   SCRIPTS
-   ============================================ -->
-<script>
-    // Animação dos números
-    document.addEventListener('DOMContentLoaded', function() {
-        const counters = document.querySelectorAll('.stat-number');
-        const speed = 200;
+    <section class="stats-section">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="1247">0</span><span class="stat-label">SUSPEITOS CADASTRADOS</span></div></div>
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="342">0</span><span class="stat-label">INVESTIGAÇÕES</span></div></div>
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="89">0</span><span class="stat-label">MANDADOS CUMPRIDOS</span></div></div>
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="2.4">0</span><span class="stat-label">TB DE DADOS CRIPTOGRAFADOS</span></div></div>
+            </div>
+        </div>
+    </section>
 
-        const animateCounter = (counter) => {
-            const target = parseFloat(counter.getAttribute('data-count'));
-            const isDecimal = target % 1 !== 0;
-            const increment = target / speed;
-            let current = 0;
+    <script>
+        function minimizeWindow() {
+            try { if (window.moveTo && window.resizeTo) { window.moveTo(0, 0); window.resizeTo(screen.width / 2, screen.height / 2); } else { alert('Use o botão de minimizar do seu navegador.'); } } catch (e) { console.warn('Minimizar não suportado:', e); }
+        }
+        function closeWindow() {
+            if (confirm('Deseja realmente fechar o sistema?')) { try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; } }
+        }
 
-            const updateCounter = () => {
-                current += increment;
-                if (current < target) {
-                    counter.textContent = isDecimal ? current.toFixed(1) : Math.ceil(current);
-                    requestAnimationFrame(updateCounter);
-                } else {
-                    counter.textContent = isDecimal ? target.toFixed(1) : target;
-                }
+        document.addEventListener('DOMContentLoaded', function() {
+            const counters = document.querySelectorAll('.stat-number');
+            const speed = 200;
+            const animateCounter = (counter) => {
+                const target = parseFloat(counter.getAttribute('data-count'));
+                const isDecimal = target % 1 !== 0;
+                const increment = target / speed;
+                let current = 0;
+                const updateCounter = () => {
+                    current += increment;
+                    if (current < target) { counter.textContent = isDecimal ? current.toFixed(1) : Math.ceil(current); requestAnimationFrame(updateCounter); }
+                    else { counter.textContent = isDecimal ? target.toFixed(1) : target; }
+                };
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => { if (entry.isIntersecting) { updateCounter(); observer.unobserve(counter); } });
+                }, { threshold: 0.5 });
+                observer.observe(counter);
             };
-
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        updateCounter();
-                        observer.unobserve(counter);
-                    }
-                });
-            }, { threshold: 0.5 });
-
-            observer.observe(counter);
-        };
-
-        counters.forEach(animateCounter);
-    });
-</script>
-
+            counters.forEach(animateCounter);
+        });
+    </script>
 </body>
 </html>
