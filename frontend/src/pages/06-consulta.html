@@ -1,14 +1,18 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ============================================
+         ALTERAÇÃO: Meta Viewport para responsividade total
+         Data: 08/09/2026
+         ============================================ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Consulta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ============================================
-           VARIÁVEIS E RESET (MESMOS ESTILOS DO DASHBOARD)
+           VARIÁVEIS E RESET
            ============================================ */
         :root {
             --police-blue: #0a1e3d;
@@ -17,532 +21,1249 @@
             --shadow-gold: rgba(201, 168, 76, 0.15);
             --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
             --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+            --control-size: 36px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ============================================
+           ALTERAÇÃO: html e body com altura total
+           Data: 08/09/2026
+           ============================================ */
+        html, body {
+            height: 100%;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--police-dark);
             color: #e0e0e0;
-            min-height: 100vh;
             overflow-x: hidden;
         }
+
         /* ============================================
-           SIDEBAR, TOP BAR, FORMULÁRIO, TABELA (MESMOS ESTILOS DO DASHBOARD)
+           NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
+           Data: 08/09/2026
            ============================================ */
-        .sidebar { /* ... mesmos estilos do dashboard ... */ }
-        .main-content { margin-left: 260px; padding: 25px 30px; min-height: 100vh; }
-        .top-bar { /* ... mesmos estilos do dashboard ... */ }
-        .form-card { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 25px; border: 1px solid rgba(255,255,255,0.03); }
-        .card-title { color: var(--police-gold); font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(201,168,76,0.08); padding-bottom: 12px; margin-bottom: 20px; }
-        .card-title i { margin-right: 10px; opacity: 0.7; }
-        .form-label { color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .form-control, .form-select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); color: #fff; padding: 10px 14px; border-radius: 10px; transition: all 0.3s; }
-        .form-control:focus, .form-select:focus { background: rgba(0,0,0,0.4); border-color: var(--police-gold); box-shadow: 0 0 0 4px rgba(201,168,76,0.08); color: #fff; }
-        .form-control::placeholder { color: rgba(255,255,255,0.15); }
-        .btn-gold { background: var(--gradient-gold); color: var(--police-dark); font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; }
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(201,168,76,0.3); color: var(--police-dark); }
-        .btn-icon { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); padding: 6px 12px; border-radius: 8px; transition: all 0.3s; }
-        .btn-icon:hover { background: rgba(201,168,76,0.05); border-color: rgba(201,168,76,0.2); color: #fff; }
-        .table-container { overflow-x: auto; }
-        .table-custom { width: 100%; border-collapse: collapse; }
-        .table-custom th { color: rgba(255,255,255,0.3); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.03); text-align: left; }
-        .table-custom td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.02); font-size: 14px; }
-        .table-custom tr:hover td { background: rgba(255,255,255,0.01); }
-        .status-badge { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; }
-        .status-badge.preso { background: #dc3545; color: #fff; }
-        .status-badge.procurado { background: #ffc107; color: #000; }
-        .status-badge.foragido { background: #dc3545; color: #fff; animation: pulse 1.5s infinite; }
-        .status-badge.investigado { background: #17a2b8; color: #fff; }
-        .status-badge.condicional { background: #28a745; color: #fff; }
-        .status-badge.liberado { background: #6c757d; color: #fff; }
-        .perigo-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
-        .perigo-badge.baixo { background: #28a745; color: #fff; }
-        .perigo-badge.medio { background: #ffc107; color: #000; }
-        .perigo-badge.alto { background: #fd7e14; color: #fff; }
-        .perigo-badge.extremo { background: #dc3545; color: #fff; }
-        .sidebar-toggle { display: none; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
-        @media (max-width: 992px) { .sidebar { transform: translateX(-100%); width: 280px; } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .sidebar-toggle { display: flex !important; } }
-        @media (max-width: 768px) { .main-content { padding: 15px; } .top-bar { flex-direction: column; align-items: flex-start; } }
-        @media (max-width: 480px) { .top-actions { width: 100%; } .top-actions .badge { flex: 1; text-align: center; } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--police-dark); }
-        ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
+        .controls-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(6, 13, 26, 0.85);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            padding: 6px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+            min-height: 48px;
+        }
+
+        .controls-left {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .controls-right {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls-center .system-title {
+            color: var(--police-gold);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .control-btn {
+            width: var(--control-size);
+            height: var(--control-size);
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--police-gold);
+        }
+
+        .control-btn:active {
+            transform: scale(0.92);
+        }
+
+        .control-btn.close-btn:hover {
+            background: rgba(220, 53, 69, 0.15);
+            color: #dc3545;
+        }
+
+        .control-btn.minimize-btn:hover {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+
+        .controls-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 0 6px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+        }
+
+        .user-info .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gradient-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--police-dark);
+        }
+
+        /* ============================================
+           SIDEBAR
+           ============================================ */
+        .sidebar {
+            position: fixed;
+            top: 48px;
+            left: 0;
+            width: 260px;
+            height: calc(100vh - 48px);
+            background: rgba(6, 13, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(201, 168, 76, 0.08);
+            z-index: 999;
+            padding: 20px 0;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--police-gold);
+            border-radius: 4px;
+        }
+
+        .sidebar-brand {
+            text-align: center;
+            padding: 0 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-brand .logo {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 10px;
+            background: var(--gradient-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 40px var(--shadow-gold);
+        }
+
+        .sidebar-brand .logo i {
+            font-size: 24px;
+            color: var(--police-dark);
+        }
+
+        .sidebar-brand h5 {
+            color: var(--police-gold);
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .sidebar-brand small {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-menu {
+            padding: 0 12px;
+        }
+
+        .sidebar-menu .menu-label {
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 15px 12px 8px;
+        }
+
+        .sidebar-menu .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 2px;
+            font-size: 14px;
+        }
+
+        .sidebar-menu .menu-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+
+        .sidebar-menu .menu-item.active {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--police-gold);
+            border: 1px solid rgba(201, 168, 76, 0.1);
+        }
+
+        .sidebar-menu .menu-item i {
+            width: 20px;
+            font-size: 15px;
+        }
+
+        .sidebar-menu .menu-item .badge {
+            margin-left: auto;
+            background: #dc3545;
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            animation: pulse 2s infinite;
+        }
+
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            padding: 0 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            padding-top: 15px;
+        }
+
+        .sidebar-footer .user-info-sidebar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-footer .user-info-sidebar .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gradient-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--police-dark);
+        }
+
+        .sidebar-footer .user-info-sidebar .name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .sidebar-footer .user-info-sidebar .role {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            /* ALTERAÇÃO: Ajuste para a barra de controles */
+            margin-left: 260px;
+            padding: 70px 30px 30px;
+            min-height: 100vh;
+        }
+
+        /* ============================================
+           TOP BAR
+           ============================================ */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: rgba(10, 30, 61, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(201, 168, 76, 0.05);
+        }
+
+        .top-bar .page-title h4 {
+            color: var(--police-gold);
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 1px;
+            font-size: 1.2rem;
+        }
+
+        .top-bar .page-title small {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .top-bar .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .top-bar .top-actions .badge {
+            padding: 6px 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+        }
+
+        .top-bar .top-actions .badge i {
+            margin-right: 6px;
+        }
+
+        /* ============================================
+           FORMULÁRIO
+           ============================================ */
+        .form-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .form-card .card-title {
+            color: var(--police-gold);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .form-card .card-title i {
+            margin-right: 10px;
+            opacity: 0.7;
+        }
+
+        .form-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: var(--police-gold);
+            box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.08);
+            color: #fff;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ============================================
+           TABELA
+           ============================================ */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table-custom th {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            text-align: left;
+        }
+
+        .table-custom td {
+            padding: 12px 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            font-size: 14px;
+        }
+
+        .table-custom tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .status-badge.preso {
+            background: #dc3545;
+            color: #fff;
+        }
+        .status-badge.procurado {
+            background: #ffc107;
+            color: #000;
+        }
+        .status-badge.foragido {
+            background: #dc3545;
+            color: #fff;
+            animation: pulse 1.5s infinite;
+        }
+        .status-badge.investigado {
+            background: #17a2b8;
+            color: #fff;
+        }
+        .status-badge.condicional {
+            background: #28a745;
+            color: #fff;
+        }
+        .status-badge.liberado {
+            background: #6c757d;
+            color: #fff;
+        }
+
+        .perigo-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .perigo-badge.baixo {
+            background: #28a745;
+            color: #fff;
+        }
+        .perigo-badge.medio {
+            background: #ffc107;
+            color: #000;
+        }
+        .perigo-badge.alto {
+            background: #fd7e14;
+            color: #fff;
+        }
+        .perigo-badge.extremo {
+            background: #dc3545;
+            color: #fff;
+        }
+
+        .btn-gold {
+            background: var(--gradient-gold);
+            color: var(--police-dark);
+            font-weight: 700;
+            padding: 10px 28px;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            font-size: 14px;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(201, 168, 76, 0.3);
+            color: var(--police-dark);
+        }
+
+        .btn-gold:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-icon {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.3);
+            padding: 6px 12px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .btn-icon:hover {
+            background: rgba(201, 168, 76, 0.05);
+            border-color: rgba(201, 168, 76, 0.2);
+            color: #fff;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        .sidebar-toggle {
+            display: none;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* ALTERAÇÃO: Breakpoints ajustados para responsividade total */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .sidebar-toggle {
+                display: flex !important;
+            }
+            .controls-center .system-title {
+                font-size: 12px;
+            }
+            .control-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            .user-info .name {
+                display: none;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 65px 15px 15px;
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 18px;
+            }
+            .top-bar .page-title h4 {
+                font-size: 1rem;
+            }
+            .form-card {
+                padding: 18px;
+            }
+            .form-control,
+            .form-select {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+            .btn-gold {
+                padding: 8px 20px;
+                font-size: 13px;
+                width: 100%;
+            }
+            .controls-center .system-title {
+                font-size: 11px;
+            }
+            .table-custom th,
+            .table-custom td {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 60px 10px 10px;
+            }
+            .top-bar {
+                padding: 10px 14px;
+            }
+            .top-bar .page-title h4 {
+                font-size: 0.9rem;
+            }
+            .top-actions {
+                width: 100%;
+            }
+            .top-actions .badge {
+                flex: 1;
+                text-align: center;
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+            .form-card {
+                padding: 14px;
+            }
+            .form-card .card-title {
+                font-size: 12px;
+            }
+            .form-label {
+                font-size: 10px;
+            }
+            .controls-center .system-title {
+                font-size: 9px;
+            }
+            .control-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            .controls-divider {
+                margin: 0 3px;
+            }
+            .sidebar-brand .logo {
+                width: 40px;
+                height: 40px;
+            }
+            .sidebar-brand .logo i {
+                font-size: 18px;
+            }
+            .sidebar-brand h5 {
+                font-size: 14px;
+            }
+            .table-custom th,
+            .table-custom td {
+                padding: 6px 8px;
+                font-size: 11px;
+            }
+            .btn-icon {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--police-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.3);
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
 
-<!-- ============================================
-   SIDEBAR (MESMA DO DASHBOARD)
-   ============================================ -->
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <div class="logo"><i class="fas fa-shield-halved"></i></div>
-        <h5>AI-DEPOM</h5>
-        <small>SISTEMA POLICIAL INTELIGENTE</small>
-    </div>
-    <nav class="sidebar-menu">
-        <div class="menu-label">Navegação</div>
-        <a class="menu-item" onclick="window.location.href='03-dashboard.html'">
-            <i class="fas fa-th-large"></i> Dashboard
-        </a>
-        <a class="menu-item" onclick="window.location.href='05-cadastro-suspeito.html'">
-            <i class="fas fa-user-plus"></i> Cadastro
-        </a>
-        <a class="menu-item active" onclick="window.location.href='06-consulta.html'">
-            <i class="fas fa-search"></i> Consulta
-        </a>
-        <a class="menu-item" onclick="window.location.href='07-relatorios.html'">
-            <i class="fas fa-chart-bar"></i> Relatórios
-        </a>
-        <div class="menu-label">Administração</div>
-        <a class="menu-item" onclick="window.location.href='04-cadastro-usuario.html'">
-            <i class="fas fa-users-cog"></i> Usuários
-            <span class="badge" style="background:var(--police-gold);color:var(--police-dark);">Master</span>
-        </a>
-        <a class="menu-item" onclick="alert('Abrindo módulo de mandados...')">
-            <i class="fas fa-gavel"></i> Mandados
-        </a>
-        <a class="menu-item" onclick="alert('Abrindo auditoria...')">
-            <i class="fas fa-clipboard-list"></i> Auditoria
-        </a>
-        <div class="menu-label">Sistema</div>
-        <a class="menu-item" onclick="alert('Abrindo configurações...')">
-            <i class="fas fa-cog"></i> Configurações
-        </a>
-        <a class="menu-item" onclick="alert('Saindo do sistema...')">
-            <i class="fas fa-sign-out-alt"></i> Sair
-        </a>
-    </nav>
-    <div class="sidebar-footer">
-        <div class="user-info">
-            <div class="avatar">AM</div>
-            <div>
-                <div class="name" id="userName">Carregando...</div>
-                <div class="role" id="userRole">Carregando...</div>
-            </div>
-        </div>
-    </div>
-</aside>
-
-<!-- ============================================
-   MAIN CONTENT
-   ============================================ -->
-<main class="main-content">
-    <!-- TOP BAR -->
-    <header class="top-bar">
-        <div class="d-flex align-items-center gap-3">
-            <button class="sidebar-toggle" onclick="toggleSidebar()">
-                <i class="fas fa-bars"></i>
+    <!-- ============================================
+       NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
+       Data: 08/09/2026
+       ============================================ -->
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()" title="Voltar (Alt+V)">
+                <i class="fas fa-arrow-left"></i>
             </button>
-            <div class="page-title">
-                <h4><i class="fas fa-search me-2"></i>Consulta de Suspeitos</h4>
-                <small id="totalRegistrosInfo">Carregando registros...</small>
-            </div>
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar (Alt+A)">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar (Alt+M)">
+                <i class="fas fa-window-minimize"></i>
+            </button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar (Alt+F)">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
-        <div class="top-actions">
-            <span class="badge" id="totalPresos"><i class="fas fa-user-check text-success"></i> Presos: <span class="count">0</span></span>
-            <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate text-warning"></i> Procurados: <span class="count">0</span></span>
-            <span class="badge" id="totalForagidos"><i class="fas fa-user-slash text-danger"></i> Foragidos: <span class="count">0</span></span>
+        <div class="controls-center">
+            <span class="system-title">
+                <i class="fas fa-shield-halved" style="color: var(--police-gold);"></i>
+                AI-DEPOM
+            </span>
+        </div>
+        <div class="controls-right">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">AM</div>
+                <span class="name" id="userName">Admin Master</span>
+            </div>
         </div>
     </header>
 
-    <!-- FORMULÁRIO DE CONSULTA -->
-    <div class="form-card">
-        <div class="card-title"><i class="fas fa-search"></i>Busca Avançada</div>
-
-        <!-- Busca Rápida -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-8">
-                <div class="input-group">
-                    <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); color:rgba(255,255,255,0.3);">
-                        <i class="fas fa-search"></i>
-                    </span>
-                    <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG..." onkeyup="realizarBusca()">
+    <!-- ============================================
+       SIDEBAR
+       ============================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo"><i class="fas fa-shield-halved"></i></div>
+            <h5>AI-DEPOM</h5>
+            <small>SISTEMA POLICIAL INTELIGENTE</small>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-label">Navegação</div>
+            <a class="menu-item" onclick="window.location.href='03-dashboard.html'">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a class="menu-item" onclick="window.location.href='05-cadastro-suspeito.html'">
+                <i class="fas fa-user-plus"></i> Cadastro
+            </a>
+            <a class="menu-item active" onclick="window.location.href='06-consulta.html'">
+                <i class="fas fa-search"></i> Consulta
+            </a>
+            <a class="menu-item" onclick="window.location.href='07-relatorios.html'">
+                <i class="fas fa-chart-bar"></i> Relatórios
+            </a>
+            <div class="menu-label">Administração</div>
+            <a class="menu-item" onclick="window.location.href='04-cadastro-usuario.html'">
+                <i class="fas fa-users-cog"></i> Usuários
+                <span class="badge" style="background:var(--police-gold);color:var(--police-dark);">Master</span>
+            </a>
+            <a class="menu-item" onclick="alert('Abrindo módulo de mandados...')">
+                <i class="fas fa-gavel"></i> Mandados
+            </a>
+            <a class="menu-item" onclick="alert('Abrindo auditoria...')">
+                <i class="fas fa-clipboard-list"></i> Auditoria
+            </a>
+            <div class="menu-label">Sistema</div>
+            <a class="menu-item" onclick="alert('Abrindo configurações...')">
+                <i class="fas fa-cog"></i> Configurações
+            </a>
+            <a class="menu-item" onclick="alert('Saindo do sistema...')">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-sidebar">
+                <div class="avatar">AM</div>
+                <div>
+                    <div class="name" id="sidebarUserName">Carregando...</div>
+                    <div class="role" id="sidebarUserRole">Carregando...</div>
                 </div>
             </div>
-            <div class="col-md-4">
-                <button class="btn-gold w-100" onclick="realizarBusca()">
-                    <i class="fas fa-arrow-right me-2"></i>BUSCAR
+        </div>
+    </aside>
+
+    <!-- ============================================
+       MAIN CONTENT
+       ============================================ -->
+    <main class="main-content">
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
                 </button>
+                <div class="page-title">
+                    <h4><i class="fas fa-search me-2"></i>Consulta de Suspeitos</h4>
+                    <small id="totalRegistrosInfo">Carregando registros...</small>
+                </div>
             </div>
-        </div>
+            <div class="top-actions">
+                <span class="badge" id="totalPresos"><i class="fas fa-user-check text-success"></i> Presos: <span class="count">0</span></span>
+                <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate text-warning"></i> Procurados: <span class="count">0</span></span>
+                <span class="badge" id="totalForagidos"><i class="fas fa-user-slash text-danger"></i> Foragidos: <span class="count">0</span></span>
+            </div>
+        </header>
 
-        <!-- Filtros -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-3">
-                <label class="form-label">Status</label>
-                <select class="form-select" id="filtroStatus" onchange="realizarBusca()">
-                    <option value="">Todos</option>
-                    <option value="PRESO">Preso</option>
-                    <option value="PROCURADO">Procurado</option>
-                    <option value="FORAGIDO">Foragido</option>
-                    <option value="INVESTIGADO">Investigado</option>
-                    <option value="CONDICIONAL">Condicional</option>
-                    <option value="LIBERADO">Liberado</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Periculosidade</label>
-                <select class="form-select" id="filtroPericulosidade" onchange="realizarBusca()">
-                    <option value="">Todos</option>
-                    <option value="BAIXO">Baixo</option>
-                    <option value="MEDIO">Médio</option>
-                    <option value="ALTO">Alto</option>
-                    <option value="EXTREMO">Extremo</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Data Início</label>
-                <input type="date" class="form-control" id="filtroDataInicio" onchange="realizarBusca()">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Data Fim</label>
-                <input type="date" class="form-control" id="filtroDataFim" onchange="realizarBusca()">
-            </div>
-        </div>
+        <!-- FORMULÁRIO DE CONSULTA -->
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-search"></i>Busca Avançada</div>
 
-        <!-- Resultados -->
-        <div id="resultadosContainer">
-            <div class="table-container">
-                <table class="table-custom" id="tabelaResultados">
-                    <thead>
-                        <tr>
-                            <th>Nome</th>
-                            <th>CPF</th>
-                            <th>Status</th>
-                            <th>Periculosidade</th>
-                            <th>Cidade</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultadosConsulta">
-                        <tr>
-                            <td colspan="6" class="text-center py-4" style="color: rgba(255,255,255,0.2);">
-                                <i class="fas fa-spinner fa-spin"></i> Carregando dados...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- Busca Rápida -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); color:rgba(255,255,255,0.3);">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG..." onkeyup="realizarBusca()">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn-gold w-100" onclick="realizarBusca()">
+                        <i class="fas fa-arrow-right me-2"></i>BUSCAR
+                    </button>
+                </div>
             </div>
 
-            <!-- Paginação -->
-            <div class="d-flex justify-content-between align-items-center mt-4">
-                <small class="text-muted" id="infoPagina">Carregando...</small>
-                <div id="paginacaoControles">
-                    <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior"><i class="fas fa-chevron-left"></i></button>
-                    <span id="numerosPaginas">
-                        <button class="btn-icon active" onclick="irPagina(1)">1</button>
-                    </span>
-                    <button class="btn-icon ms-1" onclick="proximaPagina()" id="btnProximo"><i class="fas fa-chevron-right"></i></button>
+            <!-- Filtros -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="filtroStatus" onchange="realizarBusca()">
+                        <option value="">Todos</option>
+                        <option value="PRESO">Preso</option>
+                        <option value="PROCURADO">Procurado</option>
+                        <option value="FORAGIDO">Foragido</option>
+                        <option value="INVESTIGADO">Investigado</option>
+                        <option value="CONDICIONAL">Condicional</option>
+                        <option value="LIBERADO">Liberado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Periculosidade</label>
+                    <select class="form-select" id="filtroPericulosidade" onchange="realizarBusca()">
+                        <option value="">Todos</option>
+                        <option value="BAIXO">Baixo</option>
+                        <option value="MEDIO">Médio</option>
+                        <option value="ALTO">Alto</option>
+                        <option value="EXTREMO">Extremo</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="filtroDataInicio" onchange="realizarBusca()">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="filtroDataFim" onchange="realizarBusca()">
+                </div>
+            </div>
+
+            <!-- Resultados -->
+            <div id="resultadosContainer">
+                <div class="table-container">
+                    <table class="table-custom" id="tabelaResultados">
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Status</th>
+                                <th>Periculosidade</th>
+                                <th>Cidade</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultadosConsulta">
+                            <tr>
+                                <td colspan="6" class="text-center py-4" style="color: rgba(255,255,255,0.2);">
+                                    <i class="fas fa-spinner fa-spin"></i> Carregando dados...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginação -->
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <small class="text-muted" id="infoPagina">Carregando...</small>
+                    <div id="paginacaoControles">
+                        <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior"><i class="fas fa-chevron-left"></i></button>
+                        <span id="numerosPaginas">
+                            <button class="btn-icon active" onclick="irPagina(1)">1</button>
+                        </span>
+                        <button class="btn-icon ms-1" onclick="proximaPagina()" id="btnProximo"><i class="fas fa-chevron-right"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</main>
+    </main>
 
-<!-- ============================================
-   SUPABASE SDK E CONFIGURAÇÃO
-   ============================================ -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-    // ============================================
-    // CONFIGURAÇÃO DO SUPABASE
-    // ============================================
-    const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
-    const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI'; // Substitua pela chave real
+    <!-- ============================================
+       SUPABASE SDK
+       ============================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+    <script>
+        // ============================================
+        // CONFIGURAÇÃO DO SUPABASE
+        // ============================================
+        const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
+        const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI'; // Substitua pela chave real
 
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-    // ============================================
-    // VARIÁVEIS DE CONTROLE
-    // ============================================
-    let paginaAtual = 1;
-    const itensPorPagina = 5;
-    let totalRegistros = 0;
-    let dadosAtuais = [];
-
-    // ============================================
-    // FUNÇÃO PRINCIPAL DE BUSCA
-    // ============================================
-    async function realizarBusca() {
-        const termo = document.getElementById('buscaGlobal').value;
-        const status = document.getElementById('filtroStatus').value;
-        const periculosidade = document.getElementById('filtroPericulosidade').value;
-        const dataInicio = document.getElementById('filtroDataInicio').value;
-        const dataFim = document.getElementById('filtroDataFim').value;
-
-        try {
-            // Construir query
-            let query = supabase
-                .from('suspeito')
-                .select('*', { count: 'exact' })
-                .eq('deletado', false);
-
-            // Aplicar filtros
-            if (termo.length >= 2) {
-                query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`);
+        // ============================================
+        // NOVO: CONTROLES DE JANELA (Regra de Ouro Nº 3)
+        // Data: 08/09/2026
+        // ============================================
+        function minimizeWindow() {
+            try {
+                if (window.moveTo && window.resizeTo) {
+                    window.moveTo(0, 0);
+                    window.resizeTo(screen.width / 2, screen.height / 2);
+                } else {
+                    alert('Use o botão de minimizar do seu navegador.');
+                }
+            } catch (e) {
+                console.warn('Minimizar não suportado:', e);
             }
-            if (status) {
-                query = query.eq('status_atual', status);
-            }
-            if (periculosidade) {
-                query = query.eq('nivel_periculosidade', periculosidade);
-            }
-            if (dataInicio) {
-                query = query.gte('data_cadastro', dataInicio);
-            }
-            if (dataFim) {
-                query = query.lte('data_cadastro', dataFim);
-            }
-
-            // Executar consulta
-            const { data, count, error } = await query
-                .order('data_cadastro', { ascending: false })
-                .range((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina - 1);
-
-            if (error) throw error;
-
-            dadosAtuais = data || [];
-            totalRegistros = count || 0;
-
-            // Atualizar estatísticas
-            await carregarEstatisticas();
-
-            // Renderizar resultados
-            renderizarResultados();
-
-        } catch (error) {
-            console.error('Erro na busca:', error);
-            document.getElementById('resultadosConsulta').innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center py-4" style="color: rgba(255,255,255,0.2);">
-                        <i class="fas fa-exclamation-triangle"></i> Erro ao carregar dados
-                    </td>
-                </tr>
-            `;
-        }
-    }
-
-    // ============================================
-    // RENDERIZAR RESULTADOS
-    // ============================================
-    function renderizarResultados() {
-        const tbody = document.getElementById('resultadosConsulta');
-
-        if (dadosAtuais.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="text-center py-4" style="color: rgba(255,255,255,0.2);">
-                        <i class="fas fa-search"></i> Nenhum resultado encontrado
-                    </td>
-                </tr>
-            `;
-            document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
-            document.getElementById('totalRegistrosInfo').textContent = '0 registros';
-            return;
         }
 
-        let html = '';
-        dadosAtuais.forEach(d => {
-            const statusClass = d.status_atual ? d.status_atual.toLowerCase() : '';
-            const periculosidadeClass = d.nivel_periculosidade ? d.nivel_periculosidade.toLowerCase() : '';
-            const statusLabel = {
-                'PRESO': '🔒 PRESO',
-                'PROCURADO': '🔍 PROCURADO',
-                'FORAGIDO': '🏃 FORAGIDO',
-                'INVESTIGADO': '🔎 INVESTIGADO',
-                'CONDICIONAL': '⚖️ CONDICIONAL',
-                'LIBERADO': '✅ LIBERADO'
-            }[d.status_atual] || d.status_atual || 'DESCONHECIDO';
-
-            html += `
-                <tr>
-                    <td><strong>${d.nome_completo || 'N/A'}</strong></td>
-                    <td>${d.cpf || 'N/A'}</td>
-                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
-                    <td><span class="perigo-badge ${periculosidadeClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
-                    <td>${d.cidade || 'N/A'}</td>
-                    <td>
-                        <button class="btn-icon" onclick="verDetalhes('${d.id_suspeito}')"><i class="fas fa-eye"></i></button>
-                        <button class="btn-icon" onclick="imprimirFicha('${d.id_suspeito}')"><i class="fas fa-print"></i></button>
-                        ${d.status_atual === 'PROCURADO' || d.status_atual === 'FORAGIDO' ? 
-                            `<button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta('${d.id_suspeito}')"><i class="fas fa-bell"></i></button>` : ''
-                        }
-                    </td>
-                </tr>
-            `;
-        });
-
-        tbody.innerHTML = html;
-
-        // Atualizar informações de paginação
-        const inicio = (paginaAtual - 1) * itensPorPagina + 1;
-        const fim = Math.min(paginaAtual * itensPorPagina, totalRegistros);
-        document.getElementById('infoPagina').textContent = `Mostrando ${totalRegistros > 0 ? inicio : 0}-${fim} de ${totalRegistros} registros`;
-        document.getElementById('totalRegistrosInfo').textContent = `${totalRegistros} registros`;
-
-        // Atualizar botões de paginação
-        atualizarPaginacao();
-    }
-
-    // ============================================
-    // CARREGAR ESTATÍSTICAS
-    // ============================================
-    async function carregarEstatisticas() {
-        try {
-            // Total de registros por status
-            const { count: totalPresos } = await supabase
-                .from('suspeito')
-                .select('*', { count: 'exact', head: true })
-                .eq('deletado', false)
-                .eq('status_atual', 'PRESO');
-
-            const { count: totalProcurados } = await supabase
-                .from('suspeito')
-                .select('*', { count: 'exact', head: true })
-                .eq('deletado', false)
-                .eq('status_atual', 'PROCURADO');
-
-            const { count: totalForagidos } = await supabase
-                .from('suspeito')
-                .select('*', { count: 'exact', head: true })
-                .eq('deletado', false)
-                .eq('status_atual', 'FORAGIDO');
-
-            document.getElementById('totalPresos').querySelector('.count').textContent = totalPresos || 0;
-            document.getElementById('totalProcurados').querySelector('.count').textContent = totalProcurados || 0;
-            document.getElementById('totalForagidos').querySelector('.count').textContent = totalForagidos || 0;
-
-        } catch (error) {
-            console.error('Erro ao carregar estatísticas:', error);
-        }
-    }
-
-    // ============================================
-    // PAGINAÇÃO
-    // ============================================
-    function atualizarPaginacao() {
-        const totalPaginas = Math.ceil(totalRegistros / itensPorPagina);
-        const container = document.getElementById('numerosPaginas');
-        
-        let html = '';
-        const maxBotoes = 5;
-        let inicio = Math.max(1, paginaAtual - Math.floor(maxBotoes / 2));
-        let fim = Math.min(totalPaginas, inicio + maxBotoes - 1);
-        
-        if (fim - inicio + 1 < maxBotoes) {
-            inicio = Math.max(1, fim - maxBotoes + 1);
-        }
-
-        if (inicio > 1) {
-            html += `<button class="btn-icon" onclick="irPagina(1)">1</button>`;
-            if (inicio > 2) html += `<button class="btn-icon disabled">...</button>`;
-        }
-
-        for (let i = inicio; i <= fim; i++) {
-            html += `<button class="btn-icon ${i === paginaAtual ? 'active' : ''}" onclick="irPagina(${i})" style="${i === paginaAtual ? 'background:rgba(201,168,76,0.1);border-color:var(--police-gold);color:var(--police-gold);' : ''}">${i}</button>`;
-        }
-
-        if (fim < totalPaginas) {
-            if (fim < totalPaginas - 1) html += `<button class="btn-icon disabled">...</button>`;
-            html += `<button class="btn-icon" onclick="irPagina(${totalPaginas})">${totalPaginas}</button>`;
-        }
-
-        container.innerHTML = html;
-
-        document.getElementById('btnAnterior').style.display = paginaAtual > 1 ? 'inline-block' : 'none';
-        document.getElementById('btnProximo').style.display = paginaAtual < totalPaginas ? 'inline-block' : 'none';
-    }
-
-    function paginaAnterior() {
-        if (paginaAtual > 1) {
-            paginaAtual--;
-            realizarBusca();
-        }
-    }
-
-    function proximaPagina() {
-        const totalPaginas = Math.ceil(totalRegistros / itensPorPagina);
-        if (paginaAtual < totalPaginas) {
-            paginaAtual++;
-            realizarBusca();
-        }
-    }
-
-    function irPagina(num) {
-        paginaAtual = num;
-        realizarBusca();
-    }
-
-    // ============================================
-    // AÇÕES
-    // ============================================
-    function verDetalhes(id) {
-        alert(`📋 Visualizando detalhes do suspeito ID: ${id}`);
-        // Aqui você pode abrir um modal ou redirecionar para uma página de detalhes
-    }
-
-    function imprimirFicha(id) {
-        alert(`🖨️ Imprimindo ficha do registro ID: ${id}`);
-    }
-
-    function emitirAlerta(id) {
-        if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
-            alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
-        }
-    }
-
-    // ============================================
-    // CARREGAR USUÁRIO
-    // ============================================
-    async function carregarUsuario() {
-        try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: usuario } = await supabase
-                    .from('usuarios')
-                    .select('nome_completo, setor')
-                    .eq('id', user.id)
-                    .single();
-
-                if (usuario) {
-                    document.getElementById('userName').textContent = usuario.nome_completo || 'Usuário';
-                    document.getElementById('userRole').textContent = usuario.setor || 'Servidor';
+        function closeWindow() {
+            if (confirm('Deseja realmente fechar o sistema?')) {
+                try {
+                    window.close();
+                } catch (e) {
+                    window.location.href = '01-apresentacao.html';
                 }
             }
-        } catch (error) {
-            console.error('Erro ao carregar usuário:', error);
         }
-    }
 
-    // ============================================
-    // INICIALIZAÇÃO
-    // ============================================
-    document.addEventListener('DOMContentLoaded', function() {
-        carregarUsuario();
-        realizarBusca();
-    });
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
 
-    // ============================================
-    // ENTER PARA BUSCAR
-    // ============================================
-    document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
+        // ============================================
+        // CARREGAR USUÁRIO
+        // ============================================
+        async function carregarUsuario() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: usuario, error } = await supabase
+                        .from('usuarios')
+                        .select('nome_completo, setor')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (usuario) {
+                        document.getElementById('userName').textContent = usuario.nome_completo || 'Admin Master';
+                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin Master';
+                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador Master';
+                        document.getElementById('userAvatar').textContent = usuario.nome_completo ? usuario.nome_completo
+                            .charAt(0) : 'AM';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar usuário:', error);
+            }
+        }
+
+        // ============================================
+        // CARREGAR ESTATÍSTICAS
+        // ============================================
+        async function carregarEstatisticas() {
+            try {
+                const { count: totalPresos } = await supabase
+                    .from('suspeito')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .eq('status_atual', 'PRESO');
+
+                const { count: totalProcurados } = await supabase
+                    .from('suspeito')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .eq('status_atual', 'PROCURADO');
+
+                const { count: totalForagidos } = await supabase
+                    .from('suspeito')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .eq('status_atual', 'FORAGIDO');
+
+                document.getElementById('totalPresos').querySelector('.count').textContent = totalPresos || 0;
+                document.getElementById('totalProcurados').querySelector('.count').textContent = totalProcurados || 0;
+                document.getElementById('totalForagidos').querySelector('.count').textContent = totalForagidos || 0;
+
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+        }
+
+        // ============================================
+        // VARIÁVEIS DE CONTROLE
+        // ============================================
+        let paginaAtual = 1;
+        const itensPorPagina = 5;
+        let totalRegistros = 0;
+        let dadosAtuais = [];
+
+        // ============================================
+        // FUNÇÃO PRINCIPAL DE BUSCA
+        // ============================================
+        async function realizarBusca() {
+            const termo = document.getElementById('buscaGlobal').value;
+            const status = document.getElementById('filtroStatus').value;
+            const periculosidade = document.getElementById('filtroPericulosidade').value;
+            const dataInicio = document.getElementById('filtroDataInicio').value;
+            const dataFim = document.getElementById('filtroDataFim').value;
+
+            try {
+                let query = supabase
+                    .from('suspeito')
+                    .select('*', { count: 'exact' })
+                    .eq('deletado', false);
+
+                if (termo.length >= 2) {
+                    query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`);
+                }
+                if (status) {
+                    query = query.eq('status_atual', status);
+                }
+                if (periculosidade) {
+                    query = query.eq('nivel_periculosidade', periculosidade);
+                }
+                if (dataInicio) {
+                    query = query.gte('data_cadastro', dataInicio);
+                }
+                if (dataFim) {
+                    query = query.lte('data_cadastro', dataFim);
+                }
+
+                const { data, count, error } = await query
+                    .order('data_cadastro', { ascending: false })
+                    .range((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina - 1);
+
+                if (error) throw error;
+
+                dadosAtuais = data || [];
+                totalRegistros = count || 0;
+
+                await carregarEstatisticas();
+                renderizarResultados();
+
+            } catch (error) {
+                console.error('Erro na busca:', error);
+                document.getElementById('resultadosConsulta').innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center py-4" style="color: rgba(255,255,255,0.2);">
+                                    <i class="fas fa-exclamation-triangle"></i> Erro ao carregar dados
+                                </td>
+                            </tr>
+                        `;
+            }
+        }
+
+        // ============================================
+        // RENDERIZAR RESULTADOS
+        // ============================================
+        function renderizarResultados() {
+            const tbody = document.getElementById('resultadosConsulta');
+
+            if (dadosAtuais.length === 0) {
+                tbody.innerHTML = `
+                            <tr>
+                                <td colspan="6" class="text-center py-4" style="color: rgba(255,255,255,0.2);">
+                                    <i class="fas fa-search"></i> Nenhum resultado encontrado
+                                </td>
+                            </tr>
+                        `;
+                document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
+                document.getElementById('totalRegistrosInfo').textContent = '0 registros';
+                return;
+            }
+
+            let html = '';
+            dadosAtuais.forEach(d => {
+                const statusClass = d.status_atual ? d.status_atual.toLowerCase() : '';
+                const periculosidadeClass = d.nivel_periculosidade ? d.nivel_periculosidade.toLowerCase() : '';
+                const statusLabel = {
+                    'PRESO': '🔒 PRESO',
+                    'PROCURADO': '🔍 PROCURADO',
+                    'FORAGIDO': '🏃 FORAGIDO',
+                    'INVESTIGADO': '🔎 INVESTIGADO',
+                    'CONDICIONAL': '⚖️ CONDICIONAL',
+                    'LIBERADO': '✅ LIBERADO'
+                } [d.status_atual] || d.status_atual || 'DESCONHECIDO';
+
+                html += `
+                            <tr>
+                                <td><strong>${d.nome_completo || 'N/A'}</strong></td>
+                                <td>${d.cpf || 'N/A'}</td>
+                                <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                                <td><span class="perigo-badge ${periculosidadeClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
+                                <td>${d.cidade || 'N/A'}</td>
+                                <td>
+                                    <button class="btn-icon" onclick="verDetalhes('${d.id_suspeito}')"><i class="fas fa-eye"></i></button>
+                                    <button class="btn-icon" onclick="imprimirFicha('${d.id_suspeito}')"><i class="fas fa-print"></i></button>
+                                    ${d.status_atual === 'PROCURADO' || d.status_atual === 'FORAGIDO' ?
+                                        `<button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta('${d.id_suspeito}')"><i class="fas fa-bell"></i></button>` : ''
+                                    }
+                                </td>
+                            </tr>
+                        `;
+            });
+
+            tbody.innerHTML = html;
+
+            const inicio = (paginaAtual - 1) * itensPorPagina + 1;
+            const fim = Math.min(paginaAtual * itensPorPagina, totalRegistros);
+            document.getElementById('infoPagina').textContent = `Mostrando ${totalRegistros > 0 ? inicio : 0}-${fim} de ${totalRegistros} registros`;
+            document.getElementById('totalRegistrosInfo').textContent = `${totalRegistros} registros`;
+
+            atualizarPaginacao();
+        }
+
+        // ============================================
+        // PAGINAÇÃO
+        // ============================================
+        function atualizarPaginacao() {
+            const totalPaginas = Math.ceil(totalRegistros / itensPorPagina);
+            const container = document.getElementById('numerosPaginas');
+
+            let html = '';
+            const maxBotoes = 5;
+            let inicio = Math.max(1, paginaAtual - Math.floor(maxBotoes / 2));
+            let fim = Math.min(totalPaginas, inicio + maxBotoes - 1);
+
+            if (fim - inicio + 1 < maxBotoes) {
+                inicio = Math.max(1, fim - maxBotoes + 1);
+            }
+
+            if (inicio > 1) {
+                html += `<button class="btn-icon" onclick="irPagina(1)">1</button>`;
+                if (inicio > 2) html += `<button class="btn-icon disabled">...</button>`;
+            }
+
+            for (let i = inicio; i <= fim; i++) {
+                html +=
+                    `<button class="btn-icon ${i === paginaAtual ? 'active' : ''}" onclick="irPagina(${i})" style="${i === paginaAtual ? 'background:rgba(201,168,76,0.1);border-color:var(--police-gold);color:var(--police-gold);' : ''}">${i}</button>`;
+            }
+
+            if (fim < totalPaginas) {
+                if (fim < totalPaginas - 1) html += `<button class="btn-icon disabled">...</button>`;
+                html += `<button class="btn-icon" onclick="irPagina(${totalPaginas})">${totalPaginas}</button>`;
+            }
+
+            container.innerHTML = html;
+
+            document.getElementById('btnAnterior').style.display = paginaAtual > 1 ? 'inline-block' : 'none';
+            document.getElementById('btnProximo').style.display = paginaAtual < totalPaginas ? 'inline-block' : 'none';
+        }
+
+        function paginaAnterior() {
+            if (paginaAtual > 1) {
+                paginaAtual--;
+                realizarBusca();
+            }
+        }
+
+        function proximaPagina() {
+            const totalPaginas = Math.ceil(totalRegistros / itensPorPagina);
+            if (paginaAtual < totalPaginas) {
+                paginaAtual++;
+                realizarBusca();
+            }
+        }
+
+        function irPagina(num) {
+            paginaAtual = num;
             realizarBusca();
         }
-    });
 
-    // ============================================
-    // TOGGLE SIDEBAR
-    // ============================================
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-    }
-</script>
+        // ============================================
+        // AÇÕES
+        // ============================================
+        function verDetalhes(id) {
+            alert(`📋 Visualizando detalhes do suspeito ID: ${id}`);
+        }
+
+        function imprimirFicha(id) {
+            alert(`🖨️ Imprimindo ficha do registro ID: ${id}`);
+        }
+
+        function emitirAlerta(id) {
+            if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
+                alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
+            }
+        }
+
+        // ============================================
+        // NOVO: ATALHOS DO TECLADO
+        // Data: 08/09/2026
+        // ============================================
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey && e.key === 'v') {
+                e.preventDefault();
+                window.history.back();
+            }
+            if (e.altKey && e.key === 'a') {
+                e.preventDefault();
+                window.history.forward();
+            }
+            if (e.altKey && e.key === 'm') {
+                e.preventDefault();
+                minimizeWindow();
+            }
+            if (e.altKey && e.key === 'f') {
+                e.preventDefault();
+                closeWindow();
+            }
+        });
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarUsuario();
+            realizarBusca();
+        });
+
+        // ============================================
+        // ENTER PARA BUSCAR
+        // ============================================
+        document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                realizarBusca();
+            }
+        });
+    </script>
 
 </body>
 </html>
