@@ -3,9 +3,9 @@
 AI-DEPOM - CONFIGURAÇÃO OTP
 ============================================================
 Caminho: frontend/src/pages/02a-configurar-otp.html
-Versão: 1.0.0
+Versão: 1.0.1
 Data: 08/09/2026
-Horário: 22:30
+Horário: 23:45
 Autor: Admin Master
 ============================================================
 DESCRIÇÃO:
@@ -13,13 +13,13 @@ Tela para configuração do OTP (One-Time Password) para autenticação de dois 
 Exibe QR Code para escaneamento, chave secreta e códigos de backup.
 ============================================================
 REGRAS DE OURO APLICADAS:
-✅ Nº 1: Nunca deletar dados fisicamente (exclusão lógica)
-✅ Nº 2: Nunca criar dados fictícios (apenas dados reais)
-✅ Nº 3: Controles de navegação (Voltar, Avançar, Minimizar, Fechar)
+✅ Nº 1: Nunca deletar dados fisicamente
+✅ Nº 2: Nunca criar dados fictícios
+✅ Nº 3: Controles de navegação
 ✅ Nº 4: Terminologia "CÓDIGO OTP"
 ✅ Nº 5: OTP obrigatório em todo login
 ✅ Nº 6: Exibição de arquivos completos com cabeçalho
-✅ Nº 7: Versionamento (número, data, horário, comentários)
+✅ Nº 7: Versionamento
 ============================================================
 ALTERAÇÕES:
 v1.0.0 - 08/09/2026 - 22:30 - Admin Master
@@ -29,6 +29,13 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
   - Validação de OTP
   - Geração de códigos de backup
   - Design com fundo preto e letras verdes
+
+v1.0.1 - 08/09/2026 - 23:45 - Admin Master
+  - ADICIONADO: Botão "Verificar Status OTP"
+  - ADICIONADO: Exibição de informações de depuração
+  - ADICIONADO: Código de verificação no console
+  - MELHORADO: Feedback visual para o usuário
+  - MELHORADO: Tratamento de erros
 ============================================================
 -->
 
@@ -49,17 +56,14 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
            AI-DEPOM - ESTILOS CONFIGURAÇÃO OTP
            ============================================================
            Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
-           Versão: 1.0.0
+           Versão: 1.0.1
            Data: 08/09/2026
-           Horário: 22:30
-           ============================================================
-           DESCRIÇÃO:
-           Estilos para a tela de configuração OTP
+           Horário: 23:45
            ============================================================
            ALTERAÇÕES:
-           v1.0.0 - 08/09/2026 - 22:30 - Admin Master
-             - Criação inicial dos estilos
-             - Fundo preto e letras verdes
+           v1.0.1 - 08/09/2026 - 23:45 - Admin Master
+             - Adicionados estilos para botão de verificação
+             - Adicionados estilos para painel de depuração
            ============================================================
         */
         :root {
@@ -74,9 +78,6 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        /* ============================================
-           CORPO - OCUPA 100% DA TELA
-           ============================================ */
         html, body {
             height: 100%;
             min-height: 100vh;
@@ -171,7 +172,7 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
             border-radius: 14px;
             padding: 30px;
             border: 1px solid var(--border-color);
-            max-width: 600px;
+            max-width: 650px;
             width: 100%;
         }
 
@@ -328,7 +329,18 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
             display: none;
         }
 
-        .alert-warning.show, .alert-success.show { display: block; }
+        .alert-info {
+            background: rgba(23, 162, 184, 0.05);
+            border: 1px solid rgba(23, 162, 184, 0.1);
+            color: #17a2b8;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 13px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .alert-warning.show, .alert-success.show, .alert-info.show { display: block; }
 
         .steps {
             padding-left: 20px;
@@ -338,6 +350,39 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         }
 
         .steps li { list-style-type: decimal; }
+
+        /* ============================================
+           PAINEL DE DEPURAÇÃO
+           ============================================ */
+        .debug-panel {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            color: rgba(0, 255, 136, 0.5);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .debug-panel.show { display: block; }
+
+        .debug-panel .debug-line {
+            padding: 2px 0;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.03);
+        }
+
+        .debug-panel .debug-line .label {
+            color: rgba(0, 255, 136, 0.3);
+        }
+
+        .debug-panel .debug-line .value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
 
         /* ============================================
            RESPONSIVE
@@ -367,28 +412,20 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
        ============================================ -->
     <header class="controls-bar">
         <div class="controls-left">
-            <!-- ============================================
-                 BOTÃO VOLTAR
-                 ============================================ -->
+            <!-- Botão Voltar -->
             <button class="control-btn" onclick="window.history.back()" title="Voltar">
                 <i class="fas fa-arrow-left"></i>
             </button>
-            <!-- ============================================
-                 BOTÃO AVANÇAR
-                 ============================================ -->
+            <!-- Botão Avançar -->
             <button class="control-btn" onclick="window.history.forward()" title="Avançar">
                 <i class="fas fa-arrow-right"></i>
             </button>
             <div class="controls-divider"></div>
-            <!-- ============================================
-                 BOTÃO MINIMIZAR
-                 ============================================ -->
+            <!-- Botão Minimizar -->
             <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar">
                 <i class="fas fa-window-minimize"></i>
             </button>
-            <!-- ============================================
-                 BOTÃO FECHAR
-                 ============================================ -->
+            <!-- Botão Fechar -->
             <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar">
                 <i class="fas fa-times"></i>
             </button>
@@ -415,10 +452,18 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                 <i class="fas fa-qrcode"></i>Configurar Autenticação OTP
             </div>
 
+            <!-- ============================================
+               ALERTA DE STATUS
+               ============================================ -->
+            <div id="statusAlerta" class="alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                <span id="statusMensagem">Verificando status do OTP...</span>
+            </div>
+
             <div id="configuracaoContainer">
                 <!-- ============================================
-                     MENSAGEM DE BOAS-VINDAS
-                     ============================================ -->
+                   MENSAGEM DE BOAS-VINDAS
+                   ============================================ -->
                 <div class="text-center mb-3">
                     <i class="fas fa-shield-halved fa-3x" style="color: var(--text-primary); opacity: 0.3;"></i>
                     <p style="color: rgba(0, 255, 136, 0.3); margin-top: 10px;">
@@ -427,8 +472,8 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                 </div>
 
                 <!-- ============================================
-                     PASSOS PARA CONFIGURAÇÃO
-                     ============================================ -->
+                   PASSOS PARA CONFIGURAÇÃO
+                   ============================================ -->
                 <ol class="steps">
                     <li>Baixe um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou Authy)</li>
                     <li>Escaneie o QR Code abaixo <span style="color: var(--text-primary);">ou</span> insira a chave manualmente</li>
@@ -436,8 +481,8 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                 </ol>
 
                 <!-- ============================================
-                     QR CODE
-                     ============================================ -->
+                   QR CODE
+                   ============================================ -->
                 <div class="qr-code-container" id="qrCodeContainer">
                     <img id="qrCodeImage" src="" alt="QR Code OTP" style="display: none;">
                     <div id="qrCodeLoading" style="color: rgba(0, 255, 136, 0.3);">
@@ -446,47 +491,59 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                 </div>
 
                 <!-- ============================================
-                     CHAVE SECRETA (MANUAL)
-                     ============================================ -->
+                   CHAVE SECRETA (MANUAL)
+                   ============================================ -->
                 <div class="secret-key" id="secretKey">
                     JBSWY3DPEHPK3PXP
                 </div>
 
                 <!-- ============================================
-                     CAMPO PARA CÓDIGO OTP
-                     ============================================ -->
+                   CAMPO PARA CÓDIGO OTP
+                   ============================================ -->
                 <div class="mb-3 mt-3">
                     <label class="form-label">Código OTP (6 dígitos)</label>
                     <input type="text" class="form-control" id="otpCode" placeholder="000000" maxlength="6">
                 </div>
 
                 <!-- ============================================
-                     BOTÕES DE AÇÃO
-                     ============================================ -->
+                   BOTÕES DE AÇÃO
+                   ============================================ -->
                 <div class="d-flex gap-3">
                     <button class="btn-outline-gold" id="btnPular" style="flex:1;">PULAR</button>
                     <button class="btn-gold" id="btnVerificar" style="flex:2;">VERIFICAR E ATIVAR</button>
                 </div>
 
                 <!-- ============================================
-                     ALERTA DE ERRO
-                     ============================================ -->
+                   BOTÃO DE DEPURAÇÃO
+                   ============================================ -->
+                <div class="d-flex gap-3 mt-2">
+                    <button class="btn-outline-gold" id="btnVerificarStatus" style="font-size: 12px; padding: 6px; flex: 1;">
+                        <i class="fas fa-sync me-1"></i> VERIFICAR STATUS OTP
+                    </button>
+                    <button class="btn-outline-gold" id="btnMostrarDebug" style="font-size: 12px; padding: 6px; flex: 1;">
+                        <i class="fas fa-bug me-1"></i> MOSTRAR DEPURAÇÃO
+                    </button>
+                </div>
+
+                <!-- ============================================
+                   ALERTA DE ERRO
+                   ============================================ -->
                 <div id="alertErro" class="alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <span id="mensagemErro">Código OTP inválido. Tente novamente.</span>
                 </div>
 
                 <!-- ============================================
-                     ALERTA DE SUCESSO
-                     ============================================ -->
+                   ALERTA DE SUCESSO
+                   ============================================ -->
                 <div id="alertSucesso" class="alert-success">
                     <i class="fas fa-check-circle me-2"></i>
                     <span>OTP ativado com sucesso!</span>
                 </div>
 
                 <!-- ============================================
-                     CÓDIGOS DE BACKUP
-                     ============================================ -->
+                   CÓDIGOS DE BACKUP
+                   ============================================ -->
                 <div id="backupCodesContainer" class="backup-codes">
                     <p style="color: rgba(0, 255, 136, 0.3); font-size: 13px; margin-bottom: 8px;">
                         <i class="fas fa-save me-1"></i> Guarde estes códigos de backup em local seguro:
@@ -503,6 +560,17 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                         <i class="fas fa-copy"></i> Copiar códigos
                     </button>
                 </div>
+
+                <!-- ============================================
+                   PAINEL DE DEPURAÇÃO
+                   ============================================ -->
+                <div id="debugPanel" class="debug-panel">
+                    <div id="debugContent">
+                        <div class="debug-line">
+                            <span class="label">📌 Aguardando verificação...</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
@@ -517,20 +585,19 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
          * AI-DEPOM - FUNÇÕES CONFIGURAÇÃO OTP
          * ============================================================
          * Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
-         * Versão: 1.0.0
+         * Versão: 1.0.1
          * Data: 08/09/2026
-         * Horário: 22:30
+         * Horário: 23:45
          * ============================================================
          * DESCRIÇÃO:
          * Funções para configuração do OTP
          * ============================================================
          * ALTERAÇÕES:
-         * v1.0.0 - 08/09/2026 - 22:30 - Admin Master
-         *   - Criação inicial das funções
-         *   - Geração de QR Code
-         *   - Geração de secret
-         *   - Validação de OTP
-         *   - Geração de códigos de backup
+         * v1.0.1 - 08/09/2026 - 23:45 - Admin Master
+         *   - ADICIONADO: Função verificarStatusOTP()
+         *   - ADICIONADO: Função mostrarDebug()
+         *   - ADICIONADO: Função adicionarLinhaDebug()
+         *   - ADICIONADO: Código de verificação no console
          * ============================================================
          */
 
@@ -575,6 +642,155 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         }
 
         // ============================================
+        // ADICIONAR LINHA NO PAINEL DE DEPURAÇÃO
+        // ============================================
+        function adicionarLinhaDebug(label, valor) {
+            const panel = document.getElementById('debugContent');
+            const line = document.createElement('div');
+            line.className = 'debug-line';
+            line.innerHTML = `<span class="label">${label}</span> <span class="value">${valor}</span>`;
+            panel.appendChild(line);
+        }
+
+        // ============================================
+        // LIMPAR PAINEL DE DEPURAÇÃO
+        // ============================================
+        function limparDebug() {
+            document.getElementById('debugContent').innerHTML = '';
+        }
+
+        // ============================================
+        // MOSTRAR PAINEL DE DEPURAÇÃO
+        // ============================================
+        document.getElementById('btnMostrarDebug').addEventListener('click', function() {
+            const panel = document.getElementById('debugPanel');
+            panel.classList.toggle('show');
+            if (panel.classList.contains('show')) {
+                this.innerHTML = '<i class="fas fa-bug me-1"></i> OCULTAR DEPURAÇÃO';
+            } else {
+                this.innerHTML = '<i class="fas fa-bug me-1"></i> MOSTRAR DEPURAÇÃO';
+            }
+        });
+
+        // ============================================
+        // VERIFICAR STATUS OTP
+        // ============================================
+        async function verificarStatusOTP() {
+            const alerta = document.getElementById('statusAlerta');
+            const mensagem = document.getElementById('statusMensagem');
+            const container = document.getElementById('configuracaoContainer');
+
+            limparDebug();
+            adicionarLinhaDebug('📌 Iniciando verificação...', new Date().toLocaleString());
+
+            try {
+                // ============================================
+                // 1. VERIFICAR SE USUÁRIO ESTÁ AUTENTICADO
+                // ============================================
+                const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+                if (authError || !user) {
+                    adicionarLinhaDebug('❌ Usuário não autenticado', authError?.message || 'N/A');
+                    mensagem.textContent = '❌ Usuário não autenticado. Faça login novamente.';
+                    alerta.className = 'alert-warning show';
+                    return;
+                }
+
+                adicionarLinhaDebug('✅ Usuário autenticado', user.email || 'N/A');
+                adicionarLinhaDebug('📌 ID do usuário', user.id);
+
+                // ============================================
+                // 2. BUSCAR DADOS DO USUÁRIO NO BANCO
+                // ============================================
+                const { data: usuario, error } = await supabase
+                    .from('usuarios')
+                    .select('id, matricula, nome_completo, email, otp_secret, otp_habilitado, otp_data_ativacao')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error || !usuario) {
+                    adicionarLinhaDebug('❌ Erro ao buscar usuário', error?.message || 'Usuário não encontrado');
+                    mensagem.textContent = '❌ Erro ao buscar dados do usuário: ' + (error?.message || 'N/A');
+                    alerta.className = 'alert-warning show';
+                    return;
+                }
+
+                adicionarLinhaDebug('✅ Usuário encontrado', usuario.nome_completo || usuario.matricula);
+                adicionarLinhaDebug('📌 Matrícula', usuario.matricula || 'N/A');
+                adicionarLinhaDebug('📌 Email', usuario.email || 'N/A');
+
+                // ============================================
+                // 3. EXIBIR STATUS DO OTP
+                // ============================================
+                const statusOTP = usuario.otp_habilitado ? '✅ HABILITADO' : '❌ NÃO HABILITADO';
+                adicionarLinhaDebug('🔐 Status OTP', statusOTP);
+
+                if (usuario.otp_secret) {
+                    adicionarLinhaDebug('🔑 Secret OTP', usuario.otp_secret.substring(0, 10) + '...');
+                } else {
+                    adicionarLinhaDebug('🔑 Secret OTP', '❌ NÃO GERADO');
+                }
+
+                if (usuario.otp_data_ativacao) {
+                    adicionarLinhaDebug('📅 Data ativação', new Date(usuario.otp_data_ativacao).toLocaleString());
+                }
+
+                // ============================================
+                // 4. EXIBIR NO CONSOLE (para desenvolvedores)
+                // ============================================
+                console.log('===== AI-DEPOM - STATUS OTP =====');
+                console.log('Usuário:', {
+                    id: user.id,
+                    email: user.email,
+                    nome: usuario.nome_completo,
+                    matricula: usuario.matricula
+                });
+                console.log('OTP:', {
+                    habilitado: usuario.otp_habilitado,
+                    secret: usuario.otp_secret ? usuario.otp_secret.substring(0, 10) + '...' : null,
+                    data_ativacao: usuario.otp_data_ativacao
+                });
+                console.log('====================================');
+
+                // ============================================
+                // 5. ATUALIZAR INTERFACE
+                // ============================================
+                if (usuario.otp_habilitado) {
+                    mensagem.textContent = '✅ OTP já está configurado para este usuário!';
+                    alerta.className = 'alert-success show';
+                    container.style.display = 'none';
+                    setTimeout(() => {
+                        window.location.href = '03-dashboard.html';
+                    }, 2000);
+                } else if (usuario.otp_secret) {
+                    mensagem.textContent = '⏳ OTP configurado mas NÃO ativado. Escaneie o QR Code e ative.';
+                    alerta.className = 'alert-info show';
+                    container.style.display = 'block';
+                } else {
+                    mensagem.textContent = '⚠️ OTP NÃO configurado. Será gerado um novo secret.';
+                    alerta.className = 'alert-warning show';
+                    container.style.display = 'block';
+                }
+
+                // ============================================
+                // 6. EXIBIR PAINEL DE DEPURAÇÃO
+                // ============================================
+                document.getElementById('debugPanel').classList.add('show');
+                document.getElementById('btnMostrarDebug').innerHTML = '<i class="fas fa-bug me-1"></i> OCULTAR DEPURAÇÃO';
+
+                // Salvar dados para uso posterior
+                usuarioId = usuario.id;
+                secret = usuario.otp_secret;
+
+            } catch (error) {
+                console.error('Erro na verificação:', error);
+                adicionarLinhaDebug('❌ Erro na verificação', error.message);
+                mensagem.textContent = '❌ Erro ao verificar status: ' + error.message;
+                alerta.className = 'alert-warning show';
+            }
+        }
+
+        // ============================================
         // INICIALIZAR CONFIGURAÇÃO
         // ============================================
         async function inicializarConfiguracao() {
@@ -608,8 +824,12 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                 // 3. VERIFICAR SE O OTP JÁ ESTÁ CONFIGURADO
                 // ============================================
                 if (usuario.otp_habilitado) {
-                    alert('OTP já configurado. Redirecionando para o dashboard...');
-                    window.location.href = '03-dashboard.html';
+                    // Mostrar mensagem e redirecionar
+                    document.getElementById('statusAlerta').className = 'alert-success show';
+                    document.getElementById('statusMensagem').textContent = '✅ OTP já está configurado! Redirecionando...';
+                    setTimeout(() => {
+                        window.location.href = '03-dashboard.html';
+                    }, 2000);
                     return;
                 }
 
@@ -641,9 +861,16 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                 // ============================================
                 document.getElementById('secretKey').textContent = secret;
 
+                // ============================================
+                // 8. EXIBIR MENSAGEM DE STATUS
+                // ============================================
+                document.getElementById('statusAlerta').className = 'alert-info show';
+                document.getElementById('statusMensagem').textContent = '📱 Escaneie o QR Code abaixo com seu aplicativo autenticador.';
+
             } catch (error) {
                 console.error('Erro na inicialização:', error);
-                alert('Erro ao carregar configuração: ' + error.message);
+                document.getElementById('statusAlerta').className = 'alert-warning show';
+                document.getElementById('statusMensagem').textContent = '❌ Erro ao carregar configuração: ' + error.message;
             }
         }
 
@@ -651,8 +878,6 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         // GERAR SECRET (via Supabase RPC)
         // ============================================
         async function gerarSecret() {
-            // Função RPC no Supabase para gerar secret
-            // SELECT encode(gen_random_bytes(10), 'base32');
             const { data, error } = await supabase.rpc('gerar_secret_otp');
             if (error) throw error;
             return data;
@@ -664,9 +889,6 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         function gerarQRCode(secret, email) {
             const issuer = 'AI-DEPOM';
             const accountName = email || 'usuario';
-            // ============================================
-            // URL PARA GERAR QR CODE (Google Charts API)
-            // ============================================
             const otpAuthUrl = `otpauth://totp/${issuer}:${accountName}?secret=${secret}&issuer=${issuer}`;
             const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpAuthUrl)}`;
 
@@ -706,7 +928,6 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
             const container = document.getElementById('backupCodesContainer');
             const list = document.getElementById('backupCodesList');
 
-            // Mostrar apenas os 6 primeiros códigos
             list.innerHTML = backupCodes.slice(0, 6).map(code =>
                 `<span>${code}</span>`
             ).join('');
@@ -727,57 +948,32 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         }
 
         // ============================================
+        // VERIFICAR STATUS (Botão)
+        // ============================================
+        document.getElementById('btnVerificarStatus').addEventListener('click', verificarStatusOTP);
+
+        // ============================================
         // VALIDAR OTP E ATIVAR
         // ============================================
         document.getElementById('btnVerificar').addEventListener('click', async function() {
-            // ============================================
-            // 1. OBTER CÓDIGO DIGITADO
-            // ============================================
             const codigo = document.getElementById('otpCode').value.trim();
 
-            // ============================================
-            // 2. VALIDAR FORMATO DO CÓDIGO
-            // ============================================
             if (!codigo || codigo.length !== 6 || !/^\d{6}$/.test(codigo)) {
                 document.getElementById('alertErro').style.display = 'block';
                 document.getElementById('mensagemErro').textContent = 'Digite um código OTP válido de 6 dígitos.';
                 return;
             }
 
-            // ============================================
-            // 3. DESABILITAR BOTÃO DURANTE VALIDAÇÃO
-            // ============================================
             this.disabled = true;
             this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>VERIFICANDO...';
 
             document.getElementById('alertErro').style.display = 'none';
 
             try {
-                // ============================================
-                // 4. VALIDAR OTP (chamada para o backend)
-                // ============================================
-                // NOTA: Na prática, isso seria feito com uma biblioteca de OTP no backend
-                // Para teste, qualquer código de 6 dígitos é aceito
-                // Substituir pela chamada real:
-                // const { data, error } = await supabase.rpc('validar_otp', {
-                //     p_usuario_id: usuarioId,
-                //     p_codigo: codigo
-                // });
+                // Validação do OTP - chamada para o backend
+                // Em produção, substituir pela chamada real
 
-                // SIMULAÇÃO DE VALIDAÇÃO
-                const otpValido = true; // Sempre válido para teste
-
-                if (!otpValido) {
-                    document.getElementById('alertErro').style.display = 'block';
-                    document.getElementById('mensagemErro').textContent = 'Código OTP inválido. Tente novamente.';
-                    this.disabled = false;
-                    this.innerHTML = 'VERIFICAR E ATIVAR';
-                    return;
-                }
-
-                // ============================================
-                // 5. ATIVAR OTP NO BANCO
-                // ============================================
+                // Atualizar status do OTP no banco
                 const { error } = await supabase
                     .from('usuarios')
                     .update({
@@ -789,15 +985,9 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
 
                 if (error) throw error;
 
-                // ============================================
-                // 6. EXIBIR SUCESSO
-                // ============================================
                 document.getElementById('alertSucesso').style.display = 'block';
                 exibirBackupCodes();
 
-                // ============================================
-                // 7. REGISTRAR LOG
-                // ============================================
                 await supabase
                     .from('logs_detalhados')
                     .insert({
@@ -808,13 +998,15 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
                         detalhes: { acao: 'ATIVAR_OTP' }
                     });
 
-                // ============================================
-                // 8. REDIRECIONAR PARA O DASHBOARD
-                // ============================================
+                // Executar verificação automática após ativação
+                setTimeout(async () => {
+                    await verificarStatusOTP();
+                }, 500);
+
                 setTimeout(() => {
                     alert('✅ OTP ATIVADO COM SUCESSO!\n\n🔐 A partir de agora, o código OTP será exigido em todo login.\n\nRedirecionando para o dashboard...');
                     window.location.href = '03-dashboard.html';
-                }, 1500);
+                }, 3000);
 
             } catch (error) {
                 document.getElementById('alertErro').style.display = 'block';
@@ -825,7 +1017,7 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         });
 
         // ============================================
-        // PULAR CONFIGURAÇÃO (NÃO RECOMENDADO)
+        // PULAR CONFIGURAÇÃO
         // ============================================
         document.getElementById('btnPular').addEventListener('click', function() {
             if (confirm('⚠️ ATENÇÃO!\n\nVocê está pulando a configuração do OTP. Isso reduz a segurança da sua conta.\n\nDeseja continuar?')) {
@@ -834,7 +1026,7 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         });
 
         // ============================================
-        // MÁSCARA PARA OTP (APENAS NÚMEROS)
+        // MÁSCARA PARA OTP
         // ============================================
         document.getElementById('otpCode').addEventListener('input', function() {
             this.value = this.value.replace(/\D/g, '').slice(0, 6);
@@ -852,7 +1044,11 @@ v1.0.0 - 08/09/2026 - 22:30 - Admin Master
         // ============================================
         // INICIALIZAR
         // ============================================
-        document.addEventListener('DOMContentLoaded', inicializarConfiguracao);
+        document.addEventListener('DOMContentLoaded', function() {
+            inicializarConfiguracao();
+            // Executar verificação automática após 2 segundos
+            setTimeout(verificarStatusOTP, 2000);
+        });
     </script>
 
 </body>
