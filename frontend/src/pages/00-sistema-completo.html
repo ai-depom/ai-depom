@@ -1,19 +1,63 @@
- <!DOCTYPE html>
+<!--
+============================================================
+AI-DEPOM - SISTEMA COMPLETO
+============================================================
+Caminho: frontend/src/pages/00-sistema-completo.html
+Versão: 1.0.2
+Data: 08/09/2026
+Horário: 17:00
+Autor: Admin Master
+============================================================
+DESCRIÇÃO:
+Versão unificada de todas as telas do sistema AI-DEPOM.
+Integra Dashboard, Cadastro, Consulta, Relatórios e Usuários.
+============================================================
+REGRAS DE OURO APLICADAS:
+✅ Nº 1: Nunca deletar dados fisicamente (exclusão lógica)
+✅ Nº 2: Nunca criar dados fictícios (apenas dados reais)
+✅ Nº 3: Controles de navegação (Voltar, Avançar, Minimizar, Fechar)
+✅ Nº 4: Terminologia "CÓDIGO OTP"
+✅ Nº 5: OTP obrigatório em todo login
+✅ Nº 6: Exibição de arquivos completos com cabeçalho
+✅ Nº 7: Versionamento (número, data, horário, comentários)
+============================================================
+
+v1.0.2 - 08/09/2026 - 17:00 - Admin Master
+  - Adicionado cabeçalho com versionamento (Regra de Ouro Nº 7)
+  - Adicionadas todas as Regras de Ouro no cabeçalho
+  - Padronização do formato do cabeçalho
+============================================================
+-->
+
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <!-- ============================================
          ALTERAÇÃO: Meta Viewport para responsividade total
-         Data: 08/09/2026
+         Data: 08/09/2026 - 16:35
          ============================================ -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Sistema Policial Inteligente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ============================================
-           VARIÁVEIS E RESET
-           ============================================ */
+        /* ============================================================
+           AI-DEPOM - ESTILOS DO SISTEMA COMPLETO
+           ============================================================
+           Caminho: frontend/src/pages/00-sistema-completo.html (interno)
+           Versão: 1.0.2
+           Data: 08/09/2026
+           Horário: 17:00
+           ============================================================
+           DESCRIÇÃO:
+           Estilos da tela completa do sistema AI-DEPOM
+           ============================================================
+           ALTERAÇÕES:
+           v1.0.2 - 08/09/2026 - 17:00 - Admin Master
+             - Adicionado cabeçalho com versionamento
+           ============================================================
+        */
         :root {
             --police-blue: #0a1e3d;
             --police-dark: #060d1a;
@@ -32,7 +76,7 @@
 
         /* ============================================
            ALTERAÇÃO: html e body com altura total
-           Data: 08/09/2026
+           Data: 08/09/2026 - 16:35
            ============================================ */
         html, body {
             height: 100%;
@@ -47,7 +91,7 @@
 
         /* ============================================
            NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
-           Data: 08/09/2026
+           Data: 08/09/2026 - 16:35
            ============================================ */
         .controls-bar {
             position: fixed;
@@ -323,7 +367,6 @@
            MAIN CONTENT
            ============================================ */
         .main-content {
-            /* ALTERAÇÃO: Ajuste para a barra de controles */
             margin-left: 260px;
             padding: 70px 30px 30px;
             min-height: 100vh;
@@ -782,7 +825,6 @@
             cursor: pointer;
         }
 
-        /* ALTERAÇÃO: Breakpoints ajustados para responsividade total */
         @media (max-width: 992px) {
             .sidebar {
                 transform: translateX(-100%);
@@ -944,7 +986,7 @@
 
     <!-- ============================================
        NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
-       Data: 08/09/2026
+       Data: 08/09/2026 - 16:35
        ============================================ -->
     <header class="controls-bar">
         <div class="controls-left">
@@ -1035,7 +1077,7 @@
     <!-- ============================================
        MAIN CONTENT
        ============================================ -->
-    <main class="main-content">
+    <main class="main-content" id="mainContent">
         <!-- TOP BAR -->
         <header class="top-bar">
             <div class="d-flex align-items-center gap-3">
@@ -1055,4 +1097,902 @@
         </header>
 
         <!-- ============================================
-           SEÇÃO 1: STATS - DINÂMICOS
+           SEÇÃO 1: STATS
+           ============================================ -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <i class="fas fa-users stat-icon"></i>
+                <span class="stat-number" id="totalSuspeitos">0</span>
+                <span class="stat-label">Suspeitos Cadastrados</span>
+                <div class="stat-change up" id="variacaoSuspeitos"><i class="fas fa-arrow-up"></i> Carregando...</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-search stat-icon"></i>
+                <span class="stat-number" id="totalInvestigacoes">0</span>
+                <span class="stat-label">Investigações</span>
+                <div class="stat-change" id="statusInvestigacoes"><i class="fas fa-circle" style="color:#ffc107;"></i> Carregando...</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-gavel stat-icon"></i>
+                <span class="stat-number" id="totalMandados">0</span>
+                <span class="stat-label">Mandados Ativos</span>
+                <div class="stat-change down" id="mandadosUrgentes"><i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> Carregando...</div>
+            </div>
+            <div class="stat-card">
+                <i class="fas fa-database stat-icon"></i>
+                <span class="stat-number" id="totalDados">0</span>
+                <span class="stat-label">Registros no Sistema</span>
+                <div class="stat-change"><i class="fas fa-lock" style="color:#28a745;"></i> AES-256 ativo</div>
+            </div>
+        </div>
+
+        <!-- ============================================
+           SEÇÃO 2: ALERTAS E ANÁLISE
+           ============================================ -->
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="form-card">
+                    <div class="card-title"><i class="fas fa-bell text-warning"></i>Alertas e Mandados</div>
+                    <div id="alertasContainer">
+                        <div class="text-center py-3" style="color: rgba(255,255,255,0.2);">
+                            <i class="fas fa-spinner fa-spin"></i> Carregando alertas...
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="form-card">
+                    <div class="card-title"><i class="fas fa-chart-line text-info"></i>Análise em Tempo Real</div>
+                    <div class="mt-3" id="analiseTempoReal">
+                        <div class="mb-3">
+                            <small class="text-muted">Relações Criminais Detectadas</small>
+                            <div class="progress" style="height:6px; background:rgba(255,255,255,0.05);">
+                                <div class="progress-bar bg-warning" id="progressoRelacoes" style="width:0%;"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Padrões de Atividade</small>
+                            <div class="progress" style="height:6px; background:rgba(255,255,255,0.05);">
+                                <div class="progress-bar bg-info" id="progressoPadroes" style="width:0%;"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">Previsão de Reincidência</small>
+                            <div class="progress" style="height:6px; background:rgba(255,255,255,0.05);">
+                                <div class="progress-bar bg-danger" id="progressoReincidencia" style="width:0%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+           SEÇÃO 3: AÇÕES RÁPIDAS
+           ============================================ -->
+        <div class="row g-3 mt-3">
+            <div class="col-md-2 col-4">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.01); border-radius:12px; cursor:pointer;" onclick="window.location.href='05-cadastro-suspeito.html'">
+                    <i class="fas fa-user-plus text-warning" style="font-size:28px;"></i>
+                    <div class="mt-1" style="font-size:12px; color:rgba(255,255,255,0.3);">Novo Preso</div>
+                </div>
+            </div>
+            <div class="col-md-2 col-4">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.01); border-radius:12px; cursor:pointer;" onclick="window.location.href='06-consulta.html'">
+                    <i class="fas fa-search text-info" style="font-size:28px;"></i>
+                    <div class="mt-1" style="font-size:12px; color:rgba(255,255,255,0.3);">Consultar</div>
+                </div>
+            </div>
+            <div class="col-md-2 col-4">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.01); border-radius:12px; cursor:pointer;" onclick="alert('Abrindo módulo de mandados...')">
+                    <i class="fas fa-gavel text-danger" style="font-size:28px;"></i>
+                    <div class="mt-1" style="font-size:12px; color:rgba(255,255,255,0.3);">Mandados</div>
+                </div>
+            </div>
+            <div class="col-md-2 col-4">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.01); border-radius:12px; cursor:pointer;" onclick="window.location.href='07-relatorios.html'">
+                    <i class="fas fa-file-pdf text-primary" style="font-size:28px;"></i>
+                    <div class="mt-1" style="font-size:12px; color:rgba(255,255,255,0.3);">Relatórios</div>
+                </div>
+            </div>
+            <div class="col-md-2 col-4">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.01); border-radius:12px;" onclick="alert('Abrindo biometria...')">
+                    <i class="fas fa-fingerprint text-success" style="font-size:28px;"></i>
+                    <div class="mt-1" style="font-size:12px; color:rgba(255,255,255,0.3);">Biometria</div>
+                </div>
+            </div>
+            <div class="col-md-2 col-4">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.01); border-radius:12px;" onclick="alert('Abrindo integração internacional...')">
+                    <i class="fas fa-globe text-warning" style="font-size:28px;"></i>
+                    <div class="mt-1" style="font-size:12px; color:rgba(255,255,255,0.3);">Interpol</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+           SEÇÃO 4: CADASTRO DE SUSPEITO
+           ============================================ -->
+        <div class="form-card mt-4">
+            <div class="card-title"><i class="fas fa-user-plus"></i>Cadastro de Suspeito</div>
+            <form id="formSuspeito">
+                <!-- Status e Periculosidade -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Status Atual *</label>
+                        <select class="form-select" id="statusAtual" required>
+                            <option value="PRESO">🔒 PRESO</option>
+                            <option value="PROCURADO">🔍 PROCURADO</option>
+                            <option value="FORAGIDO">🏃 FORAGIDO</option>
+                            <option value="INVESTIGADO">🔎 INVESTIGADO</option>
+                            <option value="CONDICIONAL">⚖️ CONDICIONAL</option>
+                            <option value="LIBERADO">✅ LIBERADO</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nível de Periculosidade *</label>
+                        <select class="form-select" id="periculosidade" required>
+                            <option value="BAIXO">🟢 BAIXO</option>
+                            <option value="MEDIO">🟡 MÉDIO</option>
+                            <option value="ALTO">🟠 ALTO</option>
+                            <option value="EXTREMO">🔴 EXTREMO</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Data de Cadastro</label>
+                        <input type="datetime-local" class="form-control" id="dataCadastro" readonly>
+                    </div>
+                </div>
+
+                <!-- Dados Pessoais -->
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-id-card me-2"></i>DADOS PESSOAIS
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nome Completo *</label>
+                        <input type="text" class="form-control" id="nomeCompleto" placeholder="Digite o nome completo" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Apelido</label>
+                        <input type="text" class="form-control" id="apelido" placeholder="Ex: Joãozinho">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Nascimento</label>
+                        <input type="date" class="form-control" id="dataNascimento">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">CPF</label>
+                        <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">RG</label>
+                        <input type="text" class="form-control" id="rg" placeholder="XX.XXX.XXX-X">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Sexo</label>
+                        <select class="form-select" id="sexo">
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                            <option value="O">Outro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Raça</label>
+                        <select class="form-select" id="raca">
+                            <option value="Branca">Branca</option>
+                            <option value="Preta">Preta</option>
+                            <option value="Parda">Parda</option>
+                            <option value="Amarela">Amarela</option>
+                            <option value="Indígena">Indígena</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Filiação -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-users me-2"></i>FILIAÇÃO
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nome da Mãe</label>
+                        <input type="text" class="form-control" id="nomeMae" placeholder="Nome completo da mãe">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nome do Pai</label>
+                        <input type="text" class="form-control" id="nomePai" placeholder="Nome completo do pai">
+                    </div>
+                </div>
+
+                <!-- Endereço -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-home me-2"></i>ENDEREÇO
+                        </h6>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">CEP</label>
+                        <input type="text" class="form-control" id="cep" placeholder="00000-000">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Logradouro</label>
+                        <input type="text" class="form-control" id="logradouro" placeholder="Rua, Av, etc">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Número</label>
+                        <input type="text" class="form-control" id="numero" placeholder="123">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Complemento</label>
+                        <input type="text" class="form-control" id="complemento" placeholder="Apto">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" class="form-control" id="bairro">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" class="form-control" id="cidade">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">UF</label>
+                        <select class="form-select" id="uf">
+                            <option value="SP">SP</option>
+                            <option value="RJ">RJ</option>
+                            <option value="MG">MG</option>
+                            <option value="BA">BA</option>
+                            <option value="PR">PR</option>
+                            <option value="RS">RS</option>
+                            <option value="SC">SC</option>
+                            <option value="DF">DF</option>
+                            <option value="GO">GO</option>
+                            <option value="PE">PE</option>
+                            <option value="CE">CE</option>
+                            <option value="AM">AM</option>
+                            <option value="PA">PA</option>
+                            <option value="MT">MT</option>
+                            <option value="MS">MS</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">País</label>
+                        <input type="text" class="form-control" id="pais" value="Brasil">
+                    </div>
+                </div>
+
+                <!-- Características Físicas -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-user-circle me-2"></i>CARACTERÍSTICAS FÍSICAS
+                        </h6>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Altura (m)</label>
+                        <input type="number" class="form-control" id="altura" step="0.01" min="0" max="2.50" placeholder="1.75">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Peso (kg)</label>
+                        <input type="number" class="form-control" id="peso" step="0.1" min="0" max="300" placeholder="80.5">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cor dos Olhos</label>
+                        <input type="text" class="form-control" id="corOlhos" placeholder="Castanho">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cor do Cabelo</label>
+                        <input type="text" class="form-control" id="corCabelo" placeholder="Preto">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cor da Pele</label>
+                        <input type="text" class="form-control" id="corPele" placeholder="Parda">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tatuagens</label>
+                        <input type="text" class="form-control" id="tattoo" placeholder="Braço esquerdo">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Sinais Particulares</label>
+                        <textarea class="form-control" id="sinais" rows="2" placeholder="Cicatrizes, marcas, etc"></textarea>
+                    </div>
+                </div>
+
+                <!-- Mídias -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-photo-video me-2"></i>MÍDIAS E DOCUMENTOS
+                        </h6>
+                        <div class="upload-grid">
+                            <div class="upload-box" onclick="document.getElementById('fotoFrontal').click()">
+                                <i class="fas fa-user-circle"></i>
+                                <div class="label">Foto Frontal</div>
+                                <div class="size">JPG, PNG • até 5MB</div>
+                                <input type="file" id="fotoFrontal" accept="image/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('fotoPerfil').click()">
+                                <i class="fas fa-user"></i>
+                                <div class="label">Foto Perfil</div>
+                                <div class="size">JPG, PNG • até 5MB</div>
+                                <input type="file" id="fotoPerfil" accept="image/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('fotoCorpo').click()">
+                                <i class="fas fa-user-alt"></i>
+                                <div class="label">Corpo Inteiro</div>
+                                <div class="size">JPG, PNG • até 5MB</div>
+                                <input type="file" id="fotoCorpo" accept="image/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('documentos').click()">
+                                <i class="fas fa-file-pdf"></i>
+                                <div class="label">Documentos</div>
+                                <div class="size">PDF, JPG, PNG • até 10MB</div>
+                                <input type="file" id="documentos" accept=".pdf,.jpg,.png" multiple style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('video').click()">
+                                <i class="fas fa-video"></i>
+                                <div class="label">Vídeos</div>
+                                <div class="size">MP4, MOV • até 100MB</div>
+                                <input type="file" id="video" accept="video/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('biometria').click()">
+                                <i class="fas fa-fingerprint"></i>
+                                <div class="label">Biometria</div>
+                                <div class="size">Digital, Íris, Voz</div>
+                                <input type="file" id="biometria" accept=".csv,.json" style="display:none;">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Arquivos são criptografados automaticamente antes do armazenamento
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Observações -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Modus Operandi</label>
+                        <textarea class="form-control" id="modusOperandi" rows="2" placeholder="Descreva o modus operandi"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" rows="2" placeholder="Informações adicionais"></textarea>
+                    </div>
+                </div>
+
+                <!-- Botões -->
+                <div class="row mt-4">
+                    <div class="col-md-12 text-end">
+                        <button type="reset" class="btn-outline-gold me-2">
+                            <i class="fas fa-times me-2"></i>LIMPAR
+                        </button>
+                        <button type="submit" class="btn-gold" id="btnCadastrar">
+                            <i class="fas fa-lock me-2"></i>SALVAR COM CRIPTOGRAFIA
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- ============================================
+           SEÇÃO 5: CONSULTA
+           ============================================ -->
+        <div class="form-card mt-4">
+            <div class="card-title"><i class="fas fa-search"></i>Consulta de Suspeitos</div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06); color:rgba(255,255,255,0.3);">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG..." onkeyup="realizarBusca()">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <button class="btn-gold w-100" onclick="realizarBusca()">
+                        <i class="fas fa-arrow-right me-2"></i>BUSCAR
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="table-custom">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>CPF</th>
+                            <th>Status</th>
+                            <th>Periculosidade</th>
+                            <th>Cidade</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultadosConsulta">
+                        <tr>
+                            <td colspan="6" class="text-center py-4" style="color: rgba(255,255,255,0.2);">
+                                <i class="fas fa-spinner fa-spin"></i> Carregando dados...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <small class="text-muted" id="infoPagina">Carregando...</small>
+                <div id="paginacaoControles">
+                    <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior"><i class="fas fa-chevron-left"></i></button>
+                    <span id="numerosPaginas">
+                        <button class="btn-icon active" onclick="irPagina(1)">1</button>
+                    </span>
+                    <button class="btn-icon ms-1" onclick="proximaPagina()" id="btnProximo"><i class="fas fa-chevron-right"></i></button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+           SEÇÃO 6: RELATÓRIOS
+           ============================================ -->
+        <div class="form-card mt-4">
+            <div class="card-title"><i class="fas fa-chart-bar"></i>Relatórios</div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label class="form-label">Período Início</label>
+                    <input type="date" class="form-control" id="relDataInicio" value="2026-01-01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Período Fim</label>
+                    <input type="date" class="form-control" id="relDataFim" value="2026-09-08">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Formato</label>
+                    <select class="form-select" id="relFormato">
+                        <option value="pdf">📄 PDF</option>
+                        <option value="excel">📊 Excel</option>
+                        <option value="csv">📋 CSV</option>
+                        <option value="json">📦 JSON</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Destino</label>
+                    <select class="form-select" id="relDestino">
+                        <option value="download">⬇️ Download</option>
+                        <option value="email">📧 Email</option>
+                        <option value="impressora">🖨️ Impressora</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn-gold w-100" onclick="gerarRelatorio()">
+                        <i class="fas fa-file-export me-2"></i>GERAR
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-3 col-6">
+                    <div class="report-card" onclick="gerarRelatorio('presos')">
+                        <i class="fas fa-user-slash text-danger"></i>
+                        <div class="title">Presos e Foragidos</div>
+                        <div class="desc">Lista completa com status atualizado</div>
+                        <div class="d-flex justify-content-center gap-3 mt-2" style="font-size:12px; color:rgba(255,255,255,0.2);">
+                            <span id="relPresos"><i class="fas fa-user-check"></i> Carregando...</span>
+                            <span id="relForagidos"><i class="fas fa-user-slash"></i> Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="report-card" onclick="gerarRelatorio('mandados')">
+                        <i class="fas fa-gavel text-warning"></i>
+                        <div class="title">Mandados de Prisão</div>
+                        <div class="desc">Mandados ativos, cumpridos e vencidos</div>
+                        <div class="d-flex justify-content-center gap-3 mt-2" style="font-size:12px; color:rgba(255,255,255,0.2);">
+                            <span id="relMandadosAtivos"><i class="fas fa-exclamation-triangle"></i> Carregando...</span>
+                            <span id="relMandadosCumpridos"><i class="fas fa-check-circle"></i> Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="report-card" onclick="gerarRelatorio('investigacoes')">
+                        <i class="fas fa-search text-info"></i>
+                        <div class="title">Investigações</div>
+                        <div class="desc">Status e andamento de inquéritos</div>
+                        <div class="d-flex justify-content-center gap-3 mt-2" style="font-size:12px; color:rgba(255,255,255,0.2);">
+                            <span id="relInvestigacoesAtivas"><i class="fas fa-play"></i> Carregando...</span>
+                            <span id="relInvestigacoesConcluidas"><i class="fas fa-check"></i> Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6">
+                    <div class="report-card" onclick="gerarRelatorio('estatisticas')">
+                        <i class="fas fa-chart-pie text-success"></i>
+                        <div class="title">Estatísticas Gerais</div>
+                        <div class="desc">Dashboard com indicadores criminais</div>
+                        <div class="d-flex justify-content-center gap-3 mt-2" style="font-size:12px; color:rgba(255,255,255,0.2);">
+                            <span id="relTotalSuspeitos"><i class="fas fa-users"></i> Carregando...</span>
+                            <span id="relTotalInqueritos"><i class="fas fa-file-alt"></i> Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================
+           SEÇÃO 7: USUÁRIOS
+           ============================================ -->
+        <div class="form-card mt-4">
+            <div class="card-title"><i class="fas fa-users-cog"></i>Gerenciamento de Usuários</div>
+
+            <div class="alert alert-danger" style="background:rgba(220,53,69,0.05); border:1px solid rgba(220,53,69,0.1); color:#dc3545; border-radius:10px;">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Restrito:</strong> Apenas o <strong>Administrador Master</strong> pode cadastrar usuários.
+            </div>
+
+            <form id="formUsuario">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nome Completo *</label>
+                        <input type="text" class="form-control" id="nomeUsuario" placeholder="Digite o nome completo" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Matrícula *</label>
+                        <input type="text" class="form-control" id="matriculaUsuario" placeholder="Ex: POL-001" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Setor *</label>
+                        <input type="text" class="form-control" id="setorUsuario" placeholder="Ex: Investigação" required>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="emailUsuario" placeholder="usuario@dominio.com" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Perfil *</label>
+                        <select class="form-select" id="perfilUsuario" required>
+                            <option value="">Selecione...</option>
+                            <option value="1">Administrador Master</option>
+                            <option value="2">Administrador</option>
+                            <option value="3">Delegado</option>
+                            <option value="4">Investigador</option>
+                            <option value="5">Perito</option>
+                            <option value="6">Analista</option>
+                            <option value="7">Consulta Externa</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-12 text-end">
+                        <button type="reset" class="btn-outline-gold me-2">
+                            <i class="fas fa-times me-2"></i>CANCELAR
+                        </button>
+                        <button type="submit" class="btn-gold" id="btnCadastrarUsuario">
+                            <i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- ============================================
+       SUPABASE SDK
+       ============================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+    <script>
+        /**
+         * ============================================================
+         * AI-DEPOM - FUNÇÕES DO SISTEMA COMPLETO
+         * ============================================================
+         * Caminho: frontend/src/pages/00-sistema-completo.html (interno)
+         * Versão: 1.0.2
+         * Data: 08/09/2026
+         * Horário: 17:00
+         * ============================================================
+         * DESCRIÇÃO:
+         * Funções JavaScript para a tela completa do sistema
+         * ============================================================
+         * ALTERAÇÕES:
+         * v1.0.0 - 04/09/2026 - 10:00 - Admin Master
+         *   - Criação inicial das funções
+         * 
+         * v1.0.1 - 08/09/2026 - 16:35 - Admin Master
+         *   - Adicionado modo tela cheia automático
+         *   - Adicionado atalho F11 para alternar tela cheia
+         * 
+         * v1.0.2 - 08/09/2026 - 17:00 - Admin Master
+         *   - Adicionado cabeçalho com versionamento
+         * ============================================================
+         */
+
+        // ============================================
+        // CONFIGURAÇÃO DO SUPABASE
+        // ============================================
+        const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
+        const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI'; // Substitua pela chave real
+
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // ============================================
+        // NOVO: MODO TELA CHEIA (Regra de Ouro Nº 3)
+        // Data: 08/09/2026 - 16:35
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tentar entrar em tela cheia automaticamente
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen()
+                    .then(() => {
+                        console.log('✅ Modo tela cheia ativado');
+                    })
+                    .catch(err => {
+                        console.warn('⚠️ Não foi possível ativar tela cheia:', err);
+                        // Fallback: maximizar a janela
+                        if (window.moveTo && window.resizeTo) {
+                            window.moveTo(0, 0);
+                            window.resizeTo(screen.width, screen.height);
+                        }
+                    });
+            }
+        });
+
+        // ============================================
+        // ATALHO: F11 para alternar tela cheia
+        // ============================================
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                if (document.fullscreenElement) {
+                    document.exitFullscreen();
+                } else {
+                    document.documentElement.requestFullscreen();
+                }
+            }
+        });
+
+        // ============================================
+        // CONTROLES DE JANELA (Regra de Ouro Nº 3)
+        // ============================================
+        function minimizeWindow() {
+            try {
+                if (window.moveTo && window.resizeTo) {
+                    window.moveTo(0, 0);
+                    window.resizeTo(screen.width / 2, screen.height / 2);
+                } else {
+                    alert('Use o botão de minimizar do seu navegador.');
+                }
+            } catch (e) {
+                console.warn('Minimizar não suportado:', e);
+            }
+        }
+
+        function closeWindow() {
+            if (confirm('Deseja realmente fechar o sistema?')) {
+                try {
+                    window.close();
+                } catch (e) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ============================================
+        // CARREGAR USUÁRIO
+        // ============================================
+        async function carregarUsuario() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: usuario, error } = await supabase
+                        .from('usuarios')
+                        .select('nome_completo, setor')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (usuario) {
+                        document.getElementById('userName').textContent = usuario.nome_completo || 'Admin Master';
+                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin Master';
+                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador Master';
+                        document.getElementById('userAvatar').textContent = usuario.nome_completo ? usuario.nome_completo
+                            .charAt(0) : 'AM';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar usuário:', error);
+            }
+        }
+
+        // ============================================
+        // CARREGAR ESTATÍSTICAS
+        // ============================================
+        async function carregarEstatisticas() {
+            try {
+                // Total de Suspeitos
+                const { count: totalSuspeitos, error: err1 } = await supabase
+                    .from('suspeito')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false);
+
+                // Total de Investigações Ativas
+                const { count: totalInvestigacoes, error: err2 } = await supabase
+                    .from('investigacao')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .in('status', ['INICIADA', 'EM_ANDAMENTO']);
+
+                // Total de Mandados Ativos
+                const { count: totalMandados, error: err3 } = await supabase
+                    .from('mandado_prisao')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .eq('status', 'ATIVO');
+
+                // Mandados Urgentes
+                const { count: mandadosUrgentes, error: err4 } = await supabase
+                    .from('mandado_prisao')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .eq('status', 'ATIVO')
+                    .eq('prioridade', 'URGENTE');
+
+                // Total de Usuários
+                const { count: totalUsuarios, error: err5 } = await supabase
+                    .from('usuarios')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .eq('ativo', true);
+
+                // Total de Alertas
+                const { count: totalAlertas, error: err6 } = await supabase
+                    .from('alerta_seguranca')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .eq('lido', false);
+
+                // Atualizar DOM
+                document.getElementById('totalSuspeitos').textContent = totalSuspeitos || 0;
+                document.getElementById('totalInvestigacoes').textContent = totalInvestigacoes || 0;
+                document.getElementById('totalMandados').textContent = totalMandados || 0;
+                document.getElementById('totalUsuarios').querySelector('.count').textContent = totalUsuarios || 0;
+                document.getElementById('totalAlertas').querySelector('.count').textContent = totalAlertas || 0;
+
+                // Calcular total de registros
+                const totalRegistros = (totalSuspeitos || 0) + (totalInvestigacoes || 0) + (totalMandados || 0);
+                document.getElementById('totalDados').textContent = totalRegistros > 0 ? (totalRegistros / 1000).toFixed(
+                    1) : 0;
+
+                document.getElementById('variacaoSuspeitos').innerHTML =
+                    `<i class="fas fa-arrow-up"></i> ${totalSuspeitos || 0} registros`;
+                document.getElementById('statusInvestigacoes').innerHTML =
+                    `<i class="fas fa-circle" style="color:#ffc107;"></i> ${totalInvestigacoes || 0} em andamento`;
+                document.getElementById('mandadosUrgentes').innerHTML =
+                    `<i class="fas fa-exclamation-triangle" style="color:#dc3545;"></i> ${mandadosUrgentes || 0} urgentes`;
+
+                // Atualizar data
+                document.getElementById('ultimaAtualizacao').textContent = new Date().toLocaleString('pt-BR');
+
+            } catch (error) {
+                console.error('Erro ao carregar estatísticas:', error);
+            }
+        }
+
+        // ============================================
+        // CARREGAR ALERTAS
+        // ============================================
+        async function carregarAlertas() {
+            try {
+                const { data: alertas, error } = await supabase
+                    .from('alerta_seguranca')
+                    .select('*')
+                    .eq('deletado', false)
+                    .eq('lido', false)
+                    .order('data_hora', { ascending: false })
+                    .limit(5);
+
+                if (error) throw error;
+
+                const container = document.getElementById('alertasContainer');
+
+                if (!alertas || alertas.length === 0) {
+                    container.innerHTML = `
+                                <div class="text-center py-3" style="color: rgba(255,255,255,0.2);">
+                                    <i class="fas fa-check-circle"></i> Nenhum alerta pendente
+                                </div>
+                            `;
+                    return;
+                }
+
+                let html = '';
+                alertas.forEach(alerta => {
+                    const nivelClass = alerta.nivel_urgencia === 'CRITICA' ? 'critical' :
+                        alerta.nivel_urgencia === 'ALTA' ? 'high' : 'low';
+                    const icon = alerta.tipo_alerta === 'MANDADO' ? 'fa-gavel' :
+                        alerta.tipo_alerta === 'FUGA' ? 'fa-skull' :
+                        alerta.tipo_alerta === 'OCORRENCIA' ? 'fa-file-alt' : 'fa-bell';
+
+                    html += `
+                                <div class="alert-item ${nivelClass}">
+                                    <div class="alert-icon ${nivelClass}"><i class="fas ${icon}"></i></div>
+                                    <div class="alert-text">
+                                        <div class="title">${alerta.mensagem || 'Alerta'}</div>
+                                        <div class="desc">${new Date(alerta.data_hora).toLocaleString('pt-BR')}</div>
+                                    </div>
+                                    <span class="badge ${alerta.nivel_urgencia === 'CRITICA' ? 'bg-danger' : 'bg-warning text-dark'}">${alerta.nivel_urgencia}</span>
+                                </div>
+                            `;
+                });
+
+                container.innerHTML = html;
+
+            } catch (error) {
+                console.error('Erro ao carregar alertas:', error);
+                document.getElementById('alertasContainer').innerHTML = `
+                            <div class="text-center py-3" style="color: rgba(255,255,255,0.2);">
+                                <i class="fas fa-exclamation-triangle"></i> Erro ao carregar alertas
+                            </div>
+                        `;
+            }
+        }
+
+        // ============================================
+        // CARREGAR ANÁLISE EM TEMPO REAL
+        // ============================================
+        async function carregarAnaliseTempoReal() {
+            try {
+                const { data: suspeitos, error } = await supabase
+                    .from('suspeito')
+                    .select('nivel_periculosidade, status_atual')
+                    .eq('deletado', false);
+
+                if (error) throw error;
+
+                if (!suspeitos || suspeitos.length === 0) {
+                    document.getElementById('progressoRelacoes').style.width = '0%';
+                    document.getElementById('progressoPadroes').style.width = '0%';
+                    document.getElementById('progressoReincidencia').style.width = '0%';
+                    return;
+                }
+
+                const total = suspeitos.length;
+                const altoRisco = suspeitos.filter(s => s.nivel_periculosidade === 'ALTO' || s.nivel_periculosidade ===
+                    'EXTREMO').length;
+                const procurados = suspeitos.filter(s => s.status_atual === 'PROCURADO' || s.status_atual === 'FORAGIDO')
+                    .length;
+                const reincidentes = suspeitos.filter(s => s.status_atual === 'PRESO' && s.nivel_periculosidade === 'ALTO')
+                    .length;
+
+                const relacoes = Math.min(100, (altoRisco / total) * 100);
+                const padroes = Math.min(100, (procurados / total) * 100);
+                const reincidencia = Math.min(100, (reincidentes / total) * 100);
+
+                document.getElementById('progressoRelacoes').style.width = relacoes + '%';
+                document.getElementById('progressoPadroes').style.width = padroes + '%';
+                document.getElementById('progressoReincidencia').style.width = reincidencia + '%';
+
+            } catch (error) {
+                console.error('Erro ao carregar análise:', error);
+            }
+        }
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarUsuario();
+            carregarEstatisticas();
+            carregarAlertas();
+            carregarAnaliseTempoReal();
+        });
+    </script>
+
+</body>
+</html>
