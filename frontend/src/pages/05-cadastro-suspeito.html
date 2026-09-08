@@ -1,69 +1,1302 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ============================================
+         ALTERAÇÃO: Meta Viewport para responsividade total
+         Data: 08/09/2026
+         ============================================ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Cadastro de Suspeito</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ===== MESMOS ESTILOS DO DASHBOARD E CADASTRO DE USUÁRIO ===== */
+        /* ============================================
+           VARIÁVEIS E RESET
+           ============================================ */
         :root {
             --police-blue: #0a1e3d;
             --police-dark: #060d1a;
             --police-gold: #c9a84c;
             --shadow-gold: rgba(201, 168, 76, 0.15);
+            --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
             --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+            --control-size: 36px;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* ============================================
+           ALTERAÇÃO: html e body com altura total
+           Data: 08/09/2026
+           ============================================ */
+        html, body {
+            height: 100%;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--police-dark);
             color: #e0e0e0;
-            min-height: 100vh;
             overflow-x: hidden;
         }
-        .sidebar { /* ... mesmo estilo do dashboard ... */ }
-        .main-content { margin-left: 260px; padding: 25px 30px; min-height: 100vh; }
-        .top-bar { /* ... mesmo estilo do dashboard ... */ }
-        .form-card { background: rgba(255,255,255,0.02); border-radius: 14px; padding: 25px; border: 1px solid rgba(255,255,255,0.03); }
-        .card-title { color: var(--police-gold); font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid rgba(201,168,76,0.08); padding-bottom: 12px; margin-bottom: 20px; }
-        .card-title i { margin-right: 10px; opacity: 0.7; }
-        .form-label { color: rgba(255,255,255,0.5); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .form-control, .form-select { background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); color: #fff; padding: 10px 14px; border-radius: 10px; transition: all 0.3s; }
-        .form-control:focus, .form-select:focus { background: rgba(0,0,0,0.4); border-color: var(--police-gold); box-shadow: 0 0 0 4px rgba(201,168,76,0.08); color: #fff; }
-        .form-control::placeholder { color: rgba(255,255,255,0.15); }
-        .btn-gold { background: var(--gradient-gold); color: var(--police-dark); font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; }
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(201,168,76,0.3); color: var(--police-dark); }
-        .btn-outline-gold { background: transparent; color: var(--police-gold); border: 1px solid var(--police-gold); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; }
-        .btn-outline-gold:hover { background: rgba(201,168,76,0.05); color: var(--police-gold); }
-        .upload-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; }
-        .upload-box { background: rgba(0,0,0,0.2); border: 2px dashed rgba(255,255,255,0.05); border-radius: 12px; padding: 16px 12px; text-align: center; cursor: pointer; transition: all 0.3s; }
-        .upload-box:hover { border-color: var(--police-gold); background: rgba(201,168,76,0.03); }
-        .upload-box i { font-size: 24px; color: var(--police-gold); opacity: 0.4; display: block; margin-bottom: 6px; }
-        .upload-box .label { font-size: 11px; color: rgba(255,255,255,0.3); }
-        .upload-box .size { font-size: 9px; color: rgba(255,255,255,0.15); }
-        .sidebar-toggle { display: none; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); color: #fff; padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
-        @media (max-width: 992px) { .sidebar { transform: translateX(-100%); width: 280px; } .sidebar.open { transform: translateX(0); } .main-content { margin-left: 0; } .sidebar-toggle { display: flex !important; } }
-        @media (max-width: 768px) { .main-content { padding: 15px; } .top-bar { flex-direction: column; align-items: flex-start; } .upload-grid { grid-template-columns: repeat(2, 1fr); } }
-        @media (max-width: 480px) { .top-actions { width: 100%; } .top-actions .badge { flex: 1; text-align: center; } .upload-grid { grid-template-columns: 1fr; } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--police-dark); }
-        ::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 4px; }
+
+        /* ============================================
+           NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
+           Data: 08/09/2026
+           ============================================ */
+        .controls-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(6, 13, 26, 0.85);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            padding: 6px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+            min-height: 48px;
+        }
+
+        .controls-left {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .controls-right {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .controls-center .system-title {
+            color: var(--police-gold);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+
+        .control-btn {
+            width: var(--control-size);
+            height: var(--control-size);
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--police-gold);
+        }
+
+        .control-btn:active {
+            transform: scale(0.92);
+        }
+
+        .control-btn.close-btn:hover {
+            background: rgba(220, 53, 69, 0.15);
+            color: #dc3545;
+        }
+
+        .control-btn.minimize-btn:hover {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+
+        .controls-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            margin: 0 6px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 12px;
+        }
+
+        .user-info .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gradient-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--police-dark);
+        }
+
+        /* ============================================
+           SIDEBAR
+           ============================================ */
+        .sidebar {
+            position: fixed;
+            top: 48px;
+            left: 0;
+            width: 260px;
+            height: calc(100vh - 48px);
+            background: rgba(6, 13, 26, 0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(201, 168, 76, 0.08);
+            z-index: 999;
+            padding: 20px 0;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--police-gold);
+            border-radius: 4px;
+        }
+
+        .sidebar-brand {
+            text-align: center;
+            padding: 0 20px 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            margin-bottom: 20px;
+        }
+
+        .sidebar-brand .logo {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 10px;
+            background: var(--gradient-gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 40px var(--shadow-gold);
+        }
+
+        .sidebar-brand .logo i {
+            font-size: 24px;
+            color: var(--police-dark);
+        }
+
+        .sidebar-brand h5 {
+            color: var(--police-gold);
+            font-weight: 700;
+            letter-spacing: 2px;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        .sidebar-brand small {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .sidebar-menu {
+            padding: 0 12px;
+        }
+
+        .sidebar-menu .menu-label {
+            color: rgba(255, 255, 255, 0.15);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 15px 12px 8px;
+        }
+
+        .sidebar-menu .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            text-decoration: none;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-bottom: 2px;
+            font-size: 14px;
+        }
+
+        .sidebar-menu .menu-item:hover {
+            background: rgba(255, 255, 255, 0.03);
+            color: #fff;
+        }
+
+        .sidebar-menu .menu-item.active {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--police-gold);
+            border: 1px solid rgba(201, 168, 76, 0.1);
+        }
+
+        .sidebar-menu .menu-item i {
+            width: 20px;
+            font-size: 15px;
+        }
+
+        .sidebar-menu .menu-item .badge {
+            margin-left: auto;
+            background: #dc3545;
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 8px;
+            border-radius: 12px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .sidebar-footer {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            padding: 0 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.03);
+            padding-top: 15px;
+        }
+
+        .sidebar-footer .user-info-sidebar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .sidebar-footer .user-info-sidebar .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--gradient-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--police-dark);
+        }
+
+        .sidebar-footer .user-info-sidebar .name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .sidebar-footer .user-info-sidebar .role {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            /* ALTERAÇÃO: Ajuste para a barra de controles */
+            margin-left: 260px;
+            padding: 70px 30px 30px;
+            min-height: 100vh;
+        }
+
+        /* ============================================
+           TOP BAR
+           ============================================ */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            background: rgba(10, 30, 61, 0.6);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            padding: 15px 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(201, 168, 76, 0.05);
+        }
+
+        .top-bar .page-title h4 {
+            color: var(--police-gold);
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 1px;
+            font-size: 1.2rem;
+        }
+
+        .top-bar .page-title small {
+            color: rgba(255, 255, 255, 0.2);
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .top-bar .top-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .top-bar .top-actions .badge {
+            padding: 6px 14px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+        }
+
+        .top-bar .top-actions .badge i {
+            margin-right: 6px;
+        }
+
+        /* ============================================
+           FORMULÁRIO
+           ============================================ */
+        .form-card {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 14px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .form-card .card-title {
+            color: var(--police-gold);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+
+        .form-card .card-title i {
+            margin-right: 10px;
+            opacity: 0.7;
+        }
+
+        .form-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .form-control,
+        .form-select {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            color: #fff;
+            padding: 10px 14px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            background: rgba(0, 0, 0, 0.4);
+            border-color: var(--police-gold);
+            box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.08);
+            color: #fff;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* ============================================
+           UPLOAD GRID
+           ============================================ */
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .upload-box {
+            background: rgba(0, 0, 0, 0.2);
+            border: 2px dashed rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-box:hover {
+            border-color: var(--police-gold);
+            background: rgba(201, 168, 76, 0.03);
+        }
+
+        .upload-box i {
+            font-size: 24px;
+            color: var(--police-gold);
+            opacity: 0.4;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .upload-box .label {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .upload-box .size {
+            font-size: 9px;
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-gold {
+            background: var(--gradient-gold);
+            color: var(--police-dark);
+            font-weight: 700;
+            padding: 10px 28px;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            font-size: 14px;
+        }
+
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(201, 168, 76, 0.3);
+            color: var(--police-dark);
+        }
+
+        .btn-gold:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-outline-gold {
+            background: transparent;
+            color: var(--police-gold);
+            border: 1px solid var(--police-gold);
+            padding: 10px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .btn-outline-gold:hover {
+            background: rgba(201, 168, 76, 0.05);
+            color: var(--police-gold);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        .sidebar-toggle {
+            display: none;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        /* ALTERAÇÃO: Breakpoints ajustados para responsividade total */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .sidebar-toggle {
+                display: flex !important;
+            }
+            .controls-center .system-title {
+                font-size: 12px;
+            }
+            .control-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            .user-info .name {
+                display: none;
+            }
+            .upload-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 65px 15px 15px;
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 18px;
+            }
+            .top-bar .page-title h4 {
+                font-size: 1rem;
+            }
+            .form-card {
+                padding: 18px;
+            }
+            .form-control,
+            .form-select {
+                font-size: 13px;
+                padding: 8px 12px;
+            }
+            .btn-gold,
+            .btn-outline-gold {
+                padding: 8px 20px;
+                font-size: 13px;
+                width: 100%;
+            }
+            .controls-center .system-title {
+                font-size: 11px;
+            }
+            .upload-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-content {
+                padding: 60px 10px 10px;
+            }
+            .top-bar {
+                padding: 10px 14px;
+            }
+            .top-bar .page-title h4 {
+                font-size: 0.9rem;
+            }
+            .top-actions {
+                width: 100%;
+            }
+            .top-actions .badge {
+                flex: 1;
+                text-align: center;
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+            .form-card {
+                padding: 14px;
+            }
+            .form-card .card-title {
+                font-size: 12px;
+            }
+            .form-label {
+                font-size: 10px;
+            }
+            .controls-center .system-title {
+                font-size: 9px;
+            }
+            .control-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            .controls-divider {
+                margin: 0 3px;
+            }
+            .sidebar-brand .logo {
+                width: 40px;
+                height: 40px;
+            }
+            .sidebar-brand .logo i {
+                font-size: 18px;
+            }
+            .sidebar-brand h5 {
+                font-size: 14px;
+            }
+            .upload-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--police-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.3);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
 
-<!-- ===== SIDEBAR ===== -->
-<aside class="sidebar" id="sidebar">
-    <div class="sidebar-brand">
-        <div class="logo"><i class="fas fa-shield-halved"></i></div>
-        <h5>AI-DEPOM</h5>
-        <small>SISTEMA POLICIAL INTELIGENTE</small>
-    </div>
-    <nav class="sidebar-menu">
-        <div class="menu-label">Navegação</div>
-        <a class="menu-item" onclick="window.location.href='03-dashboard.html'">
-            <i class="fas fa-th-large"></i> Dashboard
-        </a>
-        <a class="menu-item active" onclick="window
+    <!-- ============================================
+       NOVO: BARRA DE CONTROLES (Regra de Ouro Nº 3)
+       Data: 08/09/2026
+       ============================================ -->
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()" title="Voltar (Alt+V)">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar (Alt+A)">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar (Alt+M)">
+                <i class="fas fa-window-minimize"></i>
+            </button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar (Alt+F)">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="controls-center">
+            <span class="system-title">
+                <i class="fas fa-shield-halved" style="color: var(--police-gold);"></i>
+                AI-DEPOM
+            </span>
+        </div>
+        <div class="controls-right">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">AM</div>
+                <span class="name" id="userName">Admin Master</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ============================================
+       SIDEBAR
+       ============================================ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo"><i class="fas fa-shield-halved"></i></div>
+            <h5>AI-DEPOM</h5>
+            <small>SISTEMA POLICIAL INTELIGENTE</small>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-label">Navegação</div>
+            <a class="menu-item" onclick="window.location.href='03-dashboard.html'">
+                <i class="fas fa-th-large"></i> Dashboard
+            </a>
+            <a class="menu-item active" onclick="window.location.href='05-cadastro-suspeito.html'">
+                <i class="fas fa-user-plus"></i> Cadastro
+            </a>
+            <a class="menu-item" onclick="window.location.href='06-consulta.html'">
+                <i class="fas fa-search"></i> Consulta
+            </a>
+            <a class="menu-item" onclick="window.location.href='07-relatorios.html'">
+                <i class="fas fa-chart-bar"></i> Relatórios
+            </a>
+            <div class="menu-label">Administração</div>
+            <a class="menu-item" onclick="window.location.href='04-cadastro-usuario.html'">
+                <i class="fas fa-users-cog"></i> Usuários
+                <span class="badge" style="background:var(--police-gold);color:var(--police-dark);">Master</span>
+            </a>
+            <a class="menu-item" onclick="alert('Abrindo módulo de mandados...')">
+                <i class="fas fa-gavel"></i> Mandados
+            </a>
+            <a class="menu-item" onclick="alert('Abrindo auditoria...')">
+                <i class="fas fa-clipboard-list"></i> Auditoria
+            </a>
+            <div class="menu-label">Sistema</div>
+            <a class="menu-item" onclick="alert('Abrindo configurações...')">
+                <i class="fas fa-cog"></i> Configurações
+            </a>
+            <a class="menu-item" onclick="alert('Saindo do sistema...')">
+                <i class="fas fa-sign-out-alt"></i> Sair
+            </a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-sidebar">
+                <div class="avatar">AM</div>
+                <div>
+                    <div class="name" id="sidebarUserName">Carregando...</div>
+                    <div class="role" id="sidebarUserRole">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ============================================
+       MAIN CONTENT
+       ============================================ -->
+    <main class="main-content">
+        <!-- TOP BAR -->
+        <header class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="page-title">
+                    <h4><i class="fas fa-user-plus me-2"></i>Cadastro de Suspeito</h4>
+                    <small><i class="fas fa-lock me-1"></i> Dados criptografados com AES-256</small>
+                </div>
+            </div>
+            <div class="top-actions">
+                <span class="badge bg-danger"><i class="fas fa-circle"></i> Nível 3 - Restrito</span>
+                <span class="badge bg-warning text-dark"><i class="fas fa-fingerprint"></i> Biometria Obrigatória</span>
+                <span class="badge bg-success"><i class="fas fa-check-circle"></i> Auditoria Ativa</span>
+            </div>
+        </header>
+
+        <!-- FORMULÁRIO -->
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-user-plus"></i>Registro de Suspeito</div>
+
+            <form id="formSuspeito" enctype="multipart/form-data">
+                <!-- ============================================
+                   LINHA 1: STATUS E PERICULOSIDADE
+                   ============================================ -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label">Status Atual *</label>
+                        <select class="form-select" id="statusAtual" required>
+                            <option value="PRESO">🔒 PRESO</option>
+                            <option value="PROCURADO">🔍 PROCURADO</option>
+                            <option value="FORAGIDO">🏃 FORAGIDO</option>
+                            <option value="INVESTIGADO">🔎 INVESTIGADO</option>
+                            <option value="CONDICIONAL">⚖️ CONDICIONAL</option>
+                            <option value="LIBERADO">✅ LIBERADO</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nível de Periculosidade *</label>
+                        <select class="form-select" id="periculosidade" required>
+                            <option value="BAIXO">🟢 BAIXO</option>
+                            <option value="MEDIO">🟡 MÉDIO</option>
+                            <option value="ALTO">🟠 ALTO</option>
+                            <option value="EXTREMO">🔴 EXTREMO</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Data de Cadastro</label>
+                        <input type="datetime-local" class="form-control" id="dataCadastro" readonly>
+                    </div>
+                </div>
+
+                <!-- ============================================
+                   LINHA 2: DADOS PESSOAIS
+                   ============================================ -->
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-id-card me-2"></i>DADOS PESSOAIS
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nome Completo *</label>
+                        <input type="text" class="form-control" id="nomeCompleto" placeholder="Digite o nome completo" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Apelido</label>
+                        <input type="text" class="form-control" id="apelido" placeholder="Ex: Joãozinho">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Nascimento</label>
+                        <input type="date" class="form-control" id="dataNascimento">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">CPF</label>
+                        <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">RG</label>
+                        <input type="text" class="form-control" id="rg" placeholder="XX.XXX.XXX-X">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Sexo</label>
+                        <select class="form-select" id="sexo">
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                            <option value="O">Outro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Raça</label>
+                        <select class="form-select" id="raca">
+                            <option value="Branca">Branca</option>
+                            <option value="Preta">Preta</option>
+                            <option value="Parda">Parda</option>
+                            <option value="Amarela">Amarela</option>
+                            <option value="Indígena">Indígena</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- ============================================
+                   LINHA 3: FILIAÇÃO
+                   ============================================ -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-users me-2"></i>FILIAÇÃO
+                        </h6>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nome da Mãe</label>
+                        <input type="text" class="form-control" id="nomeMae" placeholder="Nome completo da mãe">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Nome do Pai</label>
+                        <input type="text" class="form-control" id="nomePai" placeholder="Nome completo do pai">
+                    </div>
+                </div>
+
+                <!-- ============================================
+                   LINHA 4: ENDEREÇO
+                   ============================================ -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-home me-2"></i>ENDEREÇO
+                        </h6>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">CEP</label>
+                        <input type="text" class="form-control" id="cep" placeholder="00000-000">
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Logradouro</label>
+                        <input type="text" class="form-control" id="logradouro" placeholder="Rua, Av, etc">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Número</label>
+                        <input type="text" class="form-control" id="numero" placeholder="123">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Complemento</label>
+                        <input type="text" class="form-control" id="complemento" placeholder="Apto">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" class="form-control" id="bairro">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" class="form-control" id="cidade">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">UF</label>
+                        <select class="form-select" id="uf">
+                            <option value="SP">SP</option>
+                            <option value="RJ">RJ</option>
+                            <option value="MG">MG</option>
+                            <option value="BA">BA</option>
+                            <option value="PR">PR</option>
+                            <option value="RS">RS</option>
+                            <option value="SC">SC</option>
+                            <option value="DF">DF</option>
+                            <option value="GO">GO</option>
+                            <option value="PE">PE</option>
+                            <option value="CE">CE</option>
+                            <option value="AM">AM</option>
+                            <option value="PA">PA</option>
+                            <option value="MT">MT</option>
+                            <option value="MS">MS</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">País</label>
+                        <input type="text" class="form-control" id="pais" value="Brasil">
+                    </div>
+                </div>
+
+                <!-- ============================================
+                   LINHA 5: CARACTERÍSTICAS FÍSICAS
+                   ============================================ -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-user-circle me-2"></i>CARACTERÍSTICAS FÍSICAS
+                        </h6>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Altura (m)</label>
+                        <input type="number" class="form-control" id="altura" step="0.01" min="0" max="2.50" placeholder="1.75">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Peso (kg)</label>
+                        <input type="number" class="form-control" id="peso" step="0.1" min="0" max="300" placeholder="80.5">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cor dos Olhos</label>
+                        <input type="text" class="form-control" id="corOlhos" placeholder="Castanho">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cor do Cabelo</label>
+                        <input type="text" class="form-control" id="corCabelo" placeholder="Preto">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cor da Pele</label>
+                        <input type="text" class="form-control" id="corPele" placeholder="Parda">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tatuagens</label>
+                        <input type="text" class="form-control" id="tattoo" placeholder="Braço esquerdo">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Sinais Particulares</label>
+                        <textarea class="form-control" id="sinais" rows="2" placeholder="Cicatrizes, marcas, etc"></textarea>
+                    </div>
+                </div>
+
+                <!-- ============================================
+                   LINHA 6: MÍDIAS E DOCUMENTOS
+                   ============================================ -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-12">
+                        <h6 style="color:var(--police-gold); font-size:13px; letter-spacing:1px; margin-bottom:10px;">
+                            <i class="fas fa-photo-video me-2"></i>MÍDIAS E DOCUMENTOS
+                        </h6>
+                        <div class="upload-grid">
+                            <div class="upload-box" onclick="document.getElementById('fotoFrontal').click()">
+                                <i class="fas fa-user-circle"></i>
+                                <div class="label">Foto Frontal</div>
+                                <div class="size">JPG, PNG • até 5MB</div>
+                                <input type="file" id="fotoFrontal" accept="image/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('fotoPerfil').click()">
+                                <i class="fas fa-user"></i>
+                                <div class="label">Foto Perfil</div>
+                                <div class="size">JPG, PNG • até 5MB</div>
+                                <input type="file" id="fotoPerfil" accept="image/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('fotoCorpo').click()">
+                                <i class="fas fa-user-alt"></i>
+                                <div class="label">Corpo Inteiro</div>
+                                <div class="size">JPG, PNG • até 5MB</div>
+                                <input type="file" id="fotoCorpo" accept="image/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('documentos').click()">
+                                <i class="fas fa-file-pdf"></i>
+                                <div class="label">Documentos</div>
+                                <div class="size">PDF, JPG, PNG • até 10MB</div>
+                                <input type="file" id="documentos" accept=".pdf,.jpg,.png" multiple style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('video').click()">
+                                <i class="fas fa-video"></i>
+                                <div class="label">Vídeos</div>
+                                <div class="size">MP4, MOV • até 100MB</div>
+                                <input type="file" id="video" accept="video/*" style="display:none;">
+                            </div>
+                            <div class="upload-box" onclick="document.getElementById('biometria').click()">
+                                <i class="fas fa-fingerprint"></i>
+                                <div class="label">Biometria</div>
+                                <div class="size">Digital, Íris, Voz</div>
+                                <input type="file" id="biometria" accept=".csv,.json" style="display:none;">
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Arquivos são criptografados automaticamente antes do armazenamento
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================
+                   LINHA 7: OBSERVAÇÕES
+                   ============================================ -->
+                <div class="row g-3 mt-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Modus Operandi</label>
+                        <textarea class="form-control" id="modusOperandi" rows="2" placeholder="Descreva o modus operandi"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" rows="2" placeholder="Informações adicionais"></textarea>
+                    </div>
+                </div>
+
+                <!-- ============================================
+                   BOTÕES
+                   ============================================ -->
+                <div class="row mt-4">
+                    <div class="col-md-12 text-end">
+                        <button type="reset" class="btn-outline-gold me-2">
+                            <i class="fas fa-times me-2"></i>LIMPAR
+                        </button>
+                        <button type="submit" class="btn-gold" id="btnCadastrar">
+                            <i class="fas fa-lock me-2"></i>SALVAR COM CRIPTOGRAFIA
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- ============================================
+       SUPABASE SDK
+       ============================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+    </script>
+    <script>
+        // ============================================
+        // CONFIGURAÇÃO DO SUPABASE
+        // ============================================
+        const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
+        const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI'; // Substitua pela chave real
+
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // ============================================
+        // NOVO: CONTROLES DE JANELA (Regra de Ouro Nº 3)
+        // Data: 08/09/2026
+        // ============================================
+        function minimizeWindow() {
+            try {
+                if (window.moveTo && window.resizeTo) {
+                    window.moveTo(0, 0);
+                    window.resizeTo(screen.width / 2, screen.height / 2);
+                } else {
+                    alert('Use o botão de minimizar do seu navegador.');
+                }
+            } catch (e) {
+                console.warn('Minimizar não suportado:', e);
+            }
+        }
+
+        function closeWindow() {
+            if (confirm('Deseja realmente fechar o sistema?')) {
+                try {
+                    window.close();
+                } catch (e) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // ============================================
+        // CARREGAR DADOS DO USUÁRIO
+        // ============================================
+        async function carregarUsuario() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: usuario, error } = await supabase
+                        .from('usuarios')
+                        .select('nome_completo, setor')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (usuario) {
+                        document.getElementById('userName').textContent = usuario.nome_completo || 'Admin Master';
+                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin Master';
+                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador Master';
+                        document.getElementById('userAvatar').textContent = usuario.nome_completo ? usuario.nome_completo
+                            .charAt(0) : 'AM';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao carregar usuário:', error);
+            }
+        }
+
+        // ============================================
+        // UPLOAD DE ARQUIVOS - PREVIEW
+        // ============================================
+        document.querySelectorAll('.upload-box input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const parent = this.closest('.upload-box');
+                const files = this.files;
+                if (files.length > 0) {
+                    const label = parent.querySelector('.label');
+                    const size = parent.querySelector('.size');
+                    if (files.length === 1) {
+                        label.textContent = files[0].name.substring(0, 20) + (files[0].name.length > 20 ? '...' :
+                        '');
+                        size.textContent = (files[0].size / 1024 / 1024).toFixed(1) + ' MB';
+                    } else {
+                        label.textContent = files.length + ' arquivos selecionados';
+                        size.textContent = 'Clique para alterar';
+                    }
+                    parent.style.borderColor = '#c9a84c';
+                    parent.style.background = 'rgba(201,168,76,0.05)';
+                }
+            });
+        });
+
+        // ============================================
+        // SUBMIT DO FORMULÁRIO
+        // ============================================
+        document.getElementById('formSuspeito').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const btn = document.getElementById('btnCadastrar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
+
+            try {
+                const nome = document.getElementById('nomeCompleto').value;
+                const status = document.getElementById('statusAtual').value;
+                const periculosidade = document.getElementById('periculosidade').value;
+
+                if (!nome) {
+                    alert('⚠️ O campo Nome Completo é obrigatório!');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-lock me-2"></i>SALVAR COM CRIPTOGRAFIA';
+                    return;
+                }
+
+                // Construir objeto com dados do formulário
+                const dados = {
+                    nome_completo: nome,
+                    apelido: document.getElementById('apelido').value || null,
+                    cpf: document.getElementById('cpf').value || null,
+                    rg: document.getElementById('rg').value || null,
+                    data_nascimento: document.getElementById('dataNascimento').value || null,
+                    sexo: document.getElementById('sexo').value || null,
+                    raca: document.getElementById('raca').value || null,
+                    nome_pai: document.getElementById('nomePai').value || null,
+                    nome_mae: document.getElementById('nomeMae').value || null,
+                    cep: document.getElementById('cep').value || null,
+                    logradouro: document.getElementById('logradouro').value || null,
+                    numero: document.getElementById('numero').value || null,
+                    complemento: document.getElementById('complemento').value || null,
+                    bairro: document.getElementById('bairro').value || null,
+                    cidade: document.getElementById('cidade').value || null,
+                    uf: document.getElementById('uf').value || null,
+                    pais: document.getElementById('pais').value || 'Brasil',
+                    altura: parseFloat(document.getElementById('altura').value) || null,
+                    peso: parseFloat(document.getElementById('peso').value) || null,
+                    cor_olhos: document.getElementById('corOlhos').value || null,
+                    cor_cabelo: document.getElementById('corCabelo').value || null,
+                    cor_pele: document.getElementById('corPele').value || null,
+                    sinais_particulares: document.getElementById('sinais').value || null,
+                    tattoo_descricao: document.getElementById('tattoo').value || null,
+                    status_atual: status,
+                    nivel_periculosidade: periculosidade,
+                    modus_operandi: document.getElementById('modusOperandi').value || null,
+                    observacoes: document.getElementById('observacoes').value || null,
+                    data_cadastro: new Date().toISOString(),
+                    id_usuario_cadastro: (await supabase.auth.getUser()).data.user?.id || null
+                };
+
+                // Inserir no Supabase
+                const { data, error } = await supabase
+                    .from('suspeito')
+                    .insert([dados])
+                    .select();
+
+                if (error) {
+                    console.error('Erro ao inserir:', error);
+                    alert('❌ Erro ao cadastrar suspeito: ' + error.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-lock me-2"></i>SALVAR COM CRIPTOGRAFIA';
+                    return;
+                }
+
+                // Sucesso
+                alert(`✅ SUSPEITO CADASTRADO COM SUCESSO!\n\n` +
+                    `📋 Nome: ${nome}\n` +
+                    `🔒 Status: ${status}\n` +
+                    `⚠️ Periculosidade: ${periculosidade}\n\n` +
+                    `🔐 Dados criptografados com AES-256\n` +
+                    `📋 Auditoria registrada`);
+
+                // Limpar formulário
+                document.getElementById('formSuspeito').reset();
+                document.querySelectorAll('.upload-box .label').forEach(el => {
+                    el.textContent = el.textContent.split(' ')[0] + ' ' + el.textContent.split(' ')[1] || el
+                        .textContent;
+                });
+                document.querySelectorAll('.upload-box .size').forEach(el => {
+                    el.textContent = 'Clique para adicionar';
+                });
+                document.querySelectorAll('.upload-box').forEach(el => {
+                    el.style.borderColor = 'rgba(255,255,255,0.05)';
+                    el.style.background = 'rgba(0,0,0,0.2)';
+                });
+
+                // Redirecionar para dashboard
+                window.location.href = '03-dashboard.html';
+
+            } catch (error) {
+                console.error('Erro geral:', error);
+                alert('❌ Erro ao cadastrar suspeito: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-lock me-2"></i>SALVAR COM CRIPTOGRAFIA';
+            }
+        });
+
+        // ============================================
+        // DATA ATUAL
+        // ============================================
+        document.getElementById('dataCadastro').value = new Date().toISOString().slice(0, 16);
+
+        // ============================================
+        // NOVO: ATALHOS DO TECLADO
+        // Data: 08/09/2026
+        // ============================================
+        document.addEventListener('keydown', function(e) {
+            if (e.altKey && e.key === 'v') {
+                e.preventDefault();
+                window.history.back();
+            }
+            if (e.altKey && e.key === 'a') {
+                e.preventDefault();
+                window.history.forward();
+            }
+            if (e.altKey && e.key === 'm') {
+                e.preventDefault();
+                minimizeWindow();
+            }
+            if (e.altKey && e.key === 'f') {
+                e.preventDefault();
+                closeWindow();
+            }
+        });
+
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        document.addEventListener('DOMContentLoaded', function() {
+            carregarUsuario();
+        });
+    </script>
+
+</body>
+</html>
