@@ -1,0 +1,80 @@
+<!--
+============================================================
+AI-DEPOM - PÁGINA INICIAL
+============================================================
+Caminho: frontend/src/pages/index.html
+Versão: 1.0.1
+Data: 08/09/2026
+Horário: 22:15
+Autor: Admin Master
+============================================================
+DESCRIÇÃO:
+Página inicial que redireciona diretamente para a tela de login.
+============================================================
+ALTERAÇÕES:
+v1.0.0 - 08/09/2026 - 22:00 - Admin Master
+  - Criação inicial com redirecionamento para apresentação
+
+v1.0.1 - 08/09/2026 - 22:15 - Admin Master
+  - ALTERAÇÃO: Redireciona diretamente para a tela de login (02-login.html)
+============================================================
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0; url=02-login.html">
+    <title>AI-DEPOM - Redirecionando</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #000000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #00ff88;
+            flex-direction: column;
+        }
+        .loader {
+            border: 3px solid rgba(0, 255, 136, 0.1);
+            border-top: 3px solid #00ff88;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        a {
+            color: #00ff88;
+            text-decoration: none;
+            border: 1px solid #00ff88;
+            padding: 10px 25px;
+            border-radius: 8px;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        a:hover {
+            background: rgba(0, 255, 136, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="loader"></div>
+    <p style="margin: 0; font-size: 18px; letter-spacing: 1px;">AI-DEPOM</p>
+    <p style="margin: 5px 0 0; font-size: 13px; color: rgba(0, 255, 136, 0.3);">Redirecionando para o login...</p>
+    <a href="02-login.html">Ir para o login</a>
+
+    <!-- Fallback: redirecionamento via JavaScript -->
+    <script>
+        // Redirecionamento imediato para a tela de login
+        window.location.href = '02-login.html';
+    </script>
+</body>
+</html>
