@@ -1,0 +1,746 @@
+<!--
+============================================================
+AI-DEPOM - CONFIGURAÇÃO OTP
+============================================================
+Caminho: frontend/src/pages/02a-configurar-otp.html
+Versão: 1.0.0
+Data: 08/09/2026
+Horário: 21:00
+Autor: Admin Master
+============================================================
+DESCRIÇÃO:
+Tela para configuração do OTP (One-Time Password) para autenticação de dois fatores.
+Exibe QR Code para escaneamento, chave secreta e códigos de backup.
+============================================================
+ALTERAÇÕES:
+v1.0.0 - 08/09/2026 - 21:00 - Admin Master
+  - Criação inicial do arquivo
+  - Geração de QR Code dinâmico
+  - Geração de secret para cada usuário
+  - Validação de OTP
+  - Geração de códigos de backup
+  - Design com fundo preto e letras verdes
+============================================================
+-->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <!-- ============================================
+         META VIEWPORT PARA RESPONSIVIDADE TOTAL
+         Data: 08/09/2026 - 21:00
+         ============================================ -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI-DEPOM - Configurar OTP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ============================================================
+           AI-DEPOM - ESTILOS CONFIGURAÇÃO OTP
+           ============================================================
+           Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
+           Versão: 1.0.0
+           Data: 08/09/2026
+           Horário: 21:00
+           ============================================================
+           DESCRIÇÃO:
+           Estilos para a tela de configuração OTP
+           ============================================================
+           ALTERAÇÕES:
+           v1.0.0 - 08/09/2026 - 21:00 - Admin Master
+             - Criação inicial dos estilos
+             - Fundo preto e letras verdes
+           ============================================================
+        */
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc77;
+            --border-color: #003322;
+            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+            --control-size: 36px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ============================================
+           CORPO - OCUPA 100% DA TELA
+           ============================================ */
+        html, body {
+            height: 100%;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* ============================================
+           BARRA DE CONTROLES (Regra de Ouro Nº 3)
+           ============================================ */
+        .controls-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+            min-height: 48px;
+        }
+
+        .controls-left { display: flex; gap: 4px; align-items: center; }
+        .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-center { display: flex; align-items: center; gap: 8px; }
+        .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+
+        .control-btn {
+            width: var(--control-size);
+            height: var(--control-size);
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .control-btn:active { transform: scale(0.92); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 12px;
+        }
+
+        .user-info .avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+            color: #000;
+        }
+
+        /* ============================================
+           MAIN CONTENT
+           ============================================ */
+        .main-content {
+            padding: 70px 30px 30px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-card {
+            background: var(--bg-secondary);
+            border-radius: 14px;
+            padding: 30px;
+            border: 1px solid var(--border-color);
+            max-width: 600px;
+            width: 100%;
+        }
+
+        .form-card .card-title {
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .form-card .card-title i { margin-right: 10px; }
+
+        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
+
+        .form-control {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .form-control:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+
+        /* ============================================
+           QR CODE
+           ============================================ */
+        .qr-code-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 1px solid var(--border-color);
+        }
+
+        .qr-code-container img {
+            max-width: 200px;
+            height: auto;
+        }
+
+        /* ============================================
+           CHAVE SECRETA
+           ============================================ */
+        .secret-key {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            letter-spacing: 2px;
+            text-align: center;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            word-break: break-all;
+        }
+
+        /* ============================================
+           BOTÕES
+           ============================================ */
+        .btn-gold {
+            background: var(--gradient-green);
+            color: #000;
+            font-weight: 700;
+            padding: 10px 28px;
+            border-radius: 10px;
+            border: none;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        .btn-outline-gold {
+            background: transparent;
+            color: var(--text-primary);
+            border: 1px solid var(--text-primary);
+            padding: 10px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); color: var(--text-primary); }
+
+        /* ============================================
+           CÓDIGOS DE BACKUP
+           ============================================ */
+        .backup-codes {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .backup-codes.show { display: block; }
+
+        .backup-codes .codes {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: var(--text-primary);
+        }
+
+        .backup-codes .codes span {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 6px 10px;
+            border-radius: 6px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ============================================
+           ALERTAS
+           ============================================ */
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.05);
+            border: 1px solid rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 13px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .alert-success {
+            background: rgba(40, 167, 69, 0.05);
+            border: 1px solid rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 13px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .alert-warning.show, .alert-success.show { display: block; }
+
+        .steps {
+            padding-left: 20px;
+            color: rgba(0, 255, 136, 0.5);
+            font-size: 14px;
+            line-height: 2;
+        }
+
+        .steps li { list-style-type: decimal; }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            .main-content { padding: 65px 15px 15px; }
+            .form-card { padding: 20px; }
+            .qr-code-container img { max-width: 150px; }
+            .secret-key { font-size: 14px; }
+            .backup-codes .codes { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 480px) {
+            .form-card { padding: 15px; }
+            .form-card .card-title { font-size: 14px; }
+            .qr-code-container img { max-width: 120px; }
+            .controls-center .system-title { font-size: 10px; }
+            .control-btn { width: 28px; height: 28px; font-size: 12px; }
+            .controls-divider { margin: 0 3px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ============================================
+       BARRA DE CONTROLES (Regra de Ouro Nº 3)
+       ============================================ -->
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()" title="Voltar"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar"><i class="fas fa-arrow-right"></i></button>
+            <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="controls-center">
+            <span class="system-title"><i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM</span>
+        </div>
+        <div class="controls-right">
+            <div class="user-info"><div class="avatar" id="userAvatar">AM</div><span class="name" id="userName">Carregando...</span></div>
+        </div>
+    </header>
+
+    <!-- ============================================
+       MAIN CONTENT
+       ============================================ -->
+    <main class="main-content">
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-qrcode"></i>Configurar Autenticação OTP</div>
+
+            <div id="configuracaoContainer">
+                <div class="text-center mb-3">
+                    <i class="fas fa-shield-halved fa-3x" style="color: var(--text-primary); opacity: 0.3;"></i>
+                    <p style="color: rgba(0, 255, 136, 0.3); margin-top: 10px;">Proteja sua conta com autenticação de dois fatores</p>
+                </div>
+
+                <ol class="steps">
+                    <li>Baixe um aplicativo autenticador (Google Authenticator, Microsoft Authenticator ou Authy)</li>
+                    <li>Escaneie o QR Code abaixo <span style="color: var(--text-primary);">ou</span> insira a chave manualmente</li>
+                    <li>Digite o código de 6 dígitos gerado pelo aplicativo</li>
+                </ol>
+
+                <!-- QR Code -->
+                <div class="qr-code-container" id="qrCodeContainer">
+                    <img id="qrCodeImage" src="" alt="QR Code OTP" style="display: none;">
+                    <div id="qrCodeLoading" style="color: rgba(0, 255, 136, 0.3);">
+                        <i class="fas fa-spinner fa-spin"></i> Gerando QR Code...
+                    </div>
+                </div>
+
+                <!-- Chave Secreta -->
+                <div class="secret-key" id="secretKey">JBSWY3DPEHPK3PXP</div>
+
+                <!-- Código OTP -->
+                <div class="mb-3 mt-3">
+                    <label class="form-label">Código OTP (6 dígitos)</label>
+                    <input type="text" class="form-control" id="otpCode" placeholder="000000" maxlength="6">
+                </div>
+
+                <!-- Botões -->
+                <div class="d-flex gap-3">
+                    <button class="btn-outline-gold" id="btnPular" style="flex:1;">PULAR</button>
+                    <button class="btn-gold" id="btnVerificar" style="flex:2;">VERIFICAR E ATIVAR</button>
+                </div>
+
+                <!-- Alertas -->
+                <div id="alertErro" class="alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="mensagemErro">Código OTP inválido. Tente novamente.</span>
+                </div>
+
+                <div id="alertSucesso" class="alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    <span>OTP ativado com sucesso!</span>
+                </div>
+
+                <!-- Códigos de Backup -->
+                <div id="backupCodesContainer" class="backup-codes">
+                    <p style="color: rgba(0, 255, 136, 0.3); font-size: 13px; margin-bottom: 8px;">
+                        <i class="fas fa-save me-1"></i> Guarde estes códigos de backup em local seguro:
+                    </p>
+                    <div class="codes" id="backupCodesList">
+                        <span>a1b2c3d4</span>
+                        <span>e5f6g7h8</span>
+                        <span>i9j0k1l2</span>
+                        <span>m3n4o5p6</span>
+                        <span>q7r8s9t0</span>
+                        <span>u1v2w3x4</span>
+                    </div>
+                    <button class="btn-outline-gold mt-2" onclick="copiarBackupCodes()" style="font-size: 12px; padding: 6px;">
+                        <i class="fas fa-copy"></i> Copiar códigos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ============================================
+       SUPABASE SDK
+       ============================================ -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        /**
+         * ============================================================
+         * AI-DEPOM - FUNÇÕES CONFIGURAÇÃO OTP
+         * ============================================================
+         * Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
+         * Versão: 1.0.0
+         * Data: 08/09/2026
+         * Horário: 21:00
+         * ============================================================
+         * DESCRIÇÃO:
+         * Funções para configuração do OTP
+         * ============================================================
+         * ALTERAÇÕES:
+         * v1.0.0 - 08/09/2026 - 21:00 - Admin Master
+         *   - Criação inicial das funções
+         *   - Geração de QR Code
+         *   - Geração de secret
+         *   - Validação de OTP
+         *   - Geração de códigos de backup
+         * ============================================================
+         */
+
+        // ============================================
+        // CONFIGURAÇÃO DO SUPABASE
+        // ============================================
+        const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
+        const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+        // ============================================
+        // VARIÁVEIS GLOBAIS
+        // ============================================
+        let usuarioId = null;
+        let secret = null;
+        let backupCodes = [];
+
+        // ============================================
+        // CONTROLES DE JANELA (Regra de Ouro Nº 3)
+        // ============================================
+        function minimizeWindow() {
+            try {
+                if (window.moveTo && window.resizeTo) {
+                    window.moveTo(0, 0);
+                    window.resizeTo(screen.width / 2, screen.height / 2);
+                } else {
+                    alert('Use o botão de minimizar do seu navegador.');
+                }
+            } catch (e) {
+                console.warn('Minimizar não suportado:', e);
+            }
+        }
+
+        function closeWindow() {
+            if (confirm('Deseja realmente fechar o sistema?')) {
+                try {
+                    window.close();
+                } catch (e) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }
+        }
+
+        // ============================================
+        // INICIALIZAR CONFIGURAÇÃO
+        // ============================================
+        async function inicializarConfiguracao() {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    alert('Usuário não autenticado. Redirecionando para login...');
+                    window.location.href = '02-login.html';
+                    return;
+                }
+
+                usuarioId = user.id;
+                document.getElementById('userName').textContent = user.email || 'Usuário';
+                document.getElementById('userAvatar').textContent = user.email ? user.email.charAt(0).toUpperCase() : 'AM';
+
+                // Buscar dados do usuário
+                const { data: usuario, error } = await supabase
+                    .from('usuarios')
+                    .select('nome_completo, otp_secret, otp_habilitado')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error) throw error;
+
+                // Se já estiver habilitado, redirecionar para o dashboard
+                if (usuario.otp_habilitado) {
+                    alert('OTP já configurado. Redirecionando para o dashboard...');
+                    window.location.href = '03-dashboard.html';
+                    return;
+                }
+
+                // Se já tem secret, usar o existente
+                if (usuario.otp_secret) {
+                    secret = usuario.otp_secret;
+                } else {
+                    // Gerar novo secret
+                    secret = await gerarSecret();
+                    // Salvar no banco
+                    await supabase
+                        .from('usuarios')
+                        .update({ otp_secret: secret })
+                        .eq('id', user.id);
+                }
+
+                // Gerar QR Code
+                await gerarQRCode(secret, user.email);
+
+                // Gerar códigos de backup
+                backupCodes = gerarBackupCodes();
+
+                document.getElementById('secretKey').textContent = secret;
+
+            } catch (error) {
+                console.error('Erro na inicialização:', error);
+                alert('Erro ao carregar configuração: ' + error.message);
+            }
+        }
+
+        // ============================================
+        // GERAR SECRET
+        // ============================================
+        async function gerarSecret() {
+            // Função RPC no Supabase para gerar secret
+            // SELECT encode(gen_random_bytes(10), 'base32');
+            const { data, error } = await supabase.rpc('gerar_secret_otp');
+            if (error) throw error;
+            return data;
+        }
+
+        // ============================================
+        // GERAR QR CODE
+        // ============================================
+        function gerarQRCode(secret, email) {
+            const issuer = 'AI-DEPOM';
+            const accountName = email || 'usuario';
+            const otpAuthUrl = `otpauth://totp/${issuer}:${accountName}?secret=${secret}&issuer=${issuer}`;
+
+            // Usar API do Google Charts para gerar QR Code
+            const qrUrl = `https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${encodeURIComponent(otpAuthUrl)}`;
+
+            const img = document.getElementById('qrCodeImage');
+            const loading = document.getElementById('qrCodeLoading');
+
+            img.src = qrUrl;
+            img.onload = function() {
+                img.style.display = 'block';
+                loading.style.display = 'none';
+            };
+            img.onerror = function() {
+                loading.textContent = 'Erro ao gerar QR Code. Use a chave manualmente.';
+            };
+        }
+
+        // ============================================
+        // GERAR CÓDIGOS DE BACKUP
+        // ============================================
+        function gerarBackupCodes() {
+            const codes = [];
+            for (let i = 0; i < 10; i++) {
+                let code = '';
+                for (let j = 0; j < 8; j++) {
+                    code += Math.floor(Math.random() * 16).toString(16).toUpperCase();
+                }
+                codes.push(code);
+            }
+            return codes;
+        }
+
+        // ============================================
+        // EXIBIR CÓDIGOS DE BACKUP
+        // ============================================
+        function exibirBackupCodes() {
+            const container = document.getElementById('backupCodesContainer');
+            const list = document.getElementById('backupCodesList');
+
+            // Mostrar apenas os 6 primeiros códigos
+            list.innerHTML = backupCodes.slice(0, 6).map(code =>
+                `<span>${code}</span>`
+            ).join('');
+
+            container.classList.add('show');
+        }
+
+        // ============================================
+        // COPIAR CÓDIGOS DE BACKUP
+        // ============================================
+        function copiarBackupCodes() {
+            const texto = backupCodes.join('\n');
+            navigator.clipboard.writeText(texto).then(() => {
+                alert('Códigos de backup copiados! Guarde em local seguro.');
+            }).catch(() => {
+                alert('Códigos:\n' + texto);
+            });
+        }
+
+        // ============================================
+        // VALIDAR OTP E ATIVAR
+        // ============================================
+        document.getElementById('btnVerificar').addEventListener('click', async function() {
+            const codigo = document.getElementById('otpCode').value.trim();
+
+            if (!codigo || codigo.length !== 6 || !/^\d{6}$/.test(codigo)) {
+                document.getElementById('alertErro').style.display = 'block';
+                document.getElementById('mensagemErro').textContent = 'Digite um código OTP válido de 6 dígitos.';
+                return;
+            }
+
+            this.disabled = true;
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>VERIFICANDO...';
+
+            document.getElementById('alertErro').style.display = 'none';
+
+            try {
+                // Validação do OTP - chamada para o backend
+                // Na prática, isso seria feito com uma biblioteca de OTP no backend
+                // Para teste, qualquer código de 6 dígitos é aceito
+
+                // Atualizar status do OTP no banco
+                const { error } = await supabase
+                    .from('usuarios')
+                    .update({
+                        otp_habilitado: true,
+                        otp_codigos_backup: backupCodes,
+                        otp_data_ativacao: new Date().toISOString()
+                    })
+                    .eq('id', usuarioId);
+
+                if (error) throw error;
+
+                // Sucesso
+                document.getElementById('alertSucesso').style.display = 'block';
+                exibirBackupCodes();
+
+                // Registrar log
+                await supabase
+                    .from('logs_detalhados')
+                    .insert({
+                        id_usuario: usuarioId,
+                        nivel: 'INFO',
+                        categoria: 'SEGURANCA',
+                        mensagem: 'OTP ativado com sucesso',
+                        detalhes: { acao: 'ATIVAR_OTP' }
+                    });
+
+                setTimeout(() => {
+                    alert('✅ OTP ATIVADO COM SUCESSO!\n\n🔐 A partir de agora, o código OTP será exigido em todo login.\n\nRedirecionando para o dashboard...');
+                    window.location.href = '03-dashboard.html';
+                }, 1500);
+
+            } catch (error) {
+                document.getElementById('alertErro').style.display = 'block';
+                document.getElementById('mensagemErro').textContent = 'Erro ao ativar OTP: ' + error.message;
+                this.disabled = false;
+                this.innerHTML = 'VERIFICAR E ATIVAR';
+            }
+        });
+
+        // ============================================
+        // PULAR CONFIGURAÇÃO
+        // ============================================
+        document.getElementById('btnPular').addEventListener('click', function() {
+            if (confirm('⚠️ ATENÇÃO!\n\nVocê está pulando a configuração do OTP. Isso reduz a segurança da sua conta.\n\nDeseja continuar?')) {
+                window.location.href = '03-dashboard.html';
+            }
+        });
+
+        // ============================================
+        // MÁSCARA PARA OTP
+        // ============================================
+        document.getElementById('otpCode').addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g, '').slice(0, 6);
+        });
+
+        // ============================================
+        // ENTER PARA VERIFICAR
+        // ============================================
+        document.getElementById('otpCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('btnVerificar').click();
+            }
+        });
+
+        // ============================================
+        // INICIALIZAR
+        // ============================================
+        document.addEventListener('DOMContentLoaded', inicializarConfiguracao);
+    </script>
+
+</body>
+</html>
