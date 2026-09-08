@@ -1,8 +1,8 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI-DEPOM - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -17,6 +17,7 @@
             --shadow-gold: rgba(201, 168, 76, 0.15);
             --gradient-primary: linear-gradient(135deg, #0a1e3d 0%, #162d5a 50%, #0a1e3d 100%);
             --gradient-gold: linear-gradient(135deg, #c9a84c 0%, #a8893a 100%);
+            --control-size: 36px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -26,6 +27,7 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
+
         /* ============================================
            SIDEBAR
            ============================================ */
@@ -151,6 +153,72 @@
             font-size: 11px;
             color: rgba(255,255,255,0.3);
         }
+
+        /* ============================================
+           CONTROLES BAR
+           ============================================ */
+        .controls-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(6, 13, 26, 0.85);
+            backdrop-filter: blur(15px);
+            border-bottom: 1px solid rgba(201, 168, 76, 0.08);
+            padding: 6px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 48px;
+            min-height: 48px;
+        }
+        .controls-left {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .controls-right {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .controls-center .system-title {
+            color: var(--police-gold);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        .control-btn {
+            width: var(--control-size);
+            height: var(--control-size);
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .control-btn:hover {
+            background: rgba(201, 168, 76, 0.08);
+            color: var(--police-gold);
+        }
+        .control-btn:active { transform: scale(0.92); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(255,255,255,0.05); margin: 0 6px; }
+        .user-info { display: flex; align-items: center; gap: 8px; color: rgba(255,255,255,0.3); font-size: 12px; }
+        .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-gold); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: var(--police-dark); }
+
         /* ============================================
            MAIN CONTENT
            ============================================ */
@@ -159,6 +227,7 @@
             padding: 25px 30px;
             min-height: 100vh;
         }
+
         /* ============================================
            TOP BAR
            ============================================ */
@@ -201,6 +270,7 @@
         }
         .top-bar .top-actions .badge i { margin-right: 6px; }
         .top-bar .top-actions .badge .count { color: var(--police-gold); font-weight: 700; }
+
         /* ============================================
            STATS CARDS
            ============================================ */
@@ -244,9 +314,29 @@
         }
         .stat-change.up { color: #28a745; }
         .stat-change.down { color: #dc3545; }
+
         /* ============================================
-           ALERTAS
+           ALERTAS E FORM CARD
            ============================================ */
+        .form-card {
+            background: rgba(255,255,255,0.02);
+            border-radius: 14px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.03);
+            height: 100%;
+        }
+        .card-title {
+            color: var(--police-gold);
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(201,168,76,0.08);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .card-title i { margin-right: 10px; opacity: 0.7; }
+
         .alert-item {
             display: flex;
             align-items: center;
@@ -267,26 +357,7 @@
         .alert-item .alert-text { flex: 1; }
         .alert-item .alert-text .title { font-size: 14px; font-weight: 600; color: #fff; }
         .alert-item .alert-text .desc { font-size: 12px; color: rgba(255,255,255,0.3); }
-        /* ============================================
-           FORM CARD
-           ============================================ */
-        .form-card {
-            background: rgba(255,255,255,0.02);
-            border-radius: 14px;
-            padding: 25px;
-            border: 1px solid rgba(255,255,255,0.03);
-        }
-        .card-title {
-            color: var(--police-gold);
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            border-bottom: 1px solid rgba(201,168,76,0.08);
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-        }
-        .card-title i { margin-right: 10px; opacity: 0.7; }
+
         /* ============================================
            RESPONSIVE
            ============================================ */
@@ -308,6 +379,9 @@
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0; }
             .sidebar-toggle { display: flex !important; }
+            .controls-center .system-title { font-size: 12px; }
+            .control-btn { width: 32px; height: 32px; font-size: 14px; }
+            .user-info .name { display: none; }
         }
         @media (max-width: 768px) {
             .main-content { padding: 15px; }
@@ -318,6 +392,9 @@
             .stats-grid { grid-template-columns: 1fr; }
             .top-actions { width: 100%; }
             .top-actions .badge { flex: 1; text-align: center; }
+            .controls-center .system-title { font-size: 10px; }
+            .control-btn { width: 28px; height: 28px; font-size: 12px; }
+            .controls-divider { margin: 0 3px; }
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--police-dark); }
@@ -325,6 +402,39 @@
     </style>
 </head>
 <body>
+
+<!-- ============================================
+   CONTROLES BAR
+   ============================================ -->
+<header class="controls-bar">
+    <div class="controls-left">
+        <button class="control-btn" onclick="window.history.back()" title="Voltar">
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <button class="control-btn" onclick="window.history.forward()" title="Avançar">
+            <i class="fas fa-arrow-right"></i>
+        </button>
+        <div class="controls-divider"></div>
+        <button class="control-btn" onclick="minimizeWindow()" title="Minimizar">
+            <i class="fas fa-window-minimize"></i>
+        </button>
+        <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+    <div class="controls-center">
+        <span class="system-title">
+            <i class="fas fa-shield-halved" style="color: var(--police-gold);"></i>
+            AI-DEPOM
+        </span>
+    </div>
+    <div class="controls-right">
+        <div class="user-info">
+            <div class="avatar">AM</div>
+            <span class="name">Admin Master</span>
+        </div>
+    </div>
+</header>
 
 <!-- ============================================
    SIDEBAR
@@ -429,8 +539,9 @@
         </div>
     </div>
 
-    <!-- ALERTAS E MANDADOS - DINÂMICOS -->
+    <!-- ALERTAS E ANÁLISE -->
     <div class="row g-4">
+        <!-- Alertas e Mandados -->
         <div class="col-md-7">
             <div class="form-card">
                 <div class="card-title"><i class="fas fa-bell text-warning"></i>Alertas e Mandados</div>
@@ -441,10 +552,11 @@
                 </div>
             </div>
         </div>
+        <!-- Análise em Tempo Real -->
         <div class="col-md-5">
             <div class="form-card">
-                <div class="card-title"><i class="fas fa-robot text-info"></i>Análise IA em Tempo Real</div>
-                <div class="mt-3" id="analiseIA">
+                <div class="card-title"><i class="fas fa-chart-line text-info"></i>Análise em Tempo Real</div>
+                <div class="mt-3" id="analiseTempoReal">
                     <div class="mb-3">
                         <small class="text-muted">Relações Criminais Detectadas</small>
                         <div class="progress" style="height:6px; background:rgba(255,255,255,0.05);">
@@ -521,6 +633,30 @@
     const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI'; // Substitua pela chave real
 
     const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    // ============================================
+    // CONTROLES DE JANELA
+    // ============================================
+    function minimizeWindow() {
+        try {
+            if (window.moveTo && window.resizeTo) {
+                window.moveTo(0, 0);
+                window.resizeTo(screen.width / 2, screen.height / 2);
+            } else {
+                alert('Use o botão de minimizar do seu navegador.');
+            }
+        } catch (e) { console.warn('Minimizar não suportado:', e); }
+    }
+
+    function closeWindow() {
+        if (confirm('Deseja realmente fechar o sistema?')) {
+            try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
+        }
+    }
+
+    function toggleSidebar() {
+        document.getElementById('sidebar').classList.toggle('open');
+    }
 
     // ============================================
     // FUNÇÕES DE CARREGAMENTO DE DADOS REAIS
@@ -651,8 +787,8 @@
         }
     }
 
-    // 3. Carregar Análise IA (baseada em dados reais)
-    async function carregarAnaliseIA() {
+    // 3. Carregar Análise em Tempo Real (baseada em dados reais)
+    async function carregarAnaliseTempoReal() {
         try {
             // Buscar dados para análise
             const { data: suspeitos, error } = await supabase
@@ -686,7 +822,7 @@
             document.getElementById('progressoReincidencia').style.width = reincidencia + '%';
 
         } catch (error) {
-            console.error('Erro ao carregar análise IA:', error);
+            console.error('Erro ao carregar análise:', error);
         }
     }
 
@@ -695,7 +831,6 @@
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                // Buscar dados do usuário na tabela 'usuarios'
                 const { data: usuario, error } = await supabase
                     .from('usuarios')
                     .select('nome_completo, setor')
@@ -718,16 +853,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         carregarEstatisticas();
         carregarAlertas();
-        carregarAnaliseIA();
+        carregarAnaliseTempoReal();
         carregarUsuario();
     });
-
-    // ============================================
-    // TOGGLE SIDEBAR
-    // ============================================
-    function toggleSidebar() {
-        document.getElementById('sidebar').classList.toggle('open');
-    }
 </script>
 
 </body>
