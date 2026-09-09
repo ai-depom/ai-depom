@@ -1,677 +1,811 @@
  <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI-DEPOM - Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- ============================================
-         SDK DO SUPABASE - OBRIGATÓRIO
-         Data: 09/09/2026 - 14:00
-         ============================================ -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-    </script>
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - Sistema PCivil</title>
+    
+    <!-- Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
     <style>
-        /* ============================================================
-           AI-DEPOM - ESTILOS LOGIN
-           ============================================================
-           Caminho: frontend/src/pages/02-login.html (interno)
-           Versão: 1.0.5
-           Data: 09/09/2026
-           Horário: 14:00
-           ============================================================
-        */
-        :root {
-            --bg-primary: #000000;
-            --bg-secondary: #0a0a0a;
-            --text-primary: #00ff88;
-            --text-secondary: #00cc77;
-            --text-muted: #004d33;
-            --border-color: #003322;
-            --shadow-color: rgba(0, 255, 136, 0.08);
-            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
-            --control-size: 36px;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
-        html,
         body {
-            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             min-height: 100vh;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
-            overflow-x: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
         }
 
-        /* ============================================
-           BARRA DE CONTROLES (Regra de Ouro Nº 3)
-           ============================================ */
-        .controls-bar {
-            position: fixed;
+        .login-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 35px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-container::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--border-color);
-            padding: 6px 15px;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            background-size: 200% 100%;
+            animation: gradientMove 3s ease infinite;
+        }
+
+        @keyframes gradientMove {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        .logo-area {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo-area .icon {
+            font-size: 48px;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .logo-area h1 {
+            font-size: 24px;
+            color: #2d3748;
+            font-weight: 700;
+        }
+
+        .logo-area p {
+            color: #718096;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 6px;
+        }
+
+        .form-group .input-wrapper {
+            position: relative;
+        }
+
+        .form-group .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 12px 12px 44px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+            color: #2d3748;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .form-group input::placeholder {
+            color: #a0aec0;
+        }
+
+        .form-group .toggle-password {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+            transition: color 0.3s ease;
+            background: none;
+            border: none;
+            font-size: 16px;
+        }
+
+        .form-group .toggle-password:hover {
+            color: #667eea;
+        }
+
+        .form-options {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 48px;
-            min-height: 48px;
+            margin: 20px 0 25px;
+            font-size: 14px;
         }
 
-        .controls-left {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-        .controls-right {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-        .controls-center {
+        .form-options label {
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-        .controls-center .system-title {
-            color: var(--text-primary);
-            font-weight: 600;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
-
-        .control-btn {
-            width: var(--control-size);
-            height: var(--control-size);
-            border-radius: 8px;
-            border: none;
-            background: transparent;
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 16px;
+            color: #4a5568;
             cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
-        .control-btn:hover {
-            background: rgba(0, 255, 136, 0.08);
-            color: var(--text-primary);
-        }
-        .control-btn:active {
-            transform: scale(0.92);
-        }
-        .control-btn.close-btn:hover {
-            background: rgba(220, 53, 69, 0.15);
-            color: #dc3545;
-        }
-        .control-btn.minimize-btn:hover {
-            background: rgba(255, 193, 7, 0.15);
-            color: #ffc107;
-        }
-        .controls-divider {
-            width: 1px;
-            height: 24px;
-            background: rgba(0, 255, 136, 0.05);
-            margin: 0 6px;
+        .form-options label input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #667eea;
+            cursor: pointer;
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 12px;
-        }
-
-        .user-info .avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--gradient-green);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 12px;
-            color: #000;
-        }
-
-        /* ============================================
-           CONTAINER LOGIN
-           ============================================ */
-        .login-container {
-            max-width: 480px;
-            width: 100%;
-            margin: 70px auto 40px;
-            background: var(--bg-secondary);
-            border-radius: 24px;
-            padding: 45px 40px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
-        }
-
-        .logo {
-            text-align: center;
-            margin-bottom: 35px;
-        }
-        .logo i {
-            font-size: 64px;
-            color: var(--text-primary);
-            background: rgba(0, 255, 136, 0.05);
-            padding: 20px;
-            border-radius: 50%;
-        }
-        .logo h1 {
-            color: var(--text-primary);
-            font-weight: 700;
-            letter-spacing: 3px;
-            margin-top: 15px;
-            text-shadow: 0 0 40px rgba(0, 255, 136, 0.1);
-        }
-        .logo span {
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 14px;
-            letter-spacing: 2px;
-        }
-
-        .form-control {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 14px 18px;
-            border-radius: 14px;
-            transition: all 0.3s;
-        }
-
-        .form-control:focus {
-            background: rgba(0, 0, 0, 0.6);
-            border-color: var(--text-primary);
-            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
-            color: var(--text-primary);
-        }
-
-        .form-control::placeholder {
-            color: rgba(0, 255, 136, 0.2);
-        }
-
-        .form-label {
-            font-size: 13px;
+        .form-options a {
+            color: #667eea;
+            text-decoration: none;
             font-weight: 600;
-            color: rgba(0, 255, 136, 0.3);
-            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+
+        .form-options a:hover {
+            color: #5a67d8;
+            text-decoration: underline;
         }
 
         .btn-login {
-            background: var(--gradient-green);
-            color: #000;
-            font-weight: 700;
-            padding: 14px;
-            border-radius: 14px;
-            transition: all 0.3s;
-            letter-spacing: 1px;
-            font-size: 16px;
-            border: none;
             width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
         }
 
-        .biometric-area {
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-            border: 1px dashed var(--border-color);
+        .btn-login:active {
+            transform: translateY(0);
         }
 
-        .biometric-area video {
-            width: 100%;
-            max-width: 200px;
-            border-radius: 12px;
-            border: 2px solid var(--text-primary);
-            background: #000;
+        .btn-login:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-login .spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        .btn-login.loading .spinner {
+            display: inline-block;
+        }
+
+        .btn-login.loading .btn-text {
             display: none;
         }
 
-        .alert-login {
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            display: none;
+            background: #fed7d7;
+            color: #c53030;
+            padding: 12px 16px;
             border-radius: 10px;
-            padding: 12px;
-            font-size: 13px;
-            margin-bottom: 15px;
-            display: none;
+            font-size: 14px;
+            margin-bottom: 20px;
+            border-left: 4px solid #fc8181;
+            align-items: center;
+            gap: 10px;
         }
 
-        .alert-login.error {
-            background: rgba(220, 53, 69, 0.05);
-            border: 1px solid rgba(220, 53, 69, 0.1);
-            color: #dc3545;
-            display: block;
-        }
-
-        .alert-login.success {
-            background: rgba(40, 167, 69, 0.05);
-            border: 1px solid rgba(40, 167, 69, 0.1);
-            color: #28a745;
-            display: block;
-        }
-
-        .alert-login.warning {
-            background: rgba(255, 193, 7, 0.05);
-            border: 1px solid rgba(255, 193, 7, 0.1);
-            color: #ffc107;
-            display: block;
-        }
-
-        .security-badge {
+        .error-message.show {
             display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-top: 25px;
-            font-size: 11px;
-            color: rgba(0, 255, 136, 0.2);
         }
 
-        .security-badge i {
-            margin-right: 5px;
-            color: #28a745;
+        .error-message i {
+            font-size: 18px;
         }
 
-        .divider {
-            border-top: 1px solid var(--border-color);
-            margin: 25px 0;
+        .success-message {
+            display: none;
+            background: #c6f6d5;
+            color: #276749;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            border-left: 4px solid #48bb78;
+            align-items: center;
+            gap: 10px;
         }
-        .version {
+
+        .success-message.show {
+            display: flex;
+        }
+
+        .footer {
             text-align: center;
-            margin-top: 20px;
-            font-size: 11px;
-            color: rgba(0, 255, 136, 0.1);
-            letter-spacing: 1px;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            color: #718096;
+            font-size: 13px;
         }
 
-        @media (max-width: 768px) {
-            .login-container {
-                padding: 30px 20px;
-                margin-top: 65px;
-            }
-            .controls-center .system-title {
-                font-size: 12px;
-            }
-            .control-btn {
-                width: 32px;
-                height: 32px;
-                font-size: 14px;
-            }
-            .user-info .name {
-                display: none;
-            }
+        .footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
         }
 
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-badge.success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .status-badge.error {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        /* Responsivo */
         @media (max-width: 480px) {
             .login-container {
-                padding: 25px 15px;
+                padding: 30px 20px;
             }
-            .logo i {
-                font-size: 48px;
-                padding: 15px;
+
+            .logo-area h1 {
+                font-size: 20px;
             }
-            .controls-center .system-title {
-                font-size: 10px;
-            }
-            .control-btn {
-                width: 28px;
-                height: 28px;
-                font-size: 12px;
+
+            .form-options {
+                flex-direction: column;
+                gap: 10px;
+                align-items: flex-start;
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- ============================================
-       BARRA DE CONTROLES (Regra de Ouro Nº 3)
-       ============================================ -->
-    <header class="controls-bar">
-        <div class="controls-left">
-            <button class="control-btn" onclick="window.history.back()" title="Voltar (Alt+V)"><i class="fas fa-arrow-left"></i></button>
-            <button class="control-btn" onclick="window.history.forward()" title="Avançar (Alt+A)"><i class="fas fa-arrow-right"></i></button>
-            <div class="controls-divider"></div>
-            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar (Alt+M)"><i class="fas fa-window-minimize"></i></button>
-            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar (Alt+F)"><i class="fas fa-times"></i></button>
-        </div>
-        <div class="controls-center">
-            <span class="system-title"><i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM</span>
-        </div>
-        <div class="controls-right">
-            <div class="user-info">
-                <div class="avatar">AM</div>
-                <span class="name">Admin Master</span>
-            </div>
-        </div>
-    </header>
-
-    <!-- ============================================
-       CONTAINER LOGIN (QRCODE REMOVIDO)
-       ============================================ -->
     <div class="login-container">
-        <div class="logo">
-            <i class="fas fa-shield-halved"></i>
-            <h1>AI-DEPOM</h1>
-            <span>SISTEMA POLICIAL INTELIGENTE</span>
-            <div class="mt-2" style="font-size:10px; color:rgba(0,255,136,0.1);">
-                <i class="fas fa-lock"></i> AES-256 FIPS 140-2
+        <div class="logo-area">
+            <div class="icon">
+                <i class="fas fa-gavel"></i>
             </div>
+            <h1>PCivil Sistema</h1>
+            <p>Gerencie suas atividades de forma eficiente</p>
         </div>
 
-        <div id="alertLogin" class="alert-login"></div>
+        <!-- Mensagem de erro -->
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorText">Erro ao fazer login. Tente novamente.</span>
+        </div>
 
-        <form id="loginForm">
-            <!-- Matrícula -->
-            <div class="mb-3">
-                <label class="form-label"><i class="fas fa-id-card me-2 text-warning" style="color: var(--text-primary);"></i>MATRÍCULA</label>
-                <input type="text" class="form-control" id="matricula" placeholder="Ex: ADM-MASTER-001" required autofocus>
-            </div>
+        <!-- Mensagem de sucesso -->
+        <div id="successMessage" class="success-message">
+            <i class="fas fa-check-circle"></i>
+            <span id="successText">Login realizado com sucesso!</span>
+        </div>
 
-            <!-- Senha -->
-            <div class="mb-3">
-                <label class="form-label"><i class="fas fa-key me-2 text-warning" style="color: var(--text-primary);"></i>SENHA</label>
-                <input type="password" class="form-control" id="senha" placeholder="Digite sua senha" required>
-            </div>
+        <!-- Status do Supabase -->
+        <div style="text-align: center; margin-bottom: 15px; font-size: 13px;">
+            <span id="supabaseStatus" class="status-badge">
+                <i class="fas fa-spinner fa-spin"></i> Verificando...
+            </span>
+        </div>
 
-            <!-- ============================================
-               QRCODE REMOVIDO - CAMPO OTP ELIMINADO
-               Data: 09/09/2026 - 14:00
-               ============================================ -->
-
-            <!-- Biometria -->
-            <div class="mb-4">
-                <label class="form-label"><i class="fas fa-fingerprint me-2 text-success" style="color: var(--text-primary);"></i>BIOMETRIA FACIAL</label>
-                <div class="biometric-area">
-                    <video id="video" autoplay muted playsinline></video>
-                    <div id="biometricStatus" class="text-center">
-                        <i class="fas fa-camera fa-2x text-muted mb-2" style="color: rgba(0, 255, 136, 0.2);"></i>
-                        <p style="font-size:12px; color:rgba(0, 255, 136, 0.3);">Clique para ativar a câmera</p>
-                        <button type="button" class="btn btn-sm btn-outline-warning" onclick="startBiometric()" style="color: var(--text-primary); border-color: var(--border-color);">
-                            <i class="fas fa-camera"></i> Ativar Biometria
-                        </button>
-                    </div>
-                    <div id="biometricResult" style="display:none; margin-top:10px;">
-                        <span class="badge bg-success"><i class="fas fa-check"></i> Biometria Validada</span>
-                    </div>
+        <form id="loginForm" autocomplete="off">
+            <div class="form-group">
+                <label for="matricula">
+                    <i class="fas fa-id-badge"></i> Matrícula
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user"></i>
+                    <input 
+                        type="text" 
+                        id="matricula" 
+                        placeholder="Digite sua matrícula" 
+                        required
+                        autofocus
+                        value="ADM-MASTER-001"
+                    />
                 </div>
             </div>
 
+            <div class="form-group">
+                <label for="senha">
+                    <i class="fas fa-lock"></i> Senha
+                </label>
+                <div class="input-wrapper">
+                    <i class="fas fa-key"></i>
+                    <input 
+                        type="password" 
+                        id="senha" 
+                        placeholder="Digite sua senha" 
+                        required
+                        value="123456"
+                    />
+                    <button type="button" class="toggle-password" id="togglePassword" aria-label="Mostrar senha">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-options">
+                <label>
+                    <input type="checkbox" id="rememberMe" checked />
+                    <span>Lembrar-me</span>
+                </label>
+                <a href="#" id="forgotPassword">Esqueceu a senha?</a>
+            </div>
+
             <button type="submit" class="btn-login" id="btnLogin">
-                <i class="fas fa-sign-in-alt me-2"></i>ACESSAR SISTEMA
+                <span class="spinner"></span>
+                <span class="btn-text">
+                    <i class="fas fa-sign-in-alt"></i> Entrar
+                </span>
             </button>
         </form>
 
-        <div class="divider"></div>
-        <div class="security-badge">
-            <span><i class="fas fa-shield"></i> FIPS 140-2</span>
-            <span><i class="fas fa-globe"></i> CJIS Compliant</span>
-            <span><i class="fas fa-database"></i> LGPD/GDPR</span>
-            <span><i class="fas fa-lock"></i> AES-256</span>
+        <div class="footer">
+            <p>
+                <i class="fas fa-shield-alt"></i>
+                Sistema seguro • Dados protegidos
+            </p>
+            <p style="margin-top: 5px; font-size: 12px; color: #a0aec0;">
+                Versão 2.0.0
+            </p>
         </div>
-        <div class="version">VERSÃO 1.0.0 | SISTEMA CERTIFICADO</div>
     </div>
 
-    <!-- ============================================
-       SUPABASE SDK E FUNÇÕES DE LOGIN
-       ============================================ -->
     <script>
-        /**
-         * ============================================================
-         * AI-DEPOM - FUNÇÕES DE LOGIN
-         * ============================================================
-         * Caminho: frontend/src/pages/02-login.html (interno)
-         * Versão: 1.0.5
-         * Data: 09/09/2026
-         * Horário: 14:00
-         * ============================================================
-         * DESCRIÇÃO:
-         * Funções para autenticação de usuários
-         * ============================================================
-         * ALTERAÇÕES:
-         * v1.0.5 - 09/09/2026 - 14:00 - Admin Master
-         *   - QRCODE REMOVIDO: Campo OTP completamente eliminado
-         *   - Login direto com matrícula e senha
-         *   - SDK do Supabase carregado no head
-         * ============================================================
-         */
-
         // ============================================
-        // CONFIGURAÇÃO DO SUPABASE
+        // CONFIGURAÇÕES
         // ============================================
         const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
         const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
 
-        let supabaseClient;
-
         // ============================================
         // INICIALIZAR SUPABASE
         // ============================================
+        let supabase = null;
+        let supabaseInicializado = false;
+
         try {
-            if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
-                supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-                console.log('✅ Supabase inicializado: ✅ Sim');
-            } else {
-                console.error('❌ SDK do Supabase não encontrado.');
-                console.log('✅ Supabase inicializado: ✅ Não');
-            }
+            console.log('🚀 Inicializando Supabase...');
+            console.log('📌 URL:', supabaseUrl);
+            console.log('📌 Key:', supabaseAnonKey.substring(0, 20) + '...');
+
+            supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+            supabaseInicializado = true;
+            
+            console.log('✅ Supabase inicializado com sucesso!');
+            document.getElementById('supabaseStatus').innerHTML = 
+                '<i class="fas fa-check-circle"></i> ✅ Supabase conectado';
+            document.getElementById('supabaseStatus').className = 'status-badge success';
         } catch (error) {
             console.error('❌ Erro ao inicializar Supabase:', error);
-            console.log('✅ Supabase inicializado: ✅ Não');
+            document.getElementById('supabaseStatus').innerHTML = 
+                '<i class="fas fa-times-circle"></i> ❌ Erro de conexão';
+            document.getElementById('supabaseStatus').className = 'status-badge error';
+            showError('Erro ao conectar com o servidor. Verifique sua conexão.');
         }
 
         // ============================================
-        // CONTROLES DE JANELA (Regra de Ouro Nº 3)
+        // ELEMENTOS DOM
         // ============================================
-        function minimizeWindow() {
-            try {
-                if (window.moveTo && window.resizeTo) {
-                    window.moveTo(0, 0);
-                    window.resizeTo(screen.width / 2, screen.height / 2);
-                } else {
-                    alert('Use o botão de minimizar do seu navegador.');
-                }
-            } catch (e) {
-                console.warn('Minimizar não suportado:', e);
+        const loginForm = document.getElementById('loginForm');
+        const matriculaInput = document.getElementById('matricula');
+        const senhaInput = document.getElementById('senha');
+        const btnLogin = document.getElementById('btnLogin');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const successMessage = document.getElementById('successMessage');
+        const successText = document.getElementById('successText');
+        const togglePassword = document.getElementById('togglePassword');
+        const rememberMe = document.getElementById('rememberMe');
+
+        // ============================================
+        // FUNÇÕES DE UTILIDADE
+        // ============================================
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.classList.add('show');
+            successMessage.classList.remove('show');
+        }
+
+        function hideError() {
+            errorMessage.classList.remove('show');
+        }
+
+        function showSuccess(message) {
+            successText.textContent = message;
+            successMessage.classList.add('show');
+            errorMessage.classList.remove('show');
+        }
+
+        function hideSuccess() {
+            successMessage.classList.remove('show');
+        }
+
+        function setLoading(loading) {
+            if (loading) {
+                btnLogin.classList.add('loading');
+                btnLogin.disabled = true;
+            } else {
+                btnLogin.classList.remove('loading');
+                btnLogin.disabled = false;
             }
         }
 
-        function closeWindow() {
-            if (confirm('Deseja realmente fechar o sistema?')) {
-                try {
-                    window.close();
-                } catch (e) {
-                    window.location.href = '01-apresentacao.html';
-                }
-            }
-        }
-
         // ============================================
-        // BIOMETRIA
+        // FUNÇÃO DE LOGIN PRINCIPAL
         // ============================================
-        function startBiometric() {
-            const video = document.getElementById('video');
-            const status = document.getElementById('biometricStatus');
-            const result = document.getElementById('biometricResult');
+        async function fazerLogin(event) {
+            event.preventDefault();
+            hideError();
+            hideSuccess();
 
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(stream => {
-                    video.srcObject = stream;
-                    video.style.display = 'block';
-                    status.style.display = 'none';
-                    result.style.display = 'block';
-                    setTimeout(() => {
-                        result.innerHTML = '<span class="badge bg-success"><i class="fas fa-check"></i> Biometria Validada</span>';
-                    }, 2000);
-                })
-                .catch(err => {
-                    alert('Erro ao acessar a câmera.');
-                    console.error('Erro na biometria:', err);
-                });
-        }
-
-        // ============================================
-        // EXIBIR ALERTA
-        // ============================================
-        function mostrarAlerta(mensagem, tipo = 'error') {
-            const alerta = document.getElementById('alertLogin');
-            alerta.textContent = mensagem;
-            alerta.className = 'alert-login ' + tipo;
-        }
-
-        function limparAlerta() {
-            const alerta = document.getElementById('alertLogin');
-            alerta.textContent = '';
-            alerta.className = 'alert-login';
-        }
-
-        // ============================================
-        // LOGIN - QRCODE REMOVIDO
-        // ============================================
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            limparAlerta();
-
-            const matricula = document.getElementById('matricula').value.trim();
-            const senha = document.getElementById('senha').value;
-
-            if (!matricula || !senha) {
-                mostrarAlerta('⚠️ Matrícula e senha são obrigatórios!', 'warning');
+            // Validar Supabase
+            if (!supabaseInicializado || !supabase) {
+                showError('Sistema não conectado. Recarregue a página e tente novamente.');
                 return;
             }
 
-            const btn = document.getElementById('btnLogin');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>AUTENTICANDO...';
+            const matricula = matriculaInput.value.trim();
+            const senha = senhaInput.value.trim();
+
+            // Validações básicas
+            if (!matricula) {
+                showError('Por favor, digite sua matrícula.');
+                matriculaInput.focus();
+                return;
+            }
+
+            if (!senha) {
+                showError('Por favor, digite sua senha.');
+                senhaInput.focus();
+                return;
+            }
+
+            console.log('🔐 Tentando login para matrícula:', matricula);
+            setLoading(true);
 
             try {
                 // ============================================
-                // 1. VERIFICAR SE O SUPABASE ESTÁ INICIALIZADO
+                // PASSO 1: BUSCAR USUÁRIO PELA MATRÍCULA
                 // ============================================
-                if (!supabaseClient) {
-                    mostrarAlerta('❌ Erro de conexão com o servidor de autenticação.', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>ACESSAR SISTEMA';
-                    return;
-                }
-
-                // ============================================
-                // 2. VERIFICAR SE O USUÁRIO EXISTE NA TABELA 'usuarios'
-                // ============================================
-                const { data: usuario, error: erroUsuario } = await supabaseClient
+                console.log('🔍 Passo 1: Buscando usuário...');
+                
+                const { data: usuario, error: buscaError } = await supabase
                     .from('usuarios')
-                    .select('id, matricula, nome_completo, email, ativo')
+                    .select('id, matricula, nome_completo, email, ativo, setor, id_perfil_acesso, primeiro_acesso, deletado')
                     .eq('matricula', matricula)
-                    .single();
+                    .maybeSingle();  // ← CRUCIAL: usar maybeSingle() em vez de single()
 
-                if (erroUsuario || !usuario) {
-                    console.error('❌ Erro ao buscar usuário:', erroUsuario);
-                    mostrarAlerta('❌ Usuário não encontrado. Verifique sua matrícula.', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>ACESSAR SISTEMA';
+                // Verificar erro de busca
+                if (buscaError) {
+                    console.error('❌ Erro na busca:', buscaError);
+                    
+                    // PGRST116 = nenhum registro encontrado (é esperado)
+                    if (buscaError.code === 'PGRST116') {
+                        console.log('ℹ️ Matrícula não encontrada:', matricula);
+                        showError('Matrícula não encontrada. Verifique e tente novamente.');
+                        setLoading(false);
+                        return;
+                    }
+                    
+                    // Outro erro inesperado
+                    console.error('❌ Erro inesperado na busca:', buscaError);
+                    showError('Erro ao buscar usuário. Tente novamente mais tarde.');
+                    setLoading(false);
                     return;
                 }
 
-                console.log('📌 Usuário encontrado:', usuario.nome_completo);
-
-                // ============================================
-                // 3. VERIFICAR SE O USUÁRIO ESTÁ ATIVO
-                // ============================================
-                if (!usuario.ativo) {
-                    mostrarAlerta('❌ Usuário desativado. Entre em contato com o Administrador.', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>ACESSAR SISTEMA';
+                // Verificar se encontrou o usuário
+                if (!usuario) {
+                    console.log('❌ Usuário não encontrado (data é null)');
+                    showError('Matrícula não encontrada. Verifique e tente novamente.');
+                    setLoading(false);
                     return;
                 }
 
+                console.log('✅ Usuário encontrado:', usuario);
+
                 // ============================================
-                // 4. AUTENTICAR NO SUPABASE AUTH
+                // PASSO 2: VALIDAR DADOS DO USUÁRIO
                 // ============================================
-                const { data: authData, error: erroAuth } = await supabaseClient.auth.signInWithPassword({
+                
+                // Verificar se o usuário está deletado
+                if (usuario.deletado === true) {
+                    console.log('❌ Usuário deletado');
+                    showError('Usuário deletado. Contate o administrador.');
+                    setLoading(false);
+                    return;
+                }
+
+                // Verificar se o usuário está ativo
+                if (usuario.ativo !== true) {
+                    console.log('❌ Usuário inativo');
+                    showError('Usuário inativo. Contate o administrador.');
+                    setLoading(false);
+                    return;
+                }
+
+                // Verificar se o email existe
+                if (!usuario.email) {
+                    console.error('❌ Usuário sem email cadastrado');
+                    showError('Usuário sem email cadastrado. Contate o administrador.');
+                    setLoading(false);
+                    return;
+                }
+
+                console.log('✅ Usuário validado com sucesso!');
+                console.log('📧 Email:', usuario.email);
+
+                // ============================================
+                // PASSO 3: AUTENTICAR COM EMAIL E SENHA
+                // ============================================
+                console.log('🔐 Passo 2: Autenticando com email:', usuario.email);
+                
+                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
                     email: usuario.email,
                     password: senha
                 });
 
-                if (erroAuth) {
-                    console.error('❌ Erro na autenticação:', erroAuth);
-                    mostrarAlerta('❌ Senha incorreta. Tente novamente.', 'error');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>ACESSAR SISTEMA';
+                if (authError) {
+                    console.error('❌ Erro na autenticação:', authError);
+                    
+                    // Tratamento específico para erros de autenticação
+                    if (authError.message.includes('Invalid login credentials')) {
+                        showError('Senha incorreta. Tente novamente.');
+                    } else if (authError.message.includes('Email not confirmed')) {
+                        showError('Email não confirmado. Verifique sua caixa de entrada.');
+                    } else {
+                        showError('Erro na autenticação: ' + authError.message);
+                    }
+                    
+                    setLoading(false);
                     return;
                 }
 
-                console.log('✅ Autenticado com sucesso!');
+                console.log('✅ Autenticação bem-sucedida!');
+                console.log('👤 Usuário autenticado:', authData.user.email);
 
                 // ============================================
-                // 5. LOGIN BEM-SUCEDIDO (QRCODE REMOVIDO)
+                // PASSO 4: SALVAR DADOS NA SESSÃO
                 // ============================================
-                mostrarAlerta('✅ Login realizado com sucesso!', 'success');
+                try {
+                    sessionStorage.setItem('usuario', JSON.stringify(usuario));
+                    sessionStorage.setItem('authData', JSON.stringify(authData));
+                    sessionStorage.setItem('usuarioId', usuario.id);
+                    
+                    if (rememberMe.checked) {
+                        localStorage.setItem('rememberMe', 'true');
+                        localStorage.setItem('lastMatricula', matricula);
+                    } else {
+                        localStorage.removeItem('rememberMe');
+                        localStorage.removeItem('lastMatricula');
+                    }
+                } catch (storageError) {
+                    console.warn('⚠️ Erro ao salvar dados na sessão:', storageError);
+                    // Não bloqueia o login
+                }
 
-                // Atualizar último acesso
-                await supabaseClient
-                    .from('usuarios')
-                    .update({ data_ultimo_acesso: new Date().toISOString() })
-                    .eq('id', usuario.id);
+                // ============================================
+                // PASSO 5: REDIRECIONAR
+                // ============================================
+                console.log('🚀 Login bem-sucedido!');
+                showSuccess('Login realizado com sucesso! Redirecionando...');
 
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>REDIRECIONANDO...';
-
+                // Aguardar 1.5 segundos para mostrar a mensagem de sucesso
                 setTimeout(() => {
-                    window.location.href = '03-dashboard.html';
-                }, 1000);
+                    if (usuario.primeiro_acesso === true) {
+                        console.log('🔄 Primeiro acesso - redirecionando para troca de senha');
+                        window.location.href = '03-primeiro-acesso.html';
+                    } else {
+                        console.log('📊 Redirecionando para dashboard');
+                        window.location.href = '04-dashboard.html';
+                    }
+                }, 1500);
 
             } catch (error) {
-                console.error('❌ Erro no login:', error);
-                mostrarAlerta('❌ Erro ao realizar login: ' + error.message, 'error');
+                console.error('❌ Erro inesperado no login:', error);
+                showError('Ocorreu um erro inesperado. Tente novamente.');
+                setLoading(false);
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>ACESSAR SISTEMA';
+                // Se não redirecionou, garantir que o loading seja removido após 5 segundos
+                setTimeout(() => {
+                    setLoading(false);
+                }, 5000);
+            }
+        }
+
+        // ============================================
+        // EVENT LISTENERS
+        // ============================================
+        
+        // Submit do formulário
+        loginForm.addEventListener('submit', fazerLogin);
+
+        // Toggle mostrar/ocultar senha
+        togglePassword.addEventListener('click', function() {
+            const type = senhaInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            senhaInput.setAttribute('type', type);
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        // Enter key no campo de senha
+        senhaInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                loginForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Enter key no campo de matrícula
+        matriculaInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                senhaInput.focus();
+            }
+        });
+
+        // Recuperar dados salvos
+        document.addEventListener('DOMContentLoaded', function() {
+            try {
+                const remember = localStorage.getItem('rememberMe');
+                const lastMatricula = localStorage.getItem('lastMatricula');
+                
+                if (remember === 'true' && lastMatricula) {
+                    matriculaInput.value = lastMatricula;
+                    rememberMe.checked = true;
+                }
+                
+                console.log('✅ Página carregada com sucesso!');
+                console.log('🔍 Status: Pronto para login');
+            } catch (error) {
+                console.warn('⚠️ Erro ao carregar dados salvos:', error);
             }
         });
 
         // ============================================
-        // ENTER PARA SUBMIT
+        // FUNÇÃO DE TESTE RÁPIDO (apenas diagnóstico)
         // ============================================
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const active = document.activeElement;
-                if (active && active.tagName === 'INPUT') {
-                    document.getElementById('loginForm').dispatchEvent(new Event('submit'));
-                }
+        async function testarBusca() {
+            console.log('🧪 Teste rápido de busca...');
+            
+            if (!supabaseInicializado || !supabase) {
+                console.error('❌ Supabase não inicializado');
+                return;
             }
-        });
+
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('matricula', 'ADM-MASTER-001')
+                .maybeSingle();
+
+            if (error) {
+                console.error('❌ Erro no teste:', error);
+                console.log('📌 Código:', error.code);
+                console.log('📌 Mensagem:', error.message);
+            } else if (data) {
+                console.log('✅ Teste bem-sucedido!');
+                console.log('📋 Dados:', data);
+                console.log('🎉 Usuário encontrado com sucesso!');
+            } else {
+                console.log('❌ Nenhum usuário encontrado (data é null)');
+            }
+        }
 
         // ============================================
         // INICIALIZAÇÃO
         // ============================================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ Página de login carregada.');
-            console.log('📌 Supabase inicializado:', supabaseClient ? '✅ Sim' : '❌ Não');
-            console.log('✅ QRCODE REMOVIDO - Login direto com matrícula e senha');
-        });
+        console.log('✅ Página de login carregada.');
+        console.log('📌 Supabase inicializado:', supabaseInicializado ? '✅ Sim' : '❌ Não');
+        console.log('✅ QRCODE REMOVIDO - Login direto com matrícula e senha');
+        
+        // Executar teste automático após 2 segundos (apenas para diagnóstico)
+        setTimeout(() => {
+            if (supabaseInicializado) {
+                testarBusca();
+            }
+        }, 2000);
+
+        // ============================================
+        // EXPORTAÇÃO GLOBAL (para debug no console)
+        // ============================================
+        window.supabase = supabase;
+        window.testarBusca = testarBusca;
+        window.fazerLogin = fazerLogin;
+        window.verificarUsuario = async function(matricula) {
+            const { data, error } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('matricula', matricula)
+                .maybeSingle();
+            
+            if (error) {
+                console.error('❌ Erro:', error);
+                return null;
+            }
+            return data;
+        };
+
+        console.log('💡 Dicas para debug:');
+        console.log('   - Digite window.testarBusca() no console para testar a busca');
+        console.log('   - Digite window.verificarUsuario("ADM-MASTER-001") para verificar um usuário específico');
+        console.log('   - Use as credenciais: Matrícula=ADM-MASTER-001, Senha=123456');
     </script>
 
 </body>
