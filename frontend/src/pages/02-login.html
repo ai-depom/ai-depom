@@ -8,8 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- ============================================
-         SDK DO SUPABASE - CARREGAMENTO OBRIGATÓRIO
-         Data: 09/09/2026 - 13:30
+         SDK DO SUPABASE - OBRIGATÓRIO
+         Data: 09/09/2026 - 14:00
          ============================================ -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
     </script>
@@ -19,9 +19,9 @@
            AI-DEPOM - ESTILOS LOGIN
            ============================================================
            Caminho: frontend/src/pages/02-login.html (interno)
-           Versão: 1.0.4
+           Versão: 1.0.5
            Data: 09/09/2026
-           Horário: 13:30
+           Horário: 14:00
            ============================================================
         */
         :root {
@@ -237,23 +237,6 @@
             box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
         }
 
-        .otp-input {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            text-align: center;
-            font-size: 28px;
-            letter-spacing: 12px;
-            border-radius: 14px;
-            padding: 12px;
-            font-weight: 300;
-        }
-
-        .otp-input:focus {
-            border-color: var(--text-primary);
-            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
-        }
-
         .biometric-area {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 14px;
@@ -352,10 +335,6 @@
                 font-size: 48px;
                 padding: 15px;
             }
-            .otp-input {
-                font-size: 22px;
-                letter-spacing: 8px;
-            }
             .controls-center .system-title {
                 font-size: 10px;
             }
@@ -392,7 +371,7 @@
     </header>
 
     <!-- ============================================
-       CONTAINER LOGIN
+       CONTAINER LOGIN (QRCODE REMOVIDO)
        ============================================ -->
     <div class="login-container">
         <div class="logo">
@@ -404,7 +383,6 @@
             </div>
         </div>
 
-        <!-- Alerta de Login -->
         <div id="alertLogin" class="alert-login"></div>
 
         <form id="loginForm">
@@ -421,20 +399,9 @@
             </div>
 
             <!-- ============================================
-               CÓDIGO OTP - DESATIVADO (APENAS VISUAL)
-               Data: 09/09/2026 - 13:30
+               QRCODE REMOVIDO - CAMPO OTP ELIMINADO
+               Data: 09/09/2026 - 14:00
                ============================================ -->
-            <div class="mb-3" style="opacity: 0.4; pointer-events: none;">
-                <label class="form-label">
-                    <i class="fas fa-qrcode me-2 text-warning" style="color: var(--text-primary);"></i>CÓDIGO OTP
-                    <span class="badge bg-secondary ms-2" style="font-size:10px;">DESATIVADO</span>
-                </label>
-                <input type="text" class="otp-input form-control" id="otpCode" placeholder="000000" maxlength="6" value="123456" readonly>
-                <small class="text-muted" style="font-size:11px; color: rgba(0, 255, 136, 0.2);">
-                    <i class="fas fa-info-circle me-1"></i>
-                    Código OTP desativado temporariamente
-                </small>
-            </div>
 
             <!-- Biometria -->
             <div class="mb-4">
@@ -470,7 +437,7 @@
     </div>
 
     <!-- ============================================
-       SUPABASE SDK E FUNÇÕES DE LOGIN (OTP DESATIVADO)
+       SUPABASE SDK E FUNÇÕES DE LOGIN
        ============================================ -->
     <script>
         /**
@@ -478,18 +445,18 @@
          * AI-DEPOM - FUNÇÕES DE LOGIN
          * ============================================================
          * Caminho: frontend/src/pages/02-login.html (interno)
-         * Versão: 1.0.4
+         * Versão: 1.0.5
          * Data: 09/09/2026
-         * Horário: 13:30
+         * Horário: 14:00
          * ============================================================
          * DESCRIÇÃO:
          * Funções para autenticação de usuários
          * ============================================================
          * ALTERAÇÕES:
-         * v1.0.4 - 09/09/2026 - 13:30 - Admin Master
-         *   - OTP DESATIVADO: Login direto com matrícula e senha
-         *   - Campo OTP visual apenas (readonly)
-         *   - Redirecionamento direto para dashboard
+         * v1.0.5 - 09/09/2026 - 14:00 - Admin Master
+         *   - QRCODE REMOVIDO: Campo OTP completamente eliminado
+         *   - Login direto com matrícula e senha
+         *   - SDK do Supabase carregado no head
          * ============================================================
          */
 
@@ -497,10 +464,13 @@
         // CONFIGURAÇÃO DO SUPABASE
         // ============================================
         const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY5MzEyMDAsImV4cCI6MjA0MjUwNzIwMH0.8zQVJ8pDPgWJmWgYqXR0x3rxXn6Htw3v58gYy7tvLwQ';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
 
         let supabaseClient;
 
+        // ============================================
+        // INICIALIZAR SUPABASE
+        // ============================================
         try {
             if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
                 supabaseClient = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
@@ -580,7 +550,7 @@
         }
 
         // ============================================
-        // LOGIN - OTP DESATIVADO
+        // LOGIN - QRCODE REMOVIDO
         // ============================================
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -657,7 +627,7 @@
                 console.log('✅ Autenticado com sucesso!');
 
                 // ============================================
-                // 5. LOGIN BEM-SUCEDIDO (OTP DESATIVADO)
+                // 5. LOGIN BEM-SUCEDIDO (QRCODE REMOVIDO)
                 // ============================================
                 mostrarAlerta('✅ Login realizado com sucesso!', 'success');
 
@@ -700,7 +670,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('✅ Página de login carregada.');
             console.log('📌 Supabase inicializado:', supabaseClient ? '✅ Sim' : '❌ Não');
-            console.log('⚠️ OTP DESATIVADO - Login direto com matrícula e senha');
+            console.log('✅ QRCODE REMOVIDO - Login direto com matrícula e senha');
         });
     </script>
 
