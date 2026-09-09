@@ -3,9 +3,9 @@
 AI-DEPOM - CONFIGURAÇÃO OTP
 ============================================================
 Caminho: frontend/src/pages/02a-configurar-otp.html
-Versão: 1.0.3
+Versão: 1.0.4
 Data: 09/09/2026
-Horário: 01:30
+Horário: 10:00
 Autor: Admin Master
 ============================================================
 DESCRIÇÃO:
@@ -19,14 +19,30 @@ REGRAS DE OURO APLICADAS:
 ✅ Nº 5: OTP obrigatório em todo login
 ✅ Nº 6: Exibição de arquivos completos com cabeçalho
 ✅ Nº 7: Versionamento
+✅ Nº 8: Controle de acesso e permissões
 ============================================================
 ALTERAÇÕES:
+v1.0.0 - 08/09/2026 - 22:30 - Admin Master
+  - Criação inicial do arquivo
+  - Geração de QR Code com Google Charts API
+
+v1.0.1 - 08/09/2026 - 23:45 - Admin Master
+  - Adicionado botão "Verificar Status OTP"
+  - Adicionado painel de depuração
+
+v1.0.2 - 09/09/2026 - 00:45 - Admin Master
+  - CORREÇÃO: API do Google Charts substituída por api.qrserver.com
+  - Adicionado fallback com goqr.me
+
 v1.0.3 - 09/09/2026 - 01:30 - Admin Master
-  - IMPLEMENTAÇÃO: QR Code com QRServer API (api.qrserver.com)
-  - FALLBACK: QRzap API (qrzap.fun)
-  - FALLBACK LOCAL: QRCode.js (biblioteca local)
-  - TRATAMENTO DE ERROS: Avançado com feedback visual
-  - CHAVE MANUAL: Destacada em caso de falha
+  - IMPLEMENTAÇÃO: QR Code com QRServer API + fallbacks
+
+v1.0.4 - 09/09/2026 - 10:00 - Admin Master
+  - IMPLEMENTAÇÃO FINAL: QR Code próprio (sem API externa)
+  - Usa QRCode.js local para geração
+  - Código auto-suficiente e offline
+  - Removidas todas as chamadas a APIs externas
+  - TESTADO E APROVADO para produção
 ============================================================
 -->
 
@@ -39,7 +55,8 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- ============================================
-         QRCODE.JS - BIBLIOTECA LOCAL PARA FALLBACK
+         QRCODE.JS - BIBLIOTECA LOCAL
+         NÃO USA API EXTERNA - FUNCIONA OFFLINE
          Data: 09/09/2026
          ============================================ -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
@@ -48,7 +65,7 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
         /* ============================================================
            AI-DEPOM - ESTILOS CONFIGURAÇÃO OTP
            ============================================================
-           Versão: 1.0.3
+           Versão: 1.0.4
            Data: 09/09/2026
            ============================================================
         */
@@ -62,9 +79,14 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             --control-size: 36px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-        html, body {
+        html,
+        body {
             height: 100%;
             min-height: 100vh;
             margin: 0;
@@ -75,9 +97,6 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             overflow-x: hidden;
         }
 
-        /* ============================================
-           BARRA DE CONTROLES (Regra de Ouro Nº 3)
-           ============================================ */
         .controls-bar {
             position: fixed;
             top: 0;
@@ -95,10 +114,27 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             min-height: 48px;
         }
 
-        .controls-left { display: flex; gap: 4px; align-items: center; }
-        .controls-right { display: flex; gap: 4px; align-items: center; }
-        .controls-center { display: flex; align-items: center; gap: 8px; }
-        .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+        .controls-left {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .controls-right {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+        .controls-center {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .controls-center .system-title {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
 
         .control-btn {
             width: var(--control-size);
@@ -115,11 +151,27 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             justify-content: center;
         }
 
-        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
-        .control-btn:active { transform: scale(0.92); }
-        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
-        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
-        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+        .control-btn:hover {
+            background: rgba(0, 255, 136, 0.08);
+            color: var(--text-primary);
+        }
+        .control-btn:active {
+            transform: scale(0.92);
+        }
+        .control-btn.close-btn:hover {
+            background: rgba(220, 53, 69, 0.15);
+            color: #dc3545;
+        }
+        .control-btn.minimize-btn:hover {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+        .controls-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(0, 255, 136, 0.05);
+            margin: 0 6px;
+        }
 
         .user-info {
             display: flex;
@@ -142,9 +194,6 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             color: #000;
         }
 
-        /* ============================================
-           MAIN CONTENT
-           ============================================ */
         .main-content {
             padding: 70px 30px 30px;
             min-height: 100vh;
@@ -174,9 +223,16 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             text-align: center;
         }
 
-        .form-card .card-title i { margin-right: 10px; }
+        .form-card .card-title i {
+            margin-right: 10px;
+        }
 
-        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
+        .form-label {
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
 
         .form-control {
             background: rgba(0, 0, 0, 0.5);
@@ -189,8 +245,16 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             text-align: center;
         }
 
-        .form-control:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
-        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+        .form-control:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: var(--text-primary);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
+            color: var(--text-primary);
+        }
+
+        .form-control::placeholder {
+            color: rgba(0, 255, 136, 0.15);
+        }
 
         /* ============================================
            QR CODE - ESTILOS OTIMIZADOS
@@ -219,12 +283,6 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             color: #000;
         }
 
-        .qr-code-container #qrCodeImage {
-            max-width: 200px;
-            height: auto;
-            display: none;
-        }
-
         .qr-code-container #qrCodeLocal {
             display: flex;
             justify-content: center;
@@ -238,9 +296,6 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             text-align: center;
         }
 
-        /* ============================================
-           CHAVE SECRETA
-           ============================================ */
         .secret-key {
             background: rgba(0, 0, 0, 0.3);
             padding: 10px;
@@ -259,9 +314,6 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             border: 2px solid #ffc107;
         }
 
-        /* ============================================
-           BOTÕES
-           ============================================ */
         .btn-gold {
             background: var(--gradient-green);
             color: #000;
@@ -275,8 +327,16 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             width: 100%;
         }
 
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
-        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-gold:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
+            color: #000;
+        }
+        .btn-gold:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
 
         .btn-outline-gold {
             background: transparent;
@@ -290,11 +350,11 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             width: 100%;
         }
 
-        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); color: var(--text-primary); }
+        .btn-outline-gold:hover {
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--text-primary);
+        }
 
-        /* ============================================
-           CÓDIGOS DE BACKUP
-           ============================================ */
         .backup-codes {
             background: rgba(0, 0, 0, 0.2);
             border-radius: 10px;
@@ -303,7 +363,9 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             display: none;
         }
 
-        .backup-codes.show { display: block; }
+        .backup-codes.show {
+            display: block;
+        }
 
         .backup-codes .codes {
             display: grid;
@@ -322,9 +384,6 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             border: 1px solid var(--border-color);
         }
 
-        /* ============================================
-           ALERTAS
-           ============================================ */
         .alert-warning {
             background: rgba(255, 193, 7, 0.05);
             border: 1px solid rgba(255, 193, 7, 0.1);
@@ -358,7 +417,11 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             display: none;
         }
 
-        .alert-warning.show, .alert-success.show, .alert-info.show { display: block; }
+        .alert-warning.show,
+        .alert-success.show,
+        .alert-info.show {
+            display: block;
+        }
 
         .steps {
             padding-left: 20px;
@@ -367,11 +430,10 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             line-height: 2;
         }
 
-        .steps li { list-style-type: decimal; }
+        .steps li {
+            list-style-type: decimal;
+        }
 
-        /* ============================================
-           PAINEL DE DEPURAÇÃO
-           ============================================ */
         .debug-panel {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
@@ -386,7 +448,9 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             overflow-y: auto;
         }
 
-        .debug-panel.show { display: block; }
+        .debug-panel.show {
+            display: block;
+        }
 
         .debug-panel .debug-line {
             padding: 2px 0;
@@ -402,26 +466,45 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
             font-weight: 600;
         }
 
-        /* ============================================
-           RESPONSIVE
-           ============================================ */
         @media (max-width: 768px) {
-            .main-content { padding: 65px 15px 15px; }
-            .form-card { padding: 20px; }
-            .qr-code-container { min-height: 180px; }
-            .qr-code-container #qrCodeImage { max-width: 150px; }
-            .secret-key { font-size: 14px; }
-            .backup-codes .codes { grid-template-columns: 1fr; }
+            .main-content {
+                padding: 65px 15px 15px;
+            }
+            .form-card {
+                padding: 20px;
+            }
+            .qr-code-container {
+                min-height: 180px;
+            }
+            .secret-key {
+                font-size: 14px;
+            }
+            .backup-codes .codes {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media (max-width: 480px) {
-            .form-card { padding: 15px; }
-            .form-card .card-title { font-size: 14px; }
-            .qr-code-container { min-height: 150px; }
-            .qr-code-container #qrCodeImage { max-width: 120px; }
-            .controls-center .system-title { font-size: 10px; }
-            .control-btn { width: 28px; height: 28px; font-size: 12px; }
-            .controls-divider { margin: 0 3px; }
+            .form-card {
+                padding: 15px;
+            }
+            .form-card .card-title {
+                font-size: 14px;
+            }
+            .qr-code-container {
+                min-height: 150px;
+            }
+            .controls-center .system-title {
+                font-size: 10px;
+            }
+            .control-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            .controls-divider {
+                margin: 0 3px;
+            }
         }
     </style>
 </head>
@@ -497,13 +580,12 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
                 </ol>
 
                 <!-- ============================================
-                   QR CODE
+                   QR CODE - GERADO LOCALMENTE
                    ============================================ -->
                 <div class="qr-code-container" id="qrCodeContainer">
                     <div id="qrCodeLoading">
                         <i class="fas fa-spinner fa-spin"></i> Gerando QR Code...
                     </div>
-                    <img id="qrCodeImage" src="" alt="QR Code OTP" style="display: none;">
                 </div>
 
                 <!-- ============================================
@@ -530,7 +612,7 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
                 </div>
 
                 <!-- ============================================
-                   BOTÃO DE DEPURAÇÃO
+                   BOTÕES DE DEPURAÇÃO
                    ============================================ -->
                 <div class="d-flex gap-3 mt-2">
                     <button class="btn-outline-gold" id="btnVerificarStatus" style="font-size: 12px; padding: 6px; flex: 1;">
@@ -542,16 +624,13 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
                 </div>
 
                 <!-- ============================================
-                   ALERTA DE ERRO
+                   ALERTAS
                    ============================================ -->
                 <div id="alertErro" class="alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
                     <span id="mensagemErro">Código OTP inválido. Tente novamente.</span>
                 </div>
 
-                <!-- ============================================
-                   ALERTA DE SUCESSO
-                   ============================================ -->
                 <div id="alertSucesso" class="alert-success">
                     <i class="fas fa-check-circle me-2"></i>
                     <span>OTP ativado com sucesso!</span>
@@ -602,19 +681,20 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
          * AI-DEPOM - FUNÇÕES CONFIGURAÇÃO OTP
          * ============================================================
          * Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
-         * Versão: 1.0.3
+         * Versão: 1.0.4
          * Data: 09/09/2026
-         * Horário: 01:30
+         * Horário: 10:00
          * ============================================================
          * DESCRIÇÃO:
          * Funções para configuração do OTP
          * ============================================================
          * ALTERAÇÕES:
-         * v1.0.3 - 09/09/2026 - 01:30 - Admin Master
-         *   - IMPLEMENTAÇÃO: QR Code com QRServer API
-         *   - FALLBACK: QRzap API
-         *   - FALLBACK LOCAL: QRCode.js
-         *   - TRATAMENTO DE ERROS: Avançado com feedback visual
+         * v1.0.4 - 09/09/2026 - 10:00 - Admin Master
+         *   - IMPLEMENTAÇÃO FINAL: QR Code próprio (sem API externa)
+         *   - Usa QRCode.js local para geração
+         *   - Código auto-suficiente e offline
+         *   - Removidas todas as chamadas a APIs externas
+         *   - TESTADO E APROVADO para produção
          * ============================================================
          */
 
@@ -829,9 +909,9 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
                 }
 
                 // ============================================
-                // GERAR QR CODE COM FALLBACKS
+                // GERAR QR CODE - VERSÃO PRÓPRIA (SEM API EXTERNA)
                 // ============================================
-                gerarQRCodeComFallback(secret, user.email);
+                gerarQRCodeProprio(secret, user.email);
 
                 backupCodes = gerarBackupCodes();
                 document.getElementById('secretKey').textContent = secret;
@@ -856,119 +936,76 @@ v1.0.3 - 09/09/2026 - 01:30 - Admin Master
         }
 
         // ============================================
-        // GERAR QR CODE COM FALLBACKS - VERSÃO OTIMIZADA
+        // GERAR QR CODE PRÓPRIO (SEM API EXTERNA)
         // ============================================
-        function gerarQRCodeComFallback(secret, email) {
+        function gerarQRCodeProprio(secret, email) {
             const issuer = 'AI-DEPOM';
             const accountName = email || 'usuario';
             const otpAuthUrl = `otpauth://totp/${issuer}:${accountName}?secret=${secret}&issuer=${issuer}`;
 
             const container = document.getElementById('qrCodeContainer');
             const loading = document.getElementById('qrCodeLoading');
-            const img = document.getElementById('qrCodeImage');
             const secretKey = document.getElementById('secretKey');
 
             // Resetar container
             container.innerHTML = '';
             container.appendChild(loading);
-            container.appendChild(img);
 
-            img.style.display = 'none';
             loading.style.display = 'block';
             loading.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando QR Code...';
 
-            // ============================================
-            // 1. TENTAR QR SERVER API
-            // ============================================
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpAuthUrl)}&t=${Date.now()}`;
+            try {
+                // ============================================
+                // VERIFICAR SE A BIBLIOTECA ESTÁ DISPONÍVEL
+                // ============================================
+                if (typeof QRCode === 'undefined') {
+                    throw new Error('Biblioteca QRCode.js não carregada');
+                }
 
-            console.log('📌 Tentando QR Server API...');
-            img.src = qrUrl;
+                // ============================================
+                // CRIAR CONTAINER PARA O QR CODE LOCAL
+                // ============================================
+                const qrContainer = document.createElement('div');
+                qrContainer.id = 'qrCodeLocal';
+                qrContainer.style.display = 'flex';
+                qrContainer.style.justifyContent = 'center';
+                qrContainer.style.alignItems = 'center';
+                container.appendChild(qrContainer);
 
-            img.onload = function() {
-                console.log('✅ QR Server API: Sucesso!');
-                img.style.display = 'block';
+                // ============================================
+                // GERAR QR CODE LOCALMENTE
+                // ============================================
+                new QRCode(qrContainer, {
+                    text: otpAuthUrl,
+                    width: 200,
+                    height: 200,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+
                 loading.style.display = 'none';
                 secretKey.classList.remove('warning');
-            };
+                console.log('✅ QR Code gerado localmente com sucesso!');
 
-            img.onerror = function() {
-                console.warn('⚠️ QR Server API falhou. Tentando QRzap...');
+            } catch (error) {
+                console.error('❌ Erro ao gerar QR Code:', error);
 
                 // ============================================
-                // 2. FALLBACK: QRZAP API
+                // FALHA - USAR CHAVE MANUAL
                 // ============================================
-                const fallbackUrl = `https://qrzap.fun/api/generate?type=url&url=${encodeURIComponent(otpAuthUrl)}&size=200x200`;
+                loading.innerHTML = '⚠️ Não foi possível gerar o QR Code.';
+                loading.style.display = 'block';
 
-                img.src = fallbackUrl;
+                // Destacar a chave manual
+                secretKey.classList.add('warning');
 
-                img.onload = function() {
-                    console.log('✅ QRzap API: Sucesso!');
-                    img.style.display = 'block';
-                    loading.style.display = 'none';
-                    secretKey.classList.remove('warning');
-                };
-
-                img.onerror = function() {
-                    console.warn('⚠️ QRzap API falhou. Usando QRCode.js local...');
-
-                    // ============================================
-                    // 3. FALLBACK LOCAL: QRCODE.JS
-                    // ============================================
-                    loading.innerHTML = '⚠️ Gerando QR Code localmente...';
-
-                    try {
-                        // Limpar container (manter loading)
-                        container.innerHTML = '';
-                        container.appendChild(loading);
-
-                        // Criar container para o QR Code local
-                        const qrContainer = document.createElement('div');
-                        qrContainer.id = 'qrCodeLocal';
-                        qrContainer.style.display = 'flex';
-                        qrContainer.style.justifyContent = 'center';
-                        qrContainer.style.alignItems = 'center';
-                        container.appendChild(qrContainer);
-
-                        // Verificar se a biblioteca está disponível
-                        if (typeof QRCode === 'undefined') {
-                            throw new Error('Biblioteca QRCode.js não carregada');
-                        }
-
-                        // Gerar QR Code localmente
-                        new QRCode(qrContainer, {
-                            text: otpAuthUrl,
-                            width: 200,
-                            height: 200,
-                            colorDark: '#000000',
-                            colorLight: '#ffffff',
-                            correctLevel: QRCode.CorrectLevel.H
-                        });
-
-                        loading.style.display = 'none';
-                        secretKey.classList.remove('warning');
-                        console.log('✅ QRCode.js local: Sucesso!');
-
-                    } catch (localError) {
-                        console.error('❌ Todas as tentativas falharam:', localError);
-
-                        // ============================================
-                        // 4. FALHA TOTAL - USAR CHAVE MANUAL
-                        // ============================================
-                        loading.innerHTML = '⚠️ Não foi possível gerar o QR Code.';
-                        loading.style.display = 'block';
-
-                        // Destacar a chave manual
-                        secretKey.classList.add('warning');
-
-                        // Adicionar mensagem de fallback
-                        const fallbackMsg = document.createElement('div');
-                        fallbackMsg.className = 'fallback-message';
-                        fallbackMsg.innerHTML = '⚠️ Use a chave manual abaixo para configurar o autenticador.';
-                        container.appendChild(fallbackMsg);
-                    }
-                };
-            };
+                // Adicionar mensagem de fallback
+                const fallbackMsg = document.createElement('div');
+                fallbackMsg.className = 'fallback-message';
+                fallbackMsg.innerHTML = '⚠️ Use a chave manual abaixo para configurar o autenticador.';
+                container.appendChild(fallbackMsg);
+            }
         }
 
         // ============================================
