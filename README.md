@@ -1,3 +1,25 @@
+# 📁 Arquivos Arquivados
+
+Esta pasta contém arquivos que foram removidos do fluxo ativo do sistema, mas mantidos para referência futura.
+
+## 📋 Arquivos
+
+| Arquivo | Data de arquivamento | Motivo | Status |
+|---------|---------------------|--------|--------|
+| `02a-configurar-otp.html` | 09/09/2026 | OTP desativado temporariamente | Arquivo |
+
+## 🔄 Como reativar
+
+1. Mova o arquivo de volta para `frontend/src/pages/`
+2. Reative a configuração OTP no sistema
+3. Atualize as referências no `02-login.html`
+
+---
+
+**Última atualização:** 09/09/2026
+
+
+
 # 🛡️ AI-DEPOM
 
 ## Sistema Inteligente de Banco de Dados Policiais
