@@ -1,3 +1,40 @@
+ <!--
+============================================================
+AI-DEPOM - DASHBOARD
+============================================================
+Caminho: frontend/src/pages/03-dashboard.html
+Versão: 1.0.1
+Data: 08/09/2026
+Horário: 20:00
+Autor: Admin Master
+============================================================
+DESCRIÇÃO:
+Tela principal de dashboard do sistema AI-DEPOM.
+Exibe estatísticas, alertas e análises em tempo real.
+============================================================
+REGRAS DE OURO APLICADAS:
+✅ Nº 1: Nunca deletar dados fisicamente (exclusão lógica)
+✅ Nº 2: Nunca criar dados fictícios (apenas dados reais)
+✅ Nº 3: Controles de navegação (Voltar, Avançar, Minimizar, Fechar)
+✅ Nº 4: Terminologia "CÓDIGO OTP"
+✅ Nº 5: OTP obrigatório em todo login
+✅ Nº 6: Exibição de arquivos completos com cabeçalho
+✅ Nº 7: Versionamento (número, data, horário, comentários)
+============================================================
+ALTERAÇÕES:
+v1.0.0 - 04/09/2026 - 10:00 - Admin Master
+  - Criação inicial da tela
+
+v1.0.1 - 08/09/2026 - 19:20 - Admin Master
+  - Layout com fundo preto e letras verdes
+  - Remoção de referências a IA
+  - Título alterado para "Análise em Tempo Real"
+
+v1.0.1 - 08/09/2026 - 20:00 - Admin Master
+  - REMOVIDO: Botão "Interpol" da seção de ações rápidas
+============================================================
+-->
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -8,31 +45,24 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* ============================================================
-           AI-DEPOM - DASHBOARD
+           AI-DEPOM - ESTILOS DO DASHBOARD
            ============================================================
-           Caminho: frontend/src/pages/03-dashboard.html
+           Caminho: frontend/src/pages/03-dashboard.html (interno)
            Versão: 1.0.1
            Data: 08/09/2026
-           Horário: 19:00
+           Horário: 20:00
            ============================================================
            DESCRIÇÃO:
-           Tela principal de dashboard do sistema AI-DEPOM.
-           Exibe estatísticas, alertas e análises em tempo real.
+           Estilos da tela de dashboard
            ============================================================
            ALTERAÇÕES:
-           v1.0.0 - 04/09/2026 - 10:00 - Admin Master
-             - Criação inicial da tela
-
-           v1.0.1 - 08/09/2026 - 19:00 - Admin Master
-             - ALTERAÇÃO: Fundo preto (#000000) e letras verdes (#00ff88)
-             - Removidas referências a IA
-             - Aplicada Regra de Ouro Nº 6 (cabeçalho completo)
+           v1.0.1 - 08/09/2026 - 20:00 - Admin Master
+             - Nenhuma alteração nos estilos, apenas remoção do botão
            ============================================================
         */
         :root {
             --bg-primary: #000000;
             --bg-secondary: #0a0a0a;
-            --bg-card: #0d0d0d;
             --text-primary: #00ff88;
             --text-secondary: #00cc77;
             --text-muted: #004d33;
@@ -283,8 +313,13 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
         }
 
         .sidebar-footer {
@@ -439,8 +474,12 @@
             font-size: 12px;
             margin-top: 6px;
         }
-        .stat-change.up { color: #28a745; }
-        .stat-change.down { color: #dc3545; }
+        .stat-change.up {
+            color: #28a745;
+        }
+        .stat-change.down {
+            color: #dc3545;
+        }
 
         /* ============================================================
            FORM CARD
@@ -488,9 +527,15 @@
             background: rgba(0, 255, 136, 0.02);
         }
 
-        .alert-item.critical { border-left-color: #dc3545; }
-        .alert-item.high { border-left-color: #fd7e14; }
-        .alert-item.low { border-left-color: #28a745; }
+        .alert-item.critical {
+            border-left-color: #dc3545;
+        }
+        .alert-item.high {
+            border-left-color: #fd7e14;
+        }
+        .alert-item.low {
+            border-left-color: #28a745;
+        }
 
         .alert-item .alert-icon.critical {
             color: #dc3545;
@@ -501,9 +546,18 @@
             opacity: 1;
         }
 
-        .alert-item .alert-text { flex: 1; }
-        .alert-item .alert-text .title { font-size: 14px; font-weight: 600; color: #fff; }
-        .alert-item .alert-text .desc { font-size: 12px; color: rgba(0, 255, 136, 0.3); }
+        .alert-item .alert-text {
+            flex: 1;
+        }
+        .alert-item .alert-text .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+        }
+        .alert-item .alert-text .desc {
+            font-size: 12px;
+            color: rgba(0, 255, 136, 0.3);
+        }
 
         /* ============================================================
            PROGRESS BARS
@@ -514,9 +568,15 @@
             border-radius: 4px;
         }
 
-        .progress-bar.bg-warning { background-color: #ffc107 !important; }
-        .progress-bar.bg-info { background-color: #17a2b8 !important; }
-        .progress-bar.bg-danger { background-color: #dc3545 !important; }
+        .progress-bar.bg-warning {
+            background-color: #ffc107 !important;
+        }
+        .progress-bar.bg-info {
+            background-color: #17a2b8 !important;
+        }
+        .progress-bar.bg-danger {
+            background-color: #dc3545 !important;
+        }
 
         /* ============================================================
            AÇÕES RÁPIDAS
@@ -575,30 +635,73 @@
             .sidebar-toggle {
                 display: flex !important;
             }
-            .controls-center .system-title { font-size: 12px; }
-            .control-btn { width: 32px; height: 32px; font-size: 14px; }
-            .user-info .name { display: none; }
+            .controls-center .system-title {
+                font-size: 12px;
+            }
+            .control-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 14px;
+            }
+            .user-info .name {
+                display: none;
+            }
         }
 
         @media (max-width: 768px) {
-            .main-content { padding: 65px 15px 15px; }
-            .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
-            .top-bar .page-title h4 { font-size: 1rem; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .main-content {
+                padding: 65px 15px 15px;
+            }
+            .top-bar {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 12px 18px;
+            }
+            .top-bar .page-title h4 {
+                font-size: 1rem;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 480px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .top-actions { width: 100%; }
-            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; padding: 4px 10px; }
-            .controls-center .system-title { font-size: 9px; }
-            .control-btn { width: 28px; height: 28px; font-size: 12px; }
-            .controls-divider { margin: 0 3px; }
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            .top-actions {
+                width: 100%;
+            }
+            .top-actions .badge {
+                flex: 1;
+                text-align: center;
+                font-size: 10px;
+                padding: 4px 10px;
+            }
+            .controls-center .system-title {
+                font-size: 9px;
+            }
+            .control-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
+            }
+            .controls-divider {
+                margin: 0 3px;
+            }
         }
 
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: var(--bg-primary); }
-        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-primary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 255, 136, 0.3);
+            border-radius: 4px;
+        }
     </style>
 </head>
 <body>
@@ -778,7 +881,10 @@
             </div>
         </div>
 
-        <!-- AÇÕES RÁPIDAS -->
+        <!-- ============================================================
+           AÇÕES RÁPIDAS - BOTÃO INTERPOL REMOVIDO
+           Data: 08/09/2026 - 20:00
+           ============================================================ -->
         <div class="row g-3 mt-3">
             <div class="col-md-2 col-4">
                 <div class="quick-action" onclick="window.location.href='05-cadastro-suspeito.html'">
@@ -810,12 +916,10 @@
                     <div class="label">Biometria</div>
                 </div>
             </div>
-            <div class="col-md-2 col-4">
-                <div class="quick-action" onclick="alert('Abrindo integração internacional...')">
-                    <i class="fas fa-globe text-warning" style="color: var(--text-primary);"></i>
-                    <div class="label">Interpol</div>
-                </div>
-            </div>
+            <!-- ============================================
+               REMOVIDO: BOTÃO INTERPOL
+               Data: 08/09/2026 - 20:00
+               ============================================ -->
         </div>
     </main>
 
@@ -832,14 +936,14 @@
          * Caminho: frontend/src/pages/03-dashboard.html (interno)
          * Versão: 1.0.1
          * Data: 08/09/2026
-         * Horário: 19:00
+         * Horário: 20:00
          * ============================================================
          * DESCRIÇÃO:
          * Funções JavaScript para o dashboard
          * ============================================================
          * ALTERAÇÕES:
-         * v1.0.1 - 08/09/2026 - 19:00 - Admin Master
-         *   - ALTERAÇÃO: Fundo preto e letras verdes
+         * v1.0.1 - 08/09/2026 - 20:00 - Admin Master
+         *   - Nenhuma alteração no JavaScript
          * ============================================================
          */
 
@@ -1091,4 +1195,4 @@
     </script>
 
 </body>
-</html> 
+</html>
