@@ -314,7 +314,6 @@
             color: #c53030;
         }
 
-        /* Responsivo */
         @media (max-width: 480px) {
             .login-container {
                 padding: 30px 20px;
@@ -343,19 +342,16 @@
             <p>Gerencie suas atividades de forma eficiente</p>
         </div>
 
-        <!-- Mensagem de erro -->
         <div id="errorMessage" class="error-message">
             <i class="fas fa-exclamation-circle"></i>
             <span id="errorText">Erro ao fazer login. Tente novamente.</span>
         </div>
 
-        <!-- Mensagem de sucesso -->
         <div id="successMessage" class="success-message">
             <i class="fas fa-check-circle"></i>
             <span id="successText">Login realizado com sucesso!</span>
         </div>
 
-        <!-- Status do Supabase -->
         <div style="text-align: center; margin-bottom: 15px; font-size: 13px;">
             <span id="supabaseStatus" class="status-badge">
                 <i class="fas fa-spinner fa-spin"></i> Verificando...
@@ -430,34 +426,21 @@
         // ============================================
         // CONFIGURAÇÕES
         // ============================================
-        const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
+        const SUPABASE_URL = 'https://szkgaqouivsvlyujfvmz.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
 
         // ============================================
-        // INICIALIZAR SUPABASE
+        // INICIALIZAR SUPABASE (única declaração)
         // ============================================
-        let supabase = null;
-        let supabaseInicializado = false;
-
-        try {
-            console.log('🚀 Inicializando Supabase...');
-            console.log('📌 URL:', supabaseUrl);
-            console.log('📌 Key:', supabaseAnonKey.substring(0, 20) + '...');
-
-            supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-            supabaseInicializado = true;
-            
-            console.log('✅ Supabase inicializado com sucesso!');
-            document.getElementById('supabaseStatus').innerHTML = 
-                '<i class="fas fa-check-circle"></i> ✅ Supabase conectado';
-            document.getElementById('supabaseStatus').className = 'status-badge success';
-        } catch (error) {
-            console.error('❌ Erro ao inicializar Supabase:', error);
-            document.getElementById('supabaseStatus').innerHTML = 
-                '<i class="fas fa-times-circle"></i> ❌ Erro de conexão';
-            document.getElementById('supabaseStatus').className = 'status-badge error';
-            showError('Erro ao conectar com o servidor. Verifique sua conexão.');
-        }
+        console.log('🚀 Inicializando Supabase...');
+        
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let supabaseInicializado = true;
+        
+        console.log('✅ Supabase inicializado com sucesso!');
+        document.getElementById('supabaseStatus').innerHTML = 
+            '<i class="fas fa-check-circle"></i> ✅ Supabase conectado';
+        document.getElementById('supabaseStatus').className = 'status-badge success';
 
         // ============================================
         // ELEMENTOS DOM
@@ -514,8 +497,7 @@
             hideError();
             hideSuccess();
 
-            // Validar Supabase
-            if (!supabaseInicializado || !supabase) {
+            if (!supabaseInicializado || !supabaseClient) {
                 showError('Sistema não conectado. Recarregue a página e tente novamente.');
                 return;
             }
@@ -523,7 +505,6 @@
             const matricula = matriculaInput.value.trim();
             const senha = senhaInput.value.trim();
 
-            // Validações básicas
             if (!matricula) {
                 showError('Por favor, digite sua matrícula.');
                 matriculaInput.focus();
@@ -540,39 +521,28 @@
             setLoading(true);
 
             try {
-                // ============================================
-                // PASSO 1: BUSCAR USUÁRIO PELA MATRÍCULA
-                // ============================================
+                // Buscar usuário
                 console.log('🔍 Passo 1: Buscando usuário...');
                 
-                const { data: usuario, error: buscaError } = await supabase
+                const { data: usuario, error: buscaError } = await supabaseClient
                     .from('usuarios')
                     .select('id, matricula, nome_completo, email, ativo, setor, id_perfil_acesso, primeiro_acesso, deletado')
                     .eq('matricula', matricula)
-                    .maybeSingle();  // ← CRUCIAL: usar maybeSingle() em vez de single()
+                    .maybeSingle();
 
-                // Verificar erro de busca
                 if (buscaError) {
                     console.error('❌ Erro na busca:', buscaError);
-                    
-                    // PGRST116 = nenhum registro encontrado (é esperado)
                     if (buscaError.code === 'PGRST116') {
-                        console.log('ℹ️ Matrícula não encontrada:', matricula);
                         showError('Matrícula não encontrada. Verifique e tente novamente.');
-                        setLoading(false);
-                        return;
+                    } else {
+                        showError('Erro ao buscar usuário. Tente novamente mais tarde.');
                     }
-                    
-                    // Outro erro inesperado
-                    console.error('❌ Erro inesperado na busca:', buscaError);
-                    showError('Erro ao buscar usuário. Tente novamente mais tarde.');
                     setLoading(false);
                     return;
                 }
 
-                // Verificar se encontrou o usuário
                 if (!usuario) {
-                    console.log('❌ Usuário não encontrado (data é null)');
+                    console.log('❌ Usuário não encontrado');
                     showError('Matrícula não encontrada. Verifique e tente novamente.');
                     setLoading(false);
                     return;
@@ -580,51 +550,36 @@
 
                 console.log('✅ Usuário encontrado:', usuario);
 
-                // ============================================
-                // PASSO 2: VALIDAR DADOS DO USUÁRIO
-                // ============================================
-                
-                // Verificar se o usuário está deletado
+                // Validar usuário
                 if (usuario.deletado === true) {
-                    console.log('❌ Usuário deletado');
                     showError('Usuário deletado. Contate o administrador.');
                     setLoading(false);
                     return;
                 }
 
-                // Verificar se o usuário está ativo
                 if (usuario.ativo !== true) {
-                    console.log('❌ Usuário inativo');
                     showError('Usuário inativo. Contate o administrador.');
                     setLoading(false);
                     return;
                 }
 
-                // Verificar se o email existe
                 if (!usuario.email) {
-                    console.error('❌ Usuário sem email cadastrado');
                     showError('Usuário sem email cadastrado. Contate o administrador.');
                     setLoading(false);
                     return;
                 }
 
-                console.log('✅ Usuário validado com sucesso!');
-                console.log('📧 Email:', usuario.email);
+                console.log('✅ Usuário validado! Email:', usuario.email);
 
-                // ============================================
-                // PASSO 3: AUTENTICAR COM EMAIL E SENHA
-                // ============================================
-                console.log('🔐 Passo 2: Autenticando com email:', usuario.email);
-                
-                const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+                // Autenticar
+                console.log('🔐 Passo 2: Autenticando...');
+                const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
                     email: usuario.email,
                     password: senha
                 });
 
                 if (authError) {
                     console.error('❌ Erro na autenticação:', authError);
-                    
-                    // Tratamento específico para erros de autenticação
                     if (authError.message.includes('Invalid login credentials')) {
                         showError('Senha incorreta. Tente novamente.');
                     } else if (authError.message.includes('Email not confirmed')) {
@@ -632,17 +587,13 @@
                     } else {
                         showError('Erro na autenticação: ' + authError.message);
                     }
-                    
                     setLoading(false);
                     return;
                 }
 
                 console.log('✅ Autenticação bem-sucedida!');
-                console.log('👤 Usuário autenticado:', authData.user.email);
 
-                // ============================================
-                // PASSO 4: SALVAR DADOS NA SESSÃO
-                // ============================================
+                // Salvar dados
                 try {
                     sessionStorage.setItem('usuario', JSON.stringify(usuario));
                     sessionStorage.setItem('authData', JSON.stringify(authData));
@@ -656,47 +607,32 @@
                         localStorage.removeItem('lastMatricula');
                     }
                 } catch (storageError) {
-                    console.warn('⚠️ Erro ao salvar dados na sessão:', storageError);
-                    // Não bloqueia o login
+                    console.warn('⚠️ Erro ao salvar dados:', storageError);
                 }
 
-                // ============================================
-                // PASSO 5: REDIRECIONAR
-                // ============================================
                 console.log('🚀 Login bem-sucedido!');
                 showSuccess('Login realizado com sucesso! Redirecionando...');
 
-                // Aguardar 1.5 segundos para mostrar a mensagem de sucesso
                 setTimeout(() => {
                     if (usuario.primeiro_acesso === true) {
-                        console.log('🔄 Primeiro acesso - redirecionando para troca de senha');
                         window.location.href = '03-primeiro-acesso.html';
                     } else {
-                        console.log('📊 Redirecionando para dashboard');
                         window.location.href = '04-dashboard.html';
                     }
                 }, 1500);
 
             } catch (error) {
-                console.error('❌ Erro inesperado no login:', error);
+                console.error('❌ Erro inesperado:', error);
                 showError('Ocorreu um erro inesperado. Tente novamente.');
                 setLoading(false);
-            } finally {
-                // Se não redirecionou, garantir que o loading seja removido após 5 segundos
-                setTimeout(() => {
-                    setLoading(false);
-                }, 5000);
             }
         }
 
         // ============================================
         // EVENT LISTENERS
         // ============================================
-        
-        // Submit do formulário
         loginForm.addEventListener('submit', fazerLogin);
 
-        // Toggle mostrar/ocultar senha
         togglePassword.addEventListener('click', function() {
             const type = senhaInput.getAttribute('type') === 'password' ? 'text' : 'password';
             senhaInput.setAttribute('type', type);
@@ -704,7 +640,6 @@
             this.querySelector('i').classList.toggle('fa-eye-slash');
         });
 
-        // Enter key no campo de senha
         senhaInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -712,7 +647,6 @@
             }
         });
 
-        // Enter key no campo de matrícula
         matriculaInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -720,7 +654,6 @@
             }
         });
 
-        // Recuperar dados salvos
         document.addEventListener('DOMContentLoaded', function() {
             try {
                 const remember = localStorage.getItem('rememberMe');
@@ -730,26 +663,18 @@
                     matriculaInput.value = lastMatricula;
                     rememberMe.checked = true;
                 }
-                
-                console.log('✅ Página carregada com sucesso!');
-                console.log('🔍 Status: Pronto para login');
             } catch (error) {
                 console.warn('⚠️ Erro ao carregar dados salvos:', error);
             }
         });
 
         // ============================================
-        // FUNÇÃO DE TESTE RÁPIDO (apenas diagnóstico)
+        // FUNÇÃO DE TESTE
         // ============================================
         async function testarBusca() {
             console.log('🧪 Teste rápido de busca...');
             
-            if (!supabaseInicializado || !supabase) {
-                console.error('❌ Supabase não inicializado');
-                return;
-            }
-
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('usuarios')
                 .select('*')
                 .eq('matricula', 'ADM-MASTER-001')
@@ -757,55 +682,29 @@
 
             if (error) {
                 console.error('❌ Erro no teste:', error);
-                console.log('📌 Código:', error.code);
-                console.log('📌 Mensagem:', error.message);
             } else if (data) {
                 console.log('✅ Teste bem-sucedido!');
                 console.log('📋 Dados:', data);
-                console.log('🎉 Usuário encontrado com sucesso!');
             } else {
-                console.log('❌ Nenhum usuário encontrado (data é null)');
+                console.log('❌ Nenhum usuário encontrado');
             }
         }
 
         // ============================================
-        // INICIALIZAÇÃO
+        // EXPORTAÇÃO GLOBAL
         // ============================================
-        console.log('✅ Página de login carregada.');
-        console.log('📌 Supabase inicializado:', supabaseInicializado ? '✅ Sim' : '❌ Não');
-        console.log('✅ QRCODE REMOVIDO - Login direto com matrícula e senha');
-        
-        // Executar teste automático após 2 segundos (apenas para diagnóstico)
-        setTimeout(() => {
-            if (supabaseInicializado) {
-                testarBusca();
-            }
-        }, 2000);
-
-        // ============================================
-        // EXPORTAÇÃO GLOBAL (para debug no console)
-        // ============================================
-        window.supabase = supabase;
+        window.supabase = supabaseClient;
         window.testarBusca = testarBusca;
         window.fazerLogin = fazerLogin;
-        window.verificarUsuario = async function(matricula) {
-            const { data, error } = await supabase
-                .from('usuarios')
-                .select('*')
-                .eq('matricula', matricula)
-                .maybeSingle();
-            
-            if (error) {
-                console.error('❌ Erro:', error);
-                return null;
-            }
-            return data;
-        };
 
-        console.log('💡 Dicas para debug:');
-        console.log('   - Digite window.testarBusca() no console para testar a busca');
-        console.log('   - Digite window.verificarUsuario("ADM-MASTER-001") para verificar um usuário específico');
-        console.log('   - Use as credenciais: Matrícula=ADM-MASTER-001, Senha=123456');
+        console.log('✅ Página de login carregada.');
+        console.log('💡 Credenciais padrão: Matrícula=ADM-MASTER-001, Senha=123456');
+        console.log('💡 Digite testarBusca() no console para testar a conexão');
+        
+        // Teste automático
+        setTimeout(() => {
+            testarBusca();
+        }, 1000);
     </script>
 
 </body>
