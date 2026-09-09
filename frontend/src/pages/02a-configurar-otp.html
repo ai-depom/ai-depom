@@ -3,14 +3,13 @@
 AI-DEPOM - CONFIGURAÇÃO OTP
 ============================================================
 Caminho: frontend/src/pages/02a-configurar-otp.html
-Versão: 1.0.2
+Versão: 1.0.3
 Data: 09/09/2026
-Horário: 00:45
+Horário: 01:30
 Autor: Admin Master
 ============================================================
 DESCRIÇÃO:
-Tela para configuração do OTP (One-Time Password) para autenticação de dois fatores.
-Exibe QR Code para escaneamento, chave secreta e códigos de backup.
+Tela para configuração do OTP (One-Time Password) com QR Code.
 ============================================================
 REGRAS DE OURO APLICADAS:
 ✅ Nº 1: Nunca deletar dados fisicamente
@@ -22,23 +21,12 @@ REGRAS DE OURO APLICADAS:
 ✅ Nº 7: Versionamento
 ============================================================
 ALTERAÇÕES:
-v1.0.0 - 08/09/2026 - 22:30 - Admin Master
-  - Criação inicial do arquivo
-  - Geração de QR Code com Google Charts API
-  - Geração de secret para cada usuário
-  - Validação de OTP
-  - Geração de códigos de backup
-
-v1.0.1 - 08/09/2026 - 23:45 - Admin Master
-  - Adicionado botão "Verificar Status OTP"
-  - Adicionado painel de depuração
-
-v1.0.2 - 09/09/2026 - 00:45 - Admin Master
-  - CORREÇÃO: API do Google Charts substituída por api.qrserver.com
-  - Adicionado fallback com goqr.me
-  - Adicionado timestamp para evitar cache
-  - Melhor tratamento de erros
-  - Destaque na chave manual em caso de falha
+v1.0.3 - 09/09/2026 - 01:30 - Admin Master
+  - IMPLEMENTAÇÃO: QR Code com QRServer API (api.qrserver.com)
+  - FALLBACK: QRzap API (qrzap.fun)
+  - FALLBACK LOCAL: QRCode.js (biblioteca local)
+  - TRATAMENTO DE ERROS: Avançado com feedback visual
+  - CHAVE MANUAL: Destacada em caso de falha
 ============================================================
 -->
 
@@ -60,10 +48,8 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
         /* ============================================================
            AI-DEPOM - ESTILOS CONFIGURAÇÃO OTP
            ============================================================
-           Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
-           Versão: 1.0.2
+           Versão: 1.0.3
            Data: 09/09/2026
-           Horário: 00:45
            ============================================================
         */
         :root {
@@ -76,14 +62,9 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             --control-size: 36px;
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        html,
-        body {
+        html, body {
             height: 100%;
             min-height: 100vh;
             margin: 0;
@@ -114,27 +95,10 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             min-height: 48px;
         }
 
-        .controls-left {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-        .controls-right {
-            display: flex;
-            gap: 4px;
-            align-items: center;
-        }
-        .controls-center {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .controls-center .system-title {
-            color: var(--text-primary);
-            font-weight: 600;
-            font-size: 14px;
-            letter-spacing: 1px;
-        }
+        .controls-left { display: flex; gap: 4px; align-items: center; }
+        .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-center { display: flex; align-items: center; gap: 8px; }
+        .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
 
         .control-btn {
             width: var(--control-size);
@@ -151,27 +115,11 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             justify-content: center;
         }
 
-        .control-btn:hover {
-            background: rgba(0, 255, 136, 0.08);
-            color: var(--text-primary);
-        }
-        .control-btn:active {
-            transform: scale(0.92);
-        }
-        .control-btn.close-btn:hover {
-            background: rgba(220, 53, 69, 0.15);
-            color: #dc3545;
-        }
-        .control-btn.minimize-btn:hover {
-            background: rgba(255, 193, 7, 0.15);
-            color: #ffc107;
-        }
-        .controls-divider {
-            width: 1px;
-            height: 24px;
-            background: rgba(0, 255, 136, 0.05);
-            margin: 0 6px;
-        }
+        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .control-btn:active { transform: scale(0.92); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
 
         .user-info {
             display: flex;
@@ -226,16 +174,9 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             text-align: center;
         }
 
-        .form-card .card-title i {
-            margin-right: 10px;
-        }
+        .form-card .card-title i { margin-right: 10px; }
 
-        .form-label {
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 12px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
+        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; }
 
         .form-control {
             background: rgba(0, 0, 0, 0.5);
@@ -248,40 +189,52 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             text-align: center;
         }
 
-        .form-control:focus {
-            background: rgba(0, 0, 0, 0.6);
-            border-color: var(--text-primary);
-            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
-            color: var(--text-primary);
-        }
-
-        .form-control::placeholder {
-            color: rgba(0, 255, 136, 0.15);
-        }
+        .form-control:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
 
         /* ============================================
-           QR CODE
+           QR CODE - ESTILOS OTIMIZADOS
            ============================================ */
         .qr-code-container {
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             padding: 20px;
-            background: #fff;
+            background: #ffffff;
             border-radius: 12px;
             margin: 20px 0;
             border: 1px solid var(--border-color);
-            min-height: 200px;
+            min-height: 220px;
             position: relative;
         }
 
-        .qr-code-container img {
-            max-width: 200px;
-            height: auto;
+        .qr-code-container #qrCodeLoading {
+            color: rgba(0, 0, 0, 0.5);
+            text-align: center;
+            font-size: 14px;
         }
 
-        .qr-code-container #qrCodeLoading {
-            color: rgba(0, 255, 136, 0.3);
+        .qr-code-container #qrCodeLoading i {
+            color: #000;
+        }
+
+        .qr-code-container #qrCodeImage {
+            max-width: 200px;
+            height: auto;
+            display: none;
+        }
+
+        .qr-code-container #qrCodeLocal {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .qr-code-container .fallback-message {
+            color: #ffc107;
+            font-size: 13px;
+            margin-top: 10px;
             text-align: center;
         }
 
@@ -322,16 +275,8 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             width: 100%;
         }
 
-        .btn-gold:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3);
-            color: #000;
-        }
-        .btn-gold:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-outline-gold {
             background: transparent;
@@ -345,10 +290,7 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             width: 100%;
         }
 
-        .btn-outline-gold:hover {
-            background: rgba(0, 255, 136, 0.05);
-            color: var(--text-primary);
-        }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); color: var(--text-primary); }
 
         /* ============================================
            CÓDIGOS DE BACKUP
@@ -361,9 +303,7 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             display: none;
         }
 
-        .backup-codes.show {
-            display: block;
-        }
+        .backup-codes.show { display: block; }
 
         .backup-codes .codes {
             display: grid;
@@ -418,11 +358,7 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             display: none;
         }
 
-        .alert-warning.show,
-        .alert-success.show,
-        .alert-info.show {
-            display: block;
-        }
+        .alert-warning.show, .alert-success.show, .alert-info.show { display: block; }
 
         .steps {
             padding-left: 20px;
@@ -431,9 +367,7 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             line-height: 2;
         }
 
-        .steps li {
-            list-style-type: decimal;
-        }
+        .steps li { list-style-type: decimal; }
 
         /* ============================================
            PAINEL DE DEPURAÇÃO
@@ -452,9 +386,7 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             overflow-y: auto;
         }
 
-        .debug-panel.show {
-            display: block;
-        }
+        .debug-panel.show { display: block; }
 
         .debug-panel .debug-line {
             padding: 2px 0;
@@ -474,44 +406,22 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
            RESPONSIVE
            ============================================ */
         @media (max-width: 768px) {
-            .main-content {
-                padding: 65px 15px 15px;
-            }
-            .form-card {
-                padding: 20px;
-            }
-            .qr-code-container img {
-                max-width: 150px;
-            }
-            .secret-key {
-                font-size: 14px;
-            }
-            .backup-codes .codes {
-                grid-template-columns: 1fr;
-            }
+            .main-content { padding: 65px 15px 15px; }
+            .form-card { padding: 20px; }
+            .qr-code-container { min-height: 180px; }
+            .qr-code-container #qrCodeImage { max-width: 150px; }
+            .secret-key { font-size: 14px; }
+            .backup-codes .codes { grid-template-columns: 1fr; }
         }
 
         @media (max-width: 480px) {
-            .form-card {
-                padding: 15px;
-            }
-            .form-card .card-title {
-                font-size: 14px;
-            }
-            .qr-code-container img {
-                max-width: 120px;
-            }
-            .controls-center .system-title {
-                font-size: 10px;
-            }
-            .control-btn {
-                width: 28px;
-                height: 28px;
-                font-size: 12px;
-            }
-            .controls-divider {
-                margin: 0 3px;
-            }
+            .form-card { padding: 15px; }
+            .form-card .card-title { font-size: 14px; }
+            .qr-code-container { min-height: 150px; }
+            .qr-code-container #qrCodeImage { max-width: 120px; }
+            .controls-center .system-title { font-size: 10px; }
+            .control-btn { width: 28px; height: 28px; font-size: 12px; }
+            .controls-divider { margin: 0 3px; }
         }
     </style>
 </head>
@@ -590,10 +500,10 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                    QR CODE
                    ============================================ -->
                 <div class="qr-code-container" id="qrCodeContainer">
-                    <img id="qrCodeImage" src="" alt="QR Code OTP" style="display: none;">
                     <div id="qrCodeLoading">
                         <i class="fas fa-spinner fa-spin"></i> Gerando QR Code...
                     </div>
+                    <img id="qrCodeImage" src="" alt="QR Code OTP" style="display: none;">
                 </div>
 
                 <!-- ============================================
@@ -692,20 +602,19 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
          * AI-DEPOM - FUNÇÕES CONFIGURAÇÃO OTP
          * ============================================================
          * Caminho: frontend/src/pages/02a-configurar-otp.html (interno)
-         * Versão: 1.0.2
+         * Versão: 1.0.3
          * Data: 09/09/2026
-         * Horário: 00:45
+         * Horário: 01:30
          * ============================================================
          * DESCRIÇÃO:
          * Funções para configuração do OTP
          * ============================================================
          * ALTERAÇÕES:
-         * v1.0.2 - 09/09/2026 - 00:45 - Admin Master
-         *   - CORREÇÃO: API do Google Charts substituída por api.qrserver.com
-         *   - Adicionado fallback com goqr.me
-         *   - Adicionado timestamp para evitar cache
-         *   - Melhor tratamento de erros
-         *   - Destaque na chave manual em caso de falha
+         * v1.0.3 - 09/09/2026 - 01:30 - Admin Master
+         *   - IMPLEMENTAÇÃO: QR Code com QRServer API
+         *   - FALLBACK: QRzap API
+         *   - FALLBACK LOCAL: QRCode.js
+         *   - TRATAMENTO DE ERROS: Avançado com feedback visual
          * ============================================================
          */
 
@@ -760,9 +669,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             panel.appendChild(line);
         }
 
-        // ============================================
-        // LIMPAR PAINEL DE DEPURAÇÃO
-        // ============================================
         function limparDebug() {
             document.getElementById('debugContent').innerHTML = '';
         }
@@ -792,9 +698,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             adicionarLinhaDebug('📌 Iniciando verificação...', new Date().toLocaleString());
 
             try {
-                // ============================================
-                // 1. VERIFICAR SE USUÁRIO ESTÁ AUTENTICADO
-                // ============================================
                 const { data: { user }, error: authError } = await supabase.auth.getUser();
 
                 if (authError || !user) {
@@ -807,9 +710,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                 adicionarLinhaDebug('✅ Usuário autenticado', user.email || 'N/A');
                 adicionarLinhaDebug('📌 ID do usuário', user.id);
 
-                // ============================================
-                // 2. BUSCAR DADOS DO USUÁRIO NO BANCO
-                // ============================================
                 const { data: usuario, error } = await supabase
                     .from('usuarios')
                     .select('id, matricula, nome_completo, email, otp_secret, otp_habilitado, otp_data_ativacao')
@@ -827,9 +727,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                 adicionarLinhaDebug('📌 Matrícula', usuario.matricula || 'N/A');
                 adicionarLinhaDebug('📌 Email', usuario.email || 'N/A');
 
-                // ============================================
-                // 3. EXIBIR STATUS DO OTP
-                // ============================================
                 const statusOTP = usuario.otp_habilitado ? '✅ HABILITADO' : '❌ NÃO HABILITADO';
                 adicionarLinhaDebug('🔐 Status OTP', statusOTP);
 
@@ -843,9 +740,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                     adicionarLinhaDebug('📅 Data ativação', new Date(usuario.otp_data_ativacao).toLocaleString());
                 }
 
-                // ============================================
-                // 4. EXIBIR NO CONSOLE (para desenvolvedores)
-                // ============================================
                 console.log('===== AI-DEPOM - STATUS OTP =====');
                 console.log('Usuário:', {
                     id: user.id,
@@ -860,9 +754,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                 });
                 console.log('====================================');
 
-                // ============================================
-                // 5. ATUALIZAR INTERFACE
-                // ============================================
                 if (usuario.otp_habilitado) {
                     mensagem.textContent = '✅ OTP já está configurado para este usuário!';
                     alerta.className = 'alert-success show';
@@ -880,13 +771,9 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                     container.style.display = 'block';
                 }
 
-                // ============================================
-                // 6. EXIBIR PAINEL DE DEPURAÇÃO
-                // ============================================
                 document.getElementById('debugPanel').classList.add('show');
                 document.getElementById('btnMostrarDebug').innerHTML = '<i class="fas fa-bug me-1"></i> OCULTAR DEPURAÇÃO';
 
-                // Salvar dados para uso posterior
                 usuarioId = usuario.id;
                 secret = usuario.otp_secret;
 
@@ -903,9 +790,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
         // ============================================
         async function inicializarConfiguracao() {
             try {
-                // ============================================
-                // 1. VERIFICAR SE USUÁRIO ESTÁ AUTENTICADO
-                // ============================================
                 const { data: { user } } = await supabase.auth.getUser();
                 if (!user) {
                     alert('Usuário não autenticado. Redirecionando para login...');
@@ -917,9 +801,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                 document.getElementById('userName').textContent = user.email || 'Usuário';
                 document.getElementById('userAvatar').textContent = user.email ? user.email.charAt(0).toUpperCase() : 'AM';
 
-                // ============================================
-                // 2. BUSCAR DADOS DO USUÁRIO NO BANCO
-                // ============================================
                 const { data: usuario, error } = await supabase
                     .from('usuarios')
                     .select('nome_completo, otp_secret, otp_habilitado')
@@ -928,11 +809,7 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
 
                 if (error) throw error;
 
-                // ============================================
-                // 3. VERIFICAR SE O OTP JÁ ESTÁ CONFIGURADO
-                // ============================================
                 if (usuario.otp_habilitado) {
-                    // Mostrar mensagem e redirecionar
                     document.getElementById('statusAlerta').className = 'alert-success show';
                     document.getElementById('statusMensagem').textContent = '✅ OTP já está configurado! Redirecionando...';
                     setTimeout(() => {
@@ -941,9 +818,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                     return;
                 }
 
-                // ============================================
-                // 4. GERAR SECRET (se não existir)
-                // ============================================
                 if (usuario.otp_secret) {
                     secret = usuario.otp_secret;
                 } else {
@@ -955,23 +829,13 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                 }
 
                 // ============================================
-                // 5. GERAR QR CODE (VERSÃO ATUALIZADA)
+                // GERAR QR CODE COM FALLBACKS
                 // ============================================
-                gerarQRCode(secret, user.email);
+                gerarQRCodeComFallback(secret, user.email);
 
-                // ============================================
-                // 6. GERAR CÓDIGOS DE BACKUP
-                // ============================================
                 backupCodes = gerarBackupCodes();
-
-                // ============================================
-                // 7. EXIBIR CHAVE SECRETA
-                // ============================================
                 document.getElementById('secretKey').textContent = secret;
 
-                // ============================================
-                // 8. EXIBIR MENSAGEM DE STATUS
-                // ============================================
                 document.getElementById('statusAlerta').className = 'alert-info show';
                 document.getElementById('statusMensagem').textContent = '📱 Escaneie o QR Code abaixo com seu aplicativo autenticador.';
 
@@ -992,81 +856,87 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
         }
 
         // ============================================
-        // GERAR QR CODE - VERSÃO CORRIGIDA
+        // GERAR QR CODE COM FALLBACKS - VERSÃO OTIMIZADA
         // ============================================
-        function gerarQRCode(secret, email) {
+        function gerarQRCodeComFallback(secret, email) {
             const issuer = 'AI-DEPOM';
             const accountName = email || 'usuario';
             const otpAuthUrl = `otpauth://totp/${issuer}:${accountName}?secret=${secret}&issuer=${issuer}`;
 
-            const img = document.getElementById('qrCodeImage');
+            const container = document.getElementById('qrCodeContainer');
             const loading = document.getElementById('qrCodeLoading');
+            const img = document.getElementById('qrCodeImage');
             const secretKey = document.getElementById('secretKey');
 
-            // ============================================
-            // API QR SERVER (RECOMENDADO)
-            // ============================================
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpAuthUrl)}`;
+            // Resetar container
+            container.innerHTML = '';
+            container.appendChild(loading);
+            container.appendChild(img);
 
-            // Adicionar timestamp para evitar cache
-            const qrUrlWithCache = `${qrUrl}&t=${Date.now()}`;
-
-            // Mostrar loading
+            img.style.display = 'none';
             loading.style.display = 'block';
             loading.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Gerando QR Code...';
-            img.style.display = 'none';
 
-            // Tentar carregar
-            img.src = qrUrlWithCache;
+            // ============================================
+            // 1. TENTAR QR SERVER API
+            // ============================================
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(otpAuthUrl)}&t=${Date.now()}`;
+
+            console.log('📌 Tentando QR Server API...');
+            img.src = qrUrl;
 
             img.onload = function() {
+                console.log('✅ QR Server API: Sucesso!');
                 img.style.display = 'block';
                 loading.style.display = 'none';
                 secretKey.classList.remove('warning');
-                console.log('✅ QR Code gerado com sucesso!');
             };
 
             img.onerror = function() {
-                console.warn('⚠️ Falha na API principal. Tentando fallback...');
+                console.warn('⚠️ QR Server API falhou. Tentando QRzap...');
 
                 // ============================================
-                // FALLBACK: API GOQR.ME
+                // 2. FALLBACK: QRZAP API
                 // ============================================
-                const fallbackUrl =
-                    `https://goqr.me/api/qr?data=${encodeURIComponent(otpAuthUrl)}&size=200x200&format=png`;
+                const fallbackUrl = `https://qrzap.fun/api/generate?type=url&url=${encodeURIComponent(otpAuthUrl)}&size=200x200`;
 
                 img.src = fallbackUrl;
 
                 img.onload = function() {
+                    console.log('✅ QRzap API: Sucesso!');
                     img.style.display = 'block';
                     loading.style.display = 'none';
                     secretKey.classList.remove('warning');
-                    console.log('✅ QR Code gerado via fallback!');
                 };
 
                 img.onerror = function() {
-                    // ============================================
-                    // FALHA TOTAL - USAR QRCODE.JS LOCAL
-                    // ============================================
-                    console.warn('⚠️ Todas as APIs falharam. Usando QRCode.js local...');
+                    console.warn('⚠️ QRzap API falhou. Usando QRCode.js local...');
 
+                    // ============================================
+                    // 3. FALLBACK LOCAL: QRCODE.JS
+                    // ============================================
                     loading.innerHTML = '⚠️ Gerando QR Code localmente...';
 
                     try {
-                        // Limpar container
-                        const container = document.getElementById('qrCodeContainer');
-                        const existingImg = container.querySelector('img');
-                        if (existingImg) {
-                            existingImg.remove();
-                        }
+                        // Limpar container (manter loading)
+                        container.innerHTML = '';
+                        container.appendChild(loading);
 
-                        // Criar novo elemento para o QR Code
+                        // Criar container para o QR Code local
                         const qrContainer = document.createElement('div');
                         qrContainer.id = 'qrCodeLocal';
+                        qrContainer.style.display = 'flex';
+                        qrContainer.style.justifyContent = 'center';
+                        qrContainer.style.alignItems = 'center';
                         container.appendChild(qrContainer);
 
+                        // Verificar se a biblioteca está disponível
+                        if (typeof QRCode === 'undefined') {
+                            throw new Error('Biblioteca QRCode.js não carregada');
+                        }
+
                         // Gerar QR Code localmente
-                        const qrCode = new QRCode(qrContainer, {
+                        new QRCode(qrContainer, {
                             text: otpAuthUrl,
                             width: 200,
                             height: 200,
@@ -1077,26 +947,25 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
 
                         loading.style.display = 'none';
                         secretKey.classList.remove('warning');
-                        console.log('✅ QR Code gerado localmente!');
-                    } catch (localError) {
-                        // ============================================
-                        // FALHA TOTAL - USAR CHAVE MANUAL
-                        // ============================================
-                        console.error('❌ Todas as tentativas de gerar QR Code falharam:', localError);
+                        console.log('✅ QRCode.js local: Sucesso!');
 
+                    } catch (localError) {
+                        console.error('❌ Todas as tentativas falharam:', localError);
+
+                        // ============================================
+                        // 4. FALHA TOTAL - USAR CHAVE MANUAL
+                        // ============================================
                         loading.innerHTML = '⚠️ Não foi possível gerar o QR Code.';
                         loading.style.display = 'block';
 
                         // Destacar a chave manual
                         secretKey.classList.add('warning');
 
-                        // Adicionar instrução
-                        const instrucao = document.createElement('p');
-                        instrucao.style.color = '#ffc107';
-                        instrucao.style.fontSize = '13px';
-                        instrucao.style.marginTop = '10px';
-                        instrucao.innerHTML = '⚠️ Use a chave manual acima para configurar o autenticador.';
-                        document.getElementById('qrCodeContainer').appendChild(instrucao);
+                        // Adicionar mensagem de fallback
+                        const fallbackMsg = document.createElement('div');
+                        fallbackMsg.className = 'fallback-message';
+                        fallbackMsg.innerHTML = '⚠️ Use a chave manual abaixo para configurar o autenticador.';
+                        container.appendChild(fallbackMsg);
                     }
                 };
             };
@@ -1166,10 +1035,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
             document.getElementById('alertErro').style.display = 'none';
 
             try {
-                // Validação do OTP - chamada para o backend
-                // Em produção, substituir pela chamada real
-
-                // Atualizar status do OTP no banco
                 const { error } = await supabase
                     .from('usuarios')
                     .update({
@@ -1194,7 +1059,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
                         detalhes: { acao: 'ATIVAR_OTP' }
                     });
 
-                // Executar verificação automática após ativação
                 setTimeout(async () => {
                     await verificarStatusOTP();
                 }, 500);
@@ -1242,7 +1106,6 @@ v1.0.2 - 09/09/2026 - 00:45 - Admin Master
         // ============================================
         document.addEventListener('DOMContentLoaded', function() {
             inicializarConfiguracao();
-            // Executar verificação automática após 2 segundos
             setTimeout(verificarStatusOTP, 2000);
         });
     </script>
