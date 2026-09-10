@@ -144,3 +144,6 @@ local_settings.py
 supabase/.env.local
 supabase/seed-data/
 supabase/migrations/*.backup
+
+# Backups locais
+backup_fase*/
