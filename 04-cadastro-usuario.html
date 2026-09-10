@@ -33,12 +33,10 @@
             overflow-x: hidden;
         }
 
-        /* Controles Bar - mesmo estilo padrão */
+        /* Controls Bar */
         .controls-bar {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(15px);
@@ -48,101 +46,55 @@
             justify-content: space-between;
             align-items: center;
             height: 48px;
-            min-height: 48px;
         }
 
-        .controls-left { display: flex; gap: 4px; align-items: center; }
-        .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
         .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
 
         .control-btn {
-            width: var(--control-size);
-            height: var(--control-size);
-            border-radius: 8px;
-            border: none;
+            width: var(--control-size); height: var(--control-size);
+            border-radius: 8px; border: none;
             background: transparent;
             color: rgba(0, 255, 136, 0.3);
-            font-size: 16px;
-            cursor: pointer;
+            font-size: 16px; cursor: pointer;
             transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
-
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn:active { transform: scale(0.92); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
-        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 12px;
-        }
-
+        .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
+            width: 28px; height: 28px; border-radius: 50%;
             background: var(--gradient-green);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 12px;
-            color: #000;
-        }
-
-        /* Main Content */
-        .main-content {
-            margin-left: 260px;
-            padding: 70px 30px 30px;
-            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; color: #000;
         }
 
         /* Sidebar */
         .sidebar {
-            position: fixed;
-            top: 48px;
-            left: 0;
-            width: 260px;
-            height: calc(100vh - 48px);
+            position: fixed; top: 48px; left: 0;
+            width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999;
-            padding: 20px 0;
+            z-index: 999; padding: 20px 0;
             transition: transform 0.3s ease;
             overflow-y: auto;
         }
-
         .sidebar::-webkit-scrollbar { width: 4px; }
         .sidebar::-webkit-scrollbar-thumb { background: var(--text-primary); border-radius: 4px; }
 
-        .sidebar-brand {
-            text-align: center;
-            padding: 0 20px 25px;
-            border-bottom: 1px solid var(--border-color);
-            margin-bottom: 20px;
-        }
-
+        .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .sidebar-brand .logo {
-            width: 50px;
-            height: 50px;
-            margin: 0 auto 10px;
-            background: var(--gradient-green);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 50px; height: 50px; margin: 0 auto 10px;
+            background: var(--gradient-green); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
             box-shadow: 0 0 40px var(--shadow-color);
         }
-
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
@@ -150,17 +102,11 @@
         .sidebar-menu { padding: 0 12px; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 16px;
-            border-radius: 10px;
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 16px; border-radius: 10px;
             color: rgba(0, 255, 136, 0.3);
-            text-decoration: none;
-            transition: all 0.3s;
-            cursor: pointer;
-            margin-bottom: 2px;
-            font-size: 14px;
+            text-decoration: none; transition: all 0.3s;
+            cursor: pointer; margin-bottom: 2px; font-size: 14px;
         }
         .sidebar-menu .menu-item:hover { background: rgba(0, 255, 136, 0.03); color: var(--text-primary); }
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
@@ -168,51 +114,29 @@
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
 
         .sidebar-footer {
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            right: 0;
-            padding: 0 20px;
-            border-top: 1px solid var(--border-color);
-            padding-top: 15px;
+            position: absolute; bottom: 20px; left: 0; right: 0;
+            padding: 0 20px; border-top: 1px solid var(--border-color); padding-top: 15px;
         }
-
-        .sidebar-footer .user-info-sidebar {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
+        .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
+            width: 36px; height: 36px; border-radius: 50%;
             background: var(--gradient-green);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 14px;
-            color: #000;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #000;
         }
-
         .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
         .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
 
-        /* Top Bar */
+        /* Main Content */
+        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; }
+
         .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 15px 25px;
-            margin-bottom: 25px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px;
+            background: var(--bg-secondary); border-radius: 16px;
+            padding: 15px 25px; margin-bottom: 25px;
             border: 1px solid var(--border-color);
         }
-
         .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
         .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
         .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -221,65 +145,154 @@
 
         /* Form Card */
         .form-card {
-            background: var(--bg-secondary);
-            border-radius: 14px;
-            padding: 25px;
-            border: 1px solid var(--border-color);
+            background: var(--bg-secondary); border-radius: 14px;
+            padding: 25px; border: 1px solid var(--border-color);
+            margin-bottom: 25px;
         }
-
         .form-card .card-title {
-            color: var(--text-primary);
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            color: var(--text-primary); font-size: 14px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-            margin-bottom: 20px;
+            padding-bottom: 12px; margin-bottom: 20px;
         }
-
         .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
+
         .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+
         .form-control, .form-select {
             background: rgba(0, 0, 0, 0.5);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
-            padding: 10px 14px;
-            border-radius: 10px;
-            transition: all 0.3s;
-            font-size: 14px;
+            padding: 10px 14px; border-radius: 10px;
+            transition: all 0.3s; font-size: 14px;
         }
-        .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 0, 0, 0.6);
+            border-color: var(--text-primary);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
+            color: var(--text-primary);
+        }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+        .form-select option { background: #000; color: var(--text-primary); }
         .input-group-text { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.2); }
 
         .btn-gold {
-            background: var(--gradient-green);
-            color: #000;
-            font-weight: 700;
-            padding: 10px 28px;
-            border-radius: 10px;
-            border: none;
-            transition: all 0.3s;
-            letter-spacing: 0.5px;
-            font-size: 14px;
+            background: var(--gradient-green); color: #000;
+            font-weight: 700; padding: 10px 28px;
+            border-radius: 10px; border: none;
+            transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px;
         }
-
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
         .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
         .btn-outline-gold {
-            background: transparent;
-            color: var(--text-primary);
+            background: transparent; color: var(--text-primary);
             border: 1px solid var(--text-primary);
-            padding: 10px 28px;
-            border-radius: 10px;
+            padding: 10px 28px; border-radius: 10px;
+            font-weight: 600; transition: all 0.3s; font-size: 14px;
+        }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); color: var(--text-primary); }
+
+        /* Tabela de usuários */
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .users-table th {
+            color: rgba(0, 255, 136, 0.4);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .users-table td {
+            color: var(--text-secondary);
+            font-size: 13px;
+            padding: 12px;
+            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+        }
+        .users-table tr:hover td { background: rgba(0, 255, 136, 0.02); }
+
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 10px;
             font-weight: 600;
-            transition: all 0.3s;
-            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        .status-ativo { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .status-inativo { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
+        .status-primeiro { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(0, 255, 136, 0.2);
+        }
+        .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
+
+        /* Toast */
+        .toast-container {
+            position: fixed;
+            top: 65px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
-        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); color: var(--text-primary); }
+        .toast-ai {
+            min-width: 320px;
+            max-width: 420px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            animation: slideIn 0.3s ease;
+            backdrop-filter: blur(20px);
+        }
+        .toast-ai.success { border-left: 4px solid var(--text-primary); }
+        .toast-ai.error { border-left: 4px solid #dc3545; }
+        .toast-ai.warning { border-left: 4px solid #ffc107; }
+        .toast-ai.info { border-left: 4px solid #0dcaf0; }
+
+        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .toast-ai.success .toast-icon { color: var(--text-primary); }
+        .toast-ai.error .toast-icon { color: #dc3545; }
+        .toast-ai.warning .toast-icon { color: #ffc107; }
+        .toast-ai.info .toast-icon { color: #0dcaf0; }
+
+        .toast-ai .toast-content { flex: 1; }
+        .toast-ai .toast-title { font-weight: 700; font-size: 13px; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
+
+        .toast-ai .toast-close {
+            background: none; border: none;
+            color: rgba(0, 255, 136, 0.3);
+            cursor: pointer; font-size: 14px;
+            padding: 0; margin-left: 8px;
+        }
+        .toast-ai .toast-close:hover { color: var(--text-primary); }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+
+        /* Sidebar toggle (mobile) */
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
         @media (max-width: 992px) {
@@ -287,33 +300,15 @@
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0; }
             .sidebar-toggle { display: flex !important; }
-            .controls-center .system-title { font-size: 12px; }
-            .control-btn { width: 32px; height: 32px; font-size: 14px; }
             .user-info .name { display: none; }
         }
 
         @media (max-width: 768px) {
             .main-content { padding: 65px 15px 15px; }
             .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
-            .top-bar .page-title h4 { font-size: 1rem; }
             .form-card { padding: 18px; }
-            .form-control, .form-select { font-size: 13px; padding: 8px 12px; }
-            .btn-gold, .btn-outline-gold { padding: 8px 20px; font-size: 13px; width: 100%; }
-            .controls-center .system-title { font-size: 11px; }
-        }
-
-        @media (max-width: 480px) {
-            .main-content { padding: 60px 10px 10px; }
-            .top-bar { padding: 10px 14px; }
-            .top-bar .page-title h4 { font-size: 0.9rem; }
-            .top-actions { width: 100%; }
-            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; padding: 4px 10px; }
-            .form-card { padding: 14px; }
-            .form-card .card-title { font-size: 12px; }
-            .form-label { font-size: 10px; }
-            .controls-center .system-title { font-size: 9px; }
-            .control-btn { width: 28px; height: 28px; font-size: 12px; }
-            .controls-divider { margin: 0 3px; }
+            .btn-gold, .btn-outline-gold { width: 100%; }
+            .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
         }
 
         ::-webkit-scrollbar { width: 6px; height: 6px; }
@@ -325,17 +320,16 @@
 
     <header class="controls-bar">
         <div class="controls-left">
-            <button class="control-btn" onclick="window.history.back()" title="Voltar (Alt+V)"><i class="fas fa-arrow-left"></i></button>
-            <button class="control-btn" onclick="window.history.forward()" title="Avançar (Alt+A)"><i class="fas fa-arrow-right"></i></button>
+            <button class="control-btn" onclick="window.history.back()" title="Voltar"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
-            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar (Alt+M)"><i class="fas fa-window-minimize"></i></button>
-            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar (Alt+F)"><i class="fas fa-times"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar"><i class="fas fa-times"></i></button>
         </div>
         <div class="controls-center">
-            <span class="system-title"><i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM</span>
+            <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
         </div>
         <div class="controls-right">
-            <div class="user-info"><div class="avatar">AM</div><span class="name">Admin Master</span></div>
+            <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
         </div>
     </header>
 
@@ -353,16 +347,19 @@
             <a class="menu-item" onclick="window.location.href='07-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatórios</a>
             <div class="menu-label">Administração</div>
             <a class="menu-item active" onclick="window.location.href='04-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuários <span class="badge">Master</span></a>
-            <a class="menu-item" onclick="alert('Abrindo módulo de mandados...')"><i class="fas fa-gavel"></i> Mandados</a>
-            <a class="menu-item" onclick="alert('Abrindo auditoria...')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="showToast('info','Em breve','Módulo de mandados em desenvolvimento.')"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="showToast('info','Em breve','Módulo de auditoria em desenvolvimento.')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
             <div class="menu-label">Sistema</div>
-            <a class="menu-item" onclick="alert('Abrindo configurações...')"><i class="fas fa-cog"></i> Configurações</a>
-            <a class="menu-item" onclick="alert('Saindo do sistema...')"><i class="fas fa-sign-out-alt"></i> Sair</a>
+            <a class="menu-item" onclick="window.location.href='configuracoes.html'"><i class="fas fa-cog"></i> Configurações</a>
+            <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info-sidebar">
-                <div class="avatar">AM</div>
-                <div><div class="name" id="sidebarUserName">Carregando...</div><div class="role" id="sidebarUserRole">Carregando...</div></div>
+                <div class="avatar" id="sidebarAvatar">AM</div>
+                <div>
+                    <div class="name" id="sidebarUserName">Carregando...</div>
+                    <div class="role" id="sidebarUserRole">Carregando...</div>
+                </div>
             </div>
         </div>
     </aside>
@@ -373,21 +370,22 @@
                 <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                 <div class="page-title">
                     <h4><i class="fas fa-users-cog me-2"></i>Gerenciamento de Usuários</h4>
-                    <small><i class="fas fa-lock me-1"></i> Apenas Administrador Master ou Desenvolvedor</small>
+                    <small><i class="fas fa-lock me-1"></i> Apenas Administrador Master</small>
                 </div>
             </div>
             <div class="top-actions">
-                <span class="badge bg-danger" style="background: #dc3545; border-color: #dc3545; color: #fff;"><i class="fas fa-circle"></i> Nível 10 - Master</span>
-                <span class="badge bg-warning text-dark" style="background: #ffc107; border-color: #ffc107; color: #000;"><i class="fas fa-user-shield"></i> Administrador Master</span>
+                <span class="badge bg-danger" style="background:#dc3545;border-color:#dc3545;color:#fff;"><i class="fas fa-circle"></i> Nível 10 - Master</span>
+                <span class="badge bg-warning text-dark" style="background:#ffc107;border-color:#ffc107;color:#000;"><i class="fas fa-user-shield"></i> Administrador Master</span>
             </div>
         </header>
 
+        <!-- Card de Cadastro -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-user-plus"></i>Cadastrar Novo Usuário</div>
 
-            <div class="alert alert-danger" style="background:rgba(220,53,69,0.05); border:1px solid rgba(220,53,69,0.1); color:#dc3545; border-radius:10px;">
+            <div id="avisoPermissao" class="alert" style="display:none; background:rgba(220,53,69,0.05); border:1px solid rgba(220,53,69,0.1); color:#dc3545; border-radius:10px;">
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Restrito:</strong> Apenas o <strong>Administrador Master</strong> ou <strong>Desenvolvedor</strong> pode cadastrar usuários.
+                <strong>Restrito:</strong> Apenas o <strong>Administrador Master</strong> pode cadastrar usuários.
             </div>
 
             <div class="alert alert-warning" style="background:rgba(255,193,7,0.05); border:1px solid rgba(255,193,7,0.1); color:#ffc107; border-radius:10px;">
@@ -418,7 +416,7 @@
                             <input type="email" class="form-control" id="email" placeholder="usuario@dominio.com" required>
                             <span class="input-group-text" id="emailValidation"><i class="fas fa-circle"></i></span>
                         </div>
-                        <small class="text-muted" id="emailFeedback" style="color:rgba(0,255,136,0.2);">Digite um email válido</small>
+                        <small id="emailFeedback" style="color:rgba(0,255,136,0.2);">Digite um email válido</small>
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Perfil de Acesso *</label>
@@ -458,105 +456,297 @@
                 </div>
 
                 <div class="mt-3" style="background:rgba(0,255,136,0.02); border:1px solid var(--border-color); border-radius:10px; padding:12px;">
-                    <small style="color:rgba(0,255,136,0.2);"><i class="fas fa-info-circle me-1"></i>Senha temporária será gerada automaticamente e enviada por email. Usuário será forçado a trocar a senha no primeiro acesso.</small>
+                    <small style="color:rgba(0,255,136,0.2);"><i class="fas fa-info-circle me-1"></i>Senha temporária será gerada automaticamente. Usuário deverá trocá-la no primeiro acesso.</small>
                 </div>
             </form>
         </div>
+
+        <!-- Card de Listagem -->
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Usuários Cadastrados</div>
+                <button class="btn-outline-gold" onclick="carregarUsuarios()" style="padding:6px 16px; font-size:12px;"><i class="fas fa-sync-alt me-2"></i>ATUALIZAR</button>
+            </div>
+            <div id="listaUsuarios">
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Carregando usuários...
+                </div>
+            </div>
+        </div>
     </main>
 
+    <!-- Container de Toasts -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
+
     <script>
-        const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
-        const supabaseAnonKey = 'SUA_CHAVE_ANON_AQUI';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+        // ============================================
+        // INICIALIZAÇÃO
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 AI-DEPOM - Cadastro de Usuário iniciado');
 
-        function minimizeWindow() {
-            try { if (window.moveTo && window.resizeTo) { window.moveTo(0, 0); window.resizeTo(screen.width / 2, screen.height / 2); } else { alert('Use o botão de minimizar do seu navegador.'); } } catch (e) { console.warn('Minimizar não suportado:', e); }
-        }
-        function closeWindow() {
-            if (confirm('Deseja realmente fechar o sistema?')) { try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; } }
-        }
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+            // 1. Verificar sessão
+            const usuario = AIDEPOM.getUsuario();
+            if (!usuario) {
+                showToast('error', 'Sessão expirada', 'Faça login novamente.');
+                setTimeout(() => window.location.href = '02-login.html', 1500);
+                return;
+            }
 
-        async function carregarUsuario() {
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (user) {
-                    const { data: usuario } = await supabase.from('usuarios').select('nome_completo, setor').eq('id', user.id).single();
-                    if (usuario) {
-                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin Master';
-                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador Master';
-                    }
+            // 2. Verificar se é MASTER
+            const isMaster = await AIDEPOM.isAdminMaster();
+            if (!isMaster) {
+                showToast('error', 'Acesso negado', 'Apenas Administrador Master pode acessar esta página.');
+                document.getElementById('avisoPermissao').style.display = 'block';
+                document.getElementById('btnCadastrar').disabled = true;
+                return;
+            }
+
+            // 3. Atualizar UI com dados do usuário
+            atualizarDadosUsuario(usuario);
+
+            // 4. Carregar lista de usuários
+            carregarUsuarios();
+
+            console.log('✅ Página pronta');
+        });
+
+        // ============================================
+        // DADOS DO USUÁRIO
+        // ============================================
+        function atualizarDadosUsuario(usuario) {
+            const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+            const nome = usuario.nome_completo || 'Usuário';
+            const perfil = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
+
+            // Top bar
+            document.getElementById('topAvatar').textContent = inicial;
+            document.getElementById('topUserName').textContent = nome;
+
+            // Sidebar
+            document.getElementById('sidebarAvatar').textContent = inicial;
+            document.getElementById('sidebarUserName').textContent = nome;
+            document.getElementById('sidebarUserRole').textContent = perfil;
+        }
+
+        // ============================================
+        // CARREGAR USUÁRIOS
+        // ============================================
+        async function carregarUsuarios() {
+            const container = document.getElementById('listaUsuarios');
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando usuários...</div>';
+
+            const { data, error } = await AIDEPOM.listarUsuarios();
+
+            if (error) {
+                console.error('Erro ao listar:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar usuários</div>';
+                return;
+            }
+
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i>Nenhum usuário cadastrado</div>';
+                return;
+            }
+
+            let html = `
+                <div style="overflow-x:auto;">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Matrícula</th>
+                                <th>Nome</th>
+                                <th>Email</th>
+                                <th>Setor</th>
+                                <th>Perfil</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            data.forEach(u => {
+                let status = '<span class="status-badge status-ativo"><i class="fas fa-check"></i> Ativo</span>';
+                if (!u.ativo) {
+                    status = '<span class="status-badge status-inativo"><i class="fas fa-times"></i> Inativo</span>';
+                } else if (u.primeiro_acesso) {
+                    status = '<span class="status-badge status-primeiro"><i class="fas fa-clock"></i> 1º Acesso</span>';
                 }
-            } catch (error) { console.error('Erro ao carregar usuário:', error); }
+
+                html += `
+                    <tr>
+                        <td><strong style="color:var(--text-primary);">${u.matricula}</strong></td>
+                        <td>${u.nome_completo}</td>
+                        <td style="font-size:12px; color:rgba(0,255,136,0.4);">${u.email}</td>
+                        <td>${u.setor}</td>
+                        <td>${AIDEPOM.getNomePerfil(u.id_perfil_acesso)}</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
         }
 
+        // ============================================
+        // TOAST
+        // ============================================
+        function showToast(tipo, titulo, mensagem, duracao = 5000) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast-ai ${tipo}`;
+
+            const icones = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+
+            toast.innerHTML = `
+                <i class="fas ${icones[tipo] || icones.info} toast-icon"></i>
+                <div class="toast-content">
+                    <div class="toast-title">${titulo}</div>
+                    <div class="toast-message">${mensagem}</div>
+                </div>
+                <button class="toast-close" onclick="this.parentElement.remove()">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
+        }
+
+        // ============================================
+        // VALIDAÇÃO DE EMAIL
+        // ============================================
         document.getElementById('email').addEventListener('input', function() {
             const email = this.value;
             const feedback = document.getElementById('emailFeedback');
             const validation = document.getElementById('emailValidation');
             const isValid = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email);
+
             if (isValid && email.length > 0) {
-                feedback.textContent = '✅ Email válido'; feedback.style.color = '#28a745';
-                validation.innerHTML = '<i class="fas fa-check-circle"></i>'; validation.style.background = 'rgba(40,167,69,0.1)'; validation.style.borderColor = 'rgba(40,167,69,0.2)'; validation.style.color = '#28a745';
+                feedback.textContent = '✅ Email válido';
+                feedback.style.color = '#00ff88';
+                validation.innerHTML = '<i class="fas fa-check-circle"></i>';
+                validation.style.background = 'rgba(0,255,136,0.1)';
+                validation.style.borderColor = 'rgba(0,255,136,0.2)';
+                validation.style.color = '#00ff88';
             } else if (email.length === 0) {
-                feedback.textContent = 'Digite um email válido'; feedback.style.color = 'rgba(0,255,136,0.2)';
-                validation.innerHTML = '<i class="fas fa-circle"></i>'; validation.style.background = 'rgba(0,0,0,0.3)'; validation.style.borderColor = 'var(--border-color)'; validation.style.color = 'rgba(0,255,136,0.2)';
+                feedback.textContent = 'Digite um email válido';
+                feedback.style.color = 'rgba(0,255,136,0.2)';
+                validation.innerHTML = '<i class="fas fa-circle"></i>';
+                validation.style.background = 'rgba(0,0,0,0.3)';
+                validation.style.borderColor = 'var(--border-color)';
+                validation.style.color = 'rgba(0,255,136,0.2)';
             } else {
-                feedback.textContent = '❌ Email inválido'; feedback.style.color = '#dc3545';
-                validation.innerHTML = '<i class="fas fa-times-circle"></i>'; validation.style.background = 'rgba(220,53,69,0.1)'; validation.style.borderColor = 'rgba(220,53,69,0.2)'; validation.style.color = '#dc3545';
+                feedback.textContent = '❌ Email inválido';
+                feedback.style.color = '#dc3545';
+                validation.innerHTML = '<i class="fas fa-times-circle"></i>';
+                validation.style.background = 'rgba(220,53,69,0.1)';
+                validation.style.borderColor = 'rgba(220,53,69,0.2)';
+                validation.style.color = '#dc3545';
             }
         });
 
+        // ============================================
+        // SUBMIT DO FORMULÁRIO
+        // ============================================
         document.getElementById('formUsuario').addEventListener('submit', async function(e) {
             e.preventDefault();
+
             const btn = document.getElementById('btnCadastrar');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
 
             try {
-                const nome = document.getElementById('nomeCompleto').value;
-                const matricula = document.getElementById('matricula').value;
-                const setor = document.getElementById('setor').value;
-                const email = document.getElementById('email').value;
-                const perfil = document.getElementById('perfil').value;
+                // 1. Coletar dados
+                const dados = {
+                    nome: document.getElementById('nomeCompleto').value.trim(),
+                    matricula: document.getElementById('matricula').value.trim(),
+                    setor: document.getElementById('setor').value.trim(),
+                    email: document.getElementById('email').value.trim(),
+                    perfil: document.getElementById('perfil').value
+                };
 
-                if (!nome || !matricula || !setor || !email || !perfil) { alert('⚠️ Preencha todos os campos obrigatórios!'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; return; }
-                if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) { alert('⚠️ Email inválido!'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; return; }
-
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) { alert('⚠️ Você precisa estar logado como Administrador Master.'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; return; }
-
-                const { data: usuarioMaster } = await supabase.from('usuarios_autorizados').select('tipo').eq('id_usuario', user.id).eq('ativo', true).single();
-                if (!usuarioMaster) {
-                    await supabase.from('logs_detalhados').insert({ id_usuario: user.id, nivel: 'WARNING', categoria: 'SEGURANCA', mensagem: 'Tentativa de cadastro de usuário não autorizada', detalhes: { acao: 'CADASTRO_USUARIO', usuario: user.id, email_tentado: email } });
-                    alert('⚠️ Apenas o Administrador Master ou Desenvolvedor pode cadastrar usuários!');
-                    btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+                // 2. Validar campos
+                if (!dados.nome || !dados.matricula || !dados.setor || !dados.email || !dados.perfil) {
+                    showToast('warning', 'Campos obrigatórios', 'Preencha todos os campos marcados com *.');
                     return;
                 }
 
-                const { data: existente } = await supabase.from('usuarios').select('matricula').eq('matricula', matricula).single();
-                if (existente) { alert('⚠️ Matrícula já cadastrada!'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; return; }
+                if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(dados.email)) {
+                    showToast('error', 'Email inválido', 'Digite um email válido.');
+                    return;
+                }
 
-                const { data: emailExistente } = await supabase.from('usuarios').select('email').eq('email', email).single();
-                if (emailExistente) { alert('⚠️ Email já cadastrado!'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; return; }
+                // 3. Chamar Edge Function
+                showToast('info', 'Processando...', 'Criando usuário no sistema...');
+                const resultado = await AIDEPOM.criarUsuario(dados);
 
-                const senhaTemp = 'Temp@' + new Date().toISOString().slice(0, 10).replace(/-/g, '') + Math.floor(Math.random() * 10000).toString().padStart(4, '0');
-                const { data: authUser, error: errAuth } = await supabase.auth.admin.createUser({ email, password: senhaTemp, email_confirm: true, user_metadata: { nome_completo: nome, matricula, setor } });
-                if (errAuth) { alert('❌ Erro ao criar usuário: ' + errAuth.message); btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; return; }
+                if (!resultado.sucesso) {
+                    showToast('error', 'Erro ao cadastrar', resultado.erro || 'Erro desconhecido');
+                    return;
+                }
 
-                const { error: errInsert } = await supabase.from('usuarios').insert({ id: authUser.user.id, matricula, nome_completo: nome, email, setor, id_perfil_acesso: parseInt(perfil), ativo: true, primeiro_acesso: true, id_usuario_cadastrador: user.id });
-                if (errInsert) { alert('❌ Erro ao cadastrar usuário no sistema: ' + errInsert.message); btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; return; }
+                // 4. Sucesso!
+                showToast('success', 'Usuário cadastrado!',
+                    `<strong>${dados.nome}</strong> foi cadastrado.<br>
+                     <small>Senha temporária: <code style="color:#ffc107;">${resultado.senha_temporaria}</code></small>`,
+                    10000
+                );
 
-                alert('✅ USUÁRIO CADASTRADO COM SUCESSO!\n\n📋 Nome: ' + nome + '\n🔑 Matrícula: ' + matricula + '\n📧 Email: ' + email + '\n👤 Perfil: ' + perfil + '\n\n🔐 Senha temporária: ' + senhaTemp + '\n\n📨 Senha enviada por email. Usuário deve trocar no primeiro acesso.\n\n⚠️ Lembre-se: Nenhum usuário pode deletar dados!');
-                document.getElementById('formUsuario').reset();
+                // 5. Limpar formulário
+                this.reset();
                 document.getElementById('emailValidation').innerHTML = '<i class="fas fa-circle"></i>';
                 document.getElementById('emailFeedback').textContent = 'Digite um email válido';
                 document.getElementById('emailFeedback').style.color = 'rgba(0,255,136,0.2)';
-            } catch (error) { alert('❌ Erro ao cadastrar usuário: ' + error.message); } finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO'; }
+
+                // 6. Recarregar lista
+                carregarUsuarios();
+
+            } catch (error) {
+                console.error('Erro inesperado:', error);
+                showToast('error', 'Erro inesperado', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus me-2"></i>CADASTRAR USUÁRIO';
+            }
         });
 
-        document.addEventListener('DOMContentLoaded', carregarUsuario);
+        // ============================================
+        // LOGOUT
+        // ============================================
+        async function fazerLogout() {
+            if (confirm('Deseja realmente sair do sistema?')) {
+                await AIDEPOM.logout();
+            }
+        }
+
+        // ============================================
+        // JANELA
+        // ============================================
+        function closeWindow() {
+            if (confirm('Deseja realmente fechar o sistema?')) {
+                try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
     </script>
 </body>
 </html>
