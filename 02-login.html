@@ -609,7 +609,25 @@
                 } catch (storageError) {
                     console.warn('⚠️ Erro ao salvar dados:', storageError);
                 }
+		// Após: console.log('✅ Autenticação bem-sucedida!');
 
+// Atualizar data_ultimo_acesso
+try {
+    const { error: updateError } = await supabaseClient
+        .from('usuarios')
+        .update({ 
+            data_ultimo_acesso: new Date().toISOString() 
+        })
+        .eq('id', usuario.id);
+    
+    if (updateError) {
+        console.warn('⚠️ Erro ao atualizar data_ultimo_acesso:', updateError);
+    } else {
+        console.log('✅ data_ultimo_acesso atualizada');
+    }
+} catch (e) {
+    console.warn('⚠️ Erro ao atualizar data_ultimo_acesso:', e);
+}
                 console.log('🚀 Login bem-sucedido!');
                 showSuccess('Login realizado com sucesso! Redirecionando...');
 

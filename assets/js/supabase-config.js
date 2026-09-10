@@ -1,5 +1,6 @@
 ﻿/* ============================================
    AI-DEPOM - Configuracao Supabase
+   Versao: 2.0.0
    ============================================ */
 
 const SUPABASE_URL = 'https://szkgaqouivsvlyujfvmz.supabase.co';
@@ -79,6 +80,11 @@ window.AIDEPOM = {
         el.classList.add('show');
     },
 
+    hideSuccess(elementId) {
+        const el = document.getElementById(elementId);
+        if (el) el.classList.remove('show');
+    },
+
     setLoading(btn, loading) {
         if (!btn) return;
         if (loading) {
@@ -88,7 +94,138 @@ window.AIDEPOM = {
             btn.classList.remove('loading');
             btn.disabled = false;
         }
+    },
+
+    async isAdminMaster() {
+        try {
+            const { data: { user } } = await window.supabaseClient.auth.getUser();
+            if (!user) return false;
+
+            const { data } = await window.supabaseClient
+                .from('usuarios_autorizados')
+                .select('tipo')
+                .eq('id_usuario', user.id)
+                .eq('ativo', true)
+                .is('data_revogacao', null)
+                .eq('tipo', 'MASTER')
+                .maybeSingle();
+
+            return !!data;
+        } catch (error) {
+            console.error('Erro ao verificar permissao MASTER:', error);
+            return false;
+        }
+    },
+
+    async criarUsuario(dados) {
+        try {
+            const { data, error } = await window.supabaseClient.functions.invoke('criar-usuario', {
+                body: dados
+            });
+
+            if (error) {
+                console.error('Erro na Edge Function:', error);
+                return { sucesso: false, erro: error.message || 'Erro ao criar usuario' };
+            }
+
+            return data;
+        } catch (error) {
+            console.error('Erro inesperado ao criar usuario:', error);
+            return { sucesso: false, erro: 'Erro inesperado: ' + error.message };
+        }
+    },
+
+    async listarUsuarios() {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('usuarios')
+                .select('id, matricula, nome_completo, email, setor, id_perfil_acesso, ativo, primeiro_acesso, data_cadastro')
+                .eq('deletado', false)
+                .order('data_cadastro', { ascending: false });
+
+            return { data, error };
+        } catch (error) {
+            console.error('Erro ao listar usuarios:', error);
+            return { data: null, error };
+        }
+    },
+
+    async buscarUsuarioPorId(id) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('usuarios')
+                .select('*')
+                .eq('id', id)
+                .maybeSingle();
+
+            return { data, error };
+        } catch (error) {
+            console.error('Erro ao buscar usuario por ID:', error);
+            return { data: null, error };
+        }
+    },
+
+    async atualizarUsuario(id, dados) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('usuarios')
+                .update(dados)
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            return { data, error };
+        } catch (error) {
+            console.error('Erro ao atualizar usuario:', error);
+            return { data: null, error };
+        }
+    },
+
+    async desativarUsuario(id) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('usuarios')
+                .update({ ativo: false })
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            return { data, error };
+        } catch (error) {
+            console.error('Erro ao desativar usuario:', error);
+            return { data: null, error };
+        }
+    },
+
+    async reativarUsuario(id) {
+        try {
+            const { data, error } = await window.supabaseClient
+                .from('usuarios')
+                .update({ ativo: true })
+                .eq('id', id)
+                .select()
+                .maybeSingle();
+
+            return { data, error };
+        } catch (error) {
+            console.error('Erro ao reativar usuario:', error);
+            return { data: null, error };
+        }
+    },
+
+    PERFIS: {
+        1: 'Administrador Master',
+        2: 'Administrador',
+        3: 'Delegado',
+        4: 'Investigador',
+        5: 'Perito',
+        6: 'Analista',
+        7: 'Consulta Externa'
+    },
+
+    getNomePerfil(idPerfil) {
+        return this.PERFIS[idPerfil] || 'Desconhecido';
     }
 };
 
-console.log('AI-DEPOM: Supabase configurado');
+console.log('AI-DEPOM: Supabase configurado (v2.0.0)');
