@@ -1,4 +1,4 @@
-@'
+ $html = @'
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -53,35 +53,20 @@
             0%, 100% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
         }
-        .logo-area {
-            text-align: center;
-            margin-bottom: 30px;
-        }
+        .logo-area { text-align: center; margin-bottom: 30px; }
         .logo-area .icon {
             font-size: 48px;
             color: var(--text-primary);
             background: rgba(0, 255, 136, 0.05);
-            width: 90px;
-            height: 90px;
-            line-height: 90px;
+            width: 90px; height: 90px; line-height: 90px;
             border-radius: 50%;
             display: inline-block;
             margin-bottom: 15px;
             border: 2px solid var(--border-color);
             box-shadow: 0 0 40px var(--shadow-color);
         }
-        .logo-area h1 {
-            font-size: 24px;
-            color: var(--text-primary);
-            font-weight: 700;
-            letter-spacing: 2px;
-        }
-        .logo-area p {
-            color: rgba(0, 255, 136, 0.4);
-            font-size: 13px;
-            margin-top: 8px;
-            letter-spacing: 1px;
-        }
+        .logo-area h1 { font-size: 24px; color: var(--text-primary); font-weight: 700; letter-spacing: 2px; }
+        .logo-area p { color: rgba(0, 255, 136, 0.4); font-size: 13px; margin-top: 8px; letter-spacing: 1px; }
         .info-box {
             background: rgba(0, 255, 136, 0.03);
             border-left: 4px solid var(--text-primary);
@@ -92,12 +77,8 @@
             color: var(--text-secondary);
             line-height: 1.6;
         }
-        .info-box i { margin-right: 8px; }
         .info-box strong { color: var(--text-primary); }
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
+        .form-group { margin-bottom: 20px; position: relative; }
         .form-group label {
             display: block;
             font-size: 12px;
@@ -107,9 +88,7 @@
             letter-spacing: 1px;
             text-transform: uppercase;
         }
-        .form-group .input-wrapper {
-            position: relative;
-        }
+        .form-group .input-wrapper { position: relative; }
         .form-group .input-wrapper > i {
             position: absolute;
             left: 16px;
@@ -134,9 +113,7 @@
             background: rgba(0, 0, 0, 0.7);
             box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
         }
-        .form-group input::placeholder {
-            color: rgba(0, 255, 136, 0.2);
-        }
+        .form-group input::placeholder { color: rgba(0, 255, 136, 0.2); }
         .form-group .toggle-password {
             position: absolute;
             right: 16px;
@@ -163,10 +140,7 @@
             color: rgba(0, 255, 136, 0.6);
             letter-spacing: 1px;
         }
-        .password-requirements ul {
-            list-style: none;
-            padding: 0;
-        }
+        .password-requirements ul { list-style: none; padding: 0; }
         .password-requirements ul li {
             padding: 4px 0;
             display: flex;
@@ -174,10 +148,7 @@
             gap: 8px;
             transition: all 0.3s;
         }
-        .password-requirements ul li i {
-            font-size: 12px;
-            width: 16px;
-        }
+        .password-requirements ul li i { font-size: 12px; width: 16px; }
         .password-requirements ul li.valid { color: var(--text-primary); }
         .password-requirements ul li.invalid { color: rgba(0, 255, 136, 0.2); }
         .btn-primary {
@@ -201,10 +172,7 @@
             transform: translateY(-2px);
             box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
         }
-        .btn-primary:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-primary .spinner {
             display: none;
             width: 18px;
@@ -248,9 +216,6 @@
         }
     </style>
 </head>
-'@ | Set-Content -Path "03-primeiro-acesso.html" -Encoding UTF8
-Write-Host "✅ Parte 1 gravada (cabeçalho + CSS)" -ForegroundColor Green
-  @'
 <body>
     <div class="container">
         <div class="logo-area">
@@ -301,7 +266,7 @@ Write-Host "✅ Parte 1 gravada (cabeçalho + CSS)" -ForegroundColor Green
                     <li id="reqUppercase" class="invalid"><i class="fas fa-circle"></i> Pelo menos 1 letra maiuscula</li>
                     <li id="reqLowercase" class="invalid"><i class="fas fa-circle"></i> Pelo menos 1 letra minuscula</li>
                     <li id="reqNumber" class="invalid"><i class="fas fa-circle"></i> Pelo menos 1 numero</li>
-                    <li id="reqSpecial" class="invalid"><i class="fas fa-circle"></i> Pelo menos 1 caractere especial (@, #, $, etc)</li>
+                    <li id="reqSpecial" class="invalid"><i class="fas fa-circle"></i> Pelo menos 1 caractere especial</li>
                 </ul>
             </div>
 
@@ -323,25 +288,17 @@ Write-Host "✅ Parte 1 gravada (cabeçalho + CSS)" -ForegroundColor Green
 
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('AI-DEPOM - Primeiro Acesso carregado');
-
-            // 1. Verificar sessao
             usuarioAtual = AIDEPOM.getUsuario();
             if (!usuarioAtual) {
                 showError('Sessao expirada. Faca login novamente.');
                 setTimeout(() => window.location.href = '02-login.html', 2000);
                 return;
             }
-
-            // 2. Mostrar nome do usuario
             const nome = usuarioAtual.nome_completo || 'Usuario';
             document.getElementById('welcomeName').textContent = 'Ola, ' + nome + '!';
-
             console.log('Usuario:', usuarioAtual.nome_completo);
         });
 
-        // ============================================
-        // TOGGLE PASSWORD
-        // ============================================
         document.getElementById('toggleNova').addEventListener('click', function() {
             const input = document.getElementById('novaSenha');
             const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -358,9 +315,6 @@ Write-Host "✅ Parte 1 gravada (cabeçalho + CSS)" -ForegroundColor Green
             this.querySelector('i').classList.toggle('fa-eye-slash');
         });
 
-        // ============================================
-        // VALIDACAO EM TEMPO REAL
-        // ============================================
         function validarSenha(senha) {
             return {
                 length: senha.length >= 8,
@@ -399,9 +353,6 @@ Write-Host "✅ Parte 1 gravada (cabeçalho + CSS)" -ForegroundColor Green
             atualizarRequisitos(this.value);
         });
 
-        // ============================================
-        // MENSAGENS
-        // ============================================
         function showError(msg) {
             document.getElementById('errorText').textContent = msg;
             document.getElementById('errorMessage').classList.add('show');
@@ -414,66 +365,42 @@ Write-Host "✅ Parte 1 gravada (cabeçalho + CSS)" -ForegroundColor Green
             document.getElementById('errorMessage').classList.remove('show');
         }
 
-        // ============================================
-        // SUBMIT
-        // ============================================
         document.getElementById('formPrimeiroAcesso').addEventListener('submit', async function(e) {
             e.preventDefault();
-
             const nova = document.getElementById('novaSenha').value;
             const confirmar = document.getElementById('confirmarSenha').value;
             const btn = document.getElementById('btnAlterar');
 
-            // Validacoes
-            if (!nova || !confirmar) {
-                showError('Preencha todos os campos.');
-                return;
-            }
-            if (nova !== confirmar) {
-                showError('As senhas nao coincidem.');
-                return;
-            }
-            if (!atualizarRequisitos(nova)) {
-                showError('A senha nao atende aos requisitos minimos.');
-                return;
-            }
+            if (!nova || !confirmar) { showError('Preencha todos os campos.'); return; }
+            if (nova !== confirmar) { showError('As senhas nao coincidem.'); return; }
+            if (!atualizarRequisitos(nova)) { showError('A senha nao atende aos requisitos minimos.'); return; }
 
             btn.disabled = true;
             btn.classList.add('loading');
 
             try {
-                // 1. Atualizar senha no Supabase Auth
-                const { error: authError } = await window.supabaseClient.auth.updateUser({
-                    password: nova
-                });
-
+                const { error: authError } = await window.supabaseClient.auth.updateUser({ password: nova });
                 if (authError) {
                     console.error('Erro ao atualizar senha:', authError);
                     showError('Erro ao alterar senha: ' + authError.message);
                     return;
                 }
 
-                // 2. Atualizar primeiro_acesso = false
                 const { error: dbError } = await window.supabaseClient
                     .from('usuarios')
                     .update({ primeiro_acesso: false })
                     .eq('id', usuarioAtual.id);
 
-                if (dbError) {
-                    console.warn('Erro ao atualizar primeiro_acesso:', dbError);
-                }
+                if (dbError) console.warn('Erro ao atualizar primeiro_acesso:', dbError);
 
-                // 3. Atualizar sessao
                 usuarioAtual.primeiro_acesso = false;
                 AIDEPOM.setUsuario(usuarioAtual);
 
-                // 4. Sucesso
                 showSuccess('Senha alterada com sucesso! Redirecionando...');
 
                 setTimeout(() => {
-                    window.location.href = '03-dashboard.html';
+                    window.location.href = '04-dashboard.html';
                 }, 2000);
-
             } catch (error) {
                 console.error('Erro inesperado:', error);
                 showError('Erro inesperado: ' + error.message);
@@ -485,6 +412,7 @@ Write-Host "✅ Parte 1 gravada (cabeçalho + CSS)" -ForegroundColor Green
     </script>
 </body>
 </html>
-'@ | Add-Content -Path "03-primeiro-acesso.html" -Encoding UTF8
-Write-Host "✅ Parte 2 gravada (corpo + scripts)" -ForegroundColor Green
-Write-Host "`n🎉 Arquivo 03-primeiro-acesso.html criado com sucesso!" -ForegroundColor Cyan
+'@
+
+Set-Content -Path "03-primeiro-acesso.html" -Value $html -Encoding UTF8
+Write-Host "✅ Arquivo 03-primeiro-acesso.html criado com sucesso!" -ForegroundColor Green
