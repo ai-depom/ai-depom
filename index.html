@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema AI-DEPOM</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container { text-align: center; color: white; animation: fadeIn 1.5s ease; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .logo {
+            font-size: 80px;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.1);
+            width: 150px; height: 150px;
+            line-height: 150px;
+            border-radius: 50%;
+            display: inline-block;
+            border: 3px solid rgba(255,255,255,0.3);
+        }
+        h1 { font-size: 42px; font-weight: 700; margin-bottom: 10px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        p { font-size: 18px; opacity: 0.9; margin-bottom: 30px; }
+        .btn-entrar {
+            background: white; color: #667eea; border: none;
+            padding: 15px 50px; border-radius: 50px;
+            font-size: 18px; font-weight: 700;
+            cursor: pointer; transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .btn-entrar:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.3); }
+        .btn-entrar i { margin-right: 10px; }
+        .loading { margin-top: 20px; font-size: 14px; opacity: 0.7; }
+        .loading .spinner {
+            display: inline-block;
+            width: 16px; height: 16px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .versao { position: fixed; bottom: 20px; right: 20px; color: rgba(255,255,255,0.5); font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo"><i class="fas fa-gavel"></i></div>
+        <h1>AI-DEPOM</h1>
+        <p>Gestão Integrada AI-DEPOM</p>
+        <button class="btn-entrar" id="btnEntrar">
+            <i class="fas fa-arrow-right"></i> Acessar Sistema
+        </button>
+        <div class="loading"><span class="spinner"></span> Carregando...</div>
+    </div>
+    <div class="versao">v2.0.0</div>
+
+    <script>
+        document.getElementById('btnEntrar').addEventListener('click', function() {
+            this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecionando...';
+            this.disabled = true;
+            setTimeout(() => { window.location.href = '01-apresentacao.html'; }, 500);
+        });
+        setTimeout(() => { window.location.href = '01-apresentacao.html'; }, 3000);
+        console.log('✅ Página inicial carregada. Redirecionando para apresentação...');
+    </script>
+</body>
+</html>
