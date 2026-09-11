@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Mapa de Operações - AI-DEPOM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-card: #0d0d0d;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc77;
+            --text-muted: #004d33;
+            --border-color: #003322;
+            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+            --control-size: 36px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%; min-height: 100vh; margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary); color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        .controls-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 15px; display: flex; justify-content: space-between;
+            align-items: center; height: 48px;
+        }
+        .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-center { display: flex; align-items: center; gap: 8px; }
+        .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+        .control-btn {
+            width: var(--control-size); height: var(--control-size);
+            border-radius: 8px; border: none; background: transparent;
+            color: rgba(0, 255, 136, 0.3); font-size: 16px;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+        .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
+        .user-info .avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; color: #000;
+        }
+        .sidebar {
+            position: fixed; top: 48px; left: 0;
+            width: 260px; height: calc(100vh - 48px);
+            background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            z-index: 999; padding: 20px 0;
+            transition: transform 0.3s ease; overflow-y: auto;
+        }
+        .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .sidebar-brand .logo {
+            width: 50px; height: 50px; margin: 0 auto 10px;
+            background: var(--gradient-green); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sidebar-brand .logo i { font-size: 24px; color: #000; }
+        .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
+        .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
+        .sidebar-menu { padding: 0 12px; }
+        .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
+        .sidebar-menu .menu-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 16px; border-radius: 10px;
+            color: rgba(0, 255, 136, 0.3); text-decoration: none;
+            transition: all 0.3s; cursor: pointer; margin-bottom: 2px; font-size: 14px;
+        }
+        .sidebar-menu .menu-item:hover { background: rgba(0, 255, 136, 0.03); color: var(--text-primary); }
+        .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
+        .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
+        .sidebar-footer {
+            position: absolute; bottom: 20px; left: 0; right: 0;
+            padding: 0 20px; border-top: 1px solid var(--border-color); padding-top: 15px;
+        }
+        .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
+        .sidebar-footer .user-info-sidebar .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #000;
+        }
+        .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
+        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; }
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px; background: var(--bg-secondary);
+            border-radius: 16px; padding: 15px 25px;
+            margin-bottom: 25px; border: 1px solid var(--border-color);
+        }
+        .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
+        .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
+        .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
+        .form-card {
+            background: var(--bg-secondary); border-radius: 14px;
+            padding: 25px; border: 1px solid var(--border-color); margin-bottom: 25px;
+        }
+        .form-card .card-title {
+            color: var(--text-primary); font-size: 14px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px; margin-bottom: 20px;
+        }
+        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .form-control, .form-select {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
+            color: var(--text-primary); padding: 10px 14px;
+            border-radius: 10px; transition: all 0.3s; font-size: 14px;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
+        }
+        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+        .form-select option { background: #000; color: var(--text-primary); }
+        .btn-gold {
+            background: var(--gradient-green); color: #000; font-weight: 700;
+            padding: 10px 28px; border-radius: 10px; border: none;
+            transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px;
+        }
+        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-outline-gold {
+            background: transparent; color: var(--text-primary);
+            border: 1px solid var(--text-primary); padding: 10px 28px;
+            border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
+        }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+        #mapa {
+            height: 600px;
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            background: #0a0a0a;
+        }
+        .leaflet-container {
+            background: #0a0a0a !important;
+            font-family: 'Segoe UI', sans-serif !important;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 10px !important;
+        }
+        .leaflet-popup-tip { background: var(--bg-secondary) !important; }
+        .leaflet-popup-content { margin: 15px !important; }
+        .popup-title { color: var(--text-primary); font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+        .popup-row { color: var(--text-secondary); font-size: 12px; padding: 2px 0; }
+        .popup-row strong { color: rgba(0, 255, 136, 0.5); }
+        .legend {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .legend-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 4px 0; color: var(--text-secondary); font-size: 13px;
+        }
+        .legend-dot {
+            width: 14px; height: 14px; border-radius: 50%;
+            border: 2px solid rgba(0, 0, 0, 0.5);
+        }
+        .legend-dot.ativo { background: #dc3545; }
+        .legend-dot.cumprido { background: #00ff88; }
+        .legend-dot.vencido { background: #6c757d; }
+        .legend-dot.cancelado { background: #ffc107; }
+        .legend-dot.suspenso { background: #0dcaf0; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px;
+        }
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-card .number { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.4); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+        .bairro-ranking { margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border-color); }
+        .bairro-item {
+            display: flex; justify-content: space-between;
+            padding: 8px 0; border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+            color: var(--text-secondary); font-size: 13px;
+        }
+        .bairro-item .ranking {
+            background: var(--gradient-green); color: #000;
+            width: 22px; height: 22px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 11px; margin-right: 10px;
+        }
+        .bairro-item .qtd { color: var(--text-primary); font-weight: 700; }
+        .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-ai {
+            min-width: 320px; max-width: 420px; padding: 16px 20px;
+            border-radius: 12px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: slideIn 0.3s ease; backdrop-filter: blur(20px);
+        }
+        .toast-ai.success { border-left: 4px solid var(--text-primary); }
+        .toast-ai.error { border-left: 4px solid #dc3545; }
+        .toast-ai.warning { border-left: 4px solid #ffc107; }
+        .toast-ai.info { border-left: 4px solid #0dcaf0; }
+        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .toast-ai.success .toast-icon { color: var(--text-primary); }
+        .toast-ai.error .toast-icon { color: #dc3545; }
+        .toast-ai.warning .toast-icon { color: #ffc107; }
+        .toast-ai.info .toast-icon { color: #0dcaf0; }
+        .toast-ai .toast-content { flex: 1; }
+        .toast-ai .toast-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
+        .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; font-size: 14px; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        .marker-custom {
+            width: 20px; height: 20px; border-radius: 50%;
+            border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .marker-ativo { background: #dc3545; }
+        .marker-cumprido { background: #00ff88; }
+        .marker-vencido { background: #6c757d; }
+        .marker-cancelado { background: #ffc107; }
+        .marker-suspenso { background: #0dcaf0; }
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .sidebar-toggle { display: flex !important; }
+            .user-info .name { display: none; }
+        }
+        @media (max-width: 768px) {
+            .main-content { padding: 65px 15px 15px; }
+            .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
+            .form-card { padding: 18px; }
+            .btn-gold, .btn-outline-gold { width: 100%; }
+            #mapa { height: 400px; }
+            .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
+            <div class="controls-divider"></div>
+            <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="controls-center">
+            <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
+        </div>
+        <div class="controls-right">
+            <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
+        </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo"><i class="fas fa-shield-halved"></i></div>
+            <h5>AI-DEPOM</h5>
+            <small>SISTEMA POLICIAL INTELIGENTE</small>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-label">Navegacao</div>
+            <a class="menu-item" onclick="window.location.href='04-dashboard.html'"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a class="menu-item" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
+            <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
+            <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
+            <a class="menu-item active" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <div class="menu-label">Administracao</div>
+            <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
+            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <div class="menu-label">Sistema</div>
+            <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
+            <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-sidebar">
+                <div class="avatar" id="sidebarAvatar">AM</div>
+                <div>
+                    <div class="name" id="sidebarUserName">Carregando...</div>
+                    <div class="role" id="sidebarUserRole">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="page-title">
+                    <h4><i class="fas fa-map-marked-alt me-2"></i>Mapa de Operacoes</h4>
+                    <small><i class="fas fa-satellite-dish me-1"></i> Visualizacao geoespacial de mandados</small>
+                </div>
+            </div>
+            <div class="top-actions">
+                <span class="badge" id="totalMandados"><i class="fas fa-list"></i> 0 mandados</span>
+                <span class="badge"><i class="fas fa-shield-alt" style="color:#00ff88;"></i> LGPD Compliance</span>
+            </div>
+        </header>
+
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-filter"></i>Filtros de Operacao</div>
+            <form id="formFiltros">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="filtroStatus">
+                            <option value="">Todos</option>
+                            <option value="ATIVO">Ativo</option>
+                            <option value="CUMPRIDO">Cumprido</option>
+                            <option value="VENCIDO">Vencido</option>
+                            <option value="CANCELADO">Cancelado</option>
+                            <option value="SUSPENSO">Suspenso</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo de Mandado</label>
+                        <select class="form-select" id="filtroTipo">
+                            <option value="">Todos</option>
+                            <option value="PRISAO">Prisao</option>
+                            <option value="BUSCA_APREENSAO">Busca e Apreensao</option>
+                            <option value="CONDUCAO_COERCITIVA">Conducao Coercitiva</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Prioridade</label>
+                        <select class="form-select" id="filtroPrioridade">
+                            <option value="">Todas</option>
+                            <option value="NORMAL">Normal</option>
+                            <option value="ALTA">Alta</option>
+                            <option value="URGENTE">Urgente</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" class="form-control" id="filtroBairro" placeholder="Nome do bairro">
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12 text-end">
+                        <button type="button" class="btn-outline-gold me-2" onclick="limparFiltros()"><i class="fas fa-times me-2"></i>LIMPAR</button>
+                        <button type="submit" class="btn-gold" id="btnBuscar"><i class="fas fa-search me-2"></i>BUSCAR NO MAPA</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-map"></i>Mapa de Calor de Mandados</div>
+            <div id="mapa"></div>
+            <div class="legend">
+                <div style="color:var(--text-primary); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
+                    <i class="fas fa-info-circle"></i> Legenda
+                </div>
+                <div class="d-flex flex-wrap gap-3">
+                    <div class="legend-item"><div class="legend-dot ativo"></div> Ativo</div>
+                    <div class="legend-item"><div class="legend-dot cumprido"></div> Cumprido</div>
+                    <div class="legend-item"><div class="legend-dot vencido"></div> Vencido</div>
+                    <div class="legend-item"><div class="legend-dot cancelado"></div> Cancelado</div>
+                    <div class="legend-item"><div class="legend-dot suspenso"></div> Suspenso</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-chart-pie"></i>Estatisticas</div>
+            <div class="stats-grid" id="statsGrid"></div>
+            <div class="bairro-ranking" id="bairroRanking"></div>
+        </div>
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script>
+        let mapa = null;
+        let clusterGroup = null;
+        let mandadosAtuais = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('AI-DEPOM - Mapa de Operacoes iniciado');
+
+            const usuario = AIDEPOM.getUsuario();
+            if (!usuario) {
+                showToast('error', 'Sessao expirada', 'Faca login novamente.');
+                setTimeout(() => window.location.href = '02-login.html', 1500);
+                return;
+            }
+
+            atualizarDadosUsuario(usuario);
+            inicializarMapa();
+            await carregarMandados();
+        });
+
+        function atualizarDadosUsuario(usuario) {
+            const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+            const nome = usuario.nome_completo || 'Usuario';
+            const perfil = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
+            document.getElementById('topAvatar').textContent = inicial;
+            document.getElementById('topUserName').textContent = nome;
+            document.getElementById('sidebarAvatar').textContent = inicial;
+            document.getElementById('sidebarUserName').textContent = nome;
+            document.getElementById('sidebarUserRole').textContent = perfil;
+        }
+
+        function inicializarMapa() {
+            mapa = L.map('mapa').setView([-12.9714, -38.5014], 12);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; OpenStreetMap &copy; CartoDB',
+                subdomains: 'abcd',
+                maxZoom: 19
+            }).addTo(mapa);
+
+            clusterGroup = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true
+            });
+
+            mapa.addLayer(clusterGroup);
+            setTimeout(() => mapa.invalidateSize(), 300);
+        }
+
+        async function carregarMandados() {
+            const btn = document.getElementById('btnBuscar');
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CARREGANDO...';
+            }
+
+            try {
+                const status = document.getElementById('filtroStatus').value;
+                const tipo = document.getElementById('filtroTipo').value;
+                const prioridade = document.getElementById('filtroPrioridade').value;
+                const bairro = document.getElementById('filtroBairro').value.trim();
+
+                let query = window.supabaseClient
+                    .from('mandado_prisao')
+                    .select(`
+                        *,
+                        suspeito:suspeito!mandado_prisao_id_suspeito_fkey (
+                            id_suspeito,
+                            nome_completo,
+                            apelido,
+                            cpf,
+                            logradouro,
+                            numero,
+                            bairro,
+                            cidade,
+                            uf,
+                            cep,
+                            status_atual,
+                            nivel_periculosidade
+                        )
+                    `)
+                    .eq('deletado', false);
+
+                if (status) query = query.eq('status', status);
+                if (tipo) query = query.eq('tipo_mandado', tipo);
+                if (prioridade) query = query.eq('prioridade', prioridade);
+
+                query = query.order('data_emissao', { ascending: false });
+
+                const { data, error } = await query;
+
+                if (error) {
+                    console.error('Erro ao carregar:', error);
+                    showToast('error', 'Erro ao carregar', error.message);
+                    return;
+                }
+
+                mandadosAtuais = data || [];
+
+                if (bairro) {
+                    mandadosAtuais = mandadosAtuais.filter(m =>
+                        m.suspeito?.bairro?.toLowerCase().includes(bairro.toLowerCase())
+                    );
+                }
+
+                document.getElementById('totalMandados').innerHTML = '<i class="fas fa-list"></i> ' + mandadosAtuais.length + ' mandado(s)';
+
+                renderizarMapa();
+                renderizarEstatisticas();
+
+                if (mandadosAtuais.length > 0) {
+                    showToast('success', 'Mandados carregados', mandadosAtuais.length + ' mandados plotados no mapa.');
+                } else {
+                    showToast('info', 'Sem resultados', 'Nenhum mandado encontrado com esses filtros.');
+                }
+
+            } catch (error) {
+                console.error('Erro inesperado:', error);
+                showToast('error', 'Erro inesperado', error.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-search me-2"></i>BUSCAR NO MAPA';
+                }
+            }
+        }
+
+        function renderizarMapa() {
+            clusterGroup.clearLayers();
+            const bounds = [];
+
+            mandadosAtuais.forEach(m => {
+                const coords = obterCoordenadas(m);
+                if (!coords) return;
+
+                const icone = L.divIcon({
+                    className: '',
+                    html: '<div class="marker-custom marker-' + (m.status || 'ativo').toLowerCase() + '"></div>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                });
+
+                const marker = L.marker([coords.lat, coords.lng], { icon: icone });
+
+                const s = m.suspeito || {};
+                const popupHTML = `
+                    <div class="popup-title">
+                        <i class="fas fa-gavel"></i> Mandado #${m.numero_mandado || m.id_mandado}
+                    </div>
+                    <div class="popup-row"><strong>Tipo:</strong> ${traduzirTipo(m.tipo_mandado)}</div>
+                    <div class="popup-row"><strong>Status:</strong> ${m.status || '-'}</div>
+                    <div class="popup-row"><strong>Prioridade:</strong> ${m.prioridade || '-'}</div>
+                    <div class="popup-row"><strong>Suspeito:</strong> ${s.nome_completo || '-'}</div>
+                    <div class="popup-row"><strong>CPF:</strong> ${s.cpf || '-'}</div>
+                    <div class="popup-row"><strong>Endereco:</strong> ${s.logradouro || '-'}, ${s.numero || 'S/N'}</div>
+                    <div class="popup-row"><strong>Bairro:</strong> ${s.bairro || '-'}</div>
+                    <div class="popup-row"><strong>Cidade/UF:</strong> ${s.cidade || '-'}/${s.uf || '-'}</div>
+                    <div class="popup-row"><strong>Juiz:</strong> ${m.juiz_nome || '-'}</div>
+                    <div class="popup-row"><strong>Emissao:</strong> ${m.data_emissao || '-'}</div>
+                    <div class="popup-row"><strong>Validade:</strong> ${m.data_validade || '-'}</div>
+                `;
+
+                marker.bindPopup(popupHTML);
+                clusterGroup.addLayer(marker);
+                bounds.push([coords.lat, coords.lng]);
+            });
+
+            if (bounds.length > 0) {
+                mapa.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+            }
+        }
+
+        function obterCoordenadas(m) {
+            const s = m.suspeito || {};
+
+            if (m.latitude && m.longitude) {
+                return { lat: parseFloat(m.latitude), lng: parseFloat(m.longitude) };
+            }
+
+            const chave = (s.cep || '') + '|' + (s.logradouro || '') + '|' + (s.bairro || '') + '|' + (s.cidade || '');
+            const hash = hashCode(chave);
+
+            const baseLat = -12.9714;
+            const baseLng = -38.5014;
+            const lat = baseLat + ((hash % 1000) / 1000 - 0.5) * 0.15;
+            const lng = baseLng + ((hash % 777) / 777 - 0.5) * 0.15;
+
+            return { lat, lng };
+        }
+
+        function hashCode(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+            }
+            return Math.abs(hash);
+        }
+
+        function traduzirTipo(tipo) {
+            const tipos = {
+                'PRISAO': 'Prisao',
+                'BUSCA_APREENSAO': 'Busca e Apreensao',
+                'CONDUCAO_COERCITIVA': 'Conducao Coercitiva'
+            };
+            return tipos[tipo] || tipo || '-';
+        }
+
+        function renderizarEstatisticas() {
+            const total = mandadosAtuais.length;
+            const ativos = mandadosAtuais.filter(m => m.status === 'ATIVO').length;
+            const cumpridos = mandadosAtuais.filter(m => m.status === 'CUMPRIDO').length;
+            const urgentes = mandadosAtuais.filter(m => m.prioridade === 'URGENTE').length;
+
+            const statsGrid = document.getElementById('statsGrid');
+            statsGrid.innerHTML = `
+                <div class="stat-card">
+                    <div class="number">${total}</div>
+                    <div class="label">Total</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" style="color:#dc3545;">${ativos}</div>
+                    <div class="label">Ativos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" style="color:#00ff88;">${cumpridos}</div>
+                    <div class="label">Cumpridos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" style="color:#ffc107;">${urgentes}</div>
+                    <div class="label">Urgentes</div>
+                </div>
+            `;
+
+            const bairros = {};
+            mandadosAtuais.forEach(m => {
+                const b = m.suspeito?.bairro;
+                if (b) bairros[b] = (bairros[b] || 0) + 1;
+            });
+
+            const ranking = Object.entries(bairros)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            const rankingDiv = document.getElementById('bairroRanking');
+            if (ranking.length === 0) {
+                rankingDiv.innerHTML = '<div style="color:rgba(0,255,136,0.3); font-size:13px; text-align:center; padding:20px;">Sem dados de bairro</div>';
+                return;
+            }
+
+            let html = '<div style="color:var(--text-primary); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:15px;"><i class="fas fa-trophy"></i> Top 5 Bairros com Mais Mandados</div>';
+            ranking.forEach(([bairro, qtd], i) => {
+                html += '<div class="bairro-item">';
+                html += '<div><span class="ranking">' + (i + 1) + '</span>' + bairro + '</div>';
+                html += '<div class="qtd">' + qtd + ' mandado(s)</div>';
+                html += '</div>';
+            });
+
+            rankingDiv.innerHTML = html;
+        }
+
+        document.getElementById('formFiltros').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await carregarMandados();
+        });
+
+        function limparFiltros() {
+            document.getElementById('filtroStatus').value = '';
+            document.getElementById('filtroTipo').value = '';
+            document.getElementById('filtroPrioridade').value = '';
+            document.getElementById('filtroBairro').value = '';
+            carregarMandados();
+        }
+
+        function showToast(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            const icones = {
+                success: 'fa-check-circle',
+                error: 'fa-times-circle',
+                warning: 'fa-exclamation-triangle',
+                info: 'fa-info-circle'
+            };
+            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
+                '<div class="toast-content">' +
+                '<div class="toast-title">' + titulo + '</div>' +
+                '<div class="toast-message">' + mensagem + '</div>' +
+                '</div>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
+        }
+
+        async function fazerLogout() {
+            if (confirm('Deseja realmente sair do sistema?')) {
+                await AIDEPOM.logout();
+            }
+        }
+
+        function closeWindow() {
+            if (confirm('Deseja realmente fechar o sistema?')) {
+                try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
+            }
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+    </script>
+</body>
+</html>
