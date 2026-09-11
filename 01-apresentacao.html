@@ -11,10 +11,12 @@
            AI-DEPOM - APRESENTAÇÃO
            ============================================================
            Caminho: frontend/src/pages/01-apresentacao.html
-           Versão: 1.0.1
-           Data: 08/09/2026 - 19:15
+           Versão: 1.0.3
+           Data: 10/09/2026
            ============================================================
            ALTERAÇÕES: Fundo preto e letras verdes
+           Contadores dinâmicos (integrados ao Supabase)
+           Créditos: Ana Clara & equipe da inteligência / Engº Itamar Souza
            ============================================================
         */
         :root {
@@ -335,7 +337,7 @@
             <div class="hero-badge"><i class="fas fa-shield-halved"></i> SISTEMA CERTIFICADO · FIPS 140-2 · CJIS COMPLIANT</div>
             <div class="hero-logo"><i class="fas fa-shield-halved"></i></div>
             <h1><span class="highlight">AI</span>-DEPOM</h1>
-            <div class="hero-subtitle"><i class="fas fa-robot me-2" style="color: var(--text-primary); opacity: 0.5;"></i>AGÊNCIA DE INTELIGÊNCIA DO DEPARTAMENTO DE POLÍCIA METROPOLITANA</div>
+            <div class="hero-subtitle"><i class="fas fa-robot me-2" style="color: var(--text-primary); opacity: 0.5;"></i>AGÊNCIA DE INTELIGÊNCIA DO DEPARTAMENTO DE POLÍCIA METROPOLITANA DA POLÍCIA CIVIL DA BAHIA</div>
             <p class="hero-description">Sistema Integrado de Gestão Policial e persistência de dados e ativos com criptografia e análise preditiva.</p>
             <div class="hero-buttons">
                 <a href="02-login.html" class="btn-hero-primary"><i class="fas fa-sign-in-alt"></i>ACESSAR SISTEMA</a>
@@ -345,7 +347,19 @@
                 <span class="security-badge-item"><i class="fas fa-fingerprint"></i> Biometria</span>
                 <span class="security-badge-item"><i class="fas fa-lock lock-icon"></i> TDE Ativo</span>
                 <span class="security-badge-item"><i class="fas fa-database"></i> LGPD/GDPR</span>
-                <span class="security-badge-item"><i class="fas fa-globe"></i> Interpol I-24/7</span>
+                <span class="security-badge-item"><i class="fas fa-globe"></i> PCivil BA |-24/7</span>
+            </div>
+            <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid var(--border-color); text-align: center;">
+                <p style="color: rgba(0, 255, 136, 0.3); font-size: 12px; letter-spacing: 1px; margin-bottom: 5px;">
+                    <i class="fas fa-star" style="color: var(--text-primary); opacity: 0.5;"></i>
+                    CRÉDITOS
+                </p>
+                <p style="color: var(--text-secondary); font-size: 14px; letter-spacing: 0.5px; margin-bottom: 5px;">
+                    Ana Clara &amp; equipe da inteligência
+                </p>
+                <p style="color: rgba(0, 255, 136, 0.4); font-size: 13px; letter-spacing: 0.5px;">
+                    Engº Computação Itamar Souza
+                </p>
             </div>
         </div>
         <div class="scroll-indicator" onclick="document.querySelector('.stats-section').scrollIntoView({ behavior: 'smooth' })">
@@ -356,14 +370,16 @@
     <section class="stats-section">
         <div class="container">
             <div class="row">
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="1247">0</span><span class="stat-label">SUSPEITOS CADASTRADOS</span></div></div>
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="342">0</span><span class="stat-label">INVESTIGAÇÕES</span></div></div>
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="89">0</span><span class="stat-label">MANDADOS CUMPRIDOS</span></div></div>
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" data-count="2.4">0</span><span class="stat-label">TB DE DADOS CRIPTOGRAFADOS</span></div></div>
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statSuspeitos">0</span><span class="stat-label">SUSPEITOS CADASTRADOS</span></div></div>
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statInvestigacoes">0</span><span class="stat-label">INVESTIGAÇÕES</span></div></div>
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statMandados">0</span><span class="stat-label">MANDADOS CUMPRIDOS</span></div></div>
+                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statDados">0.00</span><span class="stat-label">TB DE DADOS CRIPTOGRAFADOS</span></div></div>
             </div>
         </div>
     </section>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
     <script>
         function minimizeWindow() {
             try { if (window.moveTo && window.resizeTo) { window.moveTo(0, 0); window.resizeTo(screen.width / 2, screen.height / 2); } else { alert('Use o botão de minimizar do seu navegador.'); } } catch (e) { console.warn('Minimizar não suportado:', e); }
@@ -372,25 +388,75 @@
             if (confirm('Deseja realmente fechar o sistema?')) { try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; } }
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const counters = document.querySelectorAll('.stat-number');
-            const speed = 200;
-            const animateCounter = (counter) => {
-                const target = parseFloat(counter.getAttribute('data-count'));
-                const isDecimal = target % 1 !== 0;
-                const increment = target / speed;
-                let current = 0;
-                const updateCounter = () => {
-                    current += increment;
-                    if (current < target) { counter.textContent = isDecimal ? current.toFixed(1) : Math.ceil(current); requestAnimationFrame(updateCounter); }
-                    else { counter.textContent = isDecimal ? target.toFixed(1) : target; }
+        // ============================================
+        // CONTADORES DINÂMICOS (integrados ao Supabase)
+        // ============================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('AI-DEPOM - Apresentacao: carregando contadores...');
+
+            const animarContador = (elemento, valorFinal, isDecimal) => {
+                let atual = 0;
+                const incremento = valorFinal / 100;
+                const atualizar = () => {
+                    atual += incremento;
+                    if (atual < valorFinal) {
+                        elemento.textContent = isDecimal ? atual.toFixed(2) : Math.ceil(atual);
+                        requestAnimationFrame(atualizar);
+                    } else {
+                        elemento.textContent = isDecimal ? valorFinal.toFixed(2) : valorFinal;
+                    }
                 };
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => { if (entry.isIntersecting) { updateCounter(); observer.unobserve(counter); } });
-                }, { threshold: 0.5 });
-                observer.observe(counter);
+                if (valorFinal > 0) atualizar();
+                else elemento.textContent = isDecimal ? '0.00' : '0';
             };
-            counters.forEach(animateCounter);
+
+            try {
+                // 1. Contar suspeitos
+                const { count: totalSuspeitos, error: errSuspeitos } = await window.supabaseClient
+                    .from('suspeito')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false);
+
+                if (!errSuspeitos) {
+                    animarContador(document.getElementById('statSuspeitos'), totalSuspeitos || 0, false);
+                }
+
+                // 2. Contar investigações
+                const { count: totalInvestigacoes, error: errInvestigacoes } = await window.supabaseClient
+                    .from('investigacao')
+                    .select('*', { count: 'exact', head: true });
+
+                if (!errInvestigacoes) {
+                    animarContador(document.getElementById('statInvestigacoes'), totalInvestigacoes || 0, false);
+                }
+
+                // 3. Contar mandados cumpridos
+                const { count: totalMandados, error: errMandados } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('status', 'CUMPRIDO')
+                    .eq('deletado', false);
+
+                if (!errMandados) {
+                    animarContador(document.getElementById('statMandados'), totalMandados || 0, false);
+                }
+
+                // 4. Calcular TB de dados (soma de arquivos de mídia)
+                const { data: arquivos, error: errArquivos } = await window.supabaseClient
+                    .from('arquivo_midia')
+                    .select('tamanho_bytes')
+                    .eq('deletado', false);
+
+                if (!errArquivos && arquivos) {
+                    const totalBytes = arquivos.reduce((acc, a) => acc + (a.tamanho_bytes || 0), 0);
+                    const totalTB = totalBytes / (1024 ** 4);
+                    animarContador(document.getElementById('statDados'), totalTB, true);
+                }
+
+                console.log('✅ Contadores atualizados com dados reais do banco');
+            } catch (error) {
+                console.error('❌ Erro ao carregar contadores:', error);
+            }
         });
     </script>
 </body>
