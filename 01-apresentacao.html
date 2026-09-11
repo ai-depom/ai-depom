@@ -3,22 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>AI-DEPOM - Sistema Policial Inteligente</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* ============================================================
-           AI-DEPOM - APRESENTAÇÃO
-           ============================================================
-           Caminho: frontend/src/pages/01-apresentacao.html
-           Versão: 1.0.3
-           Data: 10/09/2026
-           ============================================================
-           ALTERAÇÕES: Fundo preto e letras verdes
-           Contadores dinâmicos (integrados ao Supabase)
-           Créditos: Ana Clara & equipe da inteligência / Engº Itamar Souza
-           ============================================================
-        */
         :root {
             --bg-primary: #000000;
             --bg-secondary: #0a0a0a;
@@ -34,6 +25,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         html, body {
+            width: 100%;
             height: 100%;
             min-height: 100vh;
             margin: 0;
@@ -44,12 +36,14 @@
             overflow-x: hidden;
         }
 
-        /* Controles Bar - mesmo estilo das demais telas */
+        body {
+            display: flex;
+            flex-direction: column;
+        }
+
         .controls-bar {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(15px);
@@ -60,6 +54,7 @@
             align-items: center;
             height: 48px;
             min-height: 48px;
+            width: 100vw;
         }
 
         .controls-left { display: flex; gap: 4px; align-items: center; }
@@ -91,6 +86,7 @@
         .control-btn:active { transform: scale(0.92); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
 
         .user-info {
@@ -114,14 +110,13 @@
             color: #000;
         }
 
-        /* Hero Section */
         .hero {
             min-height: 100vh;
+            width: 100vw;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 70px 20px 20px;
-            width: 100%;
         }
 
         .hero-content {
@@ -264,6 +259,7 @@
             background: var(--bg-secondary);
             border-top: 1px solid var(--border-color);
             padding: 40px 0;
+            width: 100vw;
         }
 
         .stat-item { text-align: center; padding: 20px; }
@@ -321,6 +317,7 @@
             <button class="control-btn" onclick="window.history.back()" title="Voltar (Alt+V)"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()" title="Avançar (Alt+A)"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
             <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar (Alt+M)"><i class="fas fa-window-minimize"></i></button>
             <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar (Alt+F)"><i class="fas fa-times"></i></button>
         </div>
@@ -368,7 +365,7 @@
     </section>
 
     <section class="stats-section">
-        <div class="container">
+        <div class="container-fluid">
             <div class="row">
                 <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statSuspeitos">0</span><span class="stat-label">SUSPEITOS CADASTRADOS</span></div></div>
                 <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statInvestigacoes">0</span><span class="stat-label">INVESTIGAÇÕES</span></div></div>
@@ -387,6 +384,66 @@
         function closeWindow() {
             if (confirm('Deseja realmente fechar o sistema?')) { try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; } }
         }
+
+        // ============================================
+        // FULLSCREEN - OCUPAR TODA A TELA
+        // ============================================
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+
+            const requestFullScreen = docEl.requestFullscreen 
+                || docEl.mozRequestFullScreen 
+                || docEl.webkitRequestFullScreen 
+                || docEl.msRequestFullscreen;
+
+            const cancelFullScreen = doc.exitFullscreen 
+                || doc.mozCancelFullScreen 
+                || doc.webkitExitFullscreen 
+                || doc.msExitFullscreen;
+
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
+            }
+        }
+
+        document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('MSFullscreenChange', atualizarIconeFullscreen);
+
+        function atualizarIconeFullscreen() {
+            const btn = document.querySelector('.fullscreen-btn i');
+            if (!btn) return;
+
+            const isFullscreen = document.fullscreenElement 
+                || document.webkitFullscreenElement 
+                || document.mozFullScreenElement 
+                || document.msFullscreenElement;
+
+            if (isFullscreen) {
+                btn.className = 'fas fa-compress';
+            } else {
+                btn.className = 'fas fa-expand';
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.documentElement.style.height = '100%';
+            document.body.style.height = '100%';
+            document.body.style.minHeight = '100vh';
+            document.body.style.width = '100%';
+            console.log('✅ Fullscreen configurado');
+        });
 
         // ============================================
         // CONTADORES DINÂMICOS (integrados ao Supabase)
@@ -411,7 +468,6 @@
             };
 
             try {
-                // 1. Contar suspeitos
                 const { count: totalSuspeitos, error: errSuspeitos } = await window.supabaseClient
                     .from('suspeito')
                     .select('*', { count: 'exact', head: true })
@@ -421,7 +477,6 @@
                     animarContador(document.getElementById('statSuspeitos'), totalSuspeitos || 0, false);
                 }
 
-                // 2. Contar investigações
                 const { count: totalInvestigacoes, error: errInvestigacoes } = await window.supabaseClient
                     .from('investigacao')
                     .select('*', { count: 'exact', head: true });
@@ -430,7 +485,6 @@
                     animarContador(document.getElementById('statInvestigacoes'), totalInvestigacoes || 0, false);
                 }
 
-                // 3. Contar mandados cumpridos
                 const { count: totalMandados, error: errMandados } = await window.supabaseClient
                     .from('mandado_prisao')
                     .select('*', { count: 'exact', head: true })
@@ -441,7 +495,6 @@
                     animarContador(document.getElementById('statMandados'), totalMandados || 0, false);
                 }
 
-                // 4. Calcular TB de dados (soma de arquivos de mídia)
                 const { data: arquivos, error: errArquivos } = await window.supabaseClient
                     .from('arquivo_midia')
                     .select('tamanho_bytes')
