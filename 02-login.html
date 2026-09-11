@@ -3,31 +3,26 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Login - Sistema AI-DEPOM </title>
-    
-    <!-- Supabase JS -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Login - AI-DEPOM</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-    
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            min-height: 100vh;
+            overflow-x: hidden;
         }
-
         body {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
         }
-
         .login-container {
             background: white;
             border-radius: 20px;
@@ -38,70 +33,35 @@
             position: relative;
             overflow: hidden;
         }
-
         .login-container::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 5px;
             background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
             background-size: 200% 100%;
             animation: gradientMove 3s ease infinite;
         }
-
         @keyframes gradientMove {
             0%, 100% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
         }
-
-        .logo-area {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
+        .logo-area { text-align: center; margin-bottom: 30px; }
         .logo-area .icon {
             font-size: 48px;
             color: #667eea;
             background: rgba(102, 126, 234, 0.1);
-            width: 80px;
-            height: 80px;
+            width: 80px; height: 80px;
             line-height: 80px;
             border-radius: 50%;
             display: inline-block;
             margin-bottom: 10px;
         }
-
-        .logo-area h1 {
-            font-size: 24px;
-            color: #2d3748;
-            font-weight: 700;
-        }
-
-        .logo-area p {
-            color: #718096;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 14px;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 6px;
-        }
-
-        .form-group .input-wrapper {
-            position: relative;
-        }
-
+        .logo-area h1 { font-size: 24px; color: #2d3748; font-weight: 700; letter-spacing: 1px; }
+        .logo-area p { color: #718096; font-size: 14px; margin-top: 5px; }
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-group label { display: block; font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+        .form-group .input-wrapper { position: relative; }
         .form-group .input-wrapper i {
             position: absolute;
             left: 14px;
@@ -110,7 +70,6 @@
             color: #a0aec0;
             font-size: 16px;
         }
-
         .form-group input {
             width: 100%;
             padding: 12px 12px 12px 44px;
@@ -121,18 +80,12 @@
             background: #f7fafc;
             color: #2d3748;
         }
-
         .form-group input:focus {
             outline: none;
             border-color: #667eea;
             background: white;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
         }
-
-        .form-group input::placeholder {
-            color: #a0aec0;
-        }
-
         .form-group .toggle-password {
             position: absolute;
             right: 14px;
@@ -145,11 +98,7 @@
             border: none;
             font-size: 16px;
         }
-
-        .form-group .toggle-password:hover {
-            color: #667eea;
-        }
-
+        .form-group .toggle-password:hover { color: #667eea; }
         .form-options {
             display: flex;
             justify-content: space-between;
@@ -157,34 +106,10 @@
             margin: 20px 0 25px;
             font-size: 14px;
         }
-
-        .form-options label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #4a5568;
-            cursor: pointer;
-        }
-
-        .form-options label input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: #667eea;
-            cursor: pointer;
-        }
-
-        .form-options a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.3s ease;
-        }
-
-        .form-options a:hover {
-            color: #5a67d8;
-            text-decoration: underline;
-        }
-
+        .form-options label { display: flex; align-items: center; gap: 8px; color: #4a5568; cursor: pointer; }
+        .form-options label input[type="checkbox"] { width: 16px; height: 16px; accent-color: #667eea; cursor: pointer; }
+        .form-options a { color: #667eea; text-decoration: none; font-weight: 600; transition: color 0.3s ease; cursor: pointer; }
+        .form-options a:hover { color: #5a67d8; text-decoration: underline; }
         .btn-login {
             width: 100%;
             padding: 14px;
@@ -199,45 +124,20 @@
             position: relative;
             overflow: hidden;
         }
-
-        .btn-login:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-login:active {
-            transform: translateY(0);
-        }
-
-        .btn-login:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
+        .btn-login:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4); }
+        .btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
         .btn-login .spinner {
             display: none;
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             border: 3px solid rgba(255, 255, 255, 0.3);
             border-top-color: white;
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
             margin: 0 auto;
         }
-
-        .btn-login.loading .spinner {
-            display: inline-block;
-        }
-
-        .btn-login.loading .btn-text {
-            display: none;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
+        .btn-login.loading .spinner { display: inline-block; }
+        .btn-login.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .error-message {
             display: none;
             background: #fed7d7;
@@ -250,15 +150,7 @@
             align-items: center;
             gap: 10px;
         }
-
-        .error-message.show {
-            display: flex;
-        }
-
-        .error-message i {
-            font-size: 18px;
-        }
-
+        .error-message.show { display: flex; }
         .success-message {
             display: none;
             background: #c6f6d5;
@@ -271,75 +163,24 @@
             align-items: center;
             gap: 10px;
         }
-
-        .success-message.show {
-            display: flex;
-        }
-
-        .footer {
-            text-align: center;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #e2e8f0;
-            color: #718096;
-            font-size: 13px;
-        }
-
-        .footer a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .footer a:hover {
-            text-decoration: underline;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        .status-badge.success {
-            background: #c6f6d5;
-            color: #276749;
-        }
-
-        .status-badge.error {
-            background: #fed7d7;
-            color: #c53030;
-        }
-
+        .success-message.show { display: flex; }
+        .footer { text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #718096; font-size: 13px; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; }
+        .status-badge.success { background: #c6f6d5; color: #276749; }
+        .status-badge.error { background: #fed7d7; color: #c53030; }
         @media (max-width: 480px) {
-            .login-container {
-                padding: 30px 20px;
-            }
-
-            .logo-area h1 {
-                font-size: 20px;
-            }
-
-            .form-options {
-                flex-direction: column;
-                gap: 10px;
-                align-items: flex-start;
-            }
+            .login-container { padding: 30px 20px; }
+            .logo-area h1 { font-size: 20px; }
+            .form-options { flex-direction: column; gap: 10px; align-items: flex-start; }
         }
     </style>
 </head>
 <body>
-
     <div class="login-container">
         <div class="logo-area">
-            <div class="icon">
-                <i class="fas fa-gavel"></i>
-            </div>
-            <h1>AI - DEPOM</h1>
-            <p>Gerencie suas atividades de forma eficiente</p>
+            <div class="icon"><i class="fas fa-shield-halved"></i></div>
+            <h1>AI-DEPOM</h1>
+            <p>Sistema Inteligente de Banco de Dados Policiais</p>
         </div>
 
         <div id="errorMessage" class="error-message">
@@ -360,35 +201,18 @@
 
         <form id="loginForm" autocomplete="off">
             <div class="form-group">
-                <label for="matricula">
-                    <i class="fas fa-id-badge"></i> Matrícula
-                </label>
+                <label for="matricula"><i class="fas fa-id-badge"></i> Matrícula</label>
                 <div class="input-wrapper">
                     <i class="fas fa-user"></i>
-                    <input 
-                        type="text" 
-                        id="matricula" 
-                        placeholder="Digite sua matrícula" 
-                        required
-                        autofocus
-                        value="ADM-MASTER-001"
-                    />
+                    <input type="text" id="matricula" placeholder="Digite sua matrícula" required autofocus />
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="senha">
-                    <i class="fas fa-lock"></i> Senha
-                </label>
+                <label for="senha"><i class="fas fa-lock"></i> Senha</label>
                 <div class="input-wrapper">
                     <i class="fas fa-key"></i>
-                    <input 
-                        type="password" 
-                        id="senha" 
-                        placeholder="Digite sua senha" 
-                        required
-                        value="123456"
-                    />
+                    <input type="password" id="senha" placeholder="Digite sua senha" required />
                     <button type="button" class="toggle-password" id="togglePassword" aria-label="Mostrar senha">
                         <i class="fas fa-eye"></i>
                     </button>
@@ -400,51 +224,31 @@
                     <input type="checkbox" id="rememberMe" checked />
                     <span>Lembrar-me</span>
                 </label>
-                <a href="#" id="forgotPassword">Esqueceu a senha?</a>
+                <a id="forgotPassword">Esqueceu a senha?</a>
             </div>
 
             <button type="submit" class="btn-login" id="btnLogin">
                 <span class="spinner"></span>
-                <span class="btn-text">
-                    <i class="fas fa-sign-in-alt"></i> Entrar
-                </span>
+                <span class="btn-text"><i class="fas fa-sign-in-alt"></i> Entrar</span>
             </button>
         </form>
 
         <div class="footer">
-            <p>
-                <i class="fas fa-shield-alt"></i>
-                Sistema seguro • Dados protegidos
-            </p>
-            <p style="margin-top: 5px; font-size: 12px; color: #a0aec0;">
-                Versão 2.0.0
-            </p>
+            <p><i class="fas fa-shield-alt"></i> Sistema seguro • Dados protegidos</p>
+            <p style="margin-top: 5px; font-size: 12px; color: #a0aec0;">Versão 2.0.0</p>
         </div>
     </div>
 
     <script>
-        // ============================================
-        // CONFIGURAÇÕES
-        // ============================================
         const SUPABASE_URL = 'https://szkgaqouivsvlyujfvmz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
 
-        // ============================================
-        // INICIALIZAR SUPABASE (única declaração)
-        // ============================================
-        console.log('🚀 Inicializando Supabase...');
-        
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        let supabaseInicializado = true;
-        
-        console.log('✅ Supabase inicializado com sucesso!');
-        document.getElementById('supabaseStatus').innerHTML = 
-            '<i class="fas fa-check-circle"></i> ✅ Supabase conectado';
+        const supabaseInicializado = true;
+
+        document.getElementById('supabaseStatus').innerHTML = '<i class="fas fa-check-circle"></i> ✅ Supabase conectado';
         document.getElementById('supabaseStatus').className = 'status-badge success';
 
-        // ============================================
-        // ELEMENTOS DOM
-        // ============================================
         const loginForm = document.getElementById('loginForm');
         const matriculaInput = document.getElementById('matricula');
         const senhaInput = document.getElementById('senha');
@@ -456,74 +260,37 @@
         const togglePassword = document.getElementById('togglePassword');
         const rememberMe = document.getElementById('rememberMe');
 
-        // ============================================
-        // FUNÇÕES DE UTILIDADE
-        // ============================================
-        function showError(message) {
-            errorText.textContent = message;
+        function showError(msg) {
+            errorText.textContent = msg;
             errorMessage.classList.add('show');
             successMessage.classList.remove('show');
         }
-
-        function hideError() {
-            errorMessage.classList.remove('show');
-        }
-
-        function showSuccess(message) {
-            successText.textContent = message;
+        function hideError() { errorMessage.classList.remove('show'); }
+        function showSuccess(msg) {
+            successText.textContent = msg;
             successMessage.classList.add('show');
             errorMessage.classList.remove('show');
         }
-
-        function hideSuccess() {
-            successMessage.classList.remove('show');
-        }
-
+        function hideSuccess() { successMessage.classList.remove('show'); }
         function setLoading(loading) {
-            if (loading) {
-                btnLogin.classList.add('loading');
-                btnLogin.disabled = true;
-            } else {
-                btnLogin.classList.remove('loading');
-                btnLogin.disabled = false;
-            }
+            if (loading) { btnLogin.classList.add('loading'); btnLogin.disabled = true; }
+            else { btnLogin.classList.remove('loading'); btnLogin.disabled = false; }
         }
 
-        // ============================================
-        // FUNÇÃO DE LOGIN PRINCIPAL
-        // ============================================
         async function fazerLogin(event) {
             event.preventDefault();
             hideError();
             hideSuccess();
 
-            if (!supabaseInicializado || !supabaseClient) {
-                showError('Sistema não conectado. Recarregue a página e tente novamente.');
-                return;
-            }
-
             const matricula = matriculaInput.value.trim();
             const senha = senhaInput.value.trim();
 
-            if (!matricula) {
-                showError('Por favor, digite sua matrícula.');
-                matriculaInput.focus();
-                return;
-            }
+            if (!matricula) { showError('Digite sua matrícula.'); matriculaInput.focus(); return; }
+            if (!senha) { showError('Digite sua senha.'); senhaInput.focus(); return; }
 
-            if (!senha) {
-                showError('Por favor, digite sua senha.');
-                senhaInput.focus();
-                return;
-            }
-
-            console.log('🔐 Tentando login para matrícula:', matricula);
             setLoading(true);
 
             try {
-                // Buscar usuário
-                console.log('🔍 Passo 1: Buscando usuário...');
-                
                 const { data: usuario, error: buscaError } = await supabaseClient
                     .from('usuarios')
                     .select('id, matricula, nome_completo, email, ativo, setor, id_perfil_acesso, primeiro_acesso, deletado')
@@ -531,74 +298,42 @@
                     .maybeSingle();
 
                 if (buscaError) {
-                    console.error('❌ Erro na busca:', buscaError);
-                    if (buscaError.code === 'PGRST116') {
-                        showError('Matrícula não encontrada. Verifique e tente novamente.');
-                    } else {
-                        showError('Erro ao buscar usuário. Tente novamente mais tarde.');
-                    }
+                    if (buscaError.code === 'PGRST116') showError('Matrícula não encontrada.');
+                    else showError('Erro ao buscar usuário. Tente novamente.');
                     setLoading(false);
                     return;
                 }
 
-                if (!usuario) {
-                    console.log('❌ Usuário não encontrado');
-                    showError('Matrícula não encontrada. Verifique e tente novamente.');
-                    setLoading(false);
-                    return;
-                }
+                if (!usuario) { showError('Matrícula não encontrada.'); setLoading(false); return; }
+                if (usuario.deletado === true) { showError('Usuário deletado. Contate o administrador.'); setLoading(false); return; }
+                if (usuario.ativo !== true) { showError('Usuário inativo. Contate o administrador.'); setLoading(false); return; }
+                if (!usuario.email) { showError('Usuário sem email cadastrado.'); setLoading(false); return; }
 
-                console.log('✅ Usuário encontrado:', usuario);
-
-                // Validar usuário
-                if (usuario.deletado === true) {
-                    showError('Usuário deletado. Contate o administrador.');
-                    setLoading(false);
-                    return;
-                }
-
-                if (usuario.ativo !== true) {
-                    showError('Usuário inativo. Contate o administrador.');
-                    setLoading(false);
-                    return;
-                }
-
-                if (!usuario.email) {
-                    showError('Usuário sem email cadastrado. Contate o administrador.');
-                    setLoading(false);
-                    return;
-                }
-
-                console.log('✅ Usuário validado! Email:', usuario.email);
-
-                // Autenticar
-                console.log('🔐 Passo 2: Autenticando...');
                 const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
                     email: usuario.email,
                     password: senha
                 });
 
                 if (authError) {
-                    console.error('❌ Erro na autenticação:', authError);
-                    if (authError.message.includes('Invalid login credentials')) {
-                        showError('Senha incorreta. Tente novamente.');
-                    } else if (authError.message.includes('Email not confirmed')) {
-                        showError('Email não confirmado. Verifique sua caixa de entrada.');
-                    } else {
-                        showError('Erro na autenticação: ' + authError.message);
-                    }
+                    if (authError.message.includes('Invalid login credentials')) showError('Senha incorreta. Tente novamente.');
+                    else if (authError.message.includes('Email not confirmed')) showError('Email não confirmado.');
+                    else showError('Erro na autenticação: ' + authError.message);
                     setLoading(false);
                     return;
                 }
 
-                console.log('✅ Autenticação bem-sucedida!');
+                try {
+                    await supabaseClient
+                        .from('usuarios')
+                        .update({ data_ultimo_acesso: new Date().toISOString() })
+                        .eq('id', usuario.id);
+                } catch (e) { console.warn('Erro data_ultimo_acesso:', e); }
 
-                // Salvar dados
                 try {
                     sessionStorage.setItem('usuario', JSON.stringify(usuario));
                     sessionStorage.setItem('authData', JSON.stringify(authData));
                     sessionStorage.setItem('usuarioId', usuario.id);
-                    
+                    sessionStorage.setItem('logado', 'true');
                     if (rememberMe.checked) {
                         localStorage.setItem('rememberMe', 'true');
                         localStorage.setItem('lastMatricula', matricula);
@@ -606,29 +341,8 @@
                         localStorage.removeItem('rememberMe');
                         localStorage.removeItem('lastMatricula');
                     }
-                } catch (storageError) {
-                    console.warn('⚠️ Erro ao salvar dados:', storageError);
-                }
-		// Após: console.log('✅ Autenticação bem-sucedida!');
+                } catch (e) { console.warn('Erro ao salvar sessão:', e); }
 
-// Atualizar data_ultimo_acesso
-try {
-    const { error: updateError } = await supabaseClient
-        .from('usuarios')
-        .update({ 
-            data_ultimo_acesso: new Date().toISOString() 
-        })
-        .eq('id', usuario.id);
-    
-    if (updateError) {
-        console.warn('⚠️ Erro ao atualizar data_ultimo_acesso:', updateError);
-    } else {
-        console.log('✅ data_ultimo_acesso atualizada');
-    }
-} catch (e) {
-    console.warn('⚠️ Erro ao atualizar data_ultimo_acesso:', e);
-}
-                console.log('🚀 Login bem-sucedido!');
                 showSuccess('Login realizado com sucesso! Redirecionando...');
 
                 setTimeout(() => {
@@ -640,90 +354,54 @@ try {
                 }, 1500);
 
             } catch (error) {
-                console.error('❌ Erro inesperado:', error);
-                showError('Ocorreu um erro inesperado. Tente novamente.');
+                console.error('Erro inesperado:', error);
+                showError('Erro inesperado. Tente novamente.');
                 setLoading(false);
             }
         }
 
-        // ============================================
-        // EVENT LISTENERS
-        // ============================================
         loginForm.addEventListener('submit', fazerLogin);
-
         togglePassword.addEventListener('click', function() {
             const type = senhaInput.getAttribute('type') === 'password' ? 'text' : 'password';
             senhaInput.setAttribute('type', type);
             this.querySelector('i').classList.toggle('fa-eye');
             this.querySelector('i').classList.toggle('fa-eye-slash');
         });
-
         senhaInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                loginForm.dispatchEvent(new Event('submit'));
-            }
+            if (e.key === 'Enter') { e.preventDefault(); loginForm.dispatchEvent(new Event('submit')); }
+        });
+        matriculaInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); senhaInput.focus(); }
         });
 
-        matriculaInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                senhaInput.focus();
+        // ============================================
+        // FULLSCREEN
+        // ============================================
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
             }
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
         document.addEventListener('DOMContentLoaded', function() {
             try {
                 const remember = localStorage.getItem('rememberMe');
                 const lastMatricula = localStorage.getItem('lastMatricula');
-                
                 if (remember === 'true' && lastMatricula) {
                     matriculaInput.value = lastMatricula;
                     rememberMe.checked = true;
                 }
-            } catch (error) {
-                console.warn('⚠️ Erro ao carregar dados salvos:', error);
-            }
+            } catch (e) { console.warn('Erro:', e); }
         });
-
-        // ============================================
-        // FUNÇÃO DE TESTE
-        // ============================================
-        async function testarBusca() {
-            console.log('🧪 Teste rápido de busca...');
-            
-            const { data, error } = await supabaseClient
-                .from('usuarios')
-                .select('*')
-                .eq('matricula', 'ADM-MASTER-001')
-                .maybeSingle();
-
-            if (error) {
-                console.error('❌ Erro no teste:', error);
-            } else if (data) {
-                console.log('✅ Teste bem-sucedido!');
-                console.log('📋 Dados:', data);
-            } else {
-                console.log('❌ Nenhum usuário encontrado');
-            }
-        }
-
-        // ============================================
-        // EXPORTAÇÃO GLOBAL
-        // ============================================
-        window.supabase = supabaseClient;
-        window.testarBusca = testarBusca;
-        window.fazerLogin = fazerLogin;
-
-        console.log('✅ Página de login carregada.');
-        console.log('💡 Credenciais padrão: Matrícula= , Senha= ');
-        console.log('💡 Digite testarBusca() no console para testar a conexão');
-        
-        // Teste automático
-        setTimeout(() => {
-            testarBusca();
-        }, 1000);
     </script>
-
 </body>
 </html>
