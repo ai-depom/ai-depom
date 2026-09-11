@@ -2,12 +2,14 @@
      AI-DEPOM - CADASTRO DE SUSPEITO
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 2.5.0
-     Data: 11/09/2026 - 18:15
+     Versão: 3.0.0
+     Data: 11/09/2026 - 19:30
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [11/09/2026 18:15] Garantido <form id="formSuspeito">
+     - [11/09/2026 19:30] Upload de foto salva em arquivo_midia
+     - [11/09/2026 19:30] Hash SHA-256 real (não o caminho)
+     - [11/09/2026 19:30] Reset completo do formulário + previews
      - [11/09/2026 18:15] Foto Principal e Secundaria
      - [11/09/2026 18:15] Regra de Ouro aplicada
      ============================================================
@@ -426,7 +428,7 @@
 
                 <div class="row mt-4">
                     <div class="col-md-12 text-end">
-                        <button type="reset" class="btn-outline-gold me-2"><i class="fas fa-times me-2"></i>CANCELAR</button>
+                        <button type="reset" class="btn-outline-gold me-2" onclick="setTimeout(resetFormularioCompleto, 0)"><i class="fas fa-times me-2"></i>CANCELAR</button>
                         <button type="submit" class="btn-gold" id="btnCadastrar"><i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO</button>
                     </div>
                 </div>
@@ -598,24 +600,90 @@
                 preview.style.borderStyle = 'dashed';
                 preview.style.borderColor = 'var(--border-color)';
                 btnRemover.style.display = 'none';
-                btnEscolher.innerHTML = '<i class="fas fa-camera"></i> ESCOLHER';
+                btnEscolher.innerHTML = '<i class="fas fa-camera"></i> ESCOLHER FOTO';
             });
         }
 
-        async function uploadFoto(usuario, arquivo, prefixo) {
+        // ============================================================
+        // RESET COMPLETO DO FORMULÁRIO (inclui previews de foto)
+        // ============================================================
+        function resetFormularioCompleto() {
+            const form = document.getElementById('formSuspeito');
+            if (form) form.reset();
+
+            ['fotoPrincipal', 'fotoSecundaria'].forEach(prefixo => {
+                const input       = document.getElementById(prefixo + 'Input');
+                const img         = document.getElementById(prefixo + 'Img');
+                const placeholder = document.getElementById(prefixo + 'Placeholder');
+                const preview     = document.getElementById(prefixo + 'Preview');
+                const btnEscolher = document.getElementById(
+                    'btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1)
+                );
+                const btnRemover  = document.getElementById(
+                    'btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1)
+                );
+
+                if (input) input.value = '';
+
+                if (img) {
+                    img.src = '';
+                    img.style.display = 'none';
+                }
+
+                if (placeholder) placeholder.style.display = 'block';
+
+                if (preview) {
+                    preview.style.borderStyle = 'dashed';
+                    preview.style.borderColor = 'var(--border-color)';
+                }
+
+                if (btnRemover) btnRemover.style.display = 'none';
+
+                if (btnEscolher) {
+                    const icone = prefixo === 'fotoPrincipal' ? 'fa-camera' : 'fa-upload';
+                    btnEscolher.innerHTML = `<i class="fas ${icone}"></i> ESCOLHER FOTO`;
+                }
+            });
+
+            console.log('🧹 Formulário e previews de foto resetados');
+        }
+
+        // ============================================================
+        // UPLOAD DE FOTO — VERSÃO CORRIGIDA (retorna info pra arquivo_midia)
+        // ============================================================
+        async function uploadFoto(usuario, arquivo, prefixo, idSuspeito = null) {
             if (!arquivo) return null;
             try {
-                const extensao = arquivo.name.split('.').pop();
-                const nomeArquivo = usuario.id + '/' + prefixo + '_' + Date.now() + '_' + Math.random().toString(36).substring(7) + '.' + extensao;
+                const extensao = arquivo.name.split('.').pop().toLowerCase();
+                const base = idSuspeito ? `suspeito_${idSuspeito}` : `temp_${Date.now()}`;
+                const nomeArquivo = `${base}_${prefixo}_${Date.now()}.${extensao}`;
+
                 console.log('📤 Fazendo upload:', nomeArquivo);
 
-                const { error } = await window.supabaseClient.storage
+                const { error: uploadError } = await window.supabaseClient.storage
                     .from('fotos-suspeitos')
-                    .upload(nomeArquivo, arquivo, { cacheControl: '3600', upsert: false });
+                    .upload(nomeArquivo, arquivo, {
+                        cacheControl: '3600',
+                        upsert: false,
+                        contentType: arquivo.type
+                    });
 
-                if (error) throw error;
+                if (uploadError) throw uploadError;
                 console.log('✅ Upload concluído:', nomeArquivo);
-                return nomeArquivo;
+
+                // Calcula hash SHA-256
+                const buffer = await arquivo.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashSha256 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+                return {
+                    caminho: nomeArquivo,
+                    hash: hashSha256,
+                    formato: arquivo.type,
+                    tamanho: arquivo.size,
+                    nomeOriginal: arquivo.name
+                };
             } catch (error) {
                 console.error('❌ Erro no upload:', error);
                 showToast('error', 'Erro no upload', error.message);
@@ -623,15 +691,57 @@
             }
         }
 
+        // ============================================================
+        // REGISTRA A FOTO EM arquivo_midia
+        // ============================================================
+        async function registrarMidia(infoUpload, idSuspeito, idUsuario, tipoMidia = 'FOTO') {
+            if (!infoUpload) return null;
+
+            const { data, error } = await window.supabaseClient
+                .from('arquivo_midia')
+                .insert({
+                    id_entidade:       idSuspeito,
+                    tipo_entidade:     'SUSPEITO',
+                    nome_original:     infoUpload.nomeOriginal,
+                    nome_seguro:       infoUpload.caminho,
+                    tipo_midia:        tipoMidia,
+                    formato:           infoUpload.formato,
+                    tamanho_bytes:     infoUpload.tamanho,
+                    hash_sha256:       infoUpload.hash,
+                    caminho_fisico:    infoUpload.caminho,
+                    nivel_seguranca:   'PADRAO',
+                    status:            'ATIVO',
+                    id_usuario_upload: idUsuario,
+                    deletado:          false
+                })
+                .select()
+                .single();
+
+            if (error) {
+                console.error('❌ Erro ao registrar em arquivo_midia:', error);
+                throw error;
+            }
+            console.log('✅ arquivo_midia registrado:', data);
+            return data;
+        }
+
+        // ============================================================
+        // SUBMIT DO FORMULÁRIO
+        // ============================================================
         document.getElementById('formSuspeito').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnCadastrar');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
 
+            const restaurarBotao = () => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO';
+            };
+
             try {
                 const usuario = AIDEPOM.getUsuario();
-                if (!usuario) { showToast('error', 'Sessao expirada', 'Faca login novamente.'); return; }
+                if (!usuario) { showToast('error', 'Sessao expirada', 'Faca login novamente.'); restaurarBotao(); return; }
 
                 const dados = {
                     nome_completo: document.getElementById('nomeCompleto').value.trim(),
@@ -672,40 +782,73 @@
                     deletado: false
                 };
 
-                if (!dados.nome_completo) { showToast('warning', 'Campo obrigatorio', 'Preencha o Nome Completo.'); return; }
-                if (!dados.status_atual) { showToast('warning', 'Campo obrigatorio', 'Selecione o Status Atual.'); return; }
+                if (!dados.nome_completo) { showToast('warning', 'Campo obrigatorio', 'Preencha o Nome Completo.'); restaurarBotao(); return; }
+                if (!dados.status_atual) { showToast('warning', 'Campo obrigatorio', 'Selecione o Status Atual.'); restaurarBotao(); return; }
 
-                if (arquivoFotoPrincipal) {
-                    showToast('info', 'Enviando foto principal...', 'Aguarde.');
-                    const caminho = await uploadFoto(usuario, arquivoFotoPrincipal, 'principal');
-                    if (caminho) dados.foto_hash = caminho;
-                }
-                if (arquivoFotoSecundaria) {
-                    showToast('info', 'Enviando foto secundaria...', 'Aguarde.');
-                    const caminho = await uploadFoto(usuario, arquivoFotoSecundaria, 'secundaria');
-                    if (caminho) dados.foto_hash_secundaria = caminho;
-                }
-
+                // ============================================================
+                // PASSO 1 — Insere o suspeito PRIMEIRO (pra ter o id_suspeito)
+                // ============================================================
                 showToast('info', 'Processando...', 'Cadastrando suspeito...');
-
                 const { data: inserted, error: insertError } = await window.supabaseClient
-                    .from('suspeito').insert(dados).select().maybeSingle();
+                    .from('suspeito')
+                    .insert(dados)
+                    .select()
+                    .maybeSingle();
 
                 if (insertError) {
                     showToast('error', 'Erro ao cadastrar', insertError.message);
+                    restaurarBotao();
                     return;
                 }
 
-                showToast('success', 'Suspeito cadastrado!', '<strong>' + dados.nome_completo + '</strong> foi cadastrado com ID #' + inserted.id_suspeito + '.', 8000);
-                this.reset();
+                const idSuspeito = inserted.id_suspeito;
+                console.log('✅ Suspeito cadastrado ID:', idSuspeito);
+
+                // ============================================================
+                // PASSO 2 — Upload + registro da FOTO PRINCIPAL
+                // ============================================================
+                if (arquivoFotoPrincipal) {
+                    showToast('info', 'Enviando foto principal...', 'Aguarde.');
+                    const info = await uploadFoto(usuario, arquivoFotoPrincipal, 'principal', idSuspeito);
+                    if (info) {
+                        await registrarMidia(info, idSuspeito, usuario.id, 'FOTO');
+                        await window.supabaseClient
+                            .from('suspeito')
+                            .update({ foto_hash: info.hash })
+                            .eq('id_suspeito', idSuspeito);
+                    }
+                }
+
+                // ============================================================
+                // PASSO 3 — Upload + registro da FOTO SECUNDÁRIA
+                // ============================================================
+                if (arquivoFotoSecundaria) {
+                    showToast('info', 'Enviando foto secundaria...', 'Aguarde.');
+                    const info = await uploadFoto(usuario, arquivoFotoSecundaria, 'secundaria', idSuspeito);
+                    if (info) {
+                        await registrarMidia(info, idSuspeito, usuario.id, 'FOTO');
+                        await window.supabaseClient
+                            .from('suspeito')
+                            .update({ foto_hash_secundaria: info.hash })
+                            .eq('id_suspeito', idSuspeito);
+                    }
+                }
+
+                showToast('success', 'Suspeito cadastrado!', '<strong>' + dados.nome_completo + '</strong> foi cadastrado com ID #' + idSuspeito + '.', 8000);
+
+                // ============================================================
+                // PASSO 4 — Reset COMPLETO do formulário
+                // ============================================================
                 arquivoFotoPrincipal = null;
                 arquivoFotoSecundaria = null;
+                resetFormularioCompleto();
+
                 carregarSuspeitos();
             } catch (error) {
+                console.error('❌ Erro inesperado:', error);
                 showToast('error', 'Erro inesperado', error.message);
             } finally {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO';
+                restaurarBotao();
             }
         });
 
