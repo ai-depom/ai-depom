@@ -1,7 +1,16 @@
-﻿/* ============================================
-   AI-DEPOM - Configuracao Supabase
-   Versao: 2.0.0
-   ============================================ */
+ // ============================================================
+// AI-DEPOM - CONFIGURAÇÃO SUPABASE
+// ============================================================
+// Arquivo: assets/js/supabase-config.js
+// Versão: 2.2.0
+// Data: 11/09/2026 - 17:00
+// Autor: AI-DEPOM Team
+// ============================================================
+// ALTERAÇÕES RECENTES:
+// - [11/09/2026 17:00] Adicionada função criarUsuario()
+// - [11/09/2026 17:00] Adicionada função listarUsuarios()
+// - [11/09/2026 17:00] Adicionada função isAdminMaster()
+// ============================================================
 
 const SUPABASE_URL = 'https://szkgaqouivsvlyujfvmz.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
@@ -10,6 +19,10 @@ window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON
 
 window.AIDEPOM = {
 
+    // ============================================================
+    // SESSÃO
+    // Data: 11/09/2026 - 17:00
+    // ============================================================
     getUsuario() {
         const u = sessionStorage.getItem('usuario');
         return u ? JSON.parse(u) : null;
@@ -35,6 +48,10 @@ window.AIDEPOM = {
         return usuario;
     },
 
+    // ============================================================
+    // BUSCAR USUÁRIO POR MATRÍCULA
+    // Data: 11/09/2026 - 17:00
+    // ============================================================
     async buscarUsuarioPorMatricula(matricula) {
         const { data, error } = await window.supabaseClient
             .from('usuarios')
@@ -49,6 +66,10 @@ window.AIDEPOM = {
         return { data, error };
     },
 
+    // ============================================================
+    // LOGOUT
+    // Data: 11/09/2026 - 17:00
+    // ============================================================
     async logout(redirecionarPara = '02-login.html') {
         try {
             await window.supabaseClient.auth.signOut();
@@ -59,6 +80,10 @@ window.AIDEPOM = {
         window.location.href = redirecionarPara;
     },
 
+    // ============================================================
+    // UI - MENSAGENS
+    // Data: 11/09/2026 - 17:00
+    // ============================================================
     showError(elementId, message) {
         const el = document.getElementById(elementId);
         if (!el) return;
@@ -96,6 +121,12 @@ window.AIDEPOM = {
         }
     },
 
+    // ============================================================
+    // FASE 4.1 - GERENCIAMENTO DE USUÁRIOS
+    // Data: 11/09/2026 - 17:00
+    // ============================================================
+
+    // Verificar se o usuário logado é Administrador Master
     async isAdminMaster() {
         try {
             const { data: { user } } = await window.supabaseClient.auth.getUser();
@@ -117,24 +148,30 @@ window.AIDEPOM = {
         }
     },
 
+    // Criar usuário via Edge Function
     async criarUsuario(dados) {
         try {
+            console.log('📤 Chamando Edge Function criar-usuario...');
+            console.log('📦 Dados enviados:', dados);
+
             const { data, error } = await window.supabaseClient.functions.invoke('criar-usuario', {
                 body: dados
             });
 
             if (error) {
-                console.error('Erro na Edge Function:', error);
+                console.error('❌ Erro na Edge Function:', error);
                 return { sucesso: false, erro: error.message || 'Erro ao criar usuario' };
             }
 
+            console.log('✅ Resposta da Edge Function:', data);
             return data;
         } catch (error) {
-            console.error('Erro inesperado ao criar usuario:', error);
+            console.error('❌ Erro inesperado ao criar usuario:', error);
             return { sucesso: false, erro: 'Erro inesperado: ' + error.message };
         }
     },
 
+    // Listar usuários ativos
     async listarUsuarios() {
         try {
             const { data, error } = await window.supabaseClient
@@ -150,6 +187,7 @@ window.AIDEPOM = {
         }
     },
 
+    // Buscar usuário por ID
     async buscarUsuarioPorId(id) {
         try {
             const { data, error } = await window.supabaseClient
@@ -165,6 +203,7 @@ window.AIDEPOM = {
         }
     },
 
+    // Atualizar usuário
     async atualizarUsuario(id, dados) {
         try {
             const { data, error } = await window.supabaseClient
@@ -181,6 +220,7 @@ window.AIDEPOM = {
         }
     },
 
+    // Desativar usuário (soft delete)
     async desativarUsuario(id) {
         try {
             const { data, error } = await window.supabaseClient
@@ -197,6 +237,7 @@ window.AIDEPOM = {
         }
     },
 
+    // Reativar usuário
     async reativarUsuario(id) {
         try {
             const { data, error } = await window.supabaseClient
@@ -213,6 +254,10 @@ window.AIDEPOM = {
         }
     },
 
+    // ============================================================
+    // PERFIS DE ACESSO
+    // Data: 11/09/2026 - 17:00
+    // ============================================================
     PERFIS: {
         1: 'Administrador Master',
         2: 'Administrador',
@@ -228,4 +273,4 @@ window.AIDEPOM = {
     }
 };
 
-console.log('AI-DEPOM: Supabase configurado (v2.0.0)');
+console.log('✅ AI-DEPOM: Supabase configurado (v2.2.0) em ' + new Date().toLocaleString('pt-BR'));
