@@ -2,16 +2,16 @@
      AI-DEPOM - CADASTRO DE SUSPEITO
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 2.1.0
-     Data: 11/09/2026 - 15:15
+     Versão: 2.2.0
+     Data: 11/09/2026 - 16:15
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [11/09/2026 15:15] Adicionado campo de foto de identificação
-     - [11/09/2026 15:15] Upload para bucket fotos-suspeitos
-     - [11/09/2026 15:15] Adicionados campos: data_foto, fonte_foto, observacoes_foto
-     - [11/09/2026 15:15] Adicionado cabeçalho de Regra de Ouro
-     - [11/09/2026 15:15] Comentários em CSS e JavaScript
+     - [11/09/2026 16:15] Adicionada FOTO PRINCIPAL no topo
+     - [11/09/2026 16:15] Adicionada FOTO SECUNDARIA
+     - [11/09/2026 16:15] Upload para bucket fotos-suspeitos
+     - [11/09/2026 16:15] Coluna foto_hash_secundaria na tabela
+     - [11/09/2026 16:15] Regra de Ouro aplicada
      ============================================================
 -->
 <!DOCTYPE html>
@@ -27,7 +27,7 @@
     <style>
         /* ============================================================
            VARIÁVEIS GLOBAIS
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         :root {
             --bg-primary: #000000;
@@ -44,15 +44,12 @@
 
         /* ============================================================
            RESET E CONFIGURAÇÕES GERAIS
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            width: 100%; height: 100%; min-height: 100vh;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
@@ -61,7 +58,7 @@
 
         /* ============================================================
            BARRA DE CONTROLES
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .controls-bar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
@@ -94,7 +91,7 @@
 
         /* ============================================================
            SIDEBAR
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .sidebar {
             position: fixed; top: 48px; left: 0;
@@ -141,7 +138,7 @@
 
         /* ============================================================
            CONTEÚDO PRINCIPAL
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; width: calc(100vw - 260px); }
         .top-bar {
@@ -157,7 +154,7 @@
 
         /* ============================================================
            CARDS DE FORMULÁRIO
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .form-card {
             background: var(--bg-secondary); border-radius: 14px;
@@ -186,7 +183,7 @@
 
         /* ============================================================
            BOTÕES
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .btn-gold {
             background: var(--gradient-green); color: #000; font-weight: 700;
@@ -204,7 +201,7 @@
 
         /* ============================================================
            SEÇÕES DO FORMULÁRIO
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .section-title {
             color: var(--text-primary); font-size: 13px; letter-spacing: 1px;
@@ -216,7 +213,7 @@
 
         /* ============================================================
            TABELA DE SUSPEITOS
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .suspeitos-table { width: 100%; border-collapse: collapse; }
         .suspeitos-table th {
@@ -241,7 +238,7 @@
 
         /* ============================================================
            TOASTS
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
@@ -270,7 +267,7 @@
 
         /* ============================================================
            RESPONSIVO
-           Data: 11/09/2026 - 15:15
+           Data: 11/09/2026 - 16:15
            ============================================================ */
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
         @media (max-width: 992px) {
@@ -295,7 +292,7 @@
 <body>
     <!-- ============================================================
          BARRA DE CONTROLES
-         Data: 11/09/2026 - 15:15
+         Data: 11/09/2026 - 16:15
          ============================================================ -->
     <header class="controls-bar">
         <div class="controls-left">
@@ -315,7 +312,7 @@
 
     <!-- ============================================================
          SIDEBAR
-         Data: 11/09/2026 - 15:15
+         Data: 11/09/2026 - 16:15
          ============================================================ -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
@@ -351,7 +348,7 @@
 
     <!-- ============================================================
          CONTEÚDO PRINCIPAL
-         Data: 11/09/2026 - 15:15
+         Data: 11/09/2026 - 16:15
          ============================================================ -->
     <main class="main-content">
         <header class="top-bar">
@@ -370,286 +367,348 @@
 
         <div class="form-card">
             <div class="card-title"><i class="fas fa-user-secret"></i>Dados do Suspeito</div>
-            <form id="formSuspeito">
-                <!-- ============================================================
-                     SEÇÃO: IDENTIFICAÇÃO
-                     Data: 11/09/2026 - 15:15
-                     ============================================================ -->
-                <div class="section-title"><i class="fas fa-id-card"></i>IDENTIFICACAO</div>
-                <div class="row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Nome Completo *</label>
-                        <input type="text" class="form-control" id="nomeCompleto" placeholder="Nome completo do suspeito" required>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Apelido</label>
-                        <input type="text" class="form-control" id="apelido" placeholder="Apelido / vulgo">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">CPF</label>
-                        <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00" maxlength="14">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">RG</label>
-                        <input type="text" class="form-control" id="rg" placeholder="Numero do RG">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Orgao Expedidor</label>
-                        <input type="text" class="form-control" id="orgaoExpedidor" placeholder="Ex: SSP/BA">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Data de Nascimento</label>
-                        <input type="date" class="form-control" id="dataNascimento">
-                    </div>
-                </div>
 
-                <!-- ============================================================
-                     SEÇÃO: DADOS PESSOAIS
-                     Data: 11/09/2026 - 15:15
-                     ============================================================ -->
-                <div class="section-title"><i class="fas fa-user"></i>DADOS PESSOAIS</div>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Sexo</label>
-                        <select class="form-select" id="sexo">
-                            <option value="">Selecione...</option>
-                            <option value="M">Masculino</option>
-                            <option value="F">Feminino</option>
-                            <option value="O">Outro</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Raca/Cor</label>
-                        <input type="text" class="form-control" id="raca" placeholder="Ex: Parda">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Naturalidade</label>
-                        <input type="text" class="form-control" id="naturalidade" placeholder="Cidade/UF">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Nacionalidade</label>
-                        <input type="text" class="form-control" id="nacionalidade" placeholder="Ex: Brasileira" value="Brasileira">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Nome do Pai</label>
-                        <input type="text" class="form-control" id="nomePai" placeholder="Nome completo do pai">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Nome da Mae</label>
-                        <input type="text" class="form-control" id="nomeMae" placeholder="Nome completo da mae">
-                    </div>
-                </div>
-
-                <!-- ============================================================
-                     SEÇÃO: FOTO DE IDENTIFICAÇÃO
-                     Data: 11/09/2026 - 15:15
-                     ============================================================ -->
-                <div class="section-title"><i class="fas fa-camera"></i>FOTO DE IDENTIFICACAO</div>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div style="text-align: center;">
-                            <div id="fotoPreview" style="
-                                width: 200px;
-                                height: 250px;
-                                border: 2px dashed var(--border-color);
-                                border-radius: 12px;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                margin: 0 auto 15px;
-                                background: rgba(0, 0, 0, 0.3);
-                                overflow: hidden;
-                                position: relative;
-                                transition: all 0.3s;
-                            ">
-                                <div id="fotoPlaceholder" style="text-align: center; color: rgba(0, 255, 136, 0.3);">
-                                    <i class="fas fa-camera" style="font-size: 40px; margin-bottom: 10px; display: block;"></i>
-                                    <span style="font-size: 12px;">Nenhuma foto</span>
-                                </div>
-                                <img id="fotoImg" src="" alt="Foto" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+            <!-- ============================================================
+                 SEÇÃO: FOTO PRINCIPAL (TOPO)
+                 Data: 11/09/2026 - 16:15
+                 ============================================================ -->
+            <div class="section-title"><i class="fas fa-id-card"></i>FOTO PRINCIPAL DE IDENTIFICACAO</div>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <div style="text-align: center;">
+                        <div id="fotoPrincipalPreview" style="
+                            width: 200px; height: 250px;
+                            border: 2px dashed var(--border-color);
+                            border-radius: 12px;
+                            display: flex; align-items: center; justify-content: center;
+                            margin: 0 auto 15px;
+                            background: rgba(0, 0, 0, 0.3);
+                            overflow: hidden; position: relative;
+                            transition: all 0.3s;
+                        ">
+                            <div id="fotoPrincipalPlaceholder" style="text-align: center; color: rgba(0, 255, 136, 0.3);">
+                                <i class="fas fa-user-circle" style="font-size: 50px; margin-bottom: 10px; display: block;"></i>
+                                <span style="font-size: 12px;">Foto Principal</span>
                             </div>
+                            <img id="fotoPrincipalImg" src="" alt="Foto Principal" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                        </div>
 
-                            <input type="file" id="fotoInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
-                            <button type="button" class="btn-outline-gold" id="btnEscolherFoto" style="padding: 8px 16px; font-size: 12px;">
-                                <i class="fas fa-upload"></i> ESCOLHER FOTO
-                            </button>
-                            <button type="button" class="btn-outline-gold" id="btnRemoverFoto" style="padding: 8px 16px; font-size: 12px; display: none; margin-top: 5px;">
-                                <i class="fas fa-trash"></i> REMOVER
-                            </button>
-                            <small style="display: block; color: rgba(0, 255, 136, 0.2); font-size: 11px; margin-top: 10px;">
-                                JPG, PNG ou WebP • Max 5MB
-                            </small>
+                        <input type="file" id="fotoPrincipalInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+                        <button type="button" class="btn-outline-gold" id="btnEscolherFotoPrincipal" style="padding: 8px 16px; font-size: 12px;">
+                            <i class="fas fa-camera"></i> ESCOLHER FOTO
+                        </button>
+                        <button type="button" class="btn-outline-gold" id="btnRemoverFotoPrincipal" style="padding: 8px 16px; font-size: 12px; display: none; margin-top: 5px;">
+                            <i class="fas fa-trash"></i> REMOVER
+                        </button>
+                        <small style="display: block; color: rgba(0, 255, 136, 0.2); font-size: 11px; margin-top: 10px;">
+                            JPG, PNG ou WebP • Max 5MB
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Data da Foto</label>
+                            <input type="date" class="form-control" id="dataFotoPrincipal">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fonte</label>
+                            <select class="form-select" id="fonteFotoPrincipal">
+                                <option value="DOCUMENTO">Documento Oficial</option>
+                                <option value="FOTO_POLICIAL">Foto Policial</option>
+                                <option value="CAMERA_SEGURANCA">Camera de Seguranca</option>
+                                <option value="REDES_SOCIAIS">Redes Sociais</option>
+                                <option value="OUTRO">Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Observacoes</label>
+                            <input type="text" class="form-control" id="observacoesFotoPrincipal" placeholder="Ex: Foto frontal">
                         </div>
                     </div>
-                    <div class="col-md-8">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label">Data da Foto</label>
-                                <input type="date" class="form-control" id="dataFoto">
+                    <div class="mt-3" style="background:rgba(0,255,136,0.02); border:1px solid var(--border-color); border-radius:10px; padding:12px;">
+                        <small style="color:rgba(0,255,136,0.2);">
+                            <i class="fas fa-info-circle me-1"></i>
+                            A <strong>Foto Principal</strong> sera exibida como capa do suspeito em consultas e relatorios.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 SEÇÃO: IDENTIFICAÇÃO
+                 Data: 11/09/2026 - 16:15
+                 ============================================================ -->
+            <div class="section-title"><i class="fas fa-id-card"></i>IDENTIFICACAO</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nome Completo *</label>
+                    <input type="text" class="form-control" id="nomeCompleto" placeholder="Nome completo do suspeito" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Apelido</label>
+                    <input type="text" class="form-control" id="apelido" placeholder="Apelido / vulgo">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">CPF</label>
+                    <input type="text" class="form-control" id="cpf" placeholder="000.000.000-00" maxlength="14">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">RG</label>
+                    <input type="text" class="form-control" id="rg" placeholder="Numero do RG">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Orgao Expedidor</label>
+                    <input type="text" class="form-control" id="orgaoExpedidor" placeholder="Ex: SSP/BA">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Data de Nascimento</label>
+                    <input type="date" class="form-control" id="dataNascimento">
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 SEÇÃO: DADOS PESSOAIS
+                 Data: 11/09/2026 - 16:15
+                 ============================================================ -->
+            <div class="section-title"><i class="fas fa-user"></i>DADOS PESSOAIS</div>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Sexo</label>
+                    <select class="form-select" id="sexo">
+                        <option value="">Selecione...</option>
+                        <option value="M">Masculino</option>
+                        <option value="F">Feminino</option>
+                        <option value="O">Outro</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Raca/Cor</label>
+                    <input type="text" class="form-control" id="raca" placeholder="Ex: Parda">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Naturalidade</label>
+                    <input type="text" class="form-control" id="naturalidade" placeholder="Cidade/UF">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Nacionalidade</label>
+                    <input type="text" class="form-control" id="nacionalidade" placeholder="Ex: Brasileira" value="Brasileira">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nome do Pai</label>
+                    <input type="text" class="form-control" id="nomePai" placeholder="Nome completo do pai">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Nome da Mae</label>
+                    <input type="text" class="form-control" id="nomeMae" placeholder="Nome completo da mae">
+                </div>
+            </div>
+
+            <!-- ============================================================
+                 SEÇÃO: FOTO SECUNDARIA
+                 Data: 11/09/2026 - 16:15
+                 ============================================================ -->
+            <div class="section-title"><i class="fas fa-camera"></i>FOTO SECUNDARIA</div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div style="text-align: center;">
+                        <div id="fotoSecundariaPreview" style="
+                            width: 200px; height: 250px;
+                            border: 2px dashed var(--border-color);
+                            border-radius: 12px;
+                            display: flex; align-items: center; justify-content: center;
+                            margin: 0 auto 15px;
+                            background: rgba(0, 0, 0, 0.3);
+                            overflow: hidden; position: relative;
+                            transition: all 0.3s;
+                        ">
+                            <div id="fotoSecundariaPlaceholder" style="text-align: center; color: rgba(0, 255, 136, 0.3);">
+                                <i class="fas fa-camera" style="font-size: 40px; margin-bottom: 10px; display: block;"></i>
+                                <span style="font-size: 12px;">Nenhuma foto</span>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Fonte</label>
-                                <select class="form-select" id="fonteFoto">
-                                    <option value="DOCUMENTO">Documento Oficial</option>
-                                    <option value="FOTO_POLICIAL">Foto Policial</option>
-                                    <option value="CAMERA_SEGURANCA">Camera de Seguranca</option>
-                                    <option value="REDES_SOCIAIS">Redes Sociais</option>
-                                    <option value="OUTRO">Outro</option>
-                                </select>
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label">Observacoes sobre a Foto</label>
-                                <textarea class="form-control" id="observacoesFoto" rows="3" placeholder="Ex: Foto obtida em abordagem policial..."></textarea>
-                            </div>
+                            <img id="fotoSecundariaImg" src="" alt="Foto Secundaria" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                        </div>
+
+                        <input type="file" id="fotoSecundariaInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
+                        <button type="button" class="btn-outline-gold" id="btnEscolherFotoSecundaria" style="padding: 8px 16px; font-size: 12px;">
+                            <i class="fas fa-upload"></i> ESCOLHER FOTO
+                        </button>
+                        <button type="button" class="btn-outline-gold" id="btnRemoverFotoSecundaria" style="padding: 8px 16px; font-size: 12px; display: none; margin-top: 5px;">
+                            <i class="fas fa-trash"></i> REMOVER
+                        </button>
+                        <small style="display: block; color: rgba(0, 255, 136, 0.2); font-size: 11px; margin-top: 10px;">
+                            JPG, PNG ou WebP • Max 5MB
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Data da Foto</label>
+                            <input type="date" class="form-control" id="dataFotoSecundaria">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Fonte</label>
+                            <select class="form-select" id="fonteFotoSecundaria">
+                                <option value="DOCUMENTO">Documento Oficial</option>
+                                <option value="FOTO_POLICIAL">Foto Policial</option>
+                                <option value="CAMERA_SEGURANCA">Camera de Seguranca</option>
+                                <option value="REDES_SOCIAIS">Redes Sociais</option>
+                                <option value="OUTRO">Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Observacoes sobre a Foto</label>
+                            <textarea class="form-control" id="observacoesFotoSecundaria" rows="3" placeholder="Ex: Foto de perfil..."></textarea>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- ============================================================
-                     SEÇÃO: ENDEREÇO
-                     Data: 11/09/2026 - 15:15
-                     ============================================================ -->
-                <div class="section-title"><i class="fas fa-map-marker-alt"></i>ENDERECO</div>
-                <div class="row g-3">
-                    <div class="col-md-2">
-                        <label class="form-label">CEP</label>
-                        <input type="text" class="form-control" id="cep" placeholder="00000-000" maxlength="9">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Logradouro</label>
-                        <input type="text" class="form-control" id="logradouro" placeholder="Rua, Avenida...">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Numero</label>
-                        <input type="text" class="form-control" id="numero" placeholder="N">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Complemento</label>
-                        <input type="text" class="form-control" id="complemento" placeholder="Apto">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Bairro</label>
-                        <input type="text" class="form-control" id="bairro" placeholder="Bairro">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Cidade</label>
-                        <input type="text" class="form-control" id="cidade" placeholder="Cidade">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">UF</label>
-                        <input type="text" class="form-control" id="uf" placeholder="BA" maxlength="2">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Pais</label>
-                        <input type="text" class="form-control" id="pais" placeholder="Brasil" value="Brasil">
-                    </div>
+            <!-- ============================================================
+                 SEÇÃO: ENDEREÇO
+                 Data: 11/09/2026 - 16:15
+                 ============================================================ -->
+            <div class="section-title"><i class="fas fa-map-marker-alt"></i>ENDERECO</div>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">CEP</label>
+                    <input type="text" class="form-control" id="cep" placeholder="00000-000" maxlength="9">
                 </div>
+                <div class="col-md-6">
+                    <label class="form-label">Logradouro</label>
+                    <input type="text" class="form-control" id="logradouro" placeholder="Rua, Avenida...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Numero</label>
+                    <input type="text" class="form-control" id="numero" placeholder="N">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Complemento</label>
+                    <input type="text" class="form-control" id="complemento" placeholder="Apto">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Bairro</label>
+                    <input type="text" class="form-control" id="bairro" placeholder="Bairro">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Cidade</label>
+                    <input type="text" class="form-control" id="cidade" placeholder="Cidade">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">UF</label>
+                    <input type="text" class="form-control" id="uf" placeholder="BA" maxlength="2">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Pais</label>
+                    <input type="text" class="form-control" id="pais" placeholder="Brasil" value="Brasil">
+                </div>
+            </div>
 
-                <!-- ============================================================
-                     SEÇÃO: CARACTERÍSTICAS FÍSICAS
-                     Data: 11/09/2026 - 15:15
-                     ============================================================ -->
-                <div class="section-title"><i class="fas fa-fingerprint"></i>CARACTERISTICAS FISICAS</div>
-                <div class="row g-3">
-                    <div class="col-md-2">
-                        <label class="form-label">Altura (m)</label>
-                        <input type="number" step="0.01" class="form-control" id="altura" placeholder="1.75">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Peso (kg)</label>
-                        <input type="number" step="0.1" class="form-control" id="peso" placeholder="80.5">
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label">Cor dos Olhos</label>
-                        <input type="text" class="form-control" id="corOlhos" placeholder="Castanho">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Cor do Cabelo</label>
-                        <input type="text" class="form-control" id="corCabelo" placeholder="Preto">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Cor da Pele</label>
-                        <input type="text" class="form-control" id="corPele" placeholder="Parda">
-                    </div>
+            <!-- ============================================================
+                 SEÇÃO: CARACTERÍSTICAS FÍSICAS
+                 Data: 11/09/2026 - 16:15
+                 ============================================================ -->
+            <div class="section-title"><i class="fas fa-fingerprint"></i>CARACTERISTICAS FISICAS</div>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Altura (m)</label>
+                    <input type="number" step="0.01" class="form-control" id="altura" placeholder="1.75">
                 </div>
-                <div class="row g-3 mt-3">
-                    <div class="col-md-6">
-                        <label class="form-label">Sinais Particulares</label>
-                        <textarea class="form-control" id="sinaisParticulares" rows="2" placeholder="Cicatrizes, marcas..."></textarea>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label">Descricao de Tatuagens</label>
-                        <textarea class="form-control" id="tattooDescricao" rows="2" placeholder="Localizacao e descricao"></textarea>
-                    </div>
+                <div class="col-md-2">
+                    <label class="form-label">Peso (kg)</label>
+                    <input type="number" step="0.1" class="form-control" id="peso" placeholder="80.5">
                 </div>
+                <div class="col-md-2">
+                    <label class="form-label">Cor dos Olhos</label>
+                    <input type="text" class="form-control" id="corOlhos" placeholder="Castanho">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cor do Cabelo</label>
+                    <input type="text" class="form-control" id="corCabelo" placeholder="Preto">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Cor da Pele</label>
+                    <input type="text" class="form-control" id="corPele" placeholder="Parda">
+                </div>
+            </div>
+            <div class="row g-3 mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">Sinais Particulares</label>
+                    <textarea class="form-control" id="sinaisParticulares" rows="2" placeholder="Cicatrizes, marcas..."></textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Descricao de Tatuagens</label>
+                    <textarea class="form-control" id="tattooDescricao" rows="2" placeholder="Localizacao e descricao"></textarea>
+                </div>
+            </div>
 
-                <!-- ============================================================
-                     SEÇÃO: INFORMAÇÕES CRIMINAIS
-                     Data: 11/09/2026 - 15:15
-                     ============================================================ -->
-                <div class="section-title"><i class="fas fa-exclamation-triangle"></i>INFORMACOES CRIMINAIS</div>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Status Atual *</label>
-                        <select class="form-select" id="statusAtual" required>
-                            <option value="">Selecione...</option>
-                            <option value="INVESTIGADO">Investigado</option>
-                            <option value="PRESO">Preso</option>
-                            <option value="FORAGIDO">Foragido</option>
-                            <option value="PROCURADO">Procurado</option>
-                            <option value="CONDICIONAL">Condicional</option>
-                            <option value="LIBERADO">Liberado</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Nivel de Periculosidade</label>
-                        <select class="form-select" id="nivelPericulosidade">
-                            <option value="">Selecione...</option>
-                            <option value="BAIXO">Baixo</option>
-                            <option value="MEDIO">Medio</option>
-                            <option value="ALTO">Alto</option>
-                            <option value="EXTREMO">Extremo</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Organizacao Criminal</label>
-                        <input type="text" class="form-control" id="organizacaoCriminal" placeholder="Nome da faccao">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label">Opcoes</label>
-                        <div class="d-flex flex-column gap-2" style="padding-top: 5px;">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="envolvimentoDrogas">
-                                <label class="form-check-label" for="envolvimentoDrogas">Envolvimento com Drogas</label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="posseArma">
-                                <label class="form-check-label" for="posseArma">Posse de Arma</label>
-                            </div>
+            <!-- ============================================================
+                 SEÇÃO: INFORMAÇÕES CRIMINAIS
+                 Data: 11/09/2026 - 16:15
+                 ============================================================ -->
+            <div class="section-title"><i class="fas fa-exclamation-triangle"></i>INFORMACOES CRIMINAIS</div>
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Status Atual *</label>
+                    <select class="form-select" id="statusAtual" required>
+                        <option value="">Selecione...</option>
+                        <option value="INVESTIGADO">Investigado</option>
+                        <option value="PRESO">Preso</option>
+                        <option value="FORAGIDO">Foragido</option>
+                        <option value="PROCURADO">Procurado</option>
+                        <option value="CONDICIONAL">Condicional</option>
+                        <option value="LIBERADO">Liberado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Nivel de Periculosidade</label>
+                    <select class="form-select" id="nivelPericulosidade">
+                        <option value="">Selecione...</option>
+                        <option value="BAIXO">Baixo</option>
+                        <option value="MEDIO">Medio</option>
+                        <option value="ALTO">Alto</option>
+                        <option value="EXTREMO">Extremo</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Organizacao Criminal</label>
+                    <input type="text" class="form-control" id="organizacaoCriminal" placeholder="Nome da faccao">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Opcoes</label>
+                    <div class="d-flex flex-column gap-2" style="padding-top: 5px;">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="envolvimentoDrogas">
+                            <label class="form-check-label" for="envolvimentoDrogas">Envolvimento com Drogas</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="posseArma">
+                            <label class="form-check-label" for="posseArma">Posse de Arma</label>
                         </div>
                     </div>
-                    <div class="col-md-12">
-                        <label class="form-label">Modus Operandi</label>
-                        <textarea class="form-control" id="modusOperandi" rows="2" placeholder="Como o suspeito costuma agir"></textarea>
-                    </div>
-                    <div class="col-md-12">
-                        <label class="form-label">Observacoes</label>
-                        <textarea class="form-control" id="observacoes" rows="3" placeholder="Observacoes adicionais"></textarea>
-                    </div>
                 </div>
+                <div class="col-md-12">
+                    <label class="form-label">Modus Operandi</label>
+                    <textarea class="form-control" id="modusOperandi" rows="2" placeholder="Como o suspeito costuma agir"></textarea>
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Observacoes</label>
+                    <textarea class="form-control" id="observacoes" rows="3" placeholder="Observacoes adicionais"></textarea>
+                </div>
+            </div>
 
-                <div class="row mt-4">
-                    <div class="col-md-12 text-end">
-                        <button type="reset" class="btn-outline-gold me-2"><i class="fas fa-times me-2"></i>CANCELAR</button>
-                        <button type="submit" class="btn-gold" id="btnCadastrar"><i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO</button>
-                    </div>
+            <div class="row mt-4">
+                <div class="col-md-12 text-end">
+                    <button type="reset" class="btn-outline-gold me-2"><i class="fas fa-times me-2"></i>CANCELAR</button>
+                    <button type="submit" class="btn-gold" id="btnCadastrar"><i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO</button>
                 </div>
-            </form>
+            </div>
         </div>
 
         <!-- ============================================================
              LISTA DE SUSPEITOS
-             Data: 11/09/2026 - 15:15
+             Data: 11/09/2026 - 16:15
              ============================================================ -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -672,7 +731,7 @@
     <script>
         // ============================================================
         // INICIALIZAÇÃO DA PÁGINA
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Verifica sessão e carrega dados iniciais
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
@@ -698,7 +757,7 @@
 
         // ============================================================
         // FUNÇÃO: ATUALIZAR DADOS DO USUÁRIO
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Exibe nome, avatar e perfil do usuário logado
         // ============================================================
         function atualizarDadosUsuario(usuario) {
@@ -714,7 +773,7 @@
 
         // ============================================================
         // FUNÇÃO: CARREGAR SUSPEITOS
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Lista os últimos 50 suspeitos cadastrados
         // ============================================================
         async function carregarSuspeitos() {
@@ -768,7 +827,7 @@
 
         // ============================================================
         // FUNÇÃO: MOSTRAR TOAST
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Exibe notificações de sucesso/erro/aviso
         // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
@@ -796,92 +855,99 @@
         }
 
         // ============================================================
-        // UPLOAD DE FOTO DO SUSPEITO
-        // Data: 11/09/2026 - 15:15
-        // Descrição: Gerencia o upload de foto para o Supabase Storage
+        // UPLOAD DE FOTOS (PRINCIPAL E SECUNDARIA)
+        // Data: 11/09/2026 - 16:15
+        // Descrição: Gerencia o upload das duas fotos para o Storage
         // ============================================================
 
-        let arquivoFoto = null;
-        let fotoUrl = null;
+        let arquivoFotoPrincipal = null;
+        let arquivoFotoSecundaria = null;
 
-        const fotoInput = document.getElementById('fotoInput');
-        const fotoPreview = document.getElementById('fotoPreview');
-        const fotoPlaceholder = document.getElementById('fotoPlaceholder');
-        const fotoImg = document.getElementById('fotoImg');
-        const btnEscolherFoto = document.getElementById('btnEscolherFoto');
-        const btnRemoverFoto = document.getElementById('btnRemoverFoto');
+        // ============================================================
+        // FUNÇÃO: CONFIGURAR UPLOAD DE FOTO
+        // Data: 11/09/2026 - 16:15
+        // Descrição: Configura os eventos de upload para uma foto
+        // ============================================================
+        function configurarUploadFoto(prefixo, setArquivo) {
+            const input = document.getElementById(prefixo + 'Input');
+            const preview = document.getElementById(prefixo + 'Preview');
+            const placeholder = document.getElementById(prefixo + 'Placeholder');
+            const img = document.getElementById(prefixo + 'Img');
+            const btnEscolher = document.getElementById('btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
+            const btnRemover = document.getElementById('btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
 
-        // Abrir seletor de arquivo
-        btnEscolherFoto.addEventListener('click', function() {
-            fotoInput.click();
-        });
+            btnEscolher.addEventListener('click', function() {
+                input.click();
+            });
 
-        // Preview da foto
-        fotoInput.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (!file) return;
 
-            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                showToast('error', 'Formato invalido', 'Use JPG, PNG ou WebP.');
-                return;
-            }
+                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                    showToast('error', 'Formato invalido', 'Use JPG, PNG ou WebP.');
+                    return;
+                }
 
-            if (file.size > 5 * 1024 * 1024) {
-                showToast('error', 'Arquivo muito grande', 'Maximo 5MB.');
-                return;
-            }
+                if (file.size > 5 * 1024 * 1024) {
+                    showToast('error', 'Arquivo muito grande', 'Maximo 5MB.');
+                    return;
+                }
 
-            arquivoFoto = file;
+                setArquivo(file);
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                fotoImg.src = event.target.result;
-                fotoImg.style.display = 'block';
-                fotoPlaceholder.style.display = 'none';
-                fotoPreview.style.borderStyle = 'solid';
-                fotoPreview.style.borderColor = 'var(--text-primary)';
-                btnRemoverFoto.style.display = 'inline-block';
-                btnEscolherFoto.innerHTML = '<i class="fas fa-sync-alt"></i> TROCAR FOTO';
-            };
-            reader.readAsDataURL(file);
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    img.src = event.target.result;
+                    img.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    preview.style.borderStyle = 'solid';
+                    preview.style.borderColor = 'var(--text-primary)';
+                    btnRemover.style.display = 'inline-block';
+                    btnEscolher.innerHTML = '<i class="fas fa-sync-alt"></i> TROCAR';
+                };
+                reader.readAsDataURL(file);
 
-            console.log('📸 Foto selecionada:', file.name);
-        });
+                console.log('📸 Foto selecionada:', prefixo, '-', file.name);
+            });
 
-        // Remover foto
-        btnRemoverFoto.addEventListener('click', function() {
-            arquivoFoto = null;
-            fotoUrl = null;
-            fotoInput.value = '';
-            fotoImg.src = '';
-            fotoImg.style.display = 'none';
-            fotoPlaceholder.style.display = 'block';
-            fotoPreview.style.borderStyle = 'dashed';
-            fotoPreview.style.borderColor = 'var(--border-color)';
-            btnRemoverFoto.style.display = 'none';
-            btnEscolherFoto.innerHTML = '<i class="fas fa-upload"></i> ESCOLHER FOTO';
-            console.log('🗑️ Foto removida');
-        });
+            btnRemover.addEventListener('click', function() {
+                setArquivo(null);
+                input.value = '';
+                img.src = '';
+                img.style.display = 'none';
+                placeholder.style.display = 'block';
+                preview.style.borderStyle = 'dashed';
+                preview.style.borderColor = 'var(--border-color)';
+                btnRemover.style.display = 'none';
+                btnEscolher.innerHTML = '<i class="fas fa-camera"></i> ESCOLHER';
+                console.log('🗑️ Foto removida:', prefixo);
+            });
+        }
+
+        // Configurar os dois uploads
+        configurarUploadFoto('fotoPrincipal', (f) => arquivoFotoPrincipal = f);
+        configurarUploadFoto('fotoSecundaria', (f) => arquivoFotoSecundaria = f);
 
         // ============================================================
         // FUNÇÃO: FAZER UPLOAD DA FOTO
-        // Data: 11/09/2026 - 15:15
-        // Descrição: Faz upload da foto para o Supabase Storage
+        // Data: 11/09/2026 - 16:15
+        // Descrição: Faz upload de uma foto para o Supabase Storage
         // ============================================================
-        async function uploadFoto(usuario) {
-            if (!arquivoFoto) return null;
+        async function uploadFoto(usuario, arquivo, prefixo) {
+            if (!arquivo) return null;
 
             try {
-                const extensao = arquivoFoto.name.split('.').pop();
+                const extensao = arquivo.name.split('.').pop();
                 const timestamp = Date.now();
                 const random = Math.random().toString(36).substring(7);
-                const nomeArquivo = usuario.id + '/' + timestamp + '_' + random + '.' + extensao;
+                const nomeArquivo = usuario.id + '/' + prefixo + '_' + timestamp + '_' + random + '.' + extensao;
 
                 console.log('📤 Fazendo upload:', nomeArquivo);
 
                 const { data, error } = await window.supabaseClient.storage
                     .from('fotos-suspeitos')
-                    .upload(nomeArquivo, arquivoFoto, {
+                    .upload(nomeArquivo, arquivo, {
                         cacheControl: '3600',
                         upsert: false
                     });
@@ -891,12 +957,9 @@
                     throw error;
                 }
 
-                // Gerar URL assinada
                 const { data: urlData } = await window.supabaseClient.storage
                     .from('fotos-suspeitos')
                     .createSignedUrl(nomeArquivo, 60 * 60 * 24 * 365);
-
-                fotoUrl = urlData ? urlData.signedUrl : nomeArquivo;
 
                 console.log('✅ Upload concluído:', nomeArquivo);
                 return nomeArquivo;
@@ -909,8 +972,8 @@
 
         // ============================================================
         // SUBMIT DO FORMULÁRIO
-        // Data: 11/09/2026 - 15:15
-        // Descrição: Cadastra o suspeito com todos os dados e foto
+        // Data: 11/09/2026 - 16:15
+        // Descrição: Cadastra o suspeito com todos os dados e fotos
         // ============================================================
         document.getElementById('formSuspeito').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -960,9 +1023,12 @@
                     posse_arma: document.getElementById('posseArma').checked,
                     modus_operandi: document.getElementById('modusOperandi').value.trim() || null,
                     observacoes: document.getElementById('observacoes').value.trim() || null,
-                    data_foto: document.getElementById('dataFoto').value || null,
-                    fonte_foto: document.getElementById('fonteFoto').value || null,
-                    observacoes_foto: document.getElementById('observacoesFoto').value.trim() || null,
+                    data_foto_principal: document.getElementById('dataFotoPrincipal')?.value || null,
+                    fonte_foto_principal: document.getElementById('fonteFotoPrincipal')?.value || null,
+                    observacoes_foto_principal: document.getElementById('observacoesFotoPrincipal')?.value.trim() || null,
+                    data_foto_secundaria: document.getElementById('dataFotoSecundaria')?.value || null,
+                    fonte_foto_secundaria: document.getElementById('fonteFotoSecundaria')?.value || null,
+                    observacoes_foto_secundaria: document.getElementById('observacoesFotoSecundaria')?.value.trim() || null,
                     id_usuario_cadastro: usuario.id,
                     deletado: false
                 };
@@ -976,13 +1042,18 @@
                     return;
                 }
 
-                // Fazer upload da foto (se houver)
-                if (arquivoFoto) {
-                    showToast('info', 'Enviando foto...', 'Aguarde o upload da imagem.');
-                    const caminhoFoto = await uploadFoto(usuario);
-                    if (caminhoFoto) {
-                        dados.foto_hash = caminhoFoto;
-                    }
+                // Fazer upload da foto principal
+                if (arquivoFotoPrincipal) {
+                    showToast('info', 'Enviando foto principal...', 'Aguarde o upload.');
+                    const caminho = await uploadFoto(usuario, arquivoFotoPrincipal, 'principal');
+                    if (caminho) dados.foto_hash = caminho;
+                }
+
+                // Fazer upload da foto secundária
+                if (arquivoFotoSecundaria) {
+                    showToast('info', 'Enviando foto secundaria...', 'Aguarde o upload.');
+                    const caminho = await uploadFoto(usuario, arquivoFotoSecundaria, 'secundaria');
+                    if (caminho) dados.foto_hash_secundaria = caminho;
                 }
 
                 showToast('info', 'Processando...', 'Cadastrando suspeito no sistema...');
@@ -1007,16 +1078,25 @@
                     8000);
 
                 this.reset();
-                // Resetar foto
-                arquivoFoto = null;
-                fotoUrl = null;
-                fotoImg.src = '';
-                fotoImg.style.display = 'none';
-                fotoPlaceholder.style.display = 'block';
-                fotoPreview.style.borderStyle = 'dashed';
-                fotoPreview.style.borderColor = 'var(--border-color)';
-                btnRemoverFoto.style.display = 'none';
-                btnEscolherFoto.innerHTML = '<i class="fas fa-upload"></i> ESCOLHER FOTO';
+
+                // Resetar fotos
+                arquivoFotoPrincipal = null;
+                arquivoFotoSecundaria = null;
+                document.getElementById('fotoPrincipalImg').src = '';
+                document.getElementById('fotoPrincipalImg').style.display = 'none';
+                document.getElementById('fotoPrincipalPlaceholder').style.display = 'block';
+                document.getElementById('fotoPrincipalPreview').style.borderStyle = 'dashed';
+                document.getElementById('fotoPrincipalPreview').style.borderColor = 'var(--border-color)';
+                document.getElementById('btnRemoverFotoPrincipal').style.display = 'none';
+                document.getElementById('btnEscolherFotoPrincipal').innerHTML = '<i class="fas fa-camera"></i> ESCOLHER FOTO';
+
+                document.getElementById('fotoSecundariaImg').src = '';
+                document.getElementById('fotoSecundariaImg').style.display = 'none';
+                document.getElementById('fotoSecundariaPlaceholder').style.display = 'block';
+                document.getElementById('fotoSecundariaPreview').style.borderStyle = 'dashed';
+                document.getElementById('fotoSecundariaPreview').style.borderColor = 'var(--border-color)';
+                document.getElementById('btnRemoverFotoSecundaria').style.display = 'none';
+                document.getElementById('btnEscolherFotoSecundaria').innerHTML = '<i class="fas fa-upload"></i> ESCOLHER FOTO';
 
                 carregarSuspeitos();
             } catch (error) {
@@ -1029,7 +1109,7 @@
 
         // ============================================================
         // FUNÇÃO: FULLSCREEN
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Alterna entre tela cheia e normal
         // ============================================================
         function toggleFullscreen() {
@@ -1049,7 +1129,7 @@
 
         // ============================================================
         // FUNÇÃO: LOGOUT
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Encerra a sessão do usuário
         // ============================================================
         async function fazerLogout() {
@@ -1060,7 +1140,7 @@
 
         // ============================================================
         // FUNÇÃO: FECHAR JANELA
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Fecha a janela do sistema
         // ============================================================
         function closeWindow() {
@@ -1071,7 +1151,7 @@
 
         // ============================================================
         // FUNÇÃO: TOGGLE SIDEBAR
-        // Data: 11/09/2026 - 15:15
+        // Data: 11/09/2026 - 16:15
         // Descrição: Abre/fecha o menu lateral em mobile
         // ============================================================
         function toggleSidebar() {
