@@ -1,8 +1,10 @@
-﻿<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>AI-DEPOM - Primeiro Acesso</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -18,15 +20,23 @@
             --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        html, body {
+            width: 100%;
+            height: 100%;
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
-            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            overflow-x: hidden;
+        }
+        body {
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            min-height: 100vh;
         }
         .container {
             background: var(--bg-secondary);
@@ -295,21 +305,18 @@
             }
             const nome = usuarioAtual.nome_completo || 'Usuario';
             document.getElementById('welcomeName').textContent = 'Ola, ' + nome + '!';
-            console.log('Usuario:', usuarioAtual.nome_completo);
         });
 
         document.getElementById('toggleNova').addEventListener('click', function() {
             const input = document.getElementById('novaSenha');
-            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-            input.setAttribute('type', type);
+            input.setAttribute('type', input.getAttribute('type') === 'password' ? 'text' : 'password');
             this.querySelector('i').classList.toggle('fa-eye');
             this.querySelector('i').classList.toggle('fa-eye-slash');
         });
 
         document.getElementById('toggleConfirmar').addEventListener('click', function() {
             const input = document.getElementById('confirmarSenha');
-            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
-            input.setAttribute('type', type);
+            input.setAttribute('type', input.getAttribute('type') === 'password' ? 'text' : 'password');
             this.querySelector('i').classList.toggle('fa-eye');
             this.querySelector('i').classList.toggle('fa-eye-slash');
         });
@@ -380,17 +387,14 @@
             try {
                 const { error: authError } = await window.supabaseClient.auth.updateUser({ password: nova });
                 if (authError) {
-                    console.error('Erro ao atualizar senha:', authError);
                     showError('Erro ao alterar senha: ' + authError.message);
                     return;
                 }
 
-                const { error: dbError } = await window.supabaseClient
+                await window.supabaseClient
                     .from('usuarios')
                     .update({ primeiro_acesso: false })
                     .eq('id', usuarioAtual.id);
-
-                if (dbError) console.warn('Erro ao atualizar primeiro_acesso:', dbError);
 
                 usuarioAtual.primeiro_acesso = false;
                 AIDEPOM.setUsuario(usuarioAtual);
@@ -401,12 +405,27 @@
                     window.location.href = '04-dashboard.html';
                 }, 2000);
             } catch (error) {
-                console.error('Erro inesperado:', error);
                 showError('Erro inesperado: ' + error.message);
             } finally {
                 btn.disabled = false;
                 btn.classList.remove('loading');
             }
+        });
+
+        // FULLSCREEN
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
+            }
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
     </script>
 </body>
