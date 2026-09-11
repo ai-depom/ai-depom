@@ -10,12 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
+        html, body { width: 100%; height: 100%; min-height: 100vh; overflow-x: hidden; }
         body {
             display: flex;
             justify-content: center;
@@ -42,132 +37,117 @@
             background-size: 200% 100%;
             animation: gradientMove 3s ease infinite;
         }
-        @keyframes gradientMove {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-        }
+        @keyframes gradientMove { 0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
         .logo-area { text-align: center; margin-bottom: 30px; }
         .logo-area .icon {
-            font-size: 48px;
-            color: #667eea;
+            font-size: 48px; color: #667eea;
             background: rgba(102, 126, 234, 0.1);
-            width: 80px; height: 80px;
-            line-height: 80px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-bottom: 10px;
+            width: 80px; height: 80px; line-height: 80px;
+            border-radius: 50%; display: inline-block; margin-bottom: 10px;
         }
         .logo-area h1 { font-size: 24px; color: #2d3748; font-weight: 700; letter-spacing: 1px; }
         .logo-area p { color: #718096; font-size: 14px; margin-top: 5px; }
         .form-group { margin-bottom: 20px; position: relative; }
         .form-group label { display: block; font-size: 14px; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
         .form-group .input-wrapper { position: relative; }
-        .form-group .input-wrapper i {
-            position: absolute;
-            left: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #a0aec0;
-            font-size: 16px;
-        }
+        .form-group .input-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #a0aec0; font-size: 16px; }
         .form-group input {
-            width: 100%;
-            padding: 12px 12px 12px 44px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 15px;
-            transition: all 0.3s ease;
-            background: #f7fafc;
-            color: #2d3748;
+            width: 100%; padding: 12px 12px 12px 44px;
+            border: 2px solid #e2e8f0; border-radius: 10px;
+            font-size: 15px; transition: all 0.3s ease;
+            background: #f7fafc; color: #2d3748;
         }
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-            background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
-        }
+        .form-group input:focus { outline: none; border-color: #667eea; background: white; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15); }
         .form-group .toggle-password {
-            position: absolute;
-            right: 14px;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            color: #a0aec0;
-            transition: color 0.3s ease;
-            background: none;
-            border: none;
-            font-size: 16px;
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%); cursor: pointer;
+            color: #a0aec0; transition: color 0.3s ease;
+            background: none; border: none; font-size: 16px;
         }
         .form-group .toggle-password:hover { color: #667eea; }
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 20px 0 25px;
-            font-size: 14px;
-        }
+        .form-options { display: flex; justify-content: space-between; align-items: center; margin: 20px 0 25px; font-size: 14px; }
         .form-options label { display: flex; align-items: center; gap: 8px; color: #4a5568; cursor: pointer; }
         .form-options label input[type="checkbox"] { width: 16px; height: 16px; accent-color: #667eea; cursor: pointer; }
         .form-options a { color: #667eea; text-decoration: none; font-weight: 600; transition: color 0.3s ease; cursor: pointer; }
         .form-options a:hover { color: #5a67d8; text-decoration: underline; }
         .btn-login {
-            width: 100%;
-            padding: 14px;
+            width: 100%; padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+            border: none; border-radius: 10px;
+            color: white; font-size: 16px; font-weight: 700;
+            cursor: pointer; transition: all 0.3s ease;
+            position: relative; overflow: hidden;
         }
         .btn-login:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4); }
         .btn-login:disabled { opacity: 0.7; cursor: not-allowed; }
         .btn-login .spinner {
-            display: none;
-            width: 20px; height: 20px;
+            display: none; width: 20px; height: 20px;
             border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto;
+            border-top-color: white; border-radius: 50%;
+            animation: spin 0.8s linear infinite; margin: 0 auto;
         }
         .btn-login.loading .spinner { display: inline-block; }
         .btn-login.loading .btn-text { display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .error-message {
-            display: none;
-            background: #fed7d7;
-            color: #c53030;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 20px;
+            display: none; background: #fed7d7; color: #c53030;
+            padding: 12px 16px; border-radius: 10px;
+            font-size: 14px; margin-bottom: 20px;
             border-left: 4px solid #fc8181;
-            align-items: center;
-            gap: 10px;
+            align-items: center; gap: 10px;
         }
         .error-message.show { display: flex; }
         .success-message {
-            display: none;
-            background: #c6f6d5;
-            color: #276749;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 14px;
-            margin-bottom: 20px;
+            display: none; background: #c6f6d5; color: #276749;
+            padding: 12px 16px; border-radius: 10px;
+            font-size: 14px; margin-bottom: 20px;
             border-left: 4px solid #48bb78;
-            align-items: center;
-            gap: 10px;
+            align-items: center; gap: 10px;
         }
         .success-message.show { display: flex; }
         .footer { text-align: center; margin-top: 25px; padding-top: 20px; border-top: 1px solid #e2e8f0; color: #718096; font-size: 13px; }
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; }
         .status-badge.success { background: #c6f6d5; color: #276749; }
         .status-badge.error { background: #fed7d7; color: #c53030; }
+        .modal-overlay {
+            display: none; position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75); z-index: 9999;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal-box {
+            background: white; border-radius: 20px;
+            padding: 35px 30px; max-width: 420px; width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-header { text-align: center; margin-bottom: 25px; }
+        .modal-header .icon {
+            font-size: 40px; color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            width: 70px; height: 70px; line-height: 70px;
+            border-radius: 50%; display: inline-block; margin-bottom: 12px;
+        }
+        .modal-header h3 { font-size: 20px; color: #2d3748; font-weight: 700; }
+        .modal-header p { font-size: 13px; color: #718096; margin-top: 5px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-outline {
+            flex: 1; padding: 12px; background: transparent;
+            border: 2px solid #667eea; color: #667eea;
+            border-radius: 10px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-outline:hover { background: rgba(102, 126, 234, 0.05); }
+        .btn-primary-modal {
+            flex: 1; padding: 12px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; border: none; border-radius: 10px;
+            font-weight: 700; cursor: pointer; transition: all 0.3s;
+        }
+        .btn-primary-modal:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4); }
+        .btn-primary-modal:disabled { opacity: 0.7; cursor: not-allowed; }
         @media (max-width: 480px) {
             .login-container { padding: 30px 20px; }
             .logo-area h1 { font-size: 20px; }
@@ -239,16 +219,60 @@
         </div>
     </div>
 
+    <!-- Modal de Recuperação de Senha -->
+    <div id="modalRecuperarSenha" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div class="icon"><i class="fas fa-key"></i></div>
+                <h3>Recuperar Senha</h3>
+                <p>Digite seu e-mail cadastrado para receber o link</p>
+            </div>
+
+            <div id="recuperarError" class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="recuperarErrorText"></span>
+            </div>
+            <div id="recuperarSuccess" class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <span id="recuperarSuccessText"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="emailRecuperar"><i class="fas fa-envelope"></i> E-mail</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-envelope"></i>
+                    <input type="email" id="emailRecuperar" placeholder="seu-email@dominio.com" />
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" id="btnCancelarRecuperar" class="btn-outline">Cancelar</button>
+                <button type="button" id="btnEnviarRecuperar" class="btn-primary-modal">Enviar Link</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // ============================================
+        // CONFIGURAÇÕES
+        // ============================================
         const SUPABASE_URL = 'https://szkgaqouivsvlyujfvmz.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
 
+        // ============================================
+        // INICIALIZAR SUPABASE
+        // ============================================
+        console.log('🚀 Inicializando Supabase...');
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
         const supabaseInicializado = true;
-
+        console.log('✅ Supabase inicializado!');
         document.getElementById('supabaseStatus').innerHTML = '<i class="fas fa-check-circle"></i> ✅ Supabase conectado';
         document.getElementById('supabaseStatus').className = 'status-badge success';
 
+        // ============================================
+        // ELEMENTOS DOM
+        // ============================================
         const loginForm = document.getElementById('loginForm');
         const matriculaInput = document.getElementById('matricula');
         const senhaInput = document.getElementById('senha');
@@ -354,7 +378,6 @@
                 }, 1500);
 
             } catch (error) {
-                console.error('Erro inesperado:', error);
                 showError('Erro inesperado. Tente novamente.');
                 setLoading(false);
             }
@@ -375,21 +398,84 @@
         });
 
         // ============================================
-        // FULLSCREEN
+        // RECUPERAÇÃO DE SENHA
         // ============================================
-        function toggleFullscreen() {
-            const doc = window.document;
-            const docEl = doc.documentElement;
-            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-            const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-                requestFullScreen.call(docEl);
-            } else {
-                cancelFullScreen.call(doc);
+        const modalRecuperar = document.getElementById('modalRecuperarSenha');
+        const recuperarError = document.getElementById('recuperarError');
+        const recuperarErrorText = document.getElementById('recuperarErrorText');
+        const recuperarSuccess = document.getElementById('recuperarSuccess');
+        const recuperarSuccessText = document.getElementById('recuperarSuccessText');
+
+        document.getElementById('forgotPassword').addEventListener('click', function(e) {
+            e.preventDefault();
+            modalRecuperar.classList.add('show');
+            recuperarError.classList.remove('show');
+            recuperarSuccess.classList.remove('show');
+            document.getElementById('emailRecuperar').value = '';
+            setTimeout(() => document.getElementById('emailRecuperar').focus(), 100);
+        });
+
+        document.getElementById('btnCancelarRecuperar').addEventListener('click', function() {
+            modalRecuperar.classList.remove('show');
+        });
+
+        modalRecuperar.addEventListener('click', function(e) {
+            if (e.target === modalRecuperar) modalRecuperar.classList.remove('show');
+        });
+
+        document.getElementById('btnEnviarRecuperar').addEventListener('click', async function() {
+            const email = document.getElementById('emailRecuperar').value.trim();
+            const btn = this;
+
+            recuperarError.classList.remove('show');
+            recuperarSuccess.classList.remove('show');
+
+            if (!email) {
+                recuperarErrorText.textContent = 'Digite seu e-mail.';
+                recuperarError.classList.add('show');
+                return;
             }
-        }
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
+            if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email)) {
+                recuperarErrorText.textContent = 'E-mail inválido.';
+                recuperarError.classList.add('show');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Enviando...';
+
+            try {
+                const base = window.location.href.replace(/02-login\.html.*$/, '');
+                const redirectTo = base + '03-primeiro-acesso.html';
+
+                console.log('🔗 RedirectTo:', redirectTo);
+
+                const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: redirectTo
+                });
+
+                if (error) {
+                    console.error('❌ Erro:', error);
+                    recuperarErrorText.textContent = 'Erro: ' + error.message;
+                    recuperarError.classList.add('show');
+                    return;
+                }
+
+                console.log('✅ E-mail enviado');
+                recuperarSuccessText.textContent = '✅ Link enviado para ' + email + '. Verifique sua caixa de entrada.';
+                recuperarSuccess.classList.add('show');
+
+                setTimeout(() => {
+                    modalRecuperar.classList.remove('show');
+                }, 4000);
+            } catch (e) {
+                console.error('❌ Exceção:', e);
+                recuperarErrorText.textContent = 'Erro inesperado: ' + e.message;
+                recuperarError.classList.add('show');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enviar Link';
+            }
         });
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -402,6 +488,8 @@
                 }
             } catch (e) { console.warn('Erro:', e); }
         });
+
+        console.log('✅ Página de login carregada.');
     </script>
 </body>
 </html>
