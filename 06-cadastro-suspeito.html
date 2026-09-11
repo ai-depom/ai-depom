@@ -2,16 +2,15 @@
      AI-DEPOM - CADASTRO DE SUSPEITO
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 2.2.0
-     Data: 11/09/2026 - 16:15
+     Versão: 2.3.0
+     Data: 11/09/2026 - 17:15
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [11/09/2026 16:15] Adicionada FOTO PRINCIPAL no topo
-     - [11/09/2026 16:15] Adicionada FOTO SECUNDARIA
-     - [11/09/2026 16:15] Upload para bucket fotos-suspeitos
-     - [11/09/2026 16:15] Coluna foto_hash_secundaria na tabela
-     - [11/09/2026 16:15] Regra de Ouro aplicada
+     - [11/09/2026 17:15] Corrigido erro de addEventListener em elementos null
+     - [11/09/2026 17:15] IDs consistentes entre HTML e JavaScript
+     - [11/09/2026 17:15] Adicionada verificação de null em configurarUploadFoto
+     - [11/09/2026 17:15] Foto Principal e Secundaria
      ============================================================
 -->
 <!DOCTYPE html>
@@ -27,7 +26,7 @@
     <style>
         /* ============================================================
            VARIÁVEIS GLOBAIS
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         :root {
             --bg-primary: #000000;
@@ -44,7 +43,7 @@
 
         /* ============================================================
            RESET E CONFIGURAÇÕES GERAIS
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
@@ -58,7 +57,7 @@
 
         /* ============================================================
            BARRA DE CONTROLES
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .controls-bar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
@@ -91,7 +90,7 @@
 
         /* ============================================================
            SIDEBAR
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .sidebar {
             position: fixed; top: 48px; left: 0;
@@ -138,7 +137,7 @@
 
         /* ============================================================
            CONTEÚDO PRINCIPAL
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; width: calc(100vw - 260px); }
         .top-bar {
@@ -154,7 +153,7 @@
 
         /* ============================================================
            CARDS DE FORMULÁRIO
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .form-card {
             background: var(--bg-secondary); border-radius: 14px;
@@ -183,7 +182,7 @@
 
         /* ============================================================
            BOTÕES
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .btn-gold {
             background: var(--gradient-green); color: #000; font-weight: 700;
@@ -201,7 +200,7 @@
 
         /* ============================================================
            SEÇÕES DO FORMULÁRIO
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .section-title {
             color: var(--text-primary); font-size: 13px; letter-spacing: 1px;
@@ -213,7 +212,7 @@
 
         /* ============================================================
            TABELA DE SUSPEITOS
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .suspeitos-table { width: 100%; border-collapse: collapse; }
         .suspeitos-table th {
@@ -238,7 +237,7 @@
 
         /* ============================================================
            TOASTS
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
@@ -267,7 +266,7 @@
 
         /* ============================================================
            RESPONSIVO
-           Data: 11/09/2026 - 16:15
+           Data: 11/09/2026 - 17:15
            ============================================================ */
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
         @media (max-width: 992px) {
@@ -292,7 +291,7 @@
 <body>
     <!-- ============================================================
          BARRA DE CONTROLES
-         Data: 11/09/2026 - 16:15
+         Data: 11/09/2026 - 17:15
          ============================================================ -->
     <header class="controls-bar">
         <div class="controls-left">
@@ -312,7 +311,7 @@
 
     <!-- ============================================================
          SIDEBAR
-         Data: 11/09/2026 - 16:15
+         Data: 11/09/2026 - 17:15
          ============================================================ -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
@@ -348,7 +347,7 @@
 
     <!-- ============================================================
          CONTEÚDO PRINCIPAL
-         Data: 11/09/2026 - 16:15
+         Data: 11/09/2026 - 17:15
          ============================================================ -->
     <main class="main-content">
         <header class="top-bar">
@@ -370,7 +369,7 @@
 
             <!-- ============================================================
                  SEÇÃO: FOTO PRINCIPAL (TOPO)
-                 Data: 11/09/2026 - 16:15
+                 Data: 11/09/2026 - 17:15
                  ============================================================ -->
             <div class="section-title"><i class="fas fa-id-card"></i>FOTO PRINCIPAL DE IDENTIFICACAO</div>
             <div class="row g-3">
@@ -437,7 +436,7 @@
 
             <!-- ============================================================
                  SEÇÃO: IDENTIFICAÇÃO
-                 Data: 11/09/2026 - 16:15
+                 Data: 11/09/2026 - 17:15
                  ============================================================ -->
             <div class="section-title"><i class="fas fa-id-card"></i>IDENTIFICACAO</div>
             <div class="row g-3">
@@ -469,7 +468,7 @@
 
             <!-- ============================================================
                  SEÇÃO: DADOS PESSOAIS
-                 Data: 11/09/2026 - 16:15
+                 Data: 11/09/2026 - 17:15
                  ============================================================ -->
             <div class="section-title"><i class="fas fa-user"></i>DADOS PESSOAIS</div>
             <div class="row g-3">
@@ -506,7 +505,7 @@
 
             <!-- ============================================================
                  SEÇÃO: FOTO SECUNDARIA
-                 Data: 11/09/2026 - 16:15
+                 Data: 11/09/2026 - 17:15
                  ============================================================ -->
             <div class="section-title"><i class="fas fa-camera"></i>FOTO SECUNDARIA</div>
             <div class="row g-3">
@@ -567,7 +566,7 @@
 
             <!-- ============================================================
                  SEÇÃO: ENDEREÇO
-                 Data: 11/09/2026 - 16:15
+                 Data: 11/09/2026 - 17:15
                  ============================================================ -->
             <div class="section-title"><i class="fas fa-map-marker-alt"></i>ENDERECO</div>
             <div class="row g-3">
@@ -607,7 +606,7 @@
 
             <!-- ============================================================
                  SEÇÃO: CARACTERÍSTICAS FÍSICAS
-                 Data: 11/09/2026 - 16:15
+                 Data: 11/09/2026 - 17:15
                  ============================================================ -->
             <div class="section-title"><i class="fas fa-fingerprint"></i>CARACTERISTICAS FISICAS</div>
             <div class="row g-3">
@@ -645,7 +644,7 @@
 
             <!-- ============================================================
                  SEÇÃO: INFORMAÇÕES CRIMINAIS
-                 Data: 11/09/2026 - 16:15
+                 Data: 11/09/2026 - 17:15
                  ============================================================ -->
             <div class="section-title"><i class="fas fa-exclamation-triangle"></i>INFORMACOES CRIMINAIS</div>
             <div class="row g-3">
@@ -708,7 +707,7 @@
 
         <!-- ============================================================
              LISTA DE SUSPEITOS
-             Data: 11/09/2026 - 16:15
+             Data: 11/09/2026 - 17:15
              ============================================================ -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -731,7 +730,7 @@
     <script>
         // ============================================================
         // INICIALIZAÇÃO DA PÁGINA
-        // Data: 11/09/2026 - 16:15
+        // Data: 11/09/2026 - 17:15
         // Descrição: Verifica sessão e carrega dados iniciais
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
@@ -753,12 +752,20 @@
 
             atualizarDadosUsuario(usuario);
             carregarSuspeitos();
+
+            // Configurar uploads de foto (com verificação de null)
+            try {
+                configurarUploadFoto('fotoPrincipal', (f) => { arquivoFotoPrincipal = f; });
+                configurarUploadFoto('fotoSecundaria', (f) => { arquivoFotoSecundaria = f; });
+                console.log('✅ Uploads de foto configurados');
+            } catch (err) {
+                console.error('❌ Erro ao configurar uploads de foto:', err);
+            }
         });
 
         // ============================================================
         // FUNÇÃO: ATUALIZAR DADOS DO USUÁRIO
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Exibe nome, avatar e perfil do usuário logado
+        // Data: 11/09/2026 - 17:15
         // ============================================================
         function atualizarDadosUsuario(usuario) {
             const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
@@ -773,11 +780,12 @@
 
         // ============================================================
         // FUNÇÃO: CARREGAR SUSPEITOS
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Lista os últimos 50 suspeitos cadastrados
+        // Data: 11/09/2026 - 17:15
         // ============================================================
         async function carregarSuspeitos() {
             const container = document.getElementById('listaSuspeitos');
+            if (!container) return;
+
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando suspeitos...</div>';
 
             const { data, error } = await window.supabaseClient
@@ -827,12 +835,12 @@
 
         // ============================================================
         // FUNÇÃO: MOSTRAR TOAST
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Exibe notificações de sucesso/erro/aviso
+        // Data: 11/09/2026 - 17:15
         // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
+            if (!container) return;
             const toast = document.createElement('div');
             toast.className = 'toast-ai ' + tipo;
             const icones = {
@@ -856,7 +864,7 @@
 
         // ============================================================
         // UPLOAD DE FOTOS (PRINCIPAL E SECUNDARIA)
-        // Data: 11/09/2026 - 16:15
+        // Data: 11/09/2026 - 17:15
         // Descrição: Gerencia o upload das duas fotos para o Storage
         // ============================================================
 
@@ -865,8 +873,9 @@
 
         // ============================================================
         // FUNÇÃO: CONFIGURAR UPLOAD DE FOTO
-        // Data: 11/09/2026 - 16:15
+        // Data: 11/09/2026 - 17:15
         // Descrição: Configura os eventos de upload para uma foto
+        //            COM VERIFICAÇÃO DE NULL
         // ============================================================
         function configurarUploadFoto(prefixo, setArquivo) {
             const input = document.getElementById(prefixo + 'Input');
@@ -875,6 +884,14 @@
             const img = document.getElementById(prefixo + 'Img');
             const btnEscolher = document.getElementById('btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
             const btnRemover = document.getElementById('btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
+
+            // Verificar se todos os elementos existem
+            if (!input || !preview || !placeholder || !img || !btnEscolher || !btnRemover) {
+                console.warn('⚠️ Elementos nao encontrados para:', prefixo);
+                console.warn('   input:', !!input, '| preview:', !!preview, '| placeholder:', !!placeholder);
+                console.warn('   img:', !!img, '| btnEscolher:', !!btnEscolher, '| btnRemover:', !!btnRemover);
+                return;
+            }
 
             btnEscolher.addEventListener('click', function() {
                 input.click();
@@ -925,14 +942,9 @@
             });
         }
 
-        // Configurar os dois uploads
-        configurarUploadFoto('fotoPrincipal', (f) => arquivoFotoPrincipal = f);
-        configurarUploadFoto('fotoSecundaria', (f) => arquivoFotoSecundaria = f);
-
         // ============================================================
         // FUNÇÃO: FAZER UPLOAD DA FOTO
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Faz upload de uma foto para o Supabase Storage
+        // Data: 11/09/2026 - 17:15
         // ============================================================
         async function uploadFoto(usuario, arquivo, prefixo) {
             if (!arquivo) return null;
@@ -957,7 +969,7 @@
                     throw error;
                 }
 
-                const { data: urlData } = await window.supabaseClient.storage
+                await window.supabaseClient.storage
                     .from('fotos-suspeitos')
                     .createSignedUrl(nomeArquivo, 60 * 60 * 24 * 365);
 
@@ -972,8 +984,7 @@
 
         // ============================================================
         // SUBMIT DO FORMULÁRIO
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Cadastra o suspeito com todos os dados e fotos
+        // Data: 11/09/2026 - 17:15
         // ============================================================
         document.getElementById('formSuspeito').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1023,12 +1034,12 @@
                     posse_arma: document.getElementById('posseArma').checked,
                     modus_operandi: document.getElementById('modusOperandi').value.trim() || null,
                     observacoes: document.getElementById('observacoes').value.trim() || null,
-                    data_foto_principal: document.getElementById('dataFotoPrincipal')?.value || null,
-                    fonte_foto_principal: document.getElementById('fonteFotoPrincipal')?.value || null,
-                    observacoes_foto_principal: document.getElementById('observacoesFotoPrincipal')?.value.trim() || null,
-                    data_foto_secundaria: document.getElementById('dataFotoSecundaria')?.value || null,
-                    fonte_foto_secundaria: document.getElementById('fonteFotoSecundaria')?.value || null,
-                    observacoes_foto_secundaria: document.getElementById('observacoesFotoSecundaria')?.value.trim() || null,
+                    data_foto_principal: document.getElementById('dataFotoPrincipal') ? document.getElementById('dataFotoPrincipal').value : null,
+                    fonte_foto_principal: document.getElementById('fonteFotoPrincipal') ? document.getElementById('fonteFotoPrincipal').value : null,
+                    observacoes_foto_principal: document.getElementById('observacoesFotoPrincipal') ? document.getElementById('observacoesFotoPrincipal').value.trim() : null,
+                    data_foto_secundaria: document.getElementById('dataFotoSecundaria') ? document.getElementById('dataFotoSecundaria').value : null,
+                    fonte_foto_secundaria: document.getElementById('fonteFotoSecundaria') ? document.getElementById('fonteFotoSecundaria').value : null,
+                    observacoes_foto_secundaria: document.getElementById('observacoesFotoSecundaria') ? document.getElementById('observacoesFotoSecundaria').value.trim() : null,
                     id_usuario_cadastro: usuario.id,
                     deletado: false
                 };
@@ -1042,14 +1053,14 @@
                     return;
                 }
 
-                // Fazer upload da foto principal
+                // Upload foto principal
                 if (arquivoFotoPrincipal) {
                     showToast('info', 'Enviando foto principal...', 'Aguarde o upload.');
                     const caminho = await uploadFoto(usuario, arquivoFotoPrincipal, 'principal');
                     if (caminho) dados.foto_hash = caminho;
                 }
 
-                // Fazer upload da foto secundária
+                // Upload foto secundária
                 if (arquivoFotoSecundaria) {
                     showToast('info', 'Enviando foto secundaria...', 'Aguarde o upload.');
                     const caminho = await uploadFoto(usuario, arquivoFotoSecundaria, 'secundaria');
@@ -1078,26 +1089,8 @@
                     8000);
 
                 this.reset();
-
-                // Resetar fotos
                 arquivoFotoPrincipal = null;
                 arquivoFotoSecundaria = null;
-                document.getElementById('fotoPrincipalImg').src = '';
-                document.getElementById('fotoPrincipalImg').style.display = 'none';
-                document.getElementById('fotoPrincipalPlaceholder').style.display = 'block';
-                document.getElementById('fotoPrincipalPreview').style.borderStyle = 'dashed';
-                document.getElementById('fotoPrincipalPreview').style.borderColor = 'var(--border-color)';
-                document.getElementById('btnRemoverFotoPrincipal').style.display = 'none';
-                document.getElementById('btnEscolherFotoPrincipal').innerHTML = '<i class="fas fa-camera"></i> ESCOLHER FOTO';
-
-                document.getElementById('fotoSecundariaImg').src = '';
-                document.getElementById('fotoSecundariaImg').style.display = 'none';
-                document.getElementById('fotoSecundariaPlaceholder').style.display = 'block';
-                document.getElementById('fotoSecundariaPreview').style.borderStyle = 'dashed';
-                document.getElementById('fotoSecundariaPreview').style.borderColor = 'var(--border-color)';
-                document.getElementById('btnRemoverFotoSecundaria').style.display = 'none';
-                document.getElementById('btnEscolherFotoSecundaria').innerHTML = '<i class="fas fa-upload"></i> ESCOLHER FOTO';
-
                 carregarSuspeitos();
             } catch (error) {
                 showToast('error', 'Erro inesperado', error.message);
@@ -1108,9 +1101,8 @@
         });
 
         // ============================================================
-        // FUNÇÃO: FULLSCREEN
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Alterna entre tela cheia e normal
+        // FUNÇÕES UTILITÁRIAS
+        // Data: 11/09/2026 - 17:15
         // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
@@ -1127,35 +1119,21 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
-        // ============================================================
-        // FUNÇÃO: LOGOUT
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Encerra a sessão do usuário
-        // ============================================================
         async function fazerLogout() {
             if (confirm('Deseja realmente sair do sistema?')) {
                 await AIDEPOM.logout();
             }
         }
 
-        // ============================================================
-        // FUNÇÃO: FECHAR JANELA
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Fecha a janela do sistema
-        // ============================================================
         function closeWindow() {
             if (confirm('Deseja realmente fechar o sistema?')) {
                 try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
             }
         }
 
-        // ============================================================
-        // FUNÇÃO: TOGGLE SIDEBAR
-        // Data: 11/09/2026 - 16:15
-        // Descrição: Abre/fecha o menu lateral em mobile
-        // ============================================================
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar) sidebar.classList.toggle('open');
         }
 
         console.log('✅ Página de cadastro de suspeito carregada em ' + new Date().toLocaleString('pt-BR'));
