@@ -1,4 +1,19 @@
- <!DOCTYPE html>
+ <!-- ============================================================
+     AI-DEPOM - CONSULTA DE SUSPEITOS
+     ============================================================
+     Arquivo: 07-consulta.html
+     Versão: 2.1.0
+     Data: 11/09/2026 - 16:45
+     Autor: AI-DEPOM Team
+     ============================================================
+     ALTERAÇÕES RECENTES:
+     - [11/09/2026 16:45] Adicionada miniatura da foto na tabela
+     - [11/09/2026 16:45] Adicionada foto principal no modal
+     - [11/09/2026 16:45] Adicionada foto secundária no modal
+     - [11/09/2026 16:45] Regra de Ouro aplicada
+     ============================================================
+-->
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -9,6 +24,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ============================================================
+           VARIÁVEIS GLOBAIS
+           Data: 11/09/2026 - 16:45
+           ============================================================ */
         :root {
             --bg-primary: #000000;
             --bg-secondary: #0a0a0a;
@@ -21,18 +40,25 @@
             --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
             --control-size: 36px;
         }
+
+        /* ============================================================
+           RESET E CONFIGURAÇÕES GERAIS
+           Data: 11/09/2026 - 16:45
+           ============================================================ */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            width: 100%; height: 100%; min-height: 100vh;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow-x: hidden;
         }
+
+        /* ============================================================
+           BARRA DE CONTROLES
+           Data: 11/09/2026 - 16:45
+           ============================================================ */
         .controls-bar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px);
@@ -61,6 +87,11 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
+
+        /* ============================================================
+           SIDEBAR
+           Data: 11/09/2026 - 16:45
+           ============================================================ */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -103,6 +134,11 @@
         }
         .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
         .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
+
+        /* ============================================================
+           CONTEÚDO PRINCIPAL
+           Data: 11/09/2026 - 16:45
+           ============================================================ */
         .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; width: calc(100vw - 260px); }
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
@@ -158,8 +194,15 @@
         .resultados-table td {
             color: var(--text-secondary); font-size: 13px; padding: 12px;
             border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+            vertical-align: middle;
         }
         .resultados-table tr:hover td { background: rgba(0, 255, 136, 0.02); cursor: pointer; }
+        .resultados-table .foto-mini {
+            width: 40px; height: 50px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+        }
         .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
         .status-investigado { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); }
         .status-preso { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
@@ -220,6 +263,25 @@
         .detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid rgba(0, 51, 34, 0.5); }
         .detail-label { color: rgba(0, 255, 136, 0.4); font-size: 12px; font-weight: 600; text-transform: uppercase; width: 180px; flex-shrink: 0; }
         .detail-value { color: var(--text-secondary); font-size: 14px; flex: 1; }
+        .modal-foto-principal { text-align: center; margin-bottom: 20px; }
+        .modal-foto-principal img {
+            max-width: 180px; max-height: 220px;
+            border-radius: 12px; border: 2px solid var(--border-color);
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.15);
+        }
+        .modal-foto-principal .label {
+            color: rgba(0, 255, 136, 0.4); font-size: 11px;
+            margin-top: 8px; letter-spacing: 1px;
+        }
+        .modal-foto-secundaria { text-align: center; margin-bottom: 20px; }
+        .modal-foto-secundaria img {
+            max-width: 140px; max-height: 170px;
+            border-radius: 12px; border: 2px solid var(--border-color);
+        }
+        .modal-foto-secundaria .label {
+            color: rgba(0, 255, 136, 0.4); font-size: 11px;
+            margin-top: 8px; letter-spacing: 1px;
+        }
         .pagination { display: flex; justify-content: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
         .pagination button {
             background: rgba(0, 255, 136, 0.05); border: 1px solid var(--border-color);
@@ -250,6 +312,10 @@
     </style>
 </head>
 <body>
+    <!-- ============================================================
+         BARRA DE CONTROLES
+         Data: 11/09/2026 - 16:45
+         ============================================================ -->
     <header class="controls-bar">
         <div class="controls-left">
             <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
@@ -266,6 +332,10 @@
         </div>
     </header>
 
+    <!-- ============================================================
+         SIDEBAR
+         Data: 11/09/2026 - 16:45
+         ============================================================ -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-brand">
             <div class="logo"><i class="fas fa-shield-halved"></i></div>
@@ -298,6 +368,10 @@
         </div>
     </aside>
 
+    <!-- ============================================================
+         CONTEÚDO PRINCIPAL
+         Data: 11/09/2026 - 16:45
+         ============================================================ -->
     <main class="main-content">
         <header class="top-bar">
             <div class="d-flex align-items-center gap-3">
@@ -396,12 +470,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
+        // ============================================================
+        // VARIÁVEIS GLOBAIS
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         let resultadosAtuais = [];
         let paginaAtual = 1;
         const ITENS_POR_PAGINA = 10;
 
+        // ============================================================
+        // INICIALIZAÇÃO DA PÁGINA
+        // Data: 11/09/2026 - 16:45
+        // Descrição: Verifica sessão e carrega dados iniciais
+        // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Consulta iniciada');
+            console.log('AI-DEPOM - Consulta iniciada em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -413,6 +496,11 @@
             atualizarDadosUsuario(usuario);
         });
 
+        // ============================================================
+        // FUNÇÃO: ATUALIZAR DADOS DO USUÁRIO
+        // Data: 11/09/2026 - 16:45
+        // Descrição: Exibe nome, avatar e perfil do usuário logado
+        // ============================================================
         function atualizarDadosUsuario(usuario) {
             const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
             const nome = usuario.nome_completo || 'Usuario';
@@ -424,11 +512,20 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
+        // ============================================================
+        // EVENT LISTENER: SUBMIT DO FORMULÁRIO
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         document.getElementById('formConsulta').addEventListener('submit', async function(e) {
             e.preventDefault();
             await buscar();
         });
 
+        // ============================================================
+        // FUNÇÃO: BUSCAR SUSPEITOS
+        // Data: 11/09/2026 - 16:45
+        // Descrição: Aplica filtros e busca suspeitos no banco
+        // ============================================================
         async function buscar() {
             const btn = document.getElementById('btnBuscar');
             btn.disabled = true;
@@ -486,6 +583,11 @@
             }
         }
 
+        // ============================================================
+        // FUNÇÃO: RENDERIZAR RESULTADOS
+        // Data: 11/09/2026 - 16:45
+        // Descrição: Monta a tabela com foto + dados dos suspeitos
+        // ============================================================
         function renderizarResultados() {
             const container = document.getElementById('listaResultados');
 
@@ -499,7 +601,7 @@
             const pagina = resultadosAtuais.slice(inicio, fim);
 
             let html = '<div style="overflow-x:auto;"><table class="resultados-table"><thead><tr>';
-            html += '<th>ID</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Status</th><th>Periculosidade</th><th>Cidade/UF</th>';
+            html += '<th>Foto</th><th>ID</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Status</th><th>Periculosidade</th><th>Cidade/UF</th>';
             html += '</tr></thead><tbody>';
 
             pagina.forEach(s => {
@@ -514,7 +616,14 @@
 
                 const cidadeUF = (s.cidade || '-') + (s.uf ? '/' + s.uf : '');
 
+                // Miniatura da foto
+                let fotoMini = '<i class="fas fa-user-circle" style="font-size:24px; color:rgba(0,255,136,0.2);"></i>';
+                if (s.foto_hash) {
+                    fotoMini = '<img src="' + s.foto_hash + '" class="foto-mini" alt="Foto">';
+                }
+
                 html += '<tr onclick="abrirDetalhes(' + s.id_suspeito + ')">';
+                html += '<td>' + fotoMini + '</td>';
                 html += '<td><strong style="color:var(--text-primary);">#' + s.id_suspeito + '</strong></td>';
                 html += '<td>' + (s.nome_completo || '-') + '</td>';
                 html += '<td>' + (s.apelido || '-') + '</td>';
@@ -529,6 +638,10 @@
             container.innerHTML = html;
         }
 
+        // ============================================================
+        // FUNÇÃO: RENDERIZAR PAGINAÇÃO
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function renderizarPaginacao() {
             const container = document.getElementById('paginacao');
             const totalPaginas = Math.ceil(resultadosAtuais.length / ITENS_POR_PAGINA);
@@ -554,6 +667,10 @@
             container.innerHTML = html;
         }
 
+        // ============================================================
+        // FUNÇÃO: MUDAR PÁGINA
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function mudarPagina(pagina) {
             paginaAtual = pagina;
             renderizarResultados();
@@ -561,11 +678,41 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
+        // ============================================================
+        // FUNÇÃO: ABRIR DETALHES DO SUSPEITO
+        // Data: 11/09/2026 - 16:45
+        // Descrição: Exibe foto + dados completos do suspeito
+        // ============================================================
         function abrirDetalhes(id) {
             const s = resultadosAtuais.find(x => x.id_suspeito === id);
             if (!s) return;
 
             let html = '';
+
+            // FOTO PRINCIPAL
+            if (s.foto_hash) {
+                html += '<div class="modal-foto-principal">';
+                html += '<img src="' + s.foto_hash + '" alt="Foto Principal">';
+                html += '<div class="label"><i class="fas fa-id-card"></i> FOTO PRINCIPAL</div>';
+                html += '</div>';
+            } else {
+                html += '<div style="text-align:center; margin-bottom:20px;">';
+                html += '<div style="width:180px; height:220px; border:2px dashed var(--border-color); border-radius:12px; display:inline-flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.3); color:rgba(0,255,136,0.2);">';
+                html += '<i class="fas fa-user-circle" style="font-size:60px;"></i>';
+                html += '</div>';
+                html += '<div style="color:rgba(0,255,136,0.2); font-size:11px; margin-top:8px;">SEM FOTO</div>';
+                html += '</div>';
+            }
+
+            // FOTO SECUNDARIA
+            if (s.foto_hash_secundaria) {
+                html += '<div class="modal-foto-secundaria">';
+                html += '<img src="' + s.foto_hash_secundaria + '" alt="Foto Secundaria">';
+                html += '<div class="label"><i class="fas fa-camera"></i> FOTO SECUNDARIA</div>';
+                html += '</div>';
+            }
+
+            // DADOS
             const campos = [
                 ['ID', s.id_suspeito],
                 ['Nome Completo', s.nome_completo],
@@ -618,6 +765,10 @@
             document.getElementById('modalDetalhes').classList.add('show');
         }
 
+        // ============================================================
+        // FUNÇÃO: FECHAR MODAL
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function fecharModal() {
             document.getElementById('modalDetalhes').classList.remove('show');
         }
@@ -626,6 +777,10 @@
             if (e.target === this) fecharModal();
         });
 
+        // ============================================================
+        // FUNÇÃO: LIMPAR FILTROS
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function limparFiltros() {
             document.getElementById('buscaGeral').value = '';
             document.getElementById('filtroStatus').value = '';
@@ -639,6 +794,11 @@
             document.getElementById('paginacao').innerHTML = '';
         }
 
+        // ============================================================
+        // FUNÇÃO: EXPORTAR CSV
+        // Data: 11/09/2026 - 16:45
+        // Descrição: Exporta os resultados para arquivo CSV
+        // ============================================================
         function exportarCSV() {
             if (resultadosAtuais.length === 0) {
                 showToast('warning', 'Sem dados', 'Nenhum resultado para exportar.');
@@ -673,6 +833,10 @@
             showToast('success', 'Exportado!', resultadosAtuais.length + ' registros exportados para CSV.');
         }
 
+        // ============================================================
+        // FUNÇÃO: MOSTRAR TOAST
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -697,6 +861,10 @@
             }, duracao);
         }
 
+        // ============================================================
+        // FUNÇÃO: FULLSCREEN
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
@@ -712,22 +880,35 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
+        // ============================================================
+        // FUNÇÃO: LOGOUT
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         async function fazerLogout() {
             if (confirm('Deseja realmente sair do sistema?')) {
                 await AIDEPOM.logout();
             }
         }
 
+        // ============================================================
+        // FUNÇÃO: FECHAR JANELA
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function closeWindow() {
             if (confirm('Deseja realmente fechar o sistema?')) {
                 try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
             }
         }
 
+        // ============================================================
+        // FUNÇÃO: TOGGLE SIDEBAR
+        // Data: 11/09/2026 - 16:45
+        // ============================================================
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
         }
+
+        console.log('✅ Página de consulta carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
- <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
