@@ -2,17 +2,17 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.3.0
-     Data: 12/09/2026 - 04:30
+     Versão: 2.4.0
+     Data: 12/09/2026 - 05:00
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [12/09/2026 05:00] Ficha do suspeito com modal + foto
+     - [12/09/2026 05:00] verDetalhes() carrega dados completos + signed URL
+     - [12/09/2026 05:00] Impressão da ficha funcional
      - [12/09/2026 04:30] Query separada para arquivo_midia (sem JOIN implícito)
-     - [12/09/2026 04:30] Resolve erro PGRST200 (relationship not found)
      - [12/09/2026 04:00] Alias 'sb' para evitar conflito com window.supabase
      - [12/09/2026 02:00] Exibição de foto dos suspeitos na tabela
-     - [12/09/2026 02:00] Signed URL do bucket privado (createSignedUrl)
-     - [12/09/2026 02:00] Coluna "Foto" adicionada na tabela
      ============================================================
 -->
 <!DOCTYPE html>
@@ -52,9 +52,7 @@
 
         .controls-bar {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(15px);
@@ -64,11 +62,9 @@
             justify-content: space-between;
             align-items: center;
             height: 48px;
-            min-height: 48px;
         }
 
-        .controls-left { display: flex; gap: 4px; align-items: center; }
-        .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
         .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
 
@@ -86,9 +82,7 @@
             align-items: center;
             justify-content: center;
         }
-
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
-        .control-btn:active { transform: scale(0.92); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
@@ -98,8 +92,7 @@
 
         .sidebar {
             position: fixed;
-            top: 48px;
-            left: 0;
+            top: 48px; left: 0;
             width: 260px;
             height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98);
@@ -110,12 +103,8 @@
             transition: transform 0.3s ease;
             overflow-y: auto;
         }
-
-        .sidebar::-webkit-scrollbar { width: 4px; }
-        .sidebar::-webkit-scrollbar-thumb { background: var(--text-primary); border-radius: 4px; }
-
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-        .sidebar-brand .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: var(--gradient-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 40px var(--shadow-color); }
+        .sidebar-brand .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: var(--gradient-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
@@ -123,17 +112,10 @@
         .sidebar-menu { padding: 0 12px; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            padding: 10px 16px;
-            border-radius: 10px;
-            color: rgba(0, 255, 136, 0.3);
-            text-decoration: none;
-            transition: all 0.3s;
-            cursor: pointer;
-            margin-bottom: 2px;
-            font-size: 14px;
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 16px; border-radius: 10px;
+            color: rgba(0, 255, 136, 0.3); text-decoration: none;
+            transition: all 0.3s; cursor: pointer; margin-bottom: 2px; font-size: 14px;
         }
         .sidebar-menu .menu-item:hover { background: rgba(0, 255, 136, 0.03); color: var(--text-primary); }
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
@@ -146,52 +128,26 @@
         .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
         .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
 
-        .main-content {
-            margin-left: 260px;
-            padding: 70px 30px 30px;
-            min-height: 100vh;
-        }
+        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; }
 
         .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px;
             background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 15px 25px;
-            margin-bottom: 25px;
-            border: 1px solid var(--border-color);
+            border-radius: 16px; padding: 15px 25px;
+            margin-bottom: 25px; border: 1px solid var(--border-color);
         }
-
         .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
         .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
         .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; letter-spacing: 0.5px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
+        .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
         .top-bar .top-actions .badge i { margin-right: 6px; }
 
-        .form-card {
-            background: var(--bg-secondary);
-            border-radius: 14px;
-            padding: 25px;
-            border: 1px solid var(--border-color);
-        }
-
-        .form-card .card-title {
-            color: var(--text-primary);
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px;
-            margin-bottom: 20px;
-        }
-
+        .form-card { background: var(--bg-secondary); border-radius: 14px; padding: 25px; border: 1px solid var(--border-color); }
+        .form-card .card-title { color: var(--text-primary); font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px; }
         .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
 
-        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
+        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
 
         .form-control, .form-select {
             background: rgba(0, 0, 0, 0.5);
@@ -202,67 +158,25 @@
             transition: all 0.3s;
             font-size: 14px;
         }
-
         .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
 
-        .btn-gold {
-            background: var(--gradient-green);
-            color: #000;
-            font-weight: 700;
-            padding: 10px 28px;
-            border-radius: 10px;
-            border: none;
-            transition: all 0.3s;
-            letter-spacing: 0.5px;
-            font-size: 14px;
-        }
-
+        .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
 
-        .btn-icon {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            color: rgba(0, 255, 136, 0.3);
-            padding: 6px 12px;
-            border-radius: 8px;
-            transition: all 0.3s;
-        }
+        .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
 
+        .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 12px; border-radius: 8px; transition: all 0.3s; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
 
         .table-container { overflow-x: auto; }
-
         .table-custom { width: 100%; border-collapse: collapse; }
-
-        .table-custom th {
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            padding: 12px 14px;
-            border-bottom: 1px solid var(--border-color);
-            text-align: left;
-        }
-
-        .table-custom td {
-            padding: 12px 14px;
-            border-bottom: 1px solid rgba(0, 255, 136, 0.02);
-            font-size: 14px;
-            vertical-align: middle;
-        }
-
+        .table-custom th { color: rgba(0, 255, 136, 0.3); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 12px 14px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        .table-custom td { padding: 12px 14px; border-bottom: 1px solid rgba(0, 255, 136, 0.02); font-size: 14px; vertical-align: middle; }
         .table-custom tr:hover td { background: rgba(0, 255, 136, 0.01); }
 
-        .status-badge {
-            display: inline-block;
-            padding: 3px 14px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-
+        .status-badge { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; }
         .status-badge.preso { background: #dc3545; color: #fff; }
         .status-badge.procurado { background: #ffc107; color: #000; }
         .status-badge.foragido { background: #dc3545; color: #fff; animation: pulse 1.5s infinite; }
@@ -270,87 +184,79 @@
         .status-badge.condicional { background: #28a745; color: #fff; }
         .status-badge.liberado { background: #6c757d; color: #fff; }
 
-        .perigo-badge {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
-        }
-
+        .perigo-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
         .perigo-badge.baixo { background: #28a745; color: #fff; }
         .perigo-badge.medio { background: #ffc107; color: #000; }
         .perigo-badge.alto { background: #fd7e14; color: #fff; }
         .perigo-badge.extremo { background: #dc3545; color: #fff; }
 
-        .foto-suspeito {
-            width: 50px;
-            height: 60px;
-            object-fit: cover;
-            border-radius: 6px;
-            border: 1px solid var(--border-color);
-            display: block;
-        }
+        .foto-suspeito { width: 50px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); display: block; }
+        .foto-placeholder { width: 50px; height: 60px; background: rgba(0, 255, 136, 0.05); border-radius: 6px; border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; color: rgba(0, 255, 136, 0.2); font-size: 16px; }
 
-        .foto-placeholder {
-            width: 50px;
-            height: 60px;
-            background: rgba(0, 255, 136, 0.05);
-            border-radius: 6px;
-            border: 1px dashed var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: rgba(0, 255, 136, 0.2);
-            font-size: 16px;
-        }
+        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        .sidebar-toggle {
+        /* ============================================================ */
+        /* MODAL DA FICHA                                                */
+        /* ============================================================ */
+        .modal-ficha {
             display: none;
-            background: rgba(0, 255, 136, 0.03);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 8px 14px;
-            border-radius: 10px;
-            font-size: 18px;
-            cursor: pointer;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
+        .modal-ficha.open { display: flex; }
+        .modal-ficha-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
+        }
+        .modal-ficha-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 25px; border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
+        }
+        .modal-ficha-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
+        .modal-ficha-body { padding: 25px; }
+        .modal-ficha-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid var(--border-color); }
+
+        .ficha-foto { width: 200px; height: 250px; object-fit: cover; border-radius: 10px; border: 2px solid var(--border-color); display: block; margin: 0 auto; }
+        .ficha-foto-placeholder { width: 200px; height: 250px; background: rgba(0, 255, 136, 0.05); border-radius: 10px; border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(0, 255, 136, 0.2); margin: 0 auto; }
+        .ficha-foto-placeholder i { font-size: 50px; margin-bottom: 10px; }
+
+        .ficha-campo { padding: 8px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
+        .ficha-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 3px; }
+        .ficha-campo .valor { color: var(--text-primary); font-size: 13px; }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
             .main-content { margin-left: 0; }
             .sidebar-toggle { display: flex !important; }
-            .controls-center .system-title { font-size: 12px; }
-            .control-btn { width: 32px; height: 32px; font-size: 14px; }
             .user-info .name { display: none; }
         }
-
         @media (max-width: 768px) {
             .main-content { padding: 65px 15px 15px; }
             .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
-            .top-bar .page-title h4 { font-size: 1rem; }
             .form-card { padding: 18px; }
-            .form-control, .form-select { font-size: 13px; padding: 8px 12px; }
-            .btn-gold { padding: 8px 20px; font-size: 13px; width: 100%; }
-            .controls-center .system-title { font-size: 11px; }
-            .table-custom th, .table-custom td { padding: 8px 10px; font-size: 12px; }
+            .btn-gold, .btn-outline-gold { width: 100%; }
+            .ficha-foto, .ficha-foto-placeholder { width: 140px; height: 175px; }
+            .modal-ficha-body { padding: 15px; }
         }
-
         @media (max-width: 480px) {
             .main-content { padding: 60px 10px 10px; }
-            .top-bar { padding: 10px 14px; }
-            .top-bar .page-title h4 { font-size: 0.9rem; }
             .top-actions { width: 100%; }
-            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; padding: 4px 10px; }
-            .form-card { padding: 14px; }
-            .form-card .card-title { font-size: 12px; }
-            .form-label { font-size: 10px; }
-            .controls-center .system-title { font-size: 9px; }
-            .control-btn { width: 28px; height: 28px; font-size: 12px; }
-            .controls-divider { margin: 0 3px; }
-            .table-custom th, .table-custom td { padding: 6px 8px; font-size: 11px; }
-            .btn-icon { padding: 4px 8px; font-size: 11px; }
+            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; }
             .foto-suspeito, .foto-placeholder { width: 40px; height: 48px; }
         }
 
@@ -364,11 +270,11 @@
 
     <header class="controls-bar">
         <div class="controls-left">
-            <button class="control-btn" onclick="window.history.back()" title="Voltar (Alt+V)"><i class="fas fa-arrow-left"></i></button>
-            <button class="control-btn" onclick="window.history.forward()" title="Avançar (Alt+A)"><i class="fas fa-arrow-right"></i></button>
+            <button class="control-btn" onclick="window.history.back()" title="Voltar"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
-            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar (Alt+M)"><i class="fas fa-window-minimize"></i></button>
-            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar (Alt+F)"><i class="fas fa-times"></i></button>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar"><i class="fas fa-times"></i></button>
         </div>
         <div class="controls-center">
             <span class="system-title"><i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM</span>
@@ -416,9 +322,9 @@
                 </div>
             </div>
             <div class="top-actions">
-                <span class="badge" id="totalPresos"><i class="fas fa-user-check text-success" style="color: #28a745;"></i> Presos: <span class="count">0</span></span>
-                <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate text-warning" style="color: #ffc107;"></i> Procurados: <span class="count">0</span></span>
-                <span class="badge" id="totalForagidos"><i class="fas fa-user-slash text-danger" style="color: #dc3545;"></i> Foragidos: <span class="count">0</span></span>
+                <span class="badge" id="totalPresos"><i class="fas fa-user-check" style="color: #28a745;"></i> Presos: <span class="count">0</span></span>
+                <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate" style="color: #ffc107;"></i> Procurados: <span class="count">0</span></span>
+                <span class="badge" id="totalForagidos"><i class="fas fa-user-slash" style="color: #dc3545;"></i> Foragidos: <span class="count">0</span></span>
             </div>
         </header>
 
@@ -495,7 +401,7 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mt-4">
-                    <small class="text-muted" id="infoPagina" style="color: rgba(0, 255, 136, 0.3);">Carregando...</small>
+                    <small id="infoPagina" style="color: rgba(0, 255, 136, 0.3);">Carregando...</small>
                     <div id="paginacaoControles">
                         <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior"><i class="fas fa-chevron-left"></i></button>
                         <span id="numerosPaginas">
@@ -508,11 +414,31 @@
         </div>
     </main>
 
+    <!-- ============================================================ -->
+    <!-- MODAL DA FICHA DO SUSPEITO                                    -->
+    <!-- ============================================================ -->
+    <div class="modal-ficha" id="modalFicha">
+        <div class="modal-ficha-content">
+            <div class="modal-ficha-header">
+                <h5><i class="fas fa-user-secret me-2"></i>Ficha do Suspeito</h5>
+                <button class="btn-icon" onclick="fecharFicha()" title="Fechar"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-ficha-body" id="modalFichaBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando...
+                </div>
+            </div>
+            <div class="modal-ficha-footer">
+                <button class="btn-outline-gold" onclick="fecharFicha()"><i class="fas fa-times me-2"></i>FECHAR</button>
+                <button class="btn-gold" onclick="imprimirFichaAtual()"><i class="fas fa-print me-2"></i>IMPRIMIR</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE — v2.3.0
-        // Usa alias 'sb' para NÃO colidir com window.supabase (CDN oficial)
+        // CONFIGURAÇÃO SUPABASE — v2.4.0
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
@@ -551,6 +477,7 @@
         const itensPorPagina = 5;
         let totalRegistros = 0;
         let dadosAtuais = [];
+        let idSuspeitoAtual = null;
 
         // ============================================================
         // CARREGAR USUÁRIO
@@ -583,7 +510,7 @@
         }
 
         // ============================================================
-        // BUSCA PRINCIPAL — 2 QUERIES (sem JOIN implícito)
+        // BUSCA PRINCIPAL
         // ============================================================
         async function realizarBusca() {
             console.log('🔍 realizarBusca() chamada');
@@ -594,19 +521,9 @@
             const dataFim = document.getElementById('filtroDataFim').value;
 
             try {
-                // 1️⃣ Busca os suspeitos (SEM JOIN)
                 let query = sb
                     .from('suspeito')
-                    .select(`
-                        id_suspeito,
-                        nome_completo,
-                        cpf,
-                        rg,
-                        cidade,
-                        status_atual,
-                        nivel_periculosidade,
-                        data_cadastro
-                    `, { count: 'exact' })
+                    .select(`id_suspeito, nome_completo, cpf, rg, cidade, status_atual, nivel_periculosidade, data_cadastro`, { count: 'exact' })
                     .eq('deletado', false);
 
                 if (termo.length >= 2) {
@@ -633,11 +550,10 @@
                     return;
                 }
 
-                // 2️⃣ Busca as mídias dos suspeitos encontrados
                 const ids = suspeitos.map(s => s.id_suspeito);
                 const { data: midias, error: midiaError } = await sb
                     .from('arquivo_midia')
-                    .select('id_entidade, caminho_fisico, nome_seguro, formato, tipo_midia, deletado')
+                    .select('id_entidade, caminho_fisico, nome_seguro, tipo_midia')
                     .eq('tipo_entidade', 'SUSPEITO')
                     .eq('tipo_midia', 'FOTO')
                     .eq('deletado', false)
@@ -645,14 +561,12 @@
 
                 if (midiaError) console.warn('⚠️ Erro ao buscar mídias:', midiaError);
 
-                // 3️⃣ Agrupa por id_entidade
                 const midiasPorSuspeito = {};
                 (midias || []).forEach(m => {
                     if (!midiasPorSuspeito[m.id_entidade]) midiasPorSuspeito[m.id_entidade] = [];
                     midiasPorSuspeito[m.id_entidade].push(m);
                 });
 
-                // 4️⃣ Gera signed URLs
                 const dadosComFoto = await Promise.all(suspeitos.map(async (s) => {
                     const midiasDoSuspeito = midiasPorSuspeito[s.id_suspeito] || [];
                     const midiaPrincipal = midiasDoSuspeito.find(m =>
@@ -662,19 +576,14 @@
                     let fotoUrl = null;
                     if (midiaPrincipal && midiaPrincipal.caminho_fisico) {
                         try {
-                            const { data: signed, error: signedError } = await sb.storage
+                            const { data: signed } = await sb.storage
                                 .from(BUCKET_FOTOS)
                                 .createSignedUrl(midiaPrincipal.caminho_fisico, URL_EXPIRACAO_S);
-                            if (!signedError && signed?.signedUrl) {
-                                fotoUrl = signed.signedUrl;
-                            } else {
-                                console.warn('⚠️ Sem URL assinada:', midiaPrincipal.caminho_fisico, signedError);
-                            }
+                            fotoUrl = signed?.signedUrl || null;
                         } catch (err) {
                             console.warn('⚠️ Erro ao gerar signed URL:', err);
                         }
                     }
-
                     return { ...s, fotoUrl };
                 }));
 
@@ -686,13 +595,13 @@
                 console.error('❌ Erro na busca:', error);
                 document.getElementById('resultadosConsulta').innerHTML =
                     `<tr><td colspan="7" class="text-center py-4" style="color: #dc3545;">
-                        <i class="fas fa-exclamation-triangle"></i> Erro ao buscar dados: ${error.message}
+                        <i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}
                     </td></tr>`;
             }
         }
 
         // ============================================================
-        // RENDERIZAÇÃO
+        // RENDERIZAÇÃO DA TABELA
         // ============================================================
         function renderizarResultados() {
             const tbody = document.getElementById('resultadosConsulta');
@@ -709,12 +618,8 @@
                 const statusClass = d.status_atual ? d.status_atual.toLowerCase() : '';
                 const periculosidadeClass = d.nivel_periculosidade ? d.nivel_periculosidade.toLowerCase() : '';
                 const statusLabel = {
-                    'PRESO': '🔒 PRESO',
-                    'PROCURADO': '🔍 PROCURADO',
-                    'FORAGIDO': '🏃 FORAGIDO',
-                    'INVESTIGADO': '🔎 INVESTIGADO',
-                    'CONDICIONAL': '⚖️ CONDICIONAL',
-                    'LIBERADO': '✅ LIBERADO'
+                    'PRESO': '🔒 PRESO', 'PROCURADO': '🔍 PROCURADO', 'FORAGIDO': '🏃 FORAGIDO',
+                    'INVESTIGADO': '🔎 INVESTIGADO', 'CONDICIONAL': '⚖️ CONDICIONAL', 'LIBERADO': '✅ LIBERADO'
                 }[d.status_atual] || d.status_atual || 'DESCONHECIDO';
 
                 const fotoHTML = d.fotoUrl
@@ -769,17 +674,130 @@
         function irPagina(num) { paginaAtual = num; realizarBusca(); }
 
         // ============================================================
+        // FICHA DO SUSPEITO
+        // ============================================================
+        async function verDetalhes(id) {
+            console.log('👁️ verDetalhes() chamado para ID:', id);
+            idSuspeitoAtual = id;
+
+            const modal = document.getElementById('modalFicha');
+            const body = document.getElementById('modalFichaBody');
+
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando ficha...</div>';
+
+            try {
+                const { data: suspeito, error } = await sb
+                    .from('suspeito')
+                    .select('*')
+                    .eq('id_suspeito', id)
+                    .single();
+
+                if (error) throw error;
+
+                const { data: midias } = await sb
+                    .from('arquivo_midia')
+                    .select('caminho_fisico, nome_seguro, tipo_midia')
+                    .eq('tipo_entidade', 'SUSPEITO')
+                    .eq('id_entidade', id)
+                    .eq('deletado', false);
+
+                let fotoUrl = null;
+                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
+                const principal = fotos.find(m =>
+                    m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')
+                ) || fotos[0];
+
+                if (principal && principal.caminho_fisico) {
+                    const { data: signed } = await sb.storage
+                        .from(BUCKET_FOTOS)
+                        .createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
+                    fotoUrl = signed?.signedUrl || null;
+                }
+
+                const fotoHTML = fotoUrl
+                    ? `<img src="${fotoUrl}" alt="${suspeito.nome_completo}" class="ficha-foto" />`
+                    : `<div class="ficha-foto-placeholder"><i class="fas fa-user-secret"></i><span style="font-size:12px;">Sem foto</span></div>`;
+
+                const statusBadge = suspeito.status_atual
+                    ? `<span class="status-badge ${suspeito.status_atual.toLowerCase()}">${suspeito.status_atual}</span>`
+                    : 'N/A';
+
+                const perigoBadge = suspeito.nivel_periculosidade
+                    ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>`
+                    : 'N/A';
+
+                body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-4 text-center">
+                            ${fotoHTML}
+                            <div class="mt-3">
+                                <div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Status</div>
+                                ${statusBadge}
+                            </div>
+                            <div class="mt-2">
+                                <div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Periculosidade</div>
+                                ${perigoBadge}
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="ficha-campo"><span class="label">ID</span><span class="valor">#${suspeito.id_suspeito}</span></div>
+                            <div class="ficha-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${suspeito.nome_completo || 'N/A'}</strong></span></div>
+                            <div class="ficha-campo"><span class="label">Apelido</span><span class="valor">${suspeito.apelido || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">RG</span><span class="valor">${suspeito.rg || '-'} ${suspeito.orgao_expedidor ? '(' + suspeito.orgao_expedidor + ')' : ''}</span></div>
+                            <div class="ficha-campo"><span class="label">Data de Nascimento</span><span class="valor">${suspeito.data_nascimento || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Sexo</span><span class="valor">${suspeito.sexo === 'M' ? 'Masculino' : suspeito.sexo === 'F' ? 'Feminino' : suspeito.sexo || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Endereço</span><span class="valor">${[suspeito.logradouro, suspeito.numero, suspeito.bairro, suspeito.cidade, suspeito.uf].filter(Boolean).join(', ') || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Características Físicas</span><span class="valor">Altura: ${suspeito.altura || '-'}m · Peso: ${suspeito.peso || '-'}kg · Olhos: ${suspeito.cor_olhos || '-'} · Cabelo: ${suspeito.cor_cabelo || '-'}</span></div>
+                            ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
+                            ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('❌ Erro ao carregar ficha:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharFicha() {
+            document.getElementById('modalFicha').classList.remove('open');
+            idSuspeitoAtual = null;
+        }
+
+        function imprimirFicha(id) {
+            verDetalhes(id);
+            setTimeout(() => window.print(), 800);
+        }
+
+        function imprimirFichaAtual() {
+            window.print();
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') fecharFicha();
+        });
+
+        document.getElementById('modalFicha')?.addEventListener('click', function(e) {
+            if (e.target === this) fecharFicha();
+        });
+
+        // ============================================================
         // AÇÕES
         // ============================================================
-        function verDetalhes(id) { alert(`📋 Visualizando detalhes do suspeito ID: ${id}`); }
-        function imprimirFicha(id) { alert(`🖨️ Imprimindo ficha do registro ID: ${id}`); }
-        function emitirAlerta(id) { if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) { alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`); } }
+        function emitirAlerta(id) {
+            if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
+                alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
+            }
+        }
 
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.3.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.4.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             realizarBusca();
         });
