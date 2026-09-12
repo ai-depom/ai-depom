@@ -2,14 +2,15 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.1.0
-     Data: 12/09/2026 - 03:30
+     Versão: 2.2.0
+     Data: 12/09/2026 - 04:00
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [12/09/2026 04:00] Corrigido conflito 'supabase' (CDN já define window.supabase)
+     - [12/09/2026 04:00] Alias 'sb' substitui 'supabase' em todo o script
      - [12/09/2026 03:30] Correção de conflito de variável supabase
      - [12/09/2026 03:30] Uso do window.supabaseClient existente
-     - [12/09/2026 03:30] Diferenciação foto principal x secundária
      - [12/09/2026 02:00] Exibição de foto dos suspeitos na tabela
      - [12/09/2026 02:00] Signed URL do bucket privado (createSignedUrl)
      - [12/09/2026 02:00] JOIN com arquivo_midia no SELECT
@@ -512,31 +513,31 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE — v2.1.0
-        // Usa o cliente já existente (window.supabaseClient) OU cria novo
+        // CONFIGURAÇÃO SUPABASE — v2.2.0
+        // Usa alias 'sb' para NÃO colidir com window.supabase (CDN oficial)
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600; // 1 hora
 
-        // ✅ Evita conflito: verifica se já existe um cliente global
-        const supabase = (function() {
-            // 1) Se já existe window.supabaseClient (do supabase-config.js), usa
+        // ⚠️ A CDN oficial do Supabase já define 'window.supabase'
+        // Por isso usamos 'sb' como alias — sem risco de colisão
+        const sb = (function() {
+            // 1) Se já existe um cliente pronto (do supabase-config.js), usa
             if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) {
-                console.log('✅ Usando window.supabaseClient existente');
+                console.log('✅ [07-consulta] Usando window.supabaseClient');
                 return window.supabaseClient;
             }
-
-            // 2) Se window.supabase já é um cliente (não a lib), usa
+            // 2) Se window.supabase já é um cliente (tem .from), usa
             if (typeof window.supabase !== 'undefined' && window.supabase?.from) {
-                console.log('✅ Usando window.supabase existente');
+                console.log('✅ [07-consulta] Usando window.supabase');
                 return window.supabase;
             }
-
-            // 3) Senão, cria um novo (fallback)
-            console.warn('⚠️ Nenhum cliente global encontrado. Criando novo...');
-            const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
-            const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
-            return window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+            // 3) Senão, cria um novo via window.supabase.createClient
+            console.warn('⚠️ [07-consulta] Criando cliente Supabase próprio');
+            return window.supabase.createClient(
+                'https://szkgaqouivsvlyujfvmz.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc'
+            );
         })();
 
         // ============================================================
@@ -563,9 +564,9 @@
         // ============================================================
         async function carregarUsuario() {
             try {
-                const { data: { user } } = await supabase.auth.getUser();
+                const { data: { user } } = await sb.auth.getUser();
                 if (user) {
-                    const { data: usuario } = await supabase.from('usuarios').select('nome_completo, setor').eq('id', user.id).single();
+                    const { data: usuario } = await sb.from('usuarios').select('nome_completo, setor').eq('id', user.id).single();
                     if (usuario) {
                         document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin Master';
                         document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador Master';
@@ -579,9 +580,9 @@
         // ============================================================
         async function carregarEstatisticas() {
             try {
-                const { count: totalPresos } = await supabase.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PRESO');
-                const { count: totalProcurados } = await supabase.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PROCURADO');
-                const { count: totalForagidos } = await supabase.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'FORAGIDO');
+                const { count: totalPresos } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PRESO');
+                const { count: totalProcurados } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PROCURADO');
+                const { count: totalForagidos } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'FORAGIDO');
                 document.getElementById('totalPresos').querySelector('.count').textContent = totalPresos || 0;
                 document.getElementById('totalProcurados').querySelector('.count').textContent = totalProcurados || 0;
                 document.getElementById('totalForagidos').querySelector('.count').textContent = totalForagidos || 0;
@@ -592,6 +593,7 @@
         // BUSCA PRINCIPAL — COM JOIN EM arquivo_midia + SIGNED URL
         // ============================================================
         async function realizarBusca() {
+            console.log('🔍 realizarBusca() chamada');
             const termo = document.getElementById('buscaGlobal').value;
             const status = document.getElementById('filtroStatus').value;
             const periculosidade = document.getElementById('filtroPericulosidade').value;
@@ -599,7 +601,7 @@
             const dataFim = document.getElementById('filtroDataFim').value;
 
             try {
-                let query = supabase
+                let query = sb
                     .from('suspeito')
                     .select(`
                         id_suspeito,
@@ -634,6 +636,9 @@
 
                 if (error) throw error;
 
+                console.log('📋 Registros encontrados:', count);
+                console.log('📋 Dados brutos:', data);
+
                 // ✅ Para cada suspeito, gera URL assinada da foto PRINCIPAL
                 const dadosComFoto = await Promise.all((data || []).map(async (s) => {
                     const midias = (s.arquivo_midia || []).filter(m =>
@@ -648,7 +653,7 @@
                     let fotoUrl = null;
                     if (midiaPrincipal && midiaPrincipal.caminho_fisico) {
                         try {
-                            const { data: signed, error: signedError } = await supabase.storage
+                            const { data: signed, error: signedError } = await sb.storage
                                 .from(BUCKET_FOTOS)
                                 .createSignedUrl(midiaPrincipal.caminho_fisico, URL_EXPIRACAO_S);
 
@@ -767,7 +772,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.1.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.2.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             realizarBusca();
         });
