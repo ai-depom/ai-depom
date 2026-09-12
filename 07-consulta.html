@@ -2,16 +2,18 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.0.0
-     Data: 12/09/2026 - 02:00
+     Versão: 2.1.0
+     Data: 12/09/2026 - 03:30
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [12/09/2026 03:30] Correção de conflito de variável supabase
+     - [12/09/2026 03:30] Uso do window.supabaseClient existente
+     - [12/09/2026 03:30] Diferenciação foto principal x secundária
      - [12/09/2026 02:00] Exibição de foto dos suspeitos na tabela
      - [12/09/2026 02:00] Signed URL do bucket privado (createSignedUrl)
      - [12/09/2026 02:00] JOIN com arquivo_midia no SELECT
      - [12/09/2026 02:00] Coluna "Foto" adicionada na tabela
-     - [12/09/2026 02:00] Correção da chave anon do Supabase
      ============================================================
 -->
 <!DOCTYPE html>
@@ -510,14 +512,32 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE
+        // CONFIGURAÇÃO SUPABASE — v2.1.0
+        // Usa o cliente já existente (window.supabaseClient) OU cria novo
         // ============================================================
-        const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
-        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600; // 1 hora
+
+        // ✅ Evita conflito: verifica se já existe um cliente global
+        const supabase = (function() {
+            // 1) Se já existe window.supabaseClient (do supabase-config.js), usa
+            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) {
+                console.log('✅ Usando window.supabaseClient existente');
+                return window.supabaseClient;
+            }
+
+            // 2) Se window.supabase já é um cliente (não a lib), usa
+            if (typeof window.supabase !== 'undefined' && window.supabase?.from) {
+                console.log('✅ Usando window.supabase existente');
+                return window.supabase;
+            }
+
+            // 3) Senão, cria um novo (fallback)
+            console.warn('⚠️ Nenhum cliente global encontrado. Criando novo...');
+            const supabaseUrl = 'https://szkgaqouivsvlyujfvmz.supabase.co';
+            const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc';
+            return window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+        })();
 
         // ============================================================
         // CONTROLES DE JANELA
@@ -614,23 +634,28 @@
 
                 if (error) throw error;
 
-                // ✅ Para cada suspeito, gera a URL assinada da foto principal
+                // ✅ Para cada suspeito, gera URL assinada da foto PRINCIPAL
                 const dadosComFoto = await Promise.all((data || []).map(async (s) => {
-                    const midia = (s.arquivo_midia || []).find(m =>
+                    const midias = (s.arquivo_midia || []).filter(m =>
                         m.tipo_midia === 'FOTO' && m.deletado === false
                     );
 
+                    // Prefere a que tem "principal" no nome_seguro
+                    const midiaPrincipal = midias.find(m =>
+                        m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')
+                    ) || midias[0];
+
                     let fotoUrl = null;
-                    if (midia && midia.caminho_fisico) {
+                    if (midiaPrincipal && midiaPrincipal.caminho_fisico) {
                         try {
                             const { data: signed, error: signedError } = await supabase.storage
                                 .from(BUCKET_FOTOS)
-                                .createSignedUrl(midia.caminho_fisico, URL_EXPIRACAO_S);
+                                .createSignedUrl(midiaPrincipal.caminho_fisico, URL_EXPIRACAO_S);
 
                             if (!signedError && signed?.signedUrl) {
                                 fotoUrl = signed.signedUrl;
                             } else {
-                                console.warn('⚠️ Sem URL assinada para:', midia.caminho_fisico, signedError);
+                                console.warn('⚠️ Sem URL assinada para:', midiaPrincipal.caminho_fisico, signedError);
                             }
                         } catch (err) {
                             console.warn('⚠️ Erro ao gerar signed URL:', err);
@@ -679,7 +704,7 @@
                     'LIBERADO': '✅ LIBERADO'
                 }[d.status_atual] || d.status_atual || 'DESCONHECIDO';
 
-                // ✅ Foto: usa signed URL ou placeholder
+                // ✅ Foto: signed URL ou placeholder
                 const fotoHTML = d.fotoUrl
                     ? `<img src="${d.fotoUrl}" alt="${d.nome_completo || 'Suspeito'}" class="foto-suspeito"
                             onerror="this.onerror=null; this.outerHTML='<div class=\\'foto-placeholder\\'><i class=\\'fas fa-user-secret\\'></i></div>';" />`
@@ -742,7 +767,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.1.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             realizarBusca();
         });
