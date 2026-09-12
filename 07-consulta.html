@@ -2,14 +2,17 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.7.0
-     Data: 12/09/2026 - 10:00
+     Versão: 2.7.2
+     Data: 12/09/2026 - 11:30
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [12/09/2026 11:30] Botão X corrigido (closeWindow funcional)
+     - [12/09/2026 11:30] Logout funcional (Supabase signOut + redirect)
+     - [12/09/2026 11:30] Sidebar footer sem sobrepor o menu SAIR
+     - [12/09/2026 11:30] Removida duplicação </script></body></html>
      - [12/09/2026 10:00] Edição com histórico versionado
      - [12/09/2026 10:00] Modal de edição respeitando perfis
      - [12/09/2026 10:00] Modal de histórico com diff antes/depois
-     - [12/09/2026 10:00] Justificativa obrigatória com motivos
      - [12/09/2026 10:00] Botão ✏️ Editar, 📜 Histórico, 📸 Fotos
      ============================================================
 -->
@@ -77,15 +80,19 @@
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #000; }
 
+        /* SIDEBAR com flexbox (footer não sobrepõe o menu) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999; padding: 20px 0;
+            z-index: 999;
+            padding: 20px 0 0 0;
             transition: transform 0.3s ease;
             overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .sidebar-brand .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: var(--gradient-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
@@ -93,7 +100,7 @@
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
 
-        .sidebar-menu { padding: 0 12px; }
+        .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
             display: flex; align-items: center; gap: 14px;
@@ -106,7 +113,13 @@
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
 
-        .sidebar-footer { position: absolute; bottom: 20px; left: 0; right: 0; padding: 0 20px; border-top: 1px solid var(--border-color); padding-top: 15px; }
+        .sidebar-footer {
+            position: relative;
+            padding: 15px 20px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.98);
+            margin-top: auto;
+        }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #000; }
         .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
@@ -292,7 +305,7 @@
             <a class="menu-item" onclick="alert('Abrindo auditoria...')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="alert('Abrindo configurações...')"><i class="fas fa-cog"></i> Configurações</a>
-            <a class="menu-item" onclick="alert('Saindo do sistema...')"><i class="fas fa-sign-out-alt"></i> Sair</a>
+            <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info-sidebar">
@@ -405,9 +418,8 @@
             </div>
         </div>
     </main>
-        <!-- ============================================================ -->
-    <!-- MODAL DA FICHA DO SUSPEITO                                    -->
-    <!-- ============================================================ -->
+
+    <!-- MODAL FICHA -->
     <div class="modal-ficha" id="modalFicha">
         <div class="modal-content">
             <div class="modal-header">
@@ -415,9 +427,7 @@
                 <button class="btn-icon" onclick="fecharFicha()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body" id="modalFichaBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
-                    <i class="fas fa-spinner fa-spin"></i> Carregando...
-                </div>
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
             </div>
             <div class="modal-footer">
                 <button class="btn-outline-gold" onclick="fecharFicha()"><i class="fas fa-times me-2"></i>FECHAR</button>
@@ -426,9 +436,7 @@
         </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- MODAL DE EDIÇÃO                                               -->
-    <!-- ============================================================ -->
+    <!-- MODAL EDIÇÃO -->
     <div class="modal-edicao" id="modalEdicao">
         <div class="modal-content modal-lg">
             <div class="modal-header">
@@ -436,16 +444,12 @@
                 <button class="btn-icon" onclick="fecharEdicao()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body" id="modalEdicaoBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
-                    <i class="fas fa-spinner fa-spin"></i> Carregando dados...
-                </div>
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados...</div>
             </div>
         </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- MODAL DE HISTÓRICO                                            -->
-    <!-- ============================================================ -->
+    <!-- MODAL HISTÓRICO -->
     <div class="modal-historico" id="modalHistorico">
         <div class="modal-content modal-lg">
             <div class="modal-header">
@@ -453,16 +457,12 @@
                 <button class="btn-icon" onclick="fecharHistorico()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body" id="modalHistoricoBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
-                    <i class="fas fa-spinner fa-spin"></i> Carregando histórico...
-                </div>
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>
             </div>
         </div>
     </div>
 
-    <!-- ============================================================ -->
-    <!-- MODAL DE FOTOS                                                -->
-    <!-- ============================================================ -->
+    <!-- MODAL FOTOS -->
     <div class="modal-fotos" id="modalFotos">
         <div class="modal-content">
             <div class="modal-header">
@@ -470,16 +470,15 @@
                 <button class="btn-icon" onclick="fecharFotos()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body" id="modalFotosBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
-                    <i class="fas fa-spinner fa-spin"></i> Carregando fotos...
-                </div>
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>
             </div>
         </div>
     </div>
-        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE — v2.7.0
+        // CONFIGURAÇÃO SUPABASE
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
@@ -501,14 +500,58 @@
         })();
 
         // ============================================================
-        // CONTROLES DE JANELA
+        // LOGOUT — v2.7.2
+        // ============================================================
+        async function fazerLogout() {
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try {
+                if (sb && sb.auth && sb.auth.signOut) {
+                    await sb.auth.signOut();
+                }
+            } catch (error) {
+                console.error('❌ Erro ao fazer logout no Supabase:', error);
+            } finally {
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                } catch (e) { /* ignore */ }
+                window.location.href = '02-login.html';
+            }
+        }
+
+        // ============================================================
+        // CONTROLES DE JANELA — v2.7.2
         // ============================================================
         function minimizeWindow() {
-            try { if (window.moveTo && window.resizeTo) { window.moveTo(0, 0); window.resizeTo(screen.width / 2, screen.height / 2); } else { alert('Use o botão de minimizar do seu navegador.'); } } catch (e) { console.warn('Minimizar não suportado:', e); }
+            try {
+                if (window.moveTo && window.resizeTo) {
+                    window.moveTo(0, 0);
+                    window.resizeTo(screen.width / 2, screen.height / 2);
+                } else {
+                    alert('Use o botão de minimizar do seu navegador.');
+                }
+            } catch (e) { console.warn('Minimizar não suportado:', e); }
         }
+
         function closeWindow() {
-            if (confirm('Deseja realmente fechar o sistema?')) { try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; } }
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+
+            // Tenta fechar (funciona se foi aberto via window.open)
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) {
+                console.warn('⚠️ window.close() bloqueado pelo navegador');
+            }
+
+            // Fallback: se ainda estiver aberto após 300ms, redireciona
+            setTimeout(function() {
+                if (!window.closed) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }, 300);
         }
+
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
         // ============================================================
@@ -783,18 +826,7 @@
         function irPagina(num) { paginaAtual = num; realizarBusca(); }
 
         // ============================================================
-        // INICIALIZAÇÃO
-        // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.7.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
-            carregarUsuario();
-        });
-
-        document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { realizarBusca(); }
-        });
-             // ============================================================
-        // MODAL FICHA — verDetalhes
+        // MODAL FICHA
         // ============================================================
         async function verDetalhes(id) {
             console.log('👁️ verDetalhes() chamado para ID:', id);
@@ -898,7 +930,6 @@
 
                 const campos = await carregarCamposEditaveis();
 
-                // Verifica se o perfil atual pode editar algo
                 const camposPermitidos = campos.filter(c => 
                     (c.perfis_permitidos || []).includes(perfilUsuarioAtual)
                 );
@@ -1074,7 +1105,6 @@
                     return;
                 }
 
-                // Monta o objeto só com campos editáveis + alterados
                 const campos = await carregarCamposEditaveis();
                 const dadosNovos = {};
 
@@ -1090,7 +1120,6 @@
                     }
 
                     const valorAntigo = suspeitoOriginal[campo.nome_campo];
-                    // Só inclui se mudou
                     if (JSON.stringify(valor) !== JSON.stringify(valorAntigo)) {
                         dadosNovos[campo.nome_campo] = valor;
                     }
@@ -1104,9 +1133,7 @@
                 }
 
                 console.log('📝 Campos alterados:', Object.keys(dadosNovos));
-                console.log('📝 Valores novos:', dadosNovos);
 
-                // 1. Seta a justificativa no contexto da sessão (trigger vai capturar)
                 const justificativaCompleta = `[${motivo}] ${justificativa}`;
                 const { error: rpcError } = await sb.rpc('set_justificativa', {
                     justificativa: justificativaCompleta,
@@ -1115,11 +1142,9 @@
 
                 if (rpcError) console.warn('⚠️ RPC erro:', rpcError);
 
-                // 2. Adiciona os campos de auditoria
                 dadosNovos.data_atualizacao = new Date().toISOString();
                 dadosNovos.id_usuario_atualizacao = usuarioAtual.id;
 
-                // 3. UPDATE no suspeito (trigger captura e grava histórico)
                 const { error: updateError } = await sb
                     .from('suspeito')
                     .update(dadosNovos)
@@ -1129,7 +1154,6 @@
 
                 console.log('✅ Edição salva com sucesso!');
 
-                // Toast de sucesso
                 const toast = document.createElement('div');
                 toast.style.cssText = 'position:fixed;top:70px;right:20px;background:#0a0a0a;border:1px solid #003322;border-left:4px solid #00ff88;border-radius:12px;padding:16px 20px;color:#00ff88;z-index:99999;min-width:300px;box-shadow:0 10px 40px rgba(0,0,0,0.8);';
                 toast.innerHTML = `
@@ -1144,7 +1168,6 @@
                 setTimeout(() => toast.remove(), 5000);
 
                 fecharEdicao();
-                // Recarrega a tabela mantendo os filtros
                 await realizarBusca();
 
             } catch (error) {
@@ -1314,6 +1337,18 @@
             }
         }
 
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ AI-DEPOM - Consulta v2.7.2 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            carregarUsuario();
+        });
+
+        document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { realizarBusca(); }
+        });
+
         // Fecha modais com ESC
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
@@ -1323,9 +1358,6 @@
                 fecharFotos();
             }
         });
-    </script>
-</body>
-</html>
     </script>
 </body>
 </html>
