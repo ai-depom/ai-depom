@@ -1,0 +1,535 @@
+<!-- ============================================================
+     AI-DEPOM - REDEFINIR SENHA (via link do e-mail)
+     ============================================================
+     Arquivo: 03b-redefinir-senha.html
+     Versão: 1.0.0
+     Data: 12/09/2026 - 15:30
+     ============================================================
+     ALTERAÇÕES RECENTES:
+     - [12/09/2026 15:30] Página criada para fluxo de recovery
+     - [12/09/2026 15:30] Detecta type=recovery na URL
+     - [12/09/2026 15:30] Após salvar, faz logout e vai pro login
+     - [12/09/2026 15:30] NÃO substitui 03-primeiro-acesso.html
+     ============================================================
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>AI-DEPOM - Redefinir Senha</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc77;
+            --border-color: #003322;
+            --shadow-color: rgba(0, 255, 136, 0.08);
+            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%; min-height: 100vh;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        body {
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px; min-height: 100vh;
+        }
+        .container {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%; max-width: 500px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: var(--gradient-green);
+            animation: gradientMove 3s ease infinite;
+            background-size: 200% 100%;
+        }
+        @keyframes gradientMove {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .logo-area { text-align: center; margin-bottom: 30px; }
+        .logo-area .icon {
+            font-size: 48px;
+            color: var(--text-primary);
+            background: rgba(0, 255, 136, 0.05);
+            width: 90px; height: 90px; line-height: 90px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-bottom: 15px;
+            border: 2px solid var(--border-color);
+            box-shadow: 0 0 40px var(--shadow-color);
+        }
+        .logo-area h1 { font-size: 24px; color: var(--text-primary); font-weight: 700; letter-spacing: 2px; }
+        .logo-area p { color: rgba(0, 255, 136, 0.4); font-size: 13px; margin-top: 8px; letter-spacing: 1px; }
+        .info-box {
+            background: rgba(0, 255, 136, 0.03);
+            border-left: 4px solid var(--text-primary);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .info-box strong { color: var(--text-primary); }
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: rgba(0, 255, 136, 0.5);
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .form-group .input-wrapper { position: relative; }
+        .form-group .input-wrapper > i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 16px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 14px 45px 14px 45px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--text-primary);
+            background: rgba(0, 0, 0, 0.7);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
+        }
+        .form-group input::placeholder { color: rgba(0, 255, 136, 0.2); }
+        .form-group .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: rgba(0, 255, 136, 0.3);
+            background: none;
+            border: none;
+            font-size: 16px;
+        }
+        .form-group .toggle-password:hover { color: var(--text-primary); }
+        .password-requirements {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 12px;
+        }
+        .password-requirements strong {
+            display: block;
+            margin-bottom: 10px;
+            color: rgba(0, 255, 136, 0.6);
+            letter-spacing: 1px;
+        }
+        .password-requirements ul { list-style: none; padding: 0; }
+        .password-requirements ul li {
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            color: rgba(0, 255, 136, 0.2);
+        }
+        .password-requirements ul li i { font-size: 12px; width: 16px; }
+        .password-requirements ul li.valid { color: var(--text-primary); }
+        .btn-primary {
+            width: 100%;
+            padding: 15px;
+            background: var(--gradient-green);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.3);
+        }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-primary .spinner {
+            display: none;
+            width: 18px; height: 18px;
+            border: 3px solid rgba(0, 0, 0, 0.2);
+            border-top-color: #000;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        .btn-primary.loading .spinner { display: block; }
+        .btn-primary.loading .btn-text { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-message, .success-message {
+            display: none;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            margin-bottom: 20px;
+            align-items: center;
+            gap: 10px;
+        }
+        .error-message.show, .success-message.show { display: flex; }
+        .error-message {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border-left: 4px solid #dc3545;
+        }
+        .success-message {
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--text-primary);
+            border-left: 4px solid var(--text-primary);
+        }
+        .loading-state {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .loading-state i {
+            font-size: 40px;
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            display: block;
+        }
+        .loading-state p {
+            color: rgba(0, 255, 136, 0.5);
+            font-size: 14px;
+        }
+        .footer-text {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            font-size: 11px;
+            color: rgba(0, 255, 136, 0.2);
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-area">
+            <div class="icon"><i class="fas fa-unlock-alt"></i></div>
+            <h1>AI-DEPOM</h1>
+            <p>REDEFINIR SENHA</p>
+        </div>
+
+        <div id="errorMessage" class="error-message">
+            <i class="fas fa-exclamation-circle"></i>
+            <span id="errorText">Erro ao redefinir senha.</span>
+        </div>
+
+        <div id="successMessage" class="success-message">
+            <i class="fas fa-check-circle"></i>
+            <span id="successText">Senha alterada com sucesso!</span>
+        </div>
+
+        <!-- ESTADO DE CARREGAMENTO -->
+        <div id="loadingState" class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>Validando seu link de recuperação...</p>
+        </div>
+
+        <!-- FORMULÁRIO -->
+        <div id="formContainer" style="display:none;">
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <strong>Redefinição de senha</strong><br>
+                Você chegou aqui através do link de recuperação. Crie uma nova senha para acessar o sistema.
+            </div>
+
+            <form id="formRedefinir">
+                <div class="form-group">
+                    <label for="novaSenha"><i class="fas fa-lock"></i> Nova Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-key"></i>
+                        <input type="password" id="novaSenha" placeholder="Digite sua nova senha" required>
+                        <button type="button" class="toggle-password" id="toggleNova"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmarSenha"><i class="fas fa-check"></i> Confirmar Senha</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-check-circle"></i>
+                        <input type="password" id="confirmarSenha" placeholder="Confirme sua nova senha" required>
+                        <button type="button" class="toggle-password" id="toggleConfirmar"><i class="fas fa-eye"></i></button>
+                    </div>
+                </div>
+
+                <div class="password-requirements">
+                    <strong>REQUISITOS DA SENHA</strong>
+                    <ul>
+                        <li id="reqLength"><i class="fas fa-circle"></i> Mínimo 8 caracteres</li>
+                        <li id="reqUppercase"><i class="fas fa-circle"></i> Pelo menos 1 letra maiúscula</li>
+                        <li id="reqLowercase"><i class="fas fa-circle"></i> Pelo menos 1 letra minúscula</li>
+                        <li id="reqNumber"><i class="fas fa-circle"></i> Pelo menos 1 número</li>
+                        <li id="reqSpecial"><i class="fas fa-circle"></i> Pelo menos 1 caractere especial</li>
+                    </ul>
+                </div>
+
+                <button type="submit" class="btn-primary" id="btnRedefinir">
+                    <span class="spinner"></span>
+                    <span class="btn-text"><i class="fas fa-save"></i> REDEFINIR SENHA</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="footer-text">
+            <i class="fas fa-shield-alt"></i> Sua segurança é nossa prioridade
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script>
+        let usuarioRecovery = null;
+
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('🔓 AI-DEPOM - Redefinir Senha v1.0.0');
+            console.log('📍 URL:', window.location.href);
+
+            // Verifica se veio do link do e-mail
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            const queryParams = new URLSearchParams(window.location.search);
+
+            const temRecovery = hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery';
+            const temToken = hashParams.has('access_token') || queryParams.has('code');
+
+            console.log('🔍 type=recovery?', temRecovery);
+            console.log('🔍 access_token/code?', temToken);
+
+            if (!temRecovery && !temToken) {
+                console.warn('⚠️ Sem token de recuperação na URL');
+                mostrarErro('Link inválido. Solicite um novo link em "Esqueci minha senha".');
+                setTimeout(() => window.location.href = '02-login.html', 4000);
+                return;
+            }
+
+            // O Supabase JS processa o token automaticamente e cria a sessão
+            try {
+                // Aguarda um instante pro Supabase processar o hash
+                await new Promise(resolve => setTimeout(resolve, 500));
+
+                const { data: { user }, error } = await window.supabaseClient.auth.getUser();
+
+                if (error || !user) {
+                    console.warn('⚠️ Não conseguiu obter usuário, aguardando evento...');
+
+                    // Registra listener pro caso do Supabase processar depois
+                    window.supabaseClient.auth.onAuthStateChange((event, session) => {
+                        console.log('🔔 Auth event:', event);
+                        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+                            usuarioRecovery = session?.user;
+                            mostrarFormulario();
+                        }
+                    });
+
+                    // Timeout de segurança
+                    setTimeout(() => {
+                        if (!usuarioRecovery) {
+                            mostrarErro('Não foi possível validar o link. Ele pode ter expirado.');
+                            setTimeout(() => window.location.href = '02-login.html', 4000);
+                        }
+                    }, 3000);
+                    return;
+                }
+
+                console.log('✅ Sessão de recovery ativa:', user.email);
+                usuarioRecovery = user;
+                mostrarFormulario();
+
+            } catch (err) {
+                console.error('❌ Erro:', err);
+                mostrarErro('Erro ao validar link: ' + err.message);
+            }
+        });
+
+        // ============================================================
+        // MOSTRAR FORMULÁRIO
+        // ============================================================
+        function mostrarFormulario() {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('formContainer').style.display = 'block';
+            console.log('📝 Formulário exibido');
+        }
+
+        // ============================================================
+        // TOGGLE SENHA
+        // ============================================================
+        document.getElementById('toggleNova').addEventListener('click', function() {
+            const input = document.getElementById('novaSenha');
+            input.setAttribute('type', input.getAttribute('type') === 'password' ? 'text' : 'password');
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        document.getElementById('toggleConfirmar').addEventListener('click', function() {
+            const input = document.getElementById('confirmarSenha');
+            input.setAttribute('type', input.getAttribute('type') === 'password' ? 'text' : 'password');
+            this.querySelector('i').classList.toggle('fa-eye');
+            this.querySelector('i').classList.toggle('fa-eye-slash');
+        });
+
+        // ============================================================
+        // VALIDAÇÃO DE SENHA
+        // ============================================================
+        function validarSenha(senha) {
+            return {
+                length: senha.length >= 8,
+                uppercase: /[A-Z]/.test(senha),
+                lowercase: /[a-z]/.test(senha),
+                number: /[0-9]/.test(senha),
+                special: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`;']/.test(senha)
+            };
+        }
+
+        function atualizarRequisitos(senha) {
+            const req = validarSenha(senha);
+            const mapa = {
+                reqLength: req.length,
+                reqUppercase: req.uppercase,
+                reqLowercase: req.lowercase,
+                reqNumber: req.number,
+                reqSpecial: req.special
+            };
+            let todosOk = true;
+            for (const [id, ok] of Object.entries(mapa)) {
+                const el = document.getElementById(id);
+                if (ok) {
+                    el.className = 'valid';
+                    el.querySelector('i').className = 'fas fa-check-circle';
+                } else {
+                    el.className = '';
+                    el.querySelector('i').className = 'fas fa-circle';
+                    todosOk = false;
+                }
+            }
+            return todosOk;
+        }
+
+        document.getElementById('novaSenha').addEventListener('input', function() {
+            atualizarRequisitos(this.value);
+        });
+
+        // ============================================================
+        // MENSAGENS
+        // ============================================================
+        function mostrarErro(msg) {
+            document.getElementById('errorText').textContent = msg;
+            document.getElementById('errorMessage').classList.add('show');
+            document.getElementById('successMessage').classList.remove('show');
+            document.getElementById('loadingState').style.display = 'none';
+        }
+
+        function mostrarSucesso(msg) {
+            document.getElementById('successText').textContent = msg;
+            document.getElementById('successMessage').classList.add('show');
+            document.getElementById('errorMessage').classList.remove('show');
+        }
+
+        // ============================================================
+        // SUBMIT — Redefinir senha
+        // ============================================================
+        document.getElementById('formRedefinir').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const nova = document.getElementById('novaSenha').value;
+            const confirmar = document.getElementById('confirmarSenha').value;
+            const btn = document.getElementById('btnRedefinir');
+
+            if (!nova || !confirmar) { mostrarErro('Preencha todos os campos.'); return; }
+            if (nova !== confirmar) { mostrarErro('As senhas não coincidem.'); return; }
+            if (!atualizarRequisitos(nova)) { mostrarErro('A senha não atende aos requisitos mínimos.'); return; }
+
+            btn.disabled = true;
+            btn.classList.add('loading');
+
+            try {
+                console.log('💾 Redefinindo senha...');
+
+                const { error: authError } = await window.supabaseClient.auth.updateUser({ password: nova });
+
+                if (authError) {
+                    console.error('❌ Erro:', authError);
+                    mostrarErro('Erro ao redefinir: ' + authError.message);
+                    return;
+                }
+
+                console.log('✅ Senha redefinida com sucesso!');
+
+                // Se o usuário tinha primeiro_acesso, desativa
+                if (usuarioRecovery) {
+                    try {
+                        await window.supabaseClient
+                            .from('usuarios')
+                            .update({ primeiro_acesso: false })
+                            .eq('id', usuarioRecovery.id);
+                    } catch (err) {
+                        console.warn('⚠️ Erro ao atualizar primeiro_acesso:', err);
+                    }
+                }
+
+                mostrarSucesso('Senha redefinida com sucesso! Redirecionando para o login...');
+
+                // Desloga e vai pro login (por segurança)
+                setTimeout(async () => {
+                    try {
+                        await window.supabaseClient.auth.signOut();
+                        localStorage.clear();
+                        sessionStorage.clear();
+                    } catch (err) {
+                        console.warn('⚠️ Erro ao deslogar:', err);
+                    }
+                    window.location.href = '02-login.html';
+                }, 2500);
+
+            } catch (error) {
+                console.error('❌ Erro inesperado:', error);
+                mostrarErro('Erro inesperado: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            }
+        });
+    </script>
+</body>
+</html>
