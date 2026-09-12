@@ -2,15 +2,17 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.4.0
-     Data: 12/09/2026 - 05:00
+     Versão: 2.5.0
+     Data: 12/09/2026 - 06:00
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [12/09/2026 06:00] Busca sob demanda (sem auto-busca ao abrir)
+     - [12/09/2026 06:00] Mensagem inicial orientando o pesquisador
+     - [12/09/2026 06:00] Contadores só atualizam após busca
      - [12/09/2026 05:00] Ficha do suspeito com modal + foto
      - [12/09/2026 05:00] verDetalhes() carrega dados completos + signed URL
-     - [12/09/2026 05:00] Impressão da ficha funcional
-     - [12/09/2026 04:30] Query separada para arquivo_midia (sem JOIN implícito)
+     - [12/09/2026 04:30] Query separada para arquivo_midia (sem JOIN)
      - [12/09/2026 04:00] Alias 'sb' para evitar conflito com window.supabase
      - [12/09/2026 02:00] Exibição de foto dos suspeitos na tabela
      ============================================================
@@ -195,9 +197,7 @@
 
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        /* ============================================================ */
-        /* MODAL DA FICHA                                                */
-        /* ============================================================ */
+        /* MODAL DA FICHA */
         .modal-ficha {
             display: none;
             position: fixed;
@@ -318,7 +318,7 @@
                 <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                 <div class="page-title">
                     <h4><i class="fas fa-search me-2"></i>Consulta de Suspeitos</h4>
-                    <small id="totalRegistrosInfo">Carregando registros...</small>
+                    <small id="totalRegistrosInfo">Aguardando busca...</small>
                 </div>
             </div>
             <div class="top-actions">
@@ -335,7 +335,7 @@
                 <div class="col-md-8">
                     <div class="input-group">
                         <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); color:rgba(0,255,136,0.2);"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG..." onkeyup="realizarBusca()">
+                        <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG...">
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -346,7 +346,7 @@
             <div class="row g-3 mb-4">
                 <div class="col-md-3">
                     <label class="form-label">Status</label>
-                    <select class="form-select" id="filtroStatus" onchange="realizarBusca()">
+                    <select class="form-select" id="filtroStatus">
                         <option value="">Todos</option>
                         <option value="PRESO">Preso</option>
                         <option value="PROCURADO">Procurado</option>
@@ -358,7 +358,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Periculosidade</label>
-                    <select class="form-select" id="filtroPericulosidade" onchange="realizarBusca()">
+                    <select class="form-select" id="filtroPericulosidade">
                         <option value="">Todos</option>
                         <option value="BAIXO">Baixo</option>
                         <option value="MEDIO">Médio</option>
@@ -368,11 +368,11 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Data Início</label>
-                    <input type="date" class="form-control" id="filtroDataInicio" onchange="realizarBusca()">
+                    <input type="date" class="form-control" id="filtroDataInicio">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Data Fim</label>
-                    <input type="date" class="form-control" id="filtroDataFim" onchange="realizarBusca()">
+                    <input type="date" class="form-control" id="filtroDataFim">
                 </div>
             </div>
 
@@ -392,8 +392,12 @@
                         </thead>
                         <tbody id="resultadosConsulta">
                             <tr>
-                                <td colspan="7" class="text-center py-4" style="color: rgba(0, 255, 136, 0.2);">
-                                    <i class="fas fa-spinner fa-spin"></i> Carregando dados...
+                                <td colspan="7" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                                    <i class="fas fa-search" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
+                                    <div style="font-size: 14px; margin-bottom: 6px;">Faça uma busca para ver os resultados</div>
+                                    <small style="font-size: 11px; color: rgba(0, 255, 136, 0.2);">
+                                        Use os campos acima e clique em <strong>BUSCAR</strong>
+                                    </small>
                                 </td>
                             </tr>
                         </tbody>
@@ -401,22 +405,18 @@
                 </div>
 
                 <div class="d-flex justify-content-between align-items-center mt-4">
-                    <small id="infoPagina" style="color: rgba(0, 255, 136, 0.3);">Carregando...</small>
+                    <small id="infoPagina" style="color: rgba(0, 255, 136, 0.3);"></small>
                     <div id="paginacaoControles">
-                        <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior"><i class="fas fa-chevron-left"></i></button>
-                        <span id="numerosPaginas">
-                            <button class="btn-icon active" onclick="irPagina(1)" style="background:rgba(0,255,136,0.08); border-color:var(--text-primary); color:var(--text-primary);">1</button>
-                        </span>
-                        <button class="btn-icon ms-1" onclick="proximaPagina()" id="btnProximo"><i class="fas fa-chevron-right"></i></button>
+                        <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior" style="display:none;"><i class="fas fa-chevron-left"></i></button>
+                        <span id="numerosPaginas"></span>
+                        <button class="btn-icon ms-1" onclick="proximaPagina()" id="btnProximo" style="display:none;"><i class="fas fa-chevron-right"></i></button>
                     </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- ============================================================ -->
-    <!-- MODAL DA FICHA DO SUSPEITO                                    -->
-    <!-- ============================================================ -->
+    <!-- MODAL DA FICHA DO SUSPEITO -->
     <div class="modal-ficha" id="modalFicha">
         <div class="modal-ficha-content">
             <div class="modal-ficha-header">
@@ -438,7 +438,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE — v2.4.0
+        // CONFIGURAÇÃO SUPABASE — v2.5.0
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
@@ -510,11 +510,11 @@
         }
 
         // ============================================================
-        // BUSCA PRINCIPAL
+        // BUSCA PRINCIPAL — SOB DEMANDA
         // ============================================================
         async function realizarBusca() {
             console.log('🔍 realizarBusca() chamada');
-            const termo = document.getElementById('buscaGlobal').value;
+            const termo = document.getElementById('buscaGlobal').value.trim();
             const status = document.getElementById('filtroStatus').value;
             const periculosidade = document.getElementById('filtroPericulosidade').value;
             const dataInicio = document.getElementById('filtroDataInicio').value;
@@ -607,9 +607,12 @@
             const tbody = document.getElementById('resultadosConsulta');
 
             if (dadosAtuais.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4" style="color: rgba(0, 255, 136, 0.2);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td></tr>`;
                 document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
-                document.getElementById('totalRegistrosInfo').textContent = '0 registros';
+                document.getElementById('totalRegistrosInfo').textContent = 'Nenhum resultado';
+                document.getElementById('numerosPaginas').innerHTML = '';
+                document.getElementById('btnAnterior').style.display = 'none';
+                document.getElementById('btnProximo').style.display = 'none';
                 return;
             }
 
@@ -645,8 +648,8 @@
 
             const inicio = (paginaAtual - 1) * itensPorPagina + 1;
             const fim = Math.min(paginaAtual * itensPorPagina, totalRegistros);
-            document.getElementById('infoPagina').textContent = `Mostrando ${totalRegistros > 0 ? inicio : 0}-${fim} de ${totalRegistros} registros`;
-            document.getElementById('totalRegistrosInfo').textContent = `${totalRegistros} registros`;
+            document.getElementById('infoPagina').textContent = `Mostrando ${inicio}-${fim} de ${totalRegistros} registros`;
+            document.getElementById('totalRegistrosInfo').textContent = `${totalRegistros} registros encontrados`;
             atualizarPaginacao();
         }
 
@@ -794,16 +797,21 @@
         }
 
         // ============================================================
-        // INICIALIZAÇÃO
+        // INICIALIZAÇÃO — v2.5.0 — sem busca automática
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.4.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.5.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
-            realizarBusca();
+            // ❌ NÃO chama realizarBusca() automaticamente
+            // A tabela já vem com mensagem de "Faça uma busca" no HTML
         });
 
+        // Busca ao apertar Enter no campo de texto
         document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { realizarBusca(); }
+            if (e.key === 'Enter') { 
+                paginaAtual = 1;  // volta pra página 1 em nova busca
+                realizarBusca(); 
+            }
         });
     </script>
 </body>
