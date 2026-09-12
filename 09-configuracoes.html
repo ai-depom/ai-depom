@@ -1,4 +1,19 @@
- <!DOCTYPE html>
+ <!-- ============================================================
+     AI-DEPOM - CONFIGURACOES
+     ============================================================
+     Arquivo: 09-configuracoes.html
+     Versão: 1.0.1
+     Data: 12/09/2026 - 15:45
+     ============================================================
+     ALTERAÇÕES RECENTES:
+     - [12/09/2026 15:45] closeWindow() robusto (fallback)
+     - [12/09/2026 15:45] fazerLogout() com fallback duplo
+     - [12/09/2026 15:45] Sidebar flexbox (footer sem overlap)
+     - [12/09/2026 15:45] Correção do </body> antes do </html>
+     - [12/09/2026 15:45] alterarSenha() com envio de e-mail de reset
+     ============================================================
+-->
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -23,11 +38,8 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            width: 100%; height: 100%; min-height: 100vh;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
@@ -61,13 +73,16 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
+
+        /* SIDEBAR flexbox */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999; padding: 20px 0;
+            z-index: 999; padding: 20px 0 0 0;
             transition: transform 0.3s ease; overflow-y: auto;
+            display: flex; flex-direction: column;
         }
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .sidebar-brand .logo {
@@ -78,7 +93,7 @@
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
-        .sidebar-menu { padding: 0 12px; }
+        .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
             display: flex; align-items: center; gap: 14px;
@@ -91,8 +106,11 @@
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
         .sidebar-footer {
-            position: absolute; bottom: 20px; left: 0; right: 0;
-            padding: 0 20px; border-top: 1px solid var(--border-color); padding-top: 15px;
+            position: relative;
+            padding: 15px 20px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.98);
+            margin-top: auto;
         }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar {
@@ -461,7 +479,7 @@
         let usuarioAtual = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Configuracoes iniciado');
+            console.log('⚙️ AI-DEPOM - Configuracoes v1.0.1');
 
             usuarioAtual = AIDEPOM.getUsuario();
             if (!usuarioAtual) {
@@ -523,11 +541,40 @@
             showToast('success', 'Configuracoes salvas', 'Suas preferencias foram salvas com sucesso.');
         }
 
-        function alterarSenha() {
-            showToast('info', 'Alterar Senha', 'Redirecionando para a pagina de alteracao de senha...');
-            setTimeout(() => {
-                window.location.href = '03-primeiro-acesso.html';
-            }, 2000);
+        // ============================================================
+        // ALTERAR SENHA — envia link por e-mail
+        // ============================================================
+        async function alterarSenha() {
+            if (!usuarioAtual || !usuarioAtual.email) {
+                showToast('error', 'Erro', 'Email do usuário não encontrado.');
+                return;
+            }
+
+            const email = usuarioAtual.email;
+
+            if (!confirm(`Deseja receber um link de troca de senha no email:\n\n${email}\n\nVocê será redirecionado para criar uma nova senha.`)) {
+                return;
+            }
+
+            showToast('info', 'Enviando link...', 'Aguarde um instante...');
+
+            try {
+                const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
+                    redirectTo: window.location.origin + '/03b-redefinir-senha.html'
+                });
+
+                if (error) {
+                    console.error('❌ Erro ao enviar link:', error);
+                    showToast('error', 'Erro ao enviar', error.message);
+                    return;
+                }
+
+                showToast('success', '📧 Link enviado!', 'Verifique sua caixa de entrada em ' + email, 8000);
+
+            } catch (err) {
+                console.error('❌ Erro inesperado:', err);
+                showToast('error', 'Erro inesperado', err.message);
+            }
         }
 
         function showToast(tipo, titulo, mensagem, duracao) {
@@ -554,6 +601,9 @@
             }, duracao);
         }
 
+        // ============================================================
+        // FULLSCREEN
+        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
@@ -569,22 +619,61 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
+        // ============================================================
+        // LOGOUT — v1.0.1 (robusto)
+        // ============================================================
         async function fazerLogout() {
-            if (confirm('Deseja realmente sair do sistema?')) {
-                await AIDEPOM.logout();
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try {
+                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
+                    await AIDEPOM.logout();
+                    return;
+                }
+            } catch (error) {
+                console.warn('⚠️ AIDEPOM.logout() falhou, fazendo logout direto:', error);
             }
+
+            try {
+                if (window.supabaseClient && window.supabaseClient.auth) {
+                    await window.supabaseClient.auth.signOut();
+                }
+            } catch (error) {
+                console.error('❌ Erro no signOut:', error);
+            }
+
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) { /* ignore */ }
+
+            window.location.href = '02-login.html';
         }
 
+        // ============================================================
+        // CLOSE WINDOW — v1.0.1 (robusto)
+        // ============================================================
         function closeWindow() {
-            if (confirm('Deseja realmente fechar o sistema?')) {
-                try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) {
+                console.warn('⚠️ window.close() bloqueado pelo navegador');
             }
+
+            setTimeout(function() {
+                if (!window.closed) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }, 300);
         }
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
         }
     </script>
+
+    <script src="assets/js/inactivity-lock.js"></script>
 </body>
- <script src="assets/js/inactivity-lock.js"></script>
 </html>
