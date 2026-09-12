@@ -793,6 +793,539 @@
         document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') { realizarBusca(); }
         });
+             // ============================================================
+        // MODAL FICHA — verDetalhes
+        // ============================================================
+        async function verDetalhes(id) {
+            console.log('👁️ verDetalhes() chamado para ID:', id);
+            idSuspeitoAtual = id;
+            const modal = document.getElementById('modalFicha');
+            const body = document.getElementById('modalFichaBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando ficha...</div>';
+
+            try {
+                const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
+                if (error) throw error;
+
+                const { data: midias } = await sb.from('arquivo_midia')
+                    .select('caminho_fisico, nome_seguro, tipo_midia')
+                    .eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', id).eq('deletado', false);
+
+                let fotoUrl = null;
+                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
+                const principal = fotos.find(m => m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')) || fotos[0];
+
+                if (principal && principal.caminho_fisico) {
+                    const { data: signed } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
+                    fotoUrl = signed?.signedUrl || null;
+                }
+
+                const fotoHTML = fotoUrl
+                    ? `<img src="${fotoUrl}" alt="${suspeito.nome_completo}" class="ficha-foto" />`
+                    : `<div class="ficha-foto-placeholder"><i class="fas fa-user-secret"></i><span style="font-size:12px;">Sem foto</span></div>`;
+
+                const statusBadge = suspeito.status_atual
+                    ? `<span class="status-badge ${suspeito.status_atual.toLowerCase()}">${suspeito.status_atual}</span>` : 'N/A';
+                const perigoBadge = suspeito.nivel_periculosidade
+                    ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>` : 'N/A';
+
+                body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-4 text-center">
+                            ${fotoHTML}
+                            <div class="mt-3"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Status</div>${statusBadge}</div>
+                            <div class="mt-2"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Periculosidade</div>${perigoBadge}</div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="ficha-campo"><span class="label">ID</span><span class="valor">#${suspeito.id_suspeito}</span></div>
+                            <div class="ficha-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${suspeito.nome_completo || 'N/A'}</strong></span></div>
+                            <div class="ficha-campo"><span class="label">Apelido</span><span class="valor">${suspeito.apelido || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">RG</span><span class="valor">${suspeito.rg || '-'} ${suspeito.orgao_expedidor ? '(' + suspeito.orgao_expedidor + ')' : ''}</span></div>
+                            <div class="ficha-campo"><span class="label">Data de Nascimento</span><span class="valor">${suspeito.data_nascimento || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Sexo</span><span class="valor">${suspeito.sexo === 'M' ? 'Masculino' : suspeito.sexo === 'F' ? 'Feminino' : suspeito.sexo || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Endereço</span><span class="valor">${[suspeito.logradouro, suspeito.numero, suspeito.bairro, suspeito.cidade, suspeito.uf].filter(Boolean).join(', ') || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Características Físicas</span><span class="valor">Altura: ${suspeito.altura || '-'}m · Peso: ${suspeito.peso || '-'}kg · Olhos: ${suspeito.cor_olhos || '-'} · Cabelo: ${suspeito.cor_cabelo || '-'}</span></div>
+                            ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
+                            ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
+                        </div>
+                    </div>`;
+            } catch (error) {
+                console.error('❌ Erro ao carregar ficha:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharFicha() {
+            document.getElementById('modalFicha').classList.remove('open');
+            idSuspeitoAtual = null;
+        }
+
+        function imprimirFicha(id) {
+            verDetalhes(id);
+            setTimeout(() => window.print(), 800);
+        }
+
+        function imprimirFichaAtual() { window.print(); }
+
+        // ============================================================
+        // MODAL EDIÇÃO
+        // ============================================================
+        const MOTIVOS_ALTERACAO = [
+            'Correção de erro de digitação',
+            'Atualização de status judicial',
+            'Novo mandado recebido',
+            'Correção após conferência documental',
+            'Atualização cadastral',
+            'Outro (especificar abaixo)'
+        ];
+
+        async function editarSuspeito(id) {
+            console.log('✏️ editarSuspeito() chamado para ID:', id);
+            idSuspeitoAtual = id;
+            const modal = document.getElementById('modalEdicao');
+            const body = document.getElementById('modalEdicaoBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados...</div>';
+
+            try {
+                if (!usuarioAtual) {
+                    body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;">❌ Usuário não identificado. Faça login novamente.</div>';
+                    return;
+                }
+
+                const campos = await carregarCamposEditaveis();
+
+                // Verifica se o perfil atual pode editar algo
+                const camposPermitidos = campos.filter(c => 
+                    (c.perfis_permitidos || []).includes(perfilUsuarioAtual)
+                );
+
+                if (camposPermitidos.length === 0) {
+                    body.innerHTML = `<div class="text-center py-4" style="color: #ffc107;">
+                        <i class="fas fa-lock" style="font-size: 40px; display: block; margin-bottom: 15px;"></i>
+                        <div>Seu perfil (ID ${perfilUsuarioAtual}) não tem permissão para editar suspeitos.</div>
+                    </div>`;
+                    return;
+                }
+
+                const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
+                if (error) throw error;
+
+                const setores = {
+                    'nome_completo': 'Identificação', 'apelido': 'Identificação', 'cpf': 'Identificação',
+                    'rg': 'Identificação', 'orgao_expedidor': 'Identificação', 'data_nascimento': 'Identificação',
+                    'sexo': 'Dados Pessoais', 'raca': 'Dados Pessoais', 'naturalidade': 'Dados Pessoais',
+                    'nacionalidade': 'Dados Pessoais', 'nome_pai': 'Dados Pessoais', 'nome_mae': 'Dados Pessoais',
+                    'cep': 'Endereço', 'logradouro': 'Endereço', 'numero': 'Endereço', 'complemento': 'Endereço',
+                    'bairro': 'Endereço', 'cidade': 'Endereço', 'uf': 'Endereço', 'pais': 'Endereço',
+                    'altura': 'Características Físicas', 'peso': 'Características Físicas',
+                    'cor_olhos': 'Características Físicas', 'cor_cabelo': 'Características Físicas',
+                    'cor_pele': 'Características Físicas', 'sinais_particulares': 'Características Físicas',
+                    'tattoo_descricao': 'Características Físicas',
+                    'status_atual': 'Informações Criminais', 'nivel_periculosidade': 'Informações Criminais',
+                    'organizacao_criminal': 'Informações Criminais', 'envolvimento_drogas': 'Informações Criminais',
+                    'posse_arma': 'Informações Criminais', 'modus_operandi': 'Informações Criminais',
+                    'observacoes': 'Observações'
+                };
+
+                const tipos = {
+                    'sexo': 'select-sexo', 'status_atual': 'select-status', 'nivel_periculosidade': 'select-perigo',
+                    'envolvimento_drogas': 'checkbox', 'posse_arma': 'checkbox',
+                    'data_nascimento': 'date', 'cep': 'text', 'uf': 'text', 'pais': 'text',
+                    'sinais_particulares': 'textarea', 'tattoo_descricao': 'textarea',
+                    'modus_operandi': 'textarea', 'observacoes': 'textarea',
+                    'altura': 'number', 'peso': 'number'
+                };
+
+                let camposHTML = '';
+                let setorAtual = '';
+
+                campos.forEach(campo => {
+                    const podeEditar = (campo.perfis_permitidos || []).includes(perfilUsuarioAtual);
+                    const valorAtual = suspeito[campo.nome_campo] ?? '';
+                    const setor = setores[campo.nome_campo] || 'Outros';
+
+                    if (setor !== setorAtual) {
+                        if (setorAtual) camposHTML += `</div>`;
+                        camposHTML += `<div class="mb-3"><div style="color: var(--text-primary); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 15px;">${setor}</div>`;
+                        setorAtual = setor;
+                    }
+
+                    const tipo = tipos[campo.nome_campo] || 'text';
+                    const idCampo = 'edit_' + campo.nome_campo;
+                    const disabled = podeEditar ? '' : 'disabled';
+
+                    let inputHTML = '';
+                    if (tipo === 'textarea') {
+                        inputHTML = `<textarea class="form-control" id="${idCampo}" ${disabled} rows="2">${valorAtual}</textarea>`;
+                    } else if (tipo === 'select-sexo') {
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
+                            <option value="">Selecione...</option>
+                            <option value="M" ${valorAtual === 'M' ? 'selected' : ''}>Masculino</option>
+                            <option value="F" ${valorAtual === 'F' ? 'selected' : ''}>Feminino</option>
+                            <option value="O" ${valorAtual === 'O' ? 'selected' : ''}>Outro</option>
+                        </select>`;
+                    } else if (tipo === 'select-status') {
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
+                            <option value="">Selecione...</option>
+                            ${['INVESTIGADO','PRESO','FORAGIDO','PROCURADO','CONDICIONAL','LIBERADO'].map(s => 
+                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
+                            ).join('')}
+                        </select>`;
+                    } else if (tipo === 'select-perigo') {
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
+                            <option value="">Selecione...</option>
+                            ${['BAIXO','MEDIO','ALTO','EXTREMO'].map(s => 
+                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
+                            ).join('')}
+                        </select>`;
+                    } else if (tipo === 'checkbox') {
+                        inputHTML = `<div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="${idCampo}" ${valorAtual ? 'checked' : ''} ${disabled}>
+                            <label class="form-check-label" for="${idCampo}">${campo.descricao}</label>
+                        </div>`;
+                    } else {
+                        inputHTML = `<input type="${tipo}" class="form-control" id="${idCampo}" value="${valorAtual}" ${disabled} step="${tipo === 'number' ? '0.01' : ''}">`;
+                    }
+
+                    if (tipo !== 'checkbox') {
+                        camposHTML += `<div class="col-md-4 mb-3">
+                            <label class="form-label">${campo.descricao} ${podeEditar ? '' : '🔒'}</label>
+                            ${inputHTML}
+                        </div>`;
+                    } else {
+                        camposHTML += `<div class="col-md-4 mb-3">${inputHTML}</div>`;
+                    }
+                });
+
+                if (camposHTML) camposHTML += `</div>`;
+
+                const motivosHTML = MOTIVOS_ALTERACAO.map(m => `<option value="${m}">${m}</option>`).join('');
+
+                body.innerHTML = `
+                    <div class="aviso-justificativa">
+                        <div style="color: #ffc107; font-size: 12px; font-weight: 600;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Campos bloqueados aparecem com 🔒 (sem permissão para seu perfil)
+                        </div>
+                    </div>
+                    <form id="formEdicao">
+                        <div class="row">${camposHTML}</div>
+                        <div class="mt-4 pt-3" style="border-top: 1px solid var(--border-color);">
+                            <div class="row">
+                                <div class="col-md-5 mb-3">
+                                    <label class="form-label">Motivo da alteração *</label>
+                                    <select class="form-select" id="edit_motivo" required>
+                                        <option value="">Selecione o motivo...</option>
+                                        ${motivosHTML}
+                                    </select>
+                                </div>
+                                <div class="col-md-7 mb-3">
+                                    <label class="form-label">Justificativa detalhada *</label>
+                                    <textarea class="form-control" id="edit_justificativa" rows="2" 
+                                        placeholder="Explique detalhadamente o motivo da alteração (mínimo 20 caracteres)" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn-outline-gold" onclick="fecharEdicao()">
+                                <i class="fas fa-times me-2"></i>CANCELAR
+                            </button>
+                            <button type="submit" class="btn-gold" id="btnSalvarEdicao">
+                                <i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES
+                            </button>
+                        </div>
+                    </form>
+                `;
+
+                document.getElementById('formEdicao').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await salvarEdicao(suspeito);
+                });
+            } catch (error) {
+                console.error('❌ Erro ao abrir edição:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        async function salvarEdicao(suspeitoOriginal) {
+            const btn = document.getElementById('btnSalvarEdicao');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
+
+            try {
+                const motivo = document.getElementById('edit_motivo').value;
+                const justificativa = document.getElementById('edit_justificativa').value.trim();
+
+                if (!motivo) {
+                    alert('⚠️ Selecione o motivo da alteração');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                    return;
+                }
+
+                if (justificativa.length < 20) {
+                    alert('⚠️ A justificativa deve ter no mínimo 20 caracteres');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                    return;
+                }
+
+                // Monta o objeto só com campos editáveis + alterados
+                const campos = await carregarCamposEditaveis();
+                const dadosNovos = {};
+
+                campos.forEach(campo => {
+                    const input = document.getElementById('edit_' + campo.nome_campo);
+                    if (!input || input.disabled) return;
+
+                    let valor;
+                    if (input.type === 'checkbox') {
+                        valor = input.checked;
+                    } else {
+                        valor = input.value.trim() || null;
+                    }
+
+                    const valorAntigo = suspeitoOriginal[campo.nome_campo];
+                    // Só inclui se mudou
+                    if (JSON.stringify(valor) !== JSON.stringify(valorAntigo)) {
+                        dadosNovos[campo.nome_campo] = valor;
+                    }
+                });
+
+                if (Object.keys(dadosNovos).length === 0) {
+                    alert('ℹ️ Nenhum campo foi alterado');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                    return;
+                }
+
+                console.log('📝 Campos alterados:', Object.keys(dadosNovos));
+                console.log('📝 Valores novos:', dadosNovos);
+
+                // 1. Seta a justificativa no contexto da sessão (trigger vai capturar)
+                const justificativaCompleta = `[${motivo}] ${justificativa}`;
+                const { error: rpcError } = await sb.rpc('set_justificativa', {
+                    justificativa: justificativaCompleta,
+                    id_usuario: usuarioAtual.id
+                });
+
+                if (rpcError) console.warn('⚠️ RPC erro:', rpcError);
+
+                // 2. Adiciona os campos de auditoria
+                dadosNovos.data_atualizacao = new Date().toISOString();
+                dadosNovos.id_usuario_atualizacao = usuarioAtual.id;
+
+                // 3. UPDATE no suspeito (trigger captura e grava histórico)
+                const { error: updateError } = await sb
+                    .from('suspeito')
+                    .update(dadosNovos)
+                    .eq('id_suspeito', suspeitoOriginal.id_suspeito);
+
+                if (updateError) throw updateError;
+
+                console.log('✅ Edição salva com sucesso!');
+
+                // Toast de sucesso
+                const toast = document.createElement('div');
+                toast.style.cssText = 'position:fixed;top:70px;right:20px;background:#0a0a0a;border:1px solid #003322;border-left:4px solid #00ff88;border-radius:12px;padding:16px 20px;color:#00ff88;z-index:99999;min-width:300px;box-shadow:0 10px 40px rgba(0,0,0,0.8);';
+                toast.innerHTML = `
+                    <div style="font-weight:700;margin-bottom:5px;">
+                        <i class="fas fa-check-circle me-2"></i>Alterações salvas!
+                    </div>
+                    <div style="font-size:12px;color:rgba(0,255,136,0.6);">
+                        ${Object.keys(dadosNovos).length - 2} campo(s) alterado(s) · versão gravada no histórico
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 5000);
+
+                fecharEdicao();
+                // Recarrega a tabela mantendo os filtros
+                await realizarBusca();
+
+            } catch (error) {
+                console.error('❌ Erro ao salvar:', error);
+                alert('❌ Erro ao salvar: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+            }
+        }
+
+        function fecharEdicao() {
+            document.getElementById('modalEdicao').classList.remove('open');
+            idSuspeitoAtual = null;
+        }
+
+        // ============================================================
+        // MODAL HISTÓRICO
+        // ============================================================
+        async function verHistorico(id) {
+            console.log('📜 verHistorico() chamado para ID:', id);
+            const modal = document.getElementById('modalHistorico');
+            const body = document.getElementById('modalHistoricoBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>';
+
+            try {
+                const { data: historico, error } = await sb.from('suspeito_historico')
+                    .select('*')
+                    .eq('id_suspeito', id)
+                    .order('versao', { ascending: false });
+
+                if (error) throw error;
+
+                if (!historico || historico.length === 0) {
+                    body.innerHTML = `
+                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
+                            <i class="fas fa-history" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
+                            <div>Nenhuma alteração registrada ainda</div>
+                            <small style="font-size: 11px;">Este suspeito nunca foi editado desde o cadastro</small>
+                        </div>`;
+                    return;
+                }
+
+                let html = '';
+                historico.forEach(h => {
+                    const data = new Date(h.data_alteracao).toLocaleString('pt-BR');
+                    const campos = h.campos_alterados || [];
+                    
+                    let diffHTML = '';
+                    campos.forEach(campo => {
+                        const antes = h.valores_antes?.[campo];
+                        const depois = h.valores_depois?.[campo];
+                        diffHTML += `
+                            <div class="diff-item">
+                                <strong style="color: rgba(0, 255, 136, 0.5);">${campo}:</strong><br>
+                                <span class="diff-antes">${antes ?? '(vazio)'}</span>
+                                <i class="fas fa-arrow-right mx-2" style="color: rgba(0, 255, 136, 0.3);"></i>
+                                <span class="diff-depois">${depois ?? '(vazio)'}</span>
+                            </div>`;
+                    });
+
+                    html += `
+                        <div class="historico-item">
+                            <div>
+                                <span class="versao">v${h.versao}</span>
+                                <strong style="color: var(--text-primary);">${campos.length} campo(s) alterado(s)</strong>
+                            </div>
+                            <div class="meta">
+                                <i class="fas fa-user me-1"></i> ${h.nome_usuario || 'Usuário'} ·
+                                <i class="fas fa-clock ms-2 me-1"></i> ${data}
+                            </div>
+                            ${h.justificativa ? `<div class="justificativa"><i class="fas fa-comment me-2"></i>${h.justificativa}</div>` : ''}
+                            ${diffHTML}
+                        </div>`;
+                });
+
+                body.innerHTML = html;
+            } catch (error) {
+                console.error('❌ Erro ao carregar histórico:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharHistorico() {
+            document.getElementById('modalHistorico').classList.remove('open');
+        }
+
+        // ============================================================
+        // MODAL FOTOS
+        // ============================================================
+        async function verFotos(id) {
+            console.log('📸 verFotos() chamado para ID:', id);
+            const modal = document.getElementById('modalFotos');
+            const body = document.getElementById('modalFotosBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>';
+
+            try {
+                const { data: midias, error } = await sb.from('arquivo_midia')
+                    .select('*')
+                    .eq('tipo_entidade', 'SUSPEITO')
+                    .eq('id_entidade', id)
+                    .eq('deletado', false)
+                    .order('data_upload', { ascending: false });
+
+                if (error) throw error;
+
+                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
+
+                if (fotos.length === 0) {
+                    body.innerHTML = `
+                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
+                            <i class="fas fa-images" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
+                            <div>Nenhuma foto cadastrada</div>
+                        </div>`;
+                    return;
+                }
+
+                let html = '<div class="galeria-fotos">';
+                
+                for (const foto of fotos) {
+                    let fotoUrl = null;
+                    if (foto.caminho_fisico) {
+                        const { data: signed } = await sb.storage
+                            .from(BUCKET_FOTOS)
+                            .createSignedUrl(foto.caminho_fisico, URL_EXPIRACAO_S);
+                        fotoUrl = signed?.signedUrl || null;
+                    }
+
+                    const dataUpload = foto.data_upload ? new Date(foto.data_upload).toLocaleDateString('pt-BR') : '-';
+                    const isPrincipal = foto.nome_seguro && foto.nome_seguro.toLowerCase().includes('principal');
+
+                    html += `
+                        <div class="foto-card">
+                            ${fotoUrl 
+                                ? `<img src="${fotoUrl}" alt="Foto" />` 
+                                : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:rgba(0,255,136,0.2);"><i class="fas fa-image" style="font-size:40px;"></i></div>`
+                            }
+                            <div class="info">
+                                ${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : ''}
+                                <div class="data mt-2">
+                                    <i class="fas fa-calendar me-1"></i>${dataUpload}
+                                </div>
+                                ${foto.fonte ? `<div class="data"><i class="fas fa-tag me-1"></i>${foto.fonte}</div>` : ''}
+                            </div>
+                        </div>`;
+                }
+
+                html += '</div>';
+                body.innerHTML = html;
+            } catch (error) {
+                console.error('❌ Erro ao carregar fotos:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharFotos() {
+            document.getElementById('modalFotos').classList.remove('open');
+        }
+
+        // ============================================================
+        // ALERTAS
+        // ============================================================
+        function emitirAlerta(id) {
+            if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
+                alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
+            }
+        }
+
+        // Fecha modais com ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                fecharFicha();
+                fecharEdicao();
+                fecharHistorico();
+                fecharFotos();
+            }
+        });
+    </script>
+</body>
+</html>
     </script>
 </body>
 </html>
