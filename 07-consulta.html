@@ -2,18 +2,16 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.2.0
-     Data: 12/09/2026 - 04:00
+     Versão: 2.3.0
+     Data: 12/09/2026 - 04:30
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [12/09/2026 04:00] Corrigido conflito 'supabase' (CDN já define window.supabase)
-     - [12/09/2026 04:00] Alias 'sb' substitui 'supabase' em todo o script
-     - [12/09/2026 03:30] Correção de conflito de variável supabase
-     - [12/09/2026 03:30] Uso do window.supabaseClient existente
+     - [12/09/2026 04:30] Query separada para arquivo_midia (sem JOIN implícito)
+     - [12/09/2026 04:30] Resolve erro PGRST200 (relationship not found)
+     - [12/09/2026 04:00] Alias 'sb' para evitar conflito com window.supabase
      - [12/09/2026 02:00] Exibição de foto dos suspeitos na tabela
      - [12/09/2026 02:00] Signed URL do bucket privado (createSignedUrl)
-     - [12/09/2026 02:00] JOIN com arquivo_midia no SELECT
      - [12/09/2026 02:00] Coluna "Foto" adicionada na tabela
      ============================================================
 -->
@@ -513,26 +511,21 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE — v2.2.0
+        // CONFIGURAÇÃO SUPABASE — v2.3.0
         // Usa alias 'sb' para NÃO colidir com window.supabase (CDN oficial)
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
-        const URL_EXPIRACAO_S = 3600; // 1 hora
+        const URL_EXPIRACAO_S = 3600;
 
-        // ⚠️ A CDN oficial do Supabase já define 'window.supabase'
-        // Por isso usamos 'sb' como alias — sem risco de colisão
         const sb = (function() {
-            // 1) Se já existe um cliente pronto (do supabase-config.js), usa
             if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) {
                 console.log('✅ [07-consulta] Usando window.supabaseClient');
                 return window.supabaseClient;
             }
-            // 2) Se window.supabase já é um cliente (tem .from), usa
             if (typeof window.supabase !== 'undefined' && window.supabase?.from) {
                 console.log('✅ [07-consulta] Usando window.supabase');
                 return window.supabase;
             }
-            // 3) Senão, cria um novo via window.supabase.createClient
             console.warn('⚠️ [07-consulta] Criando cliente Supabase próprio');
             return window.supabase.createClient(
                 'https://szkgaqouivsvlyujfvmz.supabase.co',
@@ -576,7 +569,7 @@
         }
 
         // ============================================================
-        // ESTATÍSTICAS (contadores no topo)
+        // ESTATÍSTICAS
         // ============================================================
         async function carregarEstatisticas() {
             try {
@@ -590,7 +583,7 @@
         }
 
         // ============================================================
-        // BUSCA PRINCIPAL — COM JOIN EM arquivo_midia + SIGNED URL
+        // BUSCA PRINCIPAL — 2 QUERIES (sem JOIN implícito)
         // ============================================================
         async function realizarBusca() {
             console.log('🔍 realizarBusca() chamada');
@@ -601,6 +594,7 @@
             const dataFim = document.getElementById('filtroDataFim').value;
 
             try {
+                // 1️⃣ Busca os suspeitos (SEM JOIN)
                 let query = sb
                     .from('suspeito')
                     .select(`
@@ -611,14 +605,7 @@
                         cidade,
                         status_atual,
                         nivel_periculosidade,
-                        data_cadastro,
-                        arquivo_midia (
-                            caminho_fisico,
-                            nome_seguro,
-                            formato,
-                            tipo_midia,
-                            deletado
-                        )
+                        data_cadastro
                     `, { count: 'exact' })
                     .eq('deletado', false);
 
@@ -630,25 +617,47 @@
                 if (dataInicio) { query = query.gte('data_cadastro', dataInicio); }
                 if (dataFim) { query = query.lte('data_cadastro', dataFim); }
 
-                const { data, count, error } = await query
+                const { data: suspeitos, count, error } = await query
                     .order('data_cadastro', { ascending: false })
                     .range((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina - 1);
 
                 if (error) throw error;
 
-                console.log('📋 Registros encontrados:', count);
-                console.log('📋 Dados brutos:', data);
+                console.log('📋 Suspeitos encontrados:', count);
 
-                // ✅ Para cada suspeito, gera URL assinada da foto PRINCIPAL
-                const dadosComFoto = await Promise.all((data || []).map(async (s) => {
-                    const midias = (s.arquivo_midia || []).filter(m =>
-                        m.tipo_midia === 'FOTO' && m.deletado === false
-                    );
+                if (!suspeitos || suspeitos.length === 0) {
+                    dadosAtuais = [];
+                    totalRegistros = 0;
+                    await carregarEstatisticas();
+                    renderizarResultados();
+                    return;
+                }
 
-                    // Prefere a que tem "principal" no nome_seguro
-                    const midiaPrincipal = midias.find(m =>
+                // 2️⃣ Busca as mídias dos suspeitos encontrados
+                const ids = suspeitos.map(s => s.id_suspeito);
+                const { data: midias, error: midiaError } = await sb
+                    .from('arquivo_midia')
+                    .select('id_entidade, caminho_fisico, nome_seguro, formato, tipo_midia, deletado')
+                    .eq('tipo_entidade', 'SUSPEITO')
+                    .eq('tipo_midia', 'FOTO')
+                    .eq('deletado', false)
+                    .in('id_entidade', ids);
+
+                if (midiaError) console.warn('⚠️ Erro ao buscar mídias:', midiaError);
+
+                // 3️⃣ Agrupa por id_entidade
+                const midiasPorSuspeito = {};
+                (midias || []).forEach(m => {
+                    if (!midiasPorSuspeito[m.id_entidade]) midiasPorSuspeito[m.id_entidade] = [];
+                    midiasPorSuspeito[m.id_entidade].push(m);
+                });
+
+                // 4️⃣ Gera signed URLs
+                const dadosComFoto = await Promise.all(suspeitos.map(async (s) => {
+                    const midiasDoSuspeito = midiasPorSuspeito[s.id_suspeito] || [];
+                    const midiaPrincipal = midiasDoSuspeito.find(m =>
                         m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')
-                    ) || midias[0];
+                    ) || midiasDoSuspeito[0];
 
                     let fotoUrl = null;
                     if (midiaPrincipal && midiaPrincipal.caminho_fisico) {
@@ -656,11 +665,10 @@
                             const { data: signed, error: signedError } = await sb.storage
                                 .from(BUCKET_FOTOS)
                                 .createSignedUrl(midiaPrincipal.caminho_fisico, URL_EXPIRACAO_S);
-
                             if (!signedError && signed?.signedUrl) {
                                 fotoUrl = signed.signedUrl;
                             } else {
-                                console.warn('⚠️ Sem URL assinada para:', midiaPrincipal.caminho_fisico, signedError);
+                                console.warn('⚠️ Sem URL assinada:', midiaPrincipal.caminho_fisico, signedError);
                             }
                         } catch (err) {
                             console.warn('⚠️ Erro ao gerar signed URL:', err);
@@ -684,7 +692,7 @@
         }
 
         // ============================================================
-        // RENDERIZAÇÃO DA TABELA
+        // RENDERIZAÇÃO
         // ============================================================
         function renderizarResultados() {
             const tbody = document.getElementById('resultadosConsulta');
@@ -709,7 +717,6 @@
                     'LIBERADO': '✅ LIBERADO'
                 }[d.status_atual] || d.status_atual || 'DESCONHECIDO';
 
-                // ✅ Foto: signed URL ou placeholder
                 const fotoHTML = d.fotoUrl
                     ? `<img src="${d.fotoUrl}" alt="${d.nome_completo || 'Suspeito'}" class="foto-suspeito"
                             onerror="this.onerror=null; this.outerHTML='<div class=\\'foto-placeholder\\'><i class=\\'fas fa-user-secret\\'></i></div>';" />`
@@ -762,7 +769,7 @@
         function irPagina(num) { paginaAtual = num; realizarBusca(); }
 
         // ============================================================
-        // AÇÕES (placeholder — implementar depois)
+        // AÇÕES
         // ============================================================
         function verDetalhes(id) { alert(`📋 Visualizando detalhes do suspeito ID: ${id}`); }
         function imprimirFicha(id) { alert(`🖨️ Imprimindo ficha do registro ID: ${id}`); }
@@ -772,7 +779,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.2.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.3.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             realizarBusca();
         });
