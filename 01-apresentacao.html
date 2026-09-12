@@ -1,4 +1,17 @@
- <!DOCTYPE html>
+ <!-- ============================================================
+     AI-DEPOM - TELA DE APRESENTAÇÃO
+     ============================================================
+     Arquivo: 01-apresentacao.html
+     Versão: 1.0.1
+     Data: 12/09/2026 - 11:45
+     ============================================================
+     ALTERAÇÕES RECENTES:
+     - [12/09/2026 11:45] Adicionado ano 2026 na seção de créditos
+     - [12/09/2026 11:45] closeWindow() corrigido (fallback pra login)
+     - [12/09/2026 11:45] Cabeçalho de versão documentado
+     ============================================================
+-->
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -344,7 +357,7 @@
                 <span class="security-badge-item"><i class="fas fa-fingerprint"></i> Biometria</span>
                 <span class="security-badge-item"><i class="fas fa-lock lock-icon"></i> TDE Ativo</span>
                 <span class="security-badge-item"><i class="fas fa-database"></i> LGPD/GDPR</span>
-                <span class="security-badge-item"><i class="fas fa-globe"></i> PCivil BA |-24/7</span>
+                <span class="security-badge-item"><i class="fas fa-globe"></i> PCivil BA · 24/7</span>
             </div>
             <div style="margin-top: 40px; padding-top: 25px; border-top: 1px solid var(--border-color); text-align: center;">
                 <p style="color: rgba(0, 255, 136, 0.3); font-size: 12px; letter-spacing: 1px; margin-bottom: 5px;">
@@ -356,6 +369,10 @@
                 </p>
                 <p style="color: rgba(0, 255, 136, 0.4); font-size: 13px; letter-spacing: 0.5px;">
                     Engº Computação Itamar Souza
+                </p>
+                <p style="color: rgba(0, 255, 136, 0.25); font-size: 11px; letter-spacing: 1px; margin-top: 12px;">
+                    <i class="fas fa-copyright" style="opacity: 0.5;"></i>
+                    AI-DEPOM © 2026 · Sistema em desenvolvimento · Todos os direitos reservados
                 </p>
             </div>
         </div>
@@ -378,11 +395,37 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
+        // ============================================
+        // CONTROLES DE JANELA — v1.0.1
+        // ============================================
         function minimizeWindow() {
-            try { if (window.moveTo && window.resizeTo) { window.moveTo(0, 0); window.resizeTo(screen.width / 2, screen.height / 2); } else { alert('Use o botão de minimizar do seu navegador.'); } } catch (e) { console.warn('Minimizar não suportado:', e); }
+            try {
+                if (window.moveTo && window.resizeTo) {
+                    window.moveTo(0, 0);
+                    window.resizeTo(screen.width / 2, screen.height / 2);
+                } else {
+                    alert('Use o botão de minimizar do seu navegador.');
+                }
+            } catch (e) { console.warn('Minimizar não suportado:', e); }
         }
+
         function closeWindow() {
-            if (confirm('Deseja realmente fechar o sistema?')) { try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; } }
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+
+            // Tenta fechar a janela (funciona se foi aberta via window.open)
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) {
+                console.warn('⚠️ window.close() bloqueado pelo navegador');
+            }
+
+            // Fallback: se ainda estiver aberto após 300ms, vai pro login
+            setTimeout(function() {
+                if (!window.closed) {
+                    window.location.href = '02-login.html';
+                }
+            }, 300);
         }
 
         // ============================================
@@ -449,7 +492,7 @@
         // CONTADORES DINÂMICOS (integrados ao Supabase)
         // ============================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Apresentacao: carregando contadores...');
+            console.log('AI-DEPOM - Apresentacao v1.0.1: carregando contadores...');
 
             const animarContador = (elemento, valorFinal, isDecimal) => {
                 let atual = 0;
