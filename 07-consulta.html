@@ -2,16 +2,16 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.5.0
-     Data: 12/09/2026 - 06:00
+     Versão: 2.6.0
+     Data: 12/09/2026 - 07:00
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [12/09/2026 07:00] Validação obrigatória de filtro antes de buscar
+     - [12/09/2026 07:00] Mínimo 2 caracteres no termo de busca
+     - [12/09/2026 07:00] Aviso amarelo quando nenhum filtro informado
      - [12/09/2026 06:00] Busca sob demanda (sem auto-busca ao abrir)
-     - [12/09/2026 06:00] Mensagem inicial orientando o pesquisador
-     - [12/09/2026 06:00] Contadores só atualizam após busca
      - [12/09/2026 05:00] Ficha do suspeito com modal + foto
-     - [12/09/2026 05:00] verDetalhes() carrega dados completos + signed URL
      - [12/09/2026 04:30] Query separada para arquivo_midia (sem JOIN)
      - [12/09/2026 04:00] Alias 'sb' para evitar conflito com window.supabase
      - [12/09/2026 02:00] Exibição de foto dos suspeitos na tabela
@@ -396,7 +396,7 @@
                                     <i class="fas fa-search" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
                                     <div style="font-size: 14px; margin-bottom: 6px;">Faça uma busca para ver os resultados</div>
                                     <small style="font-size: 11px; color: rgba(0, 255, 136, 0.2);">
-                                        Use os campos acima e clique em <strong>BUSCAR</strong>
+                                        Digite um nome/CPF/RG <strong>ou</strong> selecione um filtro e clique em <strong>BUSCAR</strong>
                                     </small>
                                 </td>
                             </tr>
@@ -438,7 +438,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE — v2.5.0
+        // CONFIGURAÇÃO SUPABASE — v2.6.0
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
@@ -510,7 +510,7 @@
         }
 
         // ============================================================
-        // BUSCA PRINCIPAL — SOB DEMANDA
+        // BUSCA PRINCIPAL — SOB DEMANDA COM VALIDAÇÃO
         // ============================================================
         async function realizarBusca() {
             console.log('🔍 realizarBusca() chamada');
@@ -520,7 +520,49 @@
             const dataInicio = document.getElementById('filtroDataInicio').value;
             const dataFim = document.getElementById('filtroDataFim').value;
 
+            // ✅ VALIDAÇÃO: Exige pelo menos 1 filtro preenchido
+            const temFiltro = termo.length > 0 || status || periculosidade || dataInicio || dataFim;
+
+            if (!temFiltro) {
+                document.getElementById('resultadosConsulta').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4" style="color: #ffc107;">
+                            <i class="fas fa-exclamation-triangle" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
+                            <div style="font-size: 14px; margin-bottom: 6px;"><strong>Nenhum filtro informado</strong></div>
+                            <small style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">
+                                Digite um nome, CPF, RG ou selecione pelo menos um filtro para buscar
+                            </small>
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('infoPagina').textContent = '';
+                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando filtros...';
+                document.getElementById('numerosPaginas').innerHTML = '';
+                document.getElementById('btnAnterior').style.display = 'none';
+                document.getElementById('btnProximo').style.display = 'none';
+                document.getElementById('buscaGlobal').focus();
+                return;
+            }
+
+            // ✅ VALIDAÇÃO: se digitou termo, mínimo 2 caracteres
+            if (termo.length > 0 && termo.length < 2) {
+                document.getElementById('resultadosConsulta').innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center py-4" style="color: #ffc107;">
+                            <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                            Digite pelo menos <strong>2 caracteres</strong> para buscar por nome, CPF ou RG
+                        </td>
+                    </tr>
+                `;
+                document.getElementById('infoPagina').textContent = '';
+                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando mais caracteres...';
+                document.getElementById('buscaGlobal').focus();
+                return;
+            }
+
             try {
+                paginaAtual = 1; // Sempre volta pra pág 1 em nova busca
+
                 let query = sb
                     .from('suspeito')
                     .select(`id_suspeito, nome_completo, cpf, rg, cidade, status_atual, nivel_periculosidade, data_cadastro`, { count: 'exact' })
@@ -797,20 +839,18 @@
         }
 
         // ============================================================
-        // INICIALIZAÇÃO — v2.5.0 — sem busca automática
+        // INICIALIZAÇÃO — v2.6.0 — sem busca automática
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.5.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.6.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             // ❌ NÃO chama realizarBusca() automaticamente
-            // A tabela já vem com mensagem de "Faça uma busca" no HTML
         });
 
-        // Busca ao apertar Enter no campo de texto
+        // Enter no campo de busca dispara a busca
         document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { 
-                paginaAtual = 1;  // volta pra página 1 em nova busca
-                realizarBusca(); 
+            if (e.key === 'Enter') {
+                realizarBusca();
             }
         });
     </script>
