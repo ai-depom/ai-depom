@@ -2,19 +2,15 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.6.0
-     Data: 12/09/2026 - 07:00
-     Autor: AI-DEPOM Team
+     Versão: 2.7.0
+     Data: 12/09/2026 - 10:00
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [12/09/2026 07:00] Validação obrigatória de filtro antes de buscar
-     - [12/09/2026 07:00] Mínimo 2 caracteres no termo de busca
-     - [12/09/2026 07:00] Aviso amarelo quando nenhum filtro informado
-     - [12/09/2026 06:00] Busca sob demanda (sem auto-busca ao abrir)
-     - [12/09/2026 05:00] Ficha do suspeito com modal + foto
-     - [12/09/2026 04:30] Query separada para arquivo_midia (sem JOIN)
-     - [12/09/2026 04:00] Alias 'sb' para evitar conflito com window.supabase
-     - [12/09/2026 02:00] Exibição de foto dos suspeitos na tabela
+     - [12/09/2026 10:00] Edição com histórico versionado
+     - [12/09/2026 10:00] Modal de edição respeitando perfis
+     - [12/09/2026 10:00] Modal de histórico com diff antes/depois
+     - [12/09/2026 10:00] Justificativa obrigatória com motivos
+     - [12/09/2026 10:00] Botão ✏️ Editar, 📜 Histórico, 📸 Fotos
      ============================================================
 -->
 <!DOCTYPE html>
@@ -53,36 +49,25 @@
         }
 
         .controls-bar {
-            position: fixed;
-            top: 0; left: 0; right: 0;
+            position: fixed; top: 0; left: 0; right: 0;
             z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--border-color);
             padding: 6px 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            display: flex; justify-content: space-between; align-items: center;
             height: 48px;
         }
-
         .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
         .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
 
         .control-btn {
-            width: var(--control-size);
-            height: var(--control-size);
-            border-radius: 8px;
-            border: none;
-            background: transparent;
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: var(--control-size); height: var(--control-size);
+            border-radius: 8px; border: none; background: transparent;
+            color: rgba(0, 255, 136, 0.3); font-size: 16px;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
         }
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
@@ -93,15 +78,12 @@
         .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #000; }
 
         .sidebar {
-            position: fixed;
-            top: 48px; left: 0;
-            width: 260px;
-            height: calc(100vh - 48px);
+            position: fixed; top: 48px; left: 0;
+            width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999;
-            padding: 20px 0;
+            z-index: 999; padding: 20px 0;
             transition: transform 0.3s ease;
             overflow-y: auto;
         }
@@ -135,9 +117,9 @@
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 15px;
-            background: var(--bg-secondary);
-            border-radius: 16px; padding: 15px 25px;
-            margin-bottom: 25px; border: 1px solid var(--border-color);
+            background: var(--bg-secondary); border-radius: 16px;
+            padding: 15px 25px; margin-bottom: 25px;
+            border: 1px solid var(--border-color);
         }
         .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
         .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
@@ -150,25 +132,20 @@
         .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
 
         .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
-
         .form-control, .form-select {
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 10px 14px;
-            border-radius: 10px;
-            transition: all 0.3s;
-            font-size: 14px;
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
+            color: var(--text-primary); padding: 10px 14px;
+            border-radius: 10px; transition: all 0.3s; font-size: 14px;
         }
         .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+        .form-control:disabled, .form-select:disabled { background: rgba(0, 0, 0, 0.2); color: rgba(0, 255, 136, 0.2); cursor: not-allowed; }
 
         .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
-
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 12px; border-radius: 8px; transition: all 0.3s; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
 
@@ -197,38 +174,33 @@
 
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        /* MODAL DA FICHA */
-        .modal-ficha {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+        /* MODAIS */
+        .modal-ficha, .modal-edicao, .modal-historico, .modal-fotos {
+            display: none; position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(5px);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            z-index: 9999; justify-content: center; align-items: center; padding: 20px;
         }
-        .modal-ficha.open { display: flex; }
-        .modal-ficha-content {
+        .modal-ficha.open, .modal-edicao.open, .modal-historico.open, .modal-fotos.open { display: flex; }
+
+        .modal-content {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 14px;
-            width: 100%;
-            max-width: 800px;
-            max-height: 90vh;
-            overflow-y: auto;
+            border-radius: 14px; width: 100%; max-width: 800px;
+            max-height: 90vh; overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
         }
-        .modal-ficha-header {
+        .modal-content.modal-lg { max-width: 1000px; }
+
+        .modal-header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 25px; border-bottom: 1px solid var(--border-color);
             position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
         }
-        .modal-ficha-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
-        .modal-ficha-body { padding: 25px; }
-        .modal-ficha-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid var(--border-color); }
+        .modal-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
+        .modal-body { padding: 25px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; background: var(--bg-secondary); }
 
         .ficha-foto { width: 200px; height: 250px; object-fit: cover; border-radius: 10px; border: 2px solid var(--border-color); display: block; margin: 0 auto; }
         .ficha-foto-placeholder { width: 200px; height: 250px; background: rgba(0, 255, 136, 0.05); border-radius: 10px; border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(0, 255, 136, 0.2); margin: 0 auto; }
@@ -237,6 +209,24 @@
         .ficha-campo { padding: 8px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
         .ficha-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 3px; }
         .ficha-campo .valor { color: var(--text-primary); font-size: 13px; }
+
+        .aviso-justificativa { background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; }
+
+        .historico-item { background: rgba(0, 0, 0, 0.3); border-left: 3px solid var(--text-primary); border-radius: 8px; padding: 15px; margin-bottom: 12px; }
+        .historico-item .versao { display: inline-block; background: var(--text-primary); color: #000; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-right: 8px; }
+        .historico-item .meta { color: rgba(0, 255, 136, 0.4); font-size: 11px; margin-bottom: 10px; }
+        .historico-item .justificativa { background: rgba(255, 193, 7, 0.05); padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #ffc107; margin-bottom: 10px; }
+        .historico-item .diff-item { background: rgba(0, 0, 0, 0.4); padding: 8px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+        .diff-antes { color: #ff6b6b; text-decoration: line-through; }
+        .diff-depois { color: var(--text-primary); font-weight: 600; }
+
+        .galeria-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .foto-card { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; transition: all 0.3s; }
+        .foto-card:hover { border-color: var(--text-primary); }
+        .foto-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+        .foto-card .info { padding: 10px; }
+        .foto-card .data { font-size: 10px; color: rgba(0, 255, 136, 0.4); }
+        .foto-card .principal { background: var(--text-primary); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -251,7 +241,7 @@
             .form-card { padding: 18px; }
             .btn-gold, .btn-outline-gold { width: 100%; }
             .ficha-foto, .ficha-foto-placeholder { width: 140px; height: 175px; }
-            .modal-ficha-body { padding: 15px; }
+            .modal-body { padding: 15px; }
         }
         @media (max-width: 480px) {
             .main-content { padding: 60px 10px 10px; }
@@ -273,14 +263,14 @@
             <button class="control-btn" onclick="window.history.back()" title="Voltar"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()" title="Avançar"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
-            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
-            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar"><i class="fas fa-times"></i></button>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
         </div>
         <div class="controls-center">
-            <span class="system-title"><i class="fas fa-shield-halved" style="color: var(--text-primary);"></i> AI-DEPOM</span>
+            <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
         </div>
         <div class="controls-right">
-            <div class="user-info"><div class="avatar">AM</div><span class="name">Admin Master</span></div>
+            <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
         </div>
     </header>
 
@@ -306,7 +296,7 @@
         </nav>
         <div class="sidebar-footer">
             <div class="user-info-sidebar">
-                <div class="avatar">AM</div>
+                <div class="avatar" id="sidebarAvatar">AM</div>
                 <div><div class="name" id="sidebarUserName">Carregando...</div><div class="role" id="sidebarUserRole">Carregando...</div></div>
             </div>
         </div>
@@ -322,9 +312,9 @@
                 </div>
             </div>
             <div class="top-actions">
-                <span class="badge" id="totalPresos"><i class="fas fa-user-check" style="color: #28a745;"></i> Presos: <span class="count">0</span></span>
-                <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate" style="color: #ffc107;"></i> Procurados: <span class="count">0</span></span>
-                <span class="badge" id="totalForagidos"><i class="fas fa-user-slash" style="color: #dc3545;"></i> Foragidos: <span class="count">0</span></span>
+                <span class="badge" id="totalPresos"><i class="fas fa-user-check" style="color:#28a745;"></i> Presos: <span class="count">0</span></span>
+                <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate" style="color:#ffc107;"></i> Procurados: <span class="count">0</span></span>
+                <span class="badge" id="totalForagidos"><i class="fas fa-user-slash" style="color:#dc3545;"></i> Foragidos: <span class="count">0</span></span>
             </div>
         </header>
 
@@ -415,30 +405,81 @@
             </div>
         </div>
     </main>
-
-    <!-- MODAL DA FICHA DO SUSPEITO -->
+        <!-- ============================================================ -->
+    <!-- MODAL DA FICHA DO SUSPEITO                                    -->
+    <!-- ============================================================ -->
     <div class="modal-ficha" id="modalFicha">
-        <div class="modal-ficha-content">
-            <div class="modal-ficha-header">
+        <div class="modal-content">
+            <div class="modal-header">
                 <h5><i class="fas fa-user-secret me-2"></i>Ficha do Suspeito</h5>
-                <button class="btn-icon" onclick="fecharFicha()" title="Fechar"><i class="fas fa-times"></i></button>
+                <button class="btn-icon" onclick="fecharFicha()"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-ficha-body" id="modalFichaBody">
+            <div class="modal-body" id="modalFichaBody">
                 <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
                     <i class="fas fa-spinner fa-spin"></i> Carregando...
                 </div>
             </div>
-            <div class="modal-ficha-footer">
+            <div class="modal-footer">
                 <button class="btn-outline-gold" onclick="fecharFicha()"><i class="fas fa-times me-2"></i>FECHAR</button>
                 <button class="btn-gold" onclick="imprimirFichaAtual()"><i class="fas fa-print me-2"></i>IMPRIMIR</button>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- ============================================================ -->
+    <!-- MODAL DE EDIÇÃO                                               -->
+    <!-- ============================================================ -->
+    <div class="modal-edicao" id="modalEdicao">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5><i class="fas fa-pencil-alt me-2"></i>Editar Suspeito</h5>
+                <button class="btn-icon" onclick="fecharEdicao()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalEdicaoBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando dados...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL DE HISTÓRICO                                            -->
+    <!-- ============================================================ -->
+    <div class="modal-historico" id="modalHistorico">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5><i class="fas fa-history me-2"></i>Histórico de Alterações</h5>
+                <button class="btn-icon" onclick="fecharHistorico()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalHistoricoBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando histórico...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL DE FOTOS                                                -->
+    <!-- ============================================================ -->
+    <div class="modal-fotos" id="modalFotos">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5><i class="fas fa-images me-2"></i>Galeria de Fotos</h5>
+                <button class="btn-icon" onclick="fecharFotos()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalFotosBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando fotos...
+                </div>
+            </div>
+        </div>
+    </div>
+        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // ============================================================
-        // CONFIGURAÇÃO SUPABASE — v2.6.0
+        // CONFIGURAÇÃO SUPABASE — v2.7.0
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
@@ -478,6 +519,9 @@
         let totalRegistros = 0;
         let dadosAtuais = [];
         let idSuspeitoAtual = null;
+        let usuarioAtual = null;
+        let perfilUsuarioAtual = null;
+        let camposEditaveisCache = null;
 
         // ============================================================
         // CARREGAR USUÁRIO
@@ -486,13 +530,38 @@
             try {
                 const { data: { user } } = await sb.auth.getUser();
                 if (user) {
-                    const { data: usuario } = await sb.from('usuarios').select('nome_completo, setor').eq('id', user.id).single();
+                    const { data: usuario } = await sb.from('usuarios').select('id, nome_completo, setor, id_perfil_acesso').eq('id', user.id).single();
                     if (usuario) {
-                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin Master';
-                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador Master';
+                        usuarioAtual = usuario;
+                        perfilUsuarioAtual = usuario.id_perfil_acesso;
+                        const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+                        document.getElementById('topAvatar').textContent = inicial;
+                        document.getElementById('topUserName').textContent = usuario.nome_completo || 'Admin';
+                        document.getElementById('sidebarAvatar').textContent = inicial;
+                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin';
+                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador';
+                        console.log('👤 Usuário logado:', usuario.nome_completo, '| Perfil:', perfilUsuarioAtual);
                     }
                 }
             } catch (error) { console.error('Erro ao carregar usuário:', error); }
+        }
+
+        // ============================================================
+        // CARREGAR CAMPOS EDITÁVEIS (cache)
+        // ============================================================
+        async function carregarCamposEditaveis() {
+            if (camposEditaveisCache) return camposEditaveisCache;
+            const { data, error } = await sb.from('suspeito_campos_editaveis')
+                .select('nome_campo, descricao, perfis_permitidos, ordem')
+                .eq('ativo', true)
+                .order('ordem');
+            if (error) {
+                console.error('❌ Erro ao carregar campos editáveis:', error);
+                return [];
+            }
+            camposEditaveisCache = data || [];
+            console.log('📋 Campos editáveis:', camposEditaveisCache.length);
+            return camposEditaveisCache;
         }
 
         // ============================================================
@@ -520,21 +589,17 @@
             const dataInicio = document.getElementById('filtroDataInicio').value;
             const dataFim = document.getElementById('filtroDataFim').value;
 
-            // ✅ VALIDAÇÃO: Exige pelo menos 1 filtro preenchido
             const temFiltro = termo.length > 0 || status || periculosidade || dataInicio || dataFim;
 
             if (!temFiltro) {
                 document.getElementById('resultadosConsulta').innerHTML = `
-                    <tr>
-                        <td colspan="7" class="text-center py-4" style="color: #ffc107;">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
-                            <div style="font-size: 14px; margin-bottom: 6px;"><strong>Nenhum filtro informado</strong></div>
-                            <small style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">
-                                Digite um nome, CPF, RG ou selecione pelo menos um filtro para buscar
-                            </small>
-                        </td>
-                    </tr>
-                `;
+                    <tr><td colspan="7" class="text-center py-4" style="color: #ffc107;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Nenhum filtro informado</strong></div>
+                        <small style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">
+                            Digite um nome, CPF, RG ou selecione pelo menos um filtro para buscar
+                        </small>
+                    </td></tr>`;
                 document.getElementById('infoPagina').textContent = '';
                 document.getElementById('totalRegistrosInfo').textContent = 'Aguardando filtros...';
                 document.getElementById('numerosPaginas').innerHTML = '';
@@ -544,16 +609,12 @@
                 return;
             }
 
-            // ✅ VALIDAÇÃO: se digitou termo, mínimo 2 caracteres
             if (termo.length > 0 && termo.length < 2) {
                 document.getElementById('resultadosConsulta').innerHTML = `
-                    <tr>
-                        <td colspan="7" class="text-center py-4" style="color: #ffc107;">
-                            <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
-                            Digite pelo menos <strong>2 caracteres</strong> para buscar por nome, CPF ou RG
-                        </td>
-                    </tr>
-                `;
+                    <tr><td colspan="7" class="text-center py-4" style="color: #ffc107;">
+                        <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                        Digite pelo menos <strong>2 caracteres</strong> para buscar por nome, CPF ou RG
+                    </td></tr>`;
                 document.getElementById('infoPagina').textContent = '';
                 document.getElementById('totalRegistrosInfo').textContent = 'Aguardando mais caracteres...';
                 document.getElementById('buscaGlobal').focus();
@@ -561,7 +622,7 @@
             }
 
             try {
-                paginaAtual = 1; // Sempre volta pra pág 1 em nova busca
+                paginaAtual = 1;
 
                 let query = sb
                     .from('suspeito')
@@ -680,9 +741,12 @@
                     <td><span class="perigo-badge ${periculosidadeClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
                     <td>${d.cidade || 'N/A'}</td>
                     <td>
-                        <button class="btn-icon" onclick="verDetalhes('${d.id_suspeito}')" title="Ver detalhes"><i class="fas fa-eye"></i></button>
+                        <button class="btn-icon" onclick="verDetalhes('${d.id_suspeito}')" title="Ver ficha"><i class="fas fa-eye"></i></button>
+                        <button class="btn-icon" onclick="editarSuspeito('${d.id_suspeito}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="btn-icon" onclick="verHistorico('${d.id_suspeito}')" title="Histórico"><i class="fas fa-history"></i></button>
+                        <button class="btn-icon" onclick="verFotos('${d.id_suspeito}')" title="Fotos"><i class="fas fa-images"></i></button>
                         <button class="btn-icon" onclick="imprimirFicha('${d.id_suspeito}')" title="Imprimir"><i class="fas fa-print"></i></button>
-                        ${d.status_atual === 'PROCURADO' || d.status_atual === 'FORAGIDO' ? `<button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta('${d.id_suspeito}')" title="Emitir alerta"><i class="fas fa-bell"></i></button>` : ''}
+                        ${d.status_atual === 'PROCURADO' || d.status_atual === 'FORAGIDO' ? `<button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta('${d.id_suspeito}')" title="Alerta"><i class="fas fa-bell"></i></button>` : ''}
                     </td>
                 </tr>`;
             });
@@ -719,139 +783,15 @@
         function irPagina(num) { paginaAtual = num; realizarBusca(); }
 
         // ============================================================
-        // FICHA DO SUSPEITO
-        // ============================================================
-        async function verDetalhes(id) {
-            console.log('👁️ verDetalhes() chamado para ID:', id);
-            idSuspeitoAtual = id;
-
-            const modal = document.getElementById('modalFicha');
-            const body = document.getElementById('modalFichaBody');
-
-            modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando ficha...</div>';
-
-            try {
-                const { data: suspeito, error } = await sb
-                    .from('suspeito')
-                    .select('*')
-                    .eq('id_suspeito', id)
-                    .single();
-
-                if (error) throw error;
-
-                const { data: midias } = await sb
-                    .from('arquivo_midia')
-                    .select('caminho_fisico, nome_seguro, tipo_midia')
-                    .eq('tipo_entidade', 'SUSPEITO')
-                    .eq('id_entidade', id)
-                    .eq('deletado', false);
-
-                let fotoUrl = null;
-                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
-                const principal = fotos.find(m =>
-                    m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')
-                ) || fotos[0];
-
-                if (principal && principal.caminho_fisico) {
-                    const { data: signed } = await sb.storage
-                        .from(BUCKET_FOTOS)
-                        .createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
-                    fotoUrl = signed?.signedUrl || null;
-                }
-
-                const fotoHTML = fotoUrl
-                    ? `<img src="${fotoUrl}" alt="${suspeito.nome_completo}" class="ficha-foto" />`
-                    : `<div class="ficha-foto-placeholder"><i class="fas fa-user-secret"></i><span style="font-size:12px;">Sem foto</span></div>`;
-
-                const statusBadge = suspeito.status_atual
-                    ? `<span class="status-badge ${suspeito.status_atual.toLowerCase()}">${suspeito.status_atual}</span>`
-                    : 'N/A';
-
-                const perigoBadge = suspeito.nivel_periculosidade
-                    ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>`
-                    : 'N/A';
-
-                body.innerHTML = `
-                    <div class="row g-3">
-                        <div class="col-md-4 text-center">
-                            ${fotoHTML}
-                            <div class="mt-3">
-                                <div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Status</div>
-                                ${statusBadge}
-                            </div>
-                            <div class="mt-2">
-                                <div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Periculosidade</div>
-                                ${perigoBadge}
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="ficha-campo"><span class="label">ID</span><span class="valor">#${suspeito.id_suspeito}</span></div>
-                            <div class="ficha-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${suspeito.nome_completo || 'N/A'}</strong></span></div>
-                            <div class="ficha-campo"><span class="label">Apelido</span><span class="valor">${suspeito.apelido || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">RG</span><span class="valor">${suspeito.rg || '-'} ${suspeito.orgao_expedidor ? '(' + suspeito.orgao_expedidor + ')' : ''}</span></div>
-                            <div class="ficha-campo"><span class="label">Data de Nascimento</span><span class="valor">${suspeito.data_nascimento || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Sexo</span><span class="valor">${suspeito.sexo === 'M' ? 'Masculino' : suspeito.sexo === 'F' ? 'Feminino' : suspeito.sexo || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Endereço</span><span class="valor">${[suspeito.logradouro, suspeito.numero, suspeito.bairro, suspeito.cidade, suspeito.uf].filter(Boolean).join(', ') || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Características Físicas</span><span class="valor">Altura: ${suspeito.altura || '-'}m · Peso: ${suspeito.peso || '-'}kg · Olhos: ${suspeito.cor_olhos || '-'} · Cabelo: ${suspeito.cor_cabelo || '-'}</span></div>
-                            ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
-                            ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
-                        </div>
-                    </div>
-                `;
-            } catch (error) {
-                console.error('❌ Erro ao carregar ficha:', error);
-                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
-            }
-        }
-
-        function fecharFicha() {
-            document.getElementById('modalFicha').classList.remove('open');
-            idSuspeitoAtual = null;
-        }
-
-        function imprimirFicha(id) {
-            verDetalhes(id);
-            setTimeout(() => window.print(), 800);
-        }
-
-        function imprimirFichaAtual() {
-            window.print();
-        }
-
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') fecharFicha();
-        });
-
-        document.getElementById('modalFicha')?.addEventListener('click', function(e) {
-            if (e.target === this) fecharFicha();
-        });
-
-        // ============================================================
-        // AÇÕES
-        // ============================================================
-        function emitirAlerta(id) {
-            if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
-                alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
-            }
-        }
-
-        // ============================================================
-        // INICIALIZAÇÃO — v2.6.0 — sem busca automática
+        // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.6.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.7.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
-            // ❌ NÃO chama realizarBusca() automaticamente
         });
 
-        // Enter no campo de busca dispara a busca
         document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                realizarBusca();
-            }
+            if (e.key === 'Enter') { realizarBusca(); }
         });
     </script>
 </body>
