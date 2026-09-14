@@ -1,15 +1,19 @@
-<!-- ============================================================
+ <!-- ============================================================
      AI-DEPOM - REDEFINIR SENHA (via link do e-mail)
      ============================================================
      Arquivo: 03b-redefinir-senha.html
-     Versão: 1.0.0
-     Data: 12/09/2026 - 15:30
+     Versão: 1.1.0
+     Data: 14/09/2026 - 10:30
+     Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [14/09/2026 10:30] ✨ Processa token do hash (implicit flow)
+     - [14/09/2026 10:30] ✨ Cria sessão com setSession() antes de mostrar form
+     - [14/09/2026 10:30] ✨ Suporte a PKCE (exchangeCodeForSession)
+     - [14/09/2026 10:30] ✨ Fallback se sessão já estiver ativa
      - [12/09/2026 15:30] Página criada para fluxo de recovery
      - [12/09/2026 15:30] Detecta type=recovery na URL
      - [12/09/2026 15:30] Após salvar, faz logout e vai pro login
-     - [12/09/2026 15:30] NÃO substitui 03-primeiro-acesso.html
      ============================================================
 -->
 <!DOCTYPE html>
@@ -322,66 +326,114 @@
         let usuarioRecovery = null;
 
         // ============================================================
-        // INICIALIZAÇÃO
+        // INICIALIZAÇÃO — v1.1.0
+        // Trata token do hash (implicit flow), PKCE (code) e sessão ativa
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🔓 AI-DEPOM - Redefinir Senha v1.0.0');
+            console.log('🔓 AI-DEPOM - Redefinir Senha v1.1.0');
             console.log('📍 URL:', window.location.href);
+            console.log('📍 Hash:', window.location.hash);
 
-            // Verifica se veio do link do e-mail
+            // ============================================================
+            // PASSO 1 — Extrair token do hash (implicit flow) [NOVO v1.1.0]
+            // ============================================================
             const hashParams = new URLSearchParams(window.location.hash.substring(1));
             const queryParams = new URLSearchParams(window.location.search);
 
-            const temRecovery = hashParams.get('type') === 'recovery' || queryParams.get('type') === 'recovery';
-            const temToken = hashParams.has('access_token') || queryParams.has('code');
+            const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
+            const type = hashParams.get('type') || queryParams.get('type');
+            const code = queryParams.get('code');
 
-            console.log('🔍 type=recovery?', temRecovery);
-            console.log('🔍 access_token/code?', temToken);
+            console.log('🔑 access_token:', accessToken ? 'SIM' : 'NÃO');
+            console.log('🔑 refresh_token:', refreshToken ? 'SIM' : 'NÃO');
+            console.log('🔑 type:', type);
+            console.log('🔑 code:', code);
 
-            if (!temRecovery && !temToken) {
-                console.warn('⚠️ Sem token de recuperação na URL');
-                mostrarErro('Link inválido. Solicite um novo link em "Esqueci minha senha".');
-                setTimeout(() => window.location.href = '02-login.html', 4000);
-                return;
-            }
+            // ============================================================
+            // CASO 1 — Token no hash (implicit flow) [NOVO v1.1.0]
+            // ============================================================
+            if (accessToken && type === 'recovery') {
+                console.log('✅ Token de recovery detectado no hash');
 
-            // O Supabase JS processa o token automaticamente e cria a sessão
-            try {
-                // Aguarda um instante pro Supabase processar o hash
-                await new Promise(resolve => setTimeout(resolve, 500));
-
-                const { data: { user }, error } = await window.supabaseClient.auth.getUser();
-
-                if (error || !user) {
-                    console.warn('⚠️ Não conseguiu obter usuário, aguardando evento...');
-
-                    // Registra listener pro caso do Supabase processar depois
-                    window.supabaseClient.auth.onAuthStateChange((event, session) => {
-                        console.log('🔔 Auth event:', event);
-                        if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
-                            usuarioRecovery = session?.user;
-                            mostrarFormulario();
-                        }
+                try {
+                    // Cria sessão temporária com o token recebido
+                    const { data, error } = await window.supabaseClient.auth.setSession({
+                        access_token: accessToken,
+                        refresh_token: refreshToken || ''
                     });
 
-                    // Timeout de segurança
-                    setTimeout(() => {
-                        if (!usuarioRecovery) {
-                            mostrarErro('Não foi possível validar o link. Ele pode ter expirado.');
-                            setTimeout(() => window.location.href = '02-login.html', 4000);
-                        }
-                    }, 3000);
+                    if (error) {
+                        console.error('❌ Erro ao criar sessão:', error);
+                        mostrarErro('Link inválido ou expirado. Solicite um novo.');
+                        setTimeout(() => window.location.href = '02-login.html', 3000);
+                        return;
+                    }
+
+                    console.log('✅ Sessão criada:', data.user.email);
+                    usuarioRecovery = data.user;
+                    mostrarFormulario();
+                    return;
+
+                } catch (err) {
+                    console.error('❌ Erro inesperado:', err);
+                    mostrarErro('Erro ao validar link: ' + err.message);
                     return;
                 }
-
-                console.log('✅ Sessão de recovery ativa:', user.email);
-                usuarioRecovery = user;
-                mostrarFormulario();
-
-            } catch (err) {
-                console.error('❌ Erro:', err);
-                mostrarErro('Erro ao validar link: ' + err.message);
             }
+
+            // ============================================================
+            // CASO 2 — Code PKCE na query [NOVO v1.1.0]
+            // ============================================================
+            if (code) {
+                console.log('✅ Code PKCE detectado na query');
+
+                try {
+                    const { data, error } = await window.supabaseClient.auth.exchangeCodeForSession(code);
+
+                    if (error) {
+                        console.error('❌ Erro ao trocar code:', error);
+                        mostrarErro('Link inválido ou expirado. Solicite um novo.');
+                        setTimeout(() => window.location.href = '02-login.html', 3000);
+                        return;
+                    }
+
+                    console.log('✅ Sessão criada:', data.user.email);
+                    usuarioRecovery = data.user;
+                    mostrarFormulario();
+                    return;
+
+                } catch (err) {
+                    console.error('❌ Erro inesperado:', err);
+                    mostrarErro('Erro ao validar link: ' + err.message);
+                    return;
+                }
+            }
+
+            // ============================================================
+            // CASO 3 — Verificar sessão ativa (fallback) [NOVO v1.1.0]
+            // ============================================================
+            console.log('ℹ️ Sem token no hash, verificando sessão...');
+
+            try {
+                const { data: { user } } = await window.supabaseClient.auth.getUser();
+
+                if (user) {
+                    console.log('✅ Sessão ativa encontrada:', user.email);
+                    usuarioRecovery = user;
+                    mostrarFormulario();
+                    return;
+                }
+            } catch (err) {
+                console.warn('⚠️ Sem sessão:', err);
+            }
+
+            // ============================================================
+            // NADA FUNCIONOU — Link inválido [NOVO v1.1.0]
+            // ============================================================
+            console.warn('⚠️ Nenhum token válido encontrado');
+            mostrarErro('Link inválido. Solicite um novo em "Esqueci minha senha".');
+            setTimeout(() => window.location.href = '02-login.html', 4000);
         });
 
         // ============================================================
