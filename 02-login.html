@@ -2,10 +2,14 @@
      AI-DEPOM - LOGIN
      ============================================================
      Arquivo: 02-login.html
-     Versão: 2.1.0
-     Data: 12/09/2026 - 15:00
+     Versão: 2.2.0
+     Data: 14/09/2026 - 16:00
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [14/09/2026 16:00] ✨ Login por MATRÍCULA ou E-MAIL (detecção automática)
+     - [14/09/2026 16:00] ✨ Campo login vira type="text" (aceita "ADM-MASTER-001")
+     - [14/09/2026 16:00] ✨ Busca o e-mail pela matrícula na tabela usuarios
+     - [14/09/2026 16:00] ✨ Validação de usuário ativo/deletado antes do login
      - [12/09/2026 15:00] Link "Esqueci minha senha" funcional
      - [12/09/2026 15:00] Modal de recuperação de senha
      - [12/09/2026 15:00] Redireciona para 03b-redefinir-senha.html
@@ -266,11 +270,12 @@
         </div>
 
         <form id="formLogin">
+            <!-- [ALTERADO v2.2.0] Campo: Email → Matrícula ou Email -->
             <div class="form-group">
-                <label for="email"><i class="fas fa-envelope"></i> Email</label>
+                <label for="login"><i class="fas fa-id-card"></i> Matrícula ou E-mail</label>
                 <div class="input-wrapper">
-                    <i class="fas fa-envelope"></i>
-                    <input type="email" id="email" placeholder="seu.email@pcivil.ba.gov.br" required autocomplete="username">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="login" placeholder="ADM-MASTER-001 ou seu@email.com" required autocomplete="username">
                 </div>
             </div>
 
@@ -334,10 +339,10 @@
         let usuarioLogado = null;
 
         // ============================================================
-        // INICIALIZAÇÃO
+        // INICIALIZAÇÃO — [ALTERADO v2.2.0]
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🔐 AI-DEPOM - Login v2.1.0');
+            console.log('🔐 AI-DEPOM - Login v2.2.0');
             console.log('📍 URL:', window.location.href);
 
             // Verifica se já tem sessão ativa
@@ -382,16 +387,17 @@
         }
 
         // ============================================================
-        // LOGIN
+        // LOGIN — [ALTERADO v2.2.0]
+        // Aceita MATRÍCULA ou E-MAIL com detecção automática
         // ============================================================
         document.getElementById('formLogin').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const email = document.getElementById('email').value.trim();
+            const inputLogin = document.getElementById('login').value.trim();
             const senha = document.getElementById('senha').value;
             const btn = document.getElementById('btnLogin');
 
-            if (!email || !senha) {
-                mostrarErro('Preencha email e senha.');
+            if (!inputLogin || !senha) {
+                mostrarErro('Preencha todos os campos.');
                 return;
             }
 
@@ -399,17 +405,60 @@
             btn.classList.add('loading');
 
             try {
-                console.log('🔐 Tentando login:', email);
+                let emailParaLogin = inputLogin;
+
+                // [NOVO v2.2.0] Detecta se é matrícula (sem @) ou e-mail (com @)
+                if (!inputLogin.includes('@')) {
+                    console.log('🔍 Matrícula detectada:', inputLogin);
+
+                    // Busca o e-mail pela matrícula
+                    const { data: usuarioPorMatricula, error: errBusca } = await window.supabaseClient
+                        .from('usuarios')
+                        .select('id, email, nome_completo, ativo, deletado')
+                        .eq('matricula', inputLogin)
+                        .maybeSingle();
+
+                    if (errBusca) {
+                        console.error('❌ Erro ao buscar matrícula:', errBusca);
+                        mostrarErro('Erro ao buscar matrícula. Tente novamente.');
+                        return;
+                    }
+
+                    if (!usuarioPorMatricula) {
+                        mostrarErro('Matrícula não encontrada.');
+                        return;
+                    }
+
+                    // Verifica se o usuário está ativo
+                    if (usuarioPorMatricula.deletado) {
+                        mostrarErro('Usuário desativado. Contate o administrador.');
+                        return;
+                    }
+
+                    if (!usuarioPorMatricula.ativo) {
+                        mostrarErro('Usuário inativo. Contate o administrador.');
+                        return;
+                    }
+
+                    emailParaLogin = usuarioPorMatricula.email;
+                    console.log('✅ E-mail encontrado para a matrícula:', emailParaLogin);
+
+                } else {
+                    console.log('📧 E-mail detectado:', inputLogin);
+                }
+
+                // Faz o login com o e-mail (seja digitado ou encontrado pela matrícula)
+                console.log('🔐 Tentando login com:', emailParaLogin);
 
                 const { data, error } = await window.supabaseClient.auth.signInWithPassword({
-                    email: email,
+                    email: emailParaLogin,
                     password: senha
                 });
 
                 if (error) {
                     console.error('❌ Erro no login:', error);
-                    let msg = 'Email ou senha inválidos.';
-                    if (error.message.includes('Invalid login')) msg = 'Email ou senha incorretos.';
+                    let msg = 'Credenciais inválidas.';
+                    if (error.message.includes('Invalid login')) msg = 'Matrícula/e-mail ou senha incorretos.';
                     else if (error.message.includes('Email not confirmed')) msg = 'Email não confirmado. Verifique sua caixa de entrada.';
                     mostrarErro(msg);
                     return;
@@ -417,7 +466,7 @@
 
                 console.log('✅ Login OK:', data.user.email);
 
-                // Busca dados do usuário na tabela
+                // Busca dados completos do usuário na tabela
                 const { data: usuario, error: errUsuario } = await window.supabaseClient
                     .from('usuarios')
                     .select('id, nome_completo, email, setor, matricula, id_perfil_acesso, primeiro_acesso, ativo, deletado')
@@ -445,7 +494,7 @@
 
                 // Salva no localStorage
                 localStorage.setItem('usuario', JSON.stringify(usuario));
-                console.log('✅ Usuário salvo:', usuario.nome_completo);
+                console.log('✅ Usuário salvo:', usuario.nome_completo, '| Matrícula:', usuario.matricula);
 
                 mostrarSucesso('Login realizado! Redirecionando...');
 
@@ -473,7 +522,8 @@
         // ============================================================
         function abrirModalRecuperar() {
             document.getElementById('modalRecuperar').classList.add('open');
-            document.getElementById('emailRecuperar').value = document.getElementById('email').value || '';
+            // [ALTERADO v2.2.0] Não copia mais o valor do campo de login (que pode ser matrícula)
+            document.getElementById('emailRecuperar').value = '';
             setTimeout(() => document.getElementById('emailRecuperar').focus(), 100);
         }
 
