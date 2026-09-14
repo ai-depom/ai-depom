@@ -1,12 +1,16 @@
-/* ============================================
+ /* ============================================
    AI-DEPOM - TEMPORIZADOR DE INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-lock.js
-   Versao: 1.0.0
-   Data: 11/09/2026
+   Versao: 1.1.0
+   Data: 14/09/2026 - 12:30
    ============================================
-   Bloqueia a tela apos 5 minutos de inatividade
-   Desbloqueio com matricula + senha
+   ALTERAÇÕES RECENTES:
+   - [14/09/2026 12:30] ✨ Desbloqueio só com SENHA (não matrícula)
+   - [14/09/2026 12:30] ✨ Valida senha do usuário logado
+   - [14/09/2026 12:30] ✨ Aviso visual mais sutil
+   - [14/09/2026 12:30] ✨ Botão "Entrar com outra conta"
+   - [11/09/2026] Versão inicial (5 min, matrícula + senha)
    ============================================ */
 
 (function() {
@@ -103,6 +107,51 @@
                 letter-spacing: 1px;
                 margin-bottom: 25px;
             }
+            /* [v1.1.0] Mostra quem está logado */
+            .lock-user-info {
+                background: rgba(0, 255, 136, 0.03);
+                border: 1px solid #003322;
+                border-radius: 10px;
+                padding: 12px;
+                margin-bottom: 20px;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                text-align: left;
+            }
+            .lock-user-info .avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                background: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 700;
+                font-size: 16px;
+                color: #000;
+                flex-shrink: 0;
+            }
+            .lock-user-info .info {
+                flex: 1;
+                min-width: 0;
+            }
+            .lock-user-info .name {
+                color: #00ff88;
+                font-size: 14px;
+                font-weight: 600;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .lock-user-info .email {
+                color: rgba(0, 255, 136, 0.4);
+                font-size: 11px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
             .lock-timer {
                 color: rgba(0, 255, 136, 0.3);
                 font-size: 12px;
@@ -236,6 +285,16 @@
                     <div class="lock-icon"><i class="fas fa-lock"></i></div>
                     <div class="lock-title">SESSAO BLOQUEADA</div>
                     <div class="lock-subtitle">Por inatividade</div>
+
+                    <!-- [v1.1.0] Mostra usuário logado -->
+                    <div class="lock-user-info">
+                        <div class="avatar" id="lockUserAvatar">?</div>
+                        <div class="info">
+                            <div class="name" id="lockUserName">Usuario</div>
+                            <div class="email" id="lockUserEmail">email@exemplo.com</div>
+                        </div>
+                    </div>
+
                     <div class="lock-timer">
                         <i class="fas fa-clock"></i> Bloqueado em <strong id="lockTime">--:--</strong>
                     </div>
@@ -244,12 +303,8 @@
 
                     <div class="lock-form">
                         <div class="form-group">
-                            <label for="lockMatricula">Matricula</label>
-                            <input type="text" id="lockMatricula" placeholder="Digite sua matricula" autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label for="lockSenha">Senha</label>
-                            <input type="password" id="lockSenha" placeholder="Digite sua senha">
+                            <label for="lockSenha">Digite sua senha para desbloquear</label>
+                            <input type="password" id="lockSenha" placeholder="Digite sua senha" autocomplete="current-password">
                         </div>
                         <button type="button" class="lock-btn" id="lockBtn">
                             <i class="fas fa-unlock"></i> DESBLOQUEAR
@@ -278,8 +333,11 @@
         const lockError = document.getElementById('lockError');
         const lockBtn = document.getElementById('lockBtn');
         const lockLogout = document.getElementById('lockLogout');
-        const lockMatricula = document.getElementById('lockMatricula');
         const lockSenha = document.getElementById('lockSenha');
+        // [v1.1.0] Elementos do usuário logado
+        const lockUserAvatar = document.getElementById('lockUserAvatar');
+        const lockUserName = document.getElementById('lockUserName');
+        const lockUserEmail = document.getElementById('lockUserEmail');
 
         // ============================================
         // REGISTRAR ATIVIDADE
@@ -339,26 +397,38 @@
             const agora = new Date();
             lockTime.textContent = agora.toLocaleTimeString('pt-BR');
 
+            // [v1.1.0] Mostra dados do usuário logado
+            try {
+                const usuarioStr = localStorage.getItem('usuario');
+                if (usuarioStr) {
+                    const usuario = JSON.parse(usuarioStr);
+                    const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+                    lockUserAvatar.textContent = inicial;
+                    lockUserName.textContent = usuario.nome_completo || 'Usuário';
+                    lockUserEmail.textContent = usuario.email || usuario.matricula || '';
+                }
+            } catch (e) {
+                console.warn('Erro ao carregar dados do usuário:', e);
+            }
+
             lockError.classList.remove('show');
-            lockMatricula.value = '';
             lockSenha.value = '';
 
-            setTimeout(() => lockMatricula.focus(), 300);
+            setTimeout(() => lockSenha.focus(), 300);
 
             console.log('🔒 Tela bloqueada por inatividade');
         }
 
         // ============================================
-        // DESBLOQUEAR
+        // DESBLOQUEAR — [v1.1.0] Só com senha
         // ============================================
         async function desbloquear() {
-            const matricula = lockMatricula.value.trim();
             const senha = lockSenha.value.trim();
 
             lockError.classList.remove('show');
 
-            if (!matricula || !senha) {
-                lockError.textContent = 'Preencha matricula e senha.';
+            if (!senha) {
+                lockError.textContent = 'Digite sua senha.';
                 lockError.classList.add('show');
                 return;
             }
@@ -373,38 +443,43 @@
             lockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFICANDO...';
 
             try {
-                // 1. Buscar usuario
-                const { data: usuario, error: buscaError } = await window.supabaseClient
-                    .from('usuarios')
-                    .select('id, matricula, nome_completo, email, ativo, deletado')
-                    .eq('matricula', matricula)
-                    .maybeSingle();
+                // [v1.1.0] Pega o email do usuário logado no localStorage
+                let emailUsuario = null;
+                try {
+                    const usuarioStr = localStorage.getItem('usuario');
+                    if (usuarioStr) {
+                        const usuario = JSON.parse(usuarioStr);
+                        emailUsuario = usuario.email;
+                    }
+                } catch (e) {
+                    console.warn('Erro ao ler usuário do localStorage:', e);
+                }
 
-                if (buscaError || !usuario) {
-                    lockError.textContent = 'Matricula nao encontrada.';
+                // [v1.1.0] Se não achou no localStorage, tenta pegar do Supabase
+                if (!emailUsuario && window.supabaseClient.auth) {
+                    const { data: { user } } = await window.supabaseClient.auth.getUser();
+                    if (user) emailUsuario = user.email;
+                }
+
+                if (!emailUsuario) {
+                    lockError.textContent = 'Usuário não identificado. Faça login novamente.';
                     lockError.classList.add('show');
                     return;
                 }
 
-                if (usuario.deletado === true || usuario.ativo !== true) {
-                    lockError.textContent = 'Usuario inativo ou deletado.';
-                    lockError.classList.add('show');
-                    return;
-                }
-
-                // 2. Autenticar
+                // [v1.1.0] Autentica com email + senha
                 const { error: authError } = await window.supabaseClient.auth.signInWithPassword({
-                    email: usuario.email,
+                    email: emailUsuario,
                     password: senha
                 });
 
                 if (authError) {
-                    lockError.textContent = 'Senha incorreta.';
+                    lockError.textContent = 'Senha incorreta. Tente novamente.';
                     lockError.classList.add('show');
                     return;
                 }
 
-                // 3. Desbloquear
+                // [v1.1.0] Sucesso — desbloqueia
                 bloqueado = false;
                 lockScreen.classList.remove('show');
                 resetarTimers();
@@ -428,11 +503,9 @@
         });
 
         lockBtn.addEventListener('click', desbloquear);
+        // [v1.1.0] Enter no campo de senha
         lockSenha.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') desbloquear();
-        });
-        lockMatricula.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') lockSenha.focus();
         });
 
         lockLogout.addEventListener('click', async function() {
