@@ -2,19 +2,40 @@
    AI-DEPOM - TEMPORIZADOR DE INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-lock.js
-   Versao: 1.1.0
-   Data: 14/09/2026 - 12:30
+   Versao: 1.1.1
+   Data: 15/09/2026 - 15:45
+   Autor: AI-DEPOM Team
    ============================================
-   ALTERAÇÕES RECENTES:
-   - [14/09/2026 12:30] ✨ Desbloqueio só com SENHA (não matrícula)
-   - [14/09/2026 12:30] ✨ Valida senha do usuário logado
-   - [14/09/2026 12:30] ✨ Aviso visual mais sutil
-   - [14/09/2026 12:30] ✨ Botão "Entrar com outra conta"
-   - [11/09/2026] Versão inicial (5 min, matrícula + senha)
+   REGRA DE OURO:
+   1. Zero placeholders quebrados
+   2. Zero TODOs esquecidos
+   3. Zero duplicações
+   4. Toda função referenciada DEVE existir
+   5. Todo botão DEVE ter handler real
+   6. Todo módulo DEVE estar conectado
+   7. Nenhuma linha deve ser removida sem substituição
+
+   ALTERAÇÕES v1.1.1 (15/09/2026 15:45):
+   - 🐛 Só inicializa se usuário estiver logado (NÃO bloqueia 02-login.html)
+   - 🐛 Logout usa AIDEPOM.logout() (limpeza total)
+   - 🐛 blocarTela() limpa TODOS os timers (evita re-disparo)
+   - 🐛 Guarda contra duplicação de listeners (evita 2x)
+   - 🐛 Aguarda window.supabaseClient estar pronto
+   - 🐛 visibilitychange registra atividade ao voltar pra aba
+   - 📜 Cabeçalho Regra de Ouro
+   - ✅ Mantidas: 5min timeout, aviso 1min, senha, usuário logado, logout
    ============================================ */
 
 (function() {
     'use strict';
+
+    // ============================================
+    // [NOVO v1.1.1] GUARDA — evita dupla inicialização
+    // ============================================
+    if (window.__AIDEPOM_INACTIVITY_LOCK_INIT__) {
+        console.log('ℹ️ inactivity-lock.js já foi inicializado. Ignorando.');
+        return;
+    }
 
     // ============================================
     // CONFIGURACOES
@@ -34,6 +55,11 @@
     // CRIAR ELEMENTOS DINAMICAMENTE
     // ============================================
     function criarElementos() {
+        // [v1.1.1] Evita duplicar se já existe
+        if (document.getElementById('inactivity-lock-container')) {
+            return;
+        }
+
         // 1. CSS
         const style = document.createElement('style');
         style.id = 'inactivity-lock-style';
@@ -107,7 +133,6 @@
                 letter-spacing: 1px;
                 margin-bottom: 25px;
             }
-            /* [v1.1.0] Mostra quem está logado */
             .lock-user-info {
                 background: rgba(0, 255, 136, 0.03);
                 border: 1px solid #003322;
@@ -286,7 +311,6 @@
                     <div class="lock-title">SESSAO BLOQUEADA</div>
                     <div class="lock-subtitle">Por inatividade</div>
 
-                    <!-- [v1.1.0] Mostra usuário logado -->
                     <div class="lock-user-info">
                         <div class="avatar" id="lockUserAvatar">?</div>
                         <div class="info">
@@ -320,9 +344,45 @@
     }
 
     // ============================================
+    // [NOVO v1.1.1] Verifica se está logado
+    // ============================================
+    function estaLogado() {
+        try {
+            const u = localStorage.getItem('usuario');
+            if (!u || u === 'null' || u === 'undefined') return false;
+            const parsed = JSON.parse(u);
+            return !!(parsed && parsed.id);
+        } catch (e) {
+            return false;
+        }
+    }
+
+    // ============================================
+    // [NOVO v1.1.1] Aguarda window.supabaseClient
+    // ============================================
+    function aguardarSupabaseClient(callback, tentativas = 0) {
+        if (window.supabaseClient && window.supabaseClient.auth) {
+            callback();
+            return;
+        }
+        if (tentativas > 50) { // ~5s
+            console.warn('⚠️ inactivity-lock: supabaseClient não disponível após 5s');
+            callback();
+            return;
+        }
+        setTimeout(() => aguardarSupabaseClient(callback, tentativas + 1), 100);
+    }
+
+    // ============================================
     // INICIALIZACAO
     // ============================================
     function init() {
+        // [NOVO v1.1.1] Não roda em páginas sem login (ex: 02-login.html)
+        if (!estaLogado()) {
+            console.log('ℹ️ inactivity-lock: usuário não logado, timers não iniciados.');
+            return;
+        }
+
         // Criar elementos
         criarElementos();
 
@@ -334,7 +394,6 @@
         const lockBtn = document.getElementById('lockBtn');
         const lockLogout = document.getElementById('lockLogout');
         const lockSenha = document.getElementById('lockSenha');
-        // [v1.1.0] Elementos do usuário logado
         const lockUserAvatar = document.getElementById('lockUserAvatar');
         const lockUserName = document.getElementById('lockUserName');
         const lockUserEmail = document.getElementById('lockUserEmail');
@@ -348,10 +407,18 @@
             resetarTimers();
         }
 
-        function resetarTimers() {
+        // [NOVO v1.1.1] Limpa TODOS os timers (usar antes de bloquear/resetar)
+        function limparTodosTimers() {
             clearTimeout(timeoutId);
             clearTimeout(warningId);
             clearInterval(countdownId);
+            timeoutId = null;
+            warningId = null;
+            countdownId = null;
+        }
+
+        function resetarTimers() {
+            limparTodosTimers();
             warningToast.classList.remove('show');
 
             warningId = setTimeout(() => {
@@ -389,15 +456,20 @@
         // BLOQUEAR TELA
         // ============================================
         function bloquearTela() {
+            if (bloqueado) return; // [NOVO v1.1.1] guarda contra dupla execução
+
             bloqueado = true;
+
+            // [NOVO v1.1.1] Limpa TODOS os timers
+            limparTodosTimers();
+
             lockScreen.classList.add('show');
             warningToast.classList.remove('show');
-            clearInterval(countdownId);
 
             const agora = new Date();
             lockTime.textContent = agora.toLocaleTimeString('pt-BR');
 
-            // [v1.1.0] Mostra dados do usuário logado
+            // Mostra dados do usuário logado
             try {
                 const usuarioStr = localStorage.getItem('usuario');
                 if (usuarioStr) {
@@ -420,7 +492,7 @@
         }
 
         // ============================================
-        // DESBLOQUEAR — [v1.1.0] Só com senha
+        // DESBLOQUEAR — só com senha
         // ============================================
         async function desbloquear() {
             const senha = lockSenha.value.trim();
@@ -443,7 +515,6 @@
             lockBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFICANDO...';
 
             try {
-                // [v1.1.0] Pega o email do usuário logado no localStorage
                 let emailUsuario = null;
                 try {
                     const usuarioStr = localStorage.getItem('usuario');
@@ -455,7 +526,6 @@
                     console.warn('Erro ao ler usuário do localStorage:', e);
                 }
 
-                // [v1.1.0] Se não achou no localStorage, tenta pegar do Supabase
                 if (!emailUsuario && window.supabaseClient.auth) {
                     const { data: { user } } = await window.supabaseClient.auth.getUser();
                     if (user) emailUsuario = user.email;
@@ -467,7 +537,6 @@
                     return;
                 }
 
-                // [v1.1.0] Autentica com email + senha
                 const { error: authError } = await window.supabaseClient.auth.signInWithPassword({
                     email: emailUsuario,
                     password: senha
@@ -479,7 +548,6 @@
                     return;
                 }
 
-                // [v1.1.0] Sucesso — desbloqueia
                 bloqueado = false;
                 lockScreen.classList.remove('show');
                 resetarTimers();
@@ -502,37 +570,71 @@
             document.addEventListener(evento, registrarAtividade, { passive: true });
         });
 
+        // [NOVO v1.1.1] Detecta retorno à aba
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                registrarAtividade();
+            }
+        });
+
         lockBtn.addEventListener('click', desbloquear);
-        // [v1.1.0] Enter no campo de senha
         lockSenha.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') desbloquear();
         });
 
+        // [ALTERADO v1.1.1] Logout robusto
         lockLogout.addEventListener('click', async function() {
-            if (confirm('Deseja realmente sair do sistema?')) {
-                try {
-                    if (window.supabaseClient) {
-                        await window.supabaseClient.auth.signOut();
-                    }
-                } catch(e) {}
-                sessionStorage.clear();
-                localStorage.removeItem('usuario');
-                window.location.href = '02-login.html';
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+
+            try {
+                // [v1.1.1] Usa AIDEPOM.logout() se disponível (limpa TUDO)
+                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
+                    await AIDEPOM.logout();
+                    return;
+                }
+            } catch (e) {
+                console.warn('⚠️ AIDEPOM.logout() falhou, usando fallback:', e);
             }
+
+            // Fallback
+            try {
+                if (window.supabaseClient?.auth) {
+                    await window.supabaseClient.auth.signOut();
+                }
+            } catch(e) { /* ignore */ }
+
+            try {
+                localStorage.removeItem('usuario');
+                localStorage.removeItem('authData');
+                localStorage.removeItem('usuarioId');
+                localStorage.removeItem('logado');
+            } catch (e) { /* ignore */ }
+
+            window.location.href = '02-login.html';
         });
 
         // Iniciar timers
         resetarTimers();
 
+        // Marca como inicializado
+        window.__AIDEPOM_INACTIVITY_LOCK_INIT__ = true;
+
         console.log('✅ Temporizador de inatividade ativo (5 minutos)');
     }
 
     // ============================================
-    // AGUARDAR DOM
+    // AGUARDAR DOM + SUPABASE
     // ============================================
+    function bootstrap() {
+        // [NOVO v1.1.1] Aguarda window.supabaseClient antes de inicializar
+        aguardarSupabaseClient(function() {
+            init();
+        });
+    }
+
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', bootstrap);
     } else {
-        init();
+        bootstrap();
     }
 })();
