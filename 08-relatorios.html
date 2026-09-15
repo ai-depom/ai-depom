@@ -2,17 +2,27 @@
      AI-DEPOM - RELATÓRIOS E ESTATÍSTICAS
      ============================================================
      Arquivo: 08-relatorios.html
-     Versão: 1.1.0
-     Data: 14/09/2026 - 17:30
+     Versão: 1.1.1
+     Data: 15/09/2026 - 10:00
      Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES RECENTES:
-     - [14/09/2026 17:30] ✨ Cabeçalho Regra de Ouro aplicado
-     - [14/09/2026 17:30] ✨ Sidebar com flexbox (footer sem overlap)
-     - [14/09/2026 17:30] ✨ fazerLogout() robusto (fallback duplo)
-     - [14/09/2026 17:30] ✨ closeWindow() robusto (fallback)
-     - [14/09/2026 17:30] ✨ <script> movido para dentro do <body>
-     - [14/09/2026 17:30] ✨ Aviso "sem dados" com ícone
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v1.1.1 (15/09/2026 10:00):
+     - 🔗 Menu: Mandados → 11-mandados.html
+     - 🔗 Menu: Auditoria → 12-auditoria.html
+     - 🎨 CSS: disabled/readonly preto + verde (padrão do sistema)
+     - ➕ Botão MINIMIZAR adicionado no controls-bar
+     - ➕ minimizeWindow() implementado
+     - 📜 Cabeçalho Regra de Ouro COMPLETO
+     - ✅ Mantidas: sidebar flexbox, fazerLogout, closeWindow, fullscreen, inactivity-lock
      ============================================================
 -->
 <!DOCTYPE html>
@@ -67,6 +77,7 @@
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar {
@@ -76,7 +87,7 @@
             font-weight: 700; font-size: 12px; color: #000;
         }
 
-        /* [ALTERADO v1.1.0] SIDEBAR com flexbox (footer não sobrepõe) */
+        /* SIDEBAR com flexbox (footer sem overlap) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -95,7 +106,6 @@
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
-        /* [ALTERADO v1.1.0] flex: 1 para empurrar footer */
         .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
@@ -108,7 +118,6 @@
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
-        /* [ALTERADO v1.1.0] position relative + margin-top auto */
         .sidebar-footer {
             position: relative;
             padding: 15px 20px 20px;
@@ -152,6 +161,28 @@
             border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
         }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+        .btn-outline-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
+        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* [NOVO v1.1.1] Regra: campos desabilitados/somente leitura = fundo preto + letras verdes FORTES */
+        .form-control:disabled,
+        .form-control[readonly],
+        .form-select:disabled,
+        .form-control.disabled,
+        .form-select.disabled {
+            background: #000000 !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+        .form-control:disabled::placeholder,
+        .form-control[readonly]::placeholder { color: rgba(0, 255, 136, 0.35) !important; }
+        .form-check-input:disabled { background-color: #000; border-color: var(--border-color); }
+        .form-check-input:disabled + .form-check-label { color: rgba(0, 255, 136, 0.35); }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -230,7 +261,6 @@
             font-weight: 700;
             min-width: 50px;
         }
-        /* [NOVO v1.1.0] Estilo de "sem dados" com ícone */
         .no-data {
             text-align: center;
             padding: 30px 20px;
@@ -282,7 +312,7 @@
             .main-content { padding: 65px 15px 15px; }
             .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
             .form-card { padding: 18px; }
-            .btn-outline-gold { width: 100%; }
+            .btn-outline-gold, .btn-gold { width: 100%; }
             .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
             .chart-bar .label { min-width: 90px; font-size: 12px; }
         }
@@ -297,6 +327,7 @@
             <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
             <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
             <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
         </div>
@@ -323,8 +354,8 @@
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-gavel"></i> Mandados</a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -390,7 +421,7 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Relatorios v1.1.0 iniciado');
+            console.log('AI-DEPOM - Relatorios v1.1.1 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -480,7 +511,6 @@
             }
         }
 
-        // [ALTERADO v1.1.0] Aviso "sem dados" com ícone
         function renderizarChart(dados, campo, containerId) {
             const container = document.getElementById(containerId);
             if (!dados || dados.length === 0) {
@@ -514,7 +544,6 @@
             container.innerHTML = html;
         }
 
-        // [ALTERADO v1.1.0] Aviso "sem dados" com ícone
         function renderizarTopBairros(dados, containerId) {
             const container = document.getElementById(containerId);
             if (!dados || dados.length === 0) {
@@ -598,7 +627,15 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
-        // [ALTERADO v1.1.0] Logout robusto
+        // [NOVO v1.1.1] minimizeWindow()
+        function minimizeWindow() {
+            try {
+                window.blur();
+                console.log('🪟 Janela desfocada (minimizar real não suportado pelo navegador)');
+            } catch (e) { console.warn('Minimizar não suportado:', e); }
+        }
+
+        // Logout robusto (mantido)
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
             try {
@@ -626,7 +663,7 @@
             window.location.href = '02-login.html';
         }
 
-        // [ALTERADO v1.1.0] CloseWindow robusto
+        // CloseWindow robusto (mantido)
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
 
@@ -648,7 +685,6 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
     </script>
-    <!-- [ALTERADO v1.1.0] inactivity-lock dentro do <body> -->
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
