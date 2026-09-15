@@ -2,11 +2,14 @@
 // AI-DEPOM - CONFIGURAÇÃO SUPABASE
 // ============================================================
 // Arquivo: assets/js/supabase-config.js
-// Versão: 2.2.0
-// Data: 11/09/2026 - 17:00
+// Versão: 2.3.0
+// Data: 14/09/2026 - 16:30
 // Autor: AI-DEPOM Team
 // ============================================================
 // ALTERAÇÕES RECENTES:
+// - [14/09/2026 16:30] ✨ getUsuario/setUsuario/limparSessao usam localStorage
+// - [14/09/2026 16:30] ✨ Corrigido bug de "Sessão expirada" imediata
+// - [14/09/2026 16:30] ✨ Padronizado storage com o 02-login.html
 // - [11/09/2026 17:00] Adicionada função criarUsuario()
 // - [11/09/2026 17:00] Adicionada função listarUsuarios()
 // - [11/09/2026 17:00] Adicionada função isAdminMaster()
@@ -20,23 +23,26 @@ window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON
 window.AIDEPOM = {
 
     // ============================================================
-    // SESSÃO
-    // Data: 11/09/2026 - 17:00
+    // SESSÃO — [ALTERADO v2.3.0] Agora usa localStorage
+    // Data: 14/09/2026 - 16:30
     // ============================================================
     getUsuario() {
-        const u = sessionStorage.getItem('usuario');
+        // [ALTERADO v2.3.0] sessionStorage → localStorage
+        const u = localStorage.getItem('usuario');
         return u ? JSON.parse(u) : null;
     },
 
     setUsuario(usuario) {
-        sessionStorage.setItem('usuario', JSON.stringify(usuario));
+        // [ALTERADO v2.3.0] sessionStorage → localStorage
+        localStorage.setItem('usuario', JSON.stringify(usuario));
     },
 
     limparSessao() {
-        sessionStorage.removeItem('usuario');
-        sessionStorage.removeItem('authData');
-        sessionStorage.removeItem('usuarioId');
-        sessionStorage.removeItem('logado');
+        // [ALTERADO v2.3.0] sessionStorage → localStorage
+        localStorage.removeItem('usuario');
+        localStorage.removeItem('authData');
+        localStorage.removeItem('usuarioId');
+        localStorage.removeItem('logado');
     },
 
     verificarSessao(redirecionarPara = '02-login.html') {
@@ -273,4 +279,4 @@ window.AIDEPOM = {
     }
 };
 
-console.log('✅ AI-DEPOM: Supabase configurado (v2.2.0) em ' + new Date().toLocaleString('pt-BR'));
+console.log('✅ AI-DEPOM: Supabase configurado (v2.3.0) em ' + new Date().toLocaleString('pt-BR'));
