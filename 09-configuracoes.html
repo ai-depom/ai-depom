@@ -2,17 +2,17 @@
      AI-DEPOM - CONFIGURAÇÕES
      ============================================================
      Arquivo: 09-configuracoes.html
-     Versão: 1.0.2
-     Data: 15/09/2026 - 17:00
+     Versão: 1.0.4
+     Data: 15/09/2026 - 18:00
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [15/09/2026 18:00] ✨ Campos disabled com fundo preto + letras verdes
+     - [15/09/2026 18:00] ✨ -webkit-text-fill-color forçando verde
      - [15/09/2026 17:00] ✨ Menu atualizado (Mandados + Auditoria)
-     - [15/09/2026 17:00] ✨ Layout padronizado (tema dark verde)
      - [15/09/2026 17:00] ✨ Sidebar com flexbox (footer sem overlap)
      - [15/09/2026 17:00] ✨ fazerLogout() robusto
      - [15/09/2026 17:00] ✨ closeWindow() robusto
-     - [12/09/2026 14:00] alterarSenha() envia email de reset
      ============================================================
 -->
 <!DOCTYPE html>
@@ -75,8 +75,6 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
-
-        /* SIDEBAR com flexbox */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -156,6 +154,34 @@
             box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
         }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+
+        /* ============================================================
+           [ALTERADO v1.0.4] CAMPOS DISABLED — FUNDO PRETO + LETRAS VERDES
+           ============================================================
+           Motivo: o Bootstrap aplica cinza claro em campos disabled,
+           quebrando o tema dark. Este bloco força:
+           - Fundo preto puro (#000)
+           - Letras verdes (#00ff88)
+           - -webkit-text-fill-color (essencial p/ Chrome/Safari)
+           - Sem transparência
+           ============================================================ */
+        .form-control:disabled,
+        .form-control[readonly],
+        .form-select:disabled,
+        textarea.form-control:disabled {
+            background-color: #000000 !important;
+            color: #00ff88 !important;
+            -webkit-text-fill-color: #00ff88 !important;
+            opacity: 1 !important;
+            border-color: #003322 !important;
+            cursor: not-allowed;
+        }
+
+        .form-control:disabled::placeholder {
+            color: rgba(0, 255, 136, 0.3) !important;
+            -webkit-text-fill-color: rgba(0, 255, 136, 0.3) !important;
+        }
+
         .form-select option { background: #000; color: var(--text-primary); }
         .form-check-input { accent-color: var(--text-primary); }
         .form-check-label { color: rgba(0, 255, 136, 0.5); font-size: 13px; }
@@ -487,7 +513,7 @@
         let usuarioAtual = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('⚙️ AI-DEPOM - Configuracoes v1.0.2');
+            console.log('⚙️ AI-DEPOM - Configuracoes v1.0.4');
 
             usuarioAtual = AIDEPOM.getUsuario();
             if (!usuarioAtual) {
