@@ -2,19 +2,17 @@
      AI-DEPOM - MAPA DE OPERAÇÕES
      ============================================================
      Arquivo: 10-mapa-operacoes.html
-     Versão: 1.1.0
-     Data: 15/09/2026 - 09:30
+     Versão: 1.2.0
+     Data: 15/09/2026 - 11:30
      Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [15/09/2026 09:30] ✨ Cabeçalho Regra de Ouro aplicado
-     - [15/09/2026 09:30] ✨ Sidebar com flexbox (footer sem overlap)
-     - [15/09/2026 09:30] ✨ fazerLogout() robusto (fallback duplo)
-     - [15/09/2026 09:30] ✨ closeWindow() robusto (fallback)
-     - [15/09/2026 09:30] ✨ <script> movido para dentro do <body>
-     - [15/09/2026 09:30] ✨ JOIN com suspeito usando coluna correta
-     - [15/09/2026 09:30] ✨ Popup com todos os campos da tabela
-     - [15/09/2026 09:30] ✨ Fallback de coordenadas com base no endereço
+     - [15/09/2026 11:30] ✨ Tiles do OpenStreetMap (sem API Key)
+     - [15/09/2026 11:30] ✨ Mapa inicia sem coordenadas prévias (mundo)
+     - [15/09/2026 11:30] ✨ Filtro CSS para mapa colorido/dark
+     - [15/09/2026 11:30] ✨ fitBounds automático quando há mandados
+     - [15/09/2026 11:30] ✨ Fallback volta pro mundo se não houver dados
+     - [15/09/2026 11:30] ✨ Cabeçalho Regra de Ouro aplicado
      ============================================================
 -->
 <!DOCTYPE html>
@@ -80,8 +78,6 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
-
-        /* SIDEBAR com flexbox (footer não sobrepõe) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -180,6 +176,10 @@
             border-radius: 14px;
             border: 1px solid var(--border-color);
             background: #0a0a0a;
+        }
+        /* [NOVO v1.2.0] Filtro CSS para mapa colorido/dark */
+        #mapa .leaflet-tile-pane {
+            filter: invert(1) hue-rotate(180deg) brightness(0.75) contrast(1.3) saturate(1.2);
         }
         .leaflet-container {
             background: #0a0a0a !important;
@@ -409,7 +409,7 @@
         </div>
 
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-map"></i>Mapa de Calor de Mandados</div>
+            <div class="card-title"><i class="fas fa-map"></i>Mapa de Operacoes</div>
             <div id="mapa"></div>
             <div class="legend">
                 <div style="color:var(--text-primary); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
@@ -444,7 +444,7 @@
         let mandadosAtuais = [];
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Operacoes v1.1.0 iniciado');
+            console.log('AI-DEPOM - Mapa de Operacoes v1.2.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -469,12 +469,23 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
+        // [ALTERADO v1.2.0] Sem coordenadas prévias + OpenStreetMap gratuito
         function inicializarMapa() {
-            mapa = L.map('mapa').setView([-12.9714, -38.5014], 12);
+            console.log('🗺️ Inicializando mapa (sem coordenadas prévias)...');
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CartoDB',
-                subdomains: 'abcd',
+            // [ALTERADO v1.2.0] Abre no mundo, sem centro fixo
+            mapa = L.map('mapa', {
+                center: [0, 0],           // [NOVO v1.2.0] Centro do mundo
+                zoom: 2,                  // [NOVO v1.2.0] Zoom out
+                minZoom: 2,
+                maxZoom: 19
+            });
+
+            // [ALTERADO v1.2.0] OpenStreetMap padrão (gratuito, sem API Key)
+            // ❌ ANTES: cartocdn.com/dark_all (pedia API Key)
+            // ✅ AGORA: tile.openstreetmap.org (100% gratuito)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
                 maxZoom: 19
             }).addTo(mapa);
 
@@ -486,9 +497,10 @@
 
             mapa.addLayer(clusterGroup);
             setTimeout(() => mapa.invalidateSize(), 300);
+
+            console.log('✅ Mapa inicializado (mundo)');
         }
 
-        // [ALTERADO v1.1.0] JOIN usando id_suspeito + colunas corretas
         async function carregarMandados() {
             const btn = document.getElementById('btnBuscar');
             if (btn) {
@@ -567,6 +579,7 @@
             }
         }
 
+        // [ALTERADO v1.2.0] Fallback pro mundo quando vazio
         function renderizarMapa() {
             clusterGroup.clearLayers();
             const bounds = [];
@@ -608,12 +621,17 @@
                 bounds.push([coords.lat, coords.lng]);
             });
 
+            // [ALTERADO v1.2.0] Ajusta ao conteúdo ou volta pro mundo
             if (bounds.length > 0) {
                 mapa.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+                console.log('📍 Mapa ajustado para', bounds.length, 'mandado(s)');
+            } else {
+                // [NOVO v1.2.0] Sem dados → volta pro mundo
+                mapa.setView([0, 0], 2);
+                console.log('🌍 Sem mandados — mostrando o mundo');
             }
         }
 
-        // [ALTERADO v1.1.0] Usa latitude/longitude reais ou hash do endereço
         function obterCoordenadas(m) {
             if (m.latitude && m.longitude) {
                 return { lat: parseFloat(m.latitude), lng: parseFloat(m.longitude) };
@@ -757,7 +775,6 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
-        // [ALTERADO v1.1.0] Logout robusto
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
             try {
@@ -785,7 +802,6 @@
             window.location.href = '02-login.html';
         }
 
-        // [ALTERADO v1.1.0] CloseWindow robusto
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
 
@@ -807,7 +823,6 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
     </script>
-    <!-- [ALTERADO v1.1.0] inactivity-lock dentro do <body> -->
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
