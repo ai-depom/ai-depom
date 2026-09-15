@@ -2,8 +2,8 @@
    AI-DEPOM - TEMPORIZADOR DE INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-lock.js
-   Versao: 1.1.1
-   Data: 15/09/2026 - 15:45
+   Versao: 1.2.1
+   Data: 16/09/2026 - 09:30
    Autor: AI-DEPOM Team
    ============================================
    REGRA DE OURO:
@@ -15,22 +15,21 @@
    6. Todo módulo DEVE estar conectado
    7. Nenhuma linha deve ser removida sem substituição
 
-   ALTERAÇÕES v1.1.1 (15/09/2026 15:45):
-   - 🐛 Só inicializa se usuário estiver logado (NÃO bloqueia 02-login.html)
-   - 🐛 Logout usa AIDEPOM.logout() (limpeza total)
-   - 🐛 blocarTela() limpa TODOS os timers (evita re-disparo)
-   - 🐛 Guarda contra duplicação de listeners (evita 2x)
-   - 🐛 Aguarda window.supabaseClient estar pronto
-   - 🐛 visibilitychange registra atividade ao voltar pra aba
-   - 📜 Cabeçalho Regra de Ouro
-   - ✅ Mantidas: 5min timeout, aviso 1min, senha, usuário logado, logout
+   ALTERAÇÕES v1.2.1 (16/09/2026 09:30):
+   - 🐛 CORRIGIDO: autofill do navegador (Edge) preenchia a senha automaticamente
+   - 🐛 CORRIGIDO: campo agora exige digitação manual (readonly + flag)
+   - 🐛 CORRIGIDO: autocomplete="new-password" (não autofill)
+   - 🐛 CORRIGIDO: readonly removido só ao clicar/focar no campo
+   - 🛡️ NOVO: rastreia se o usuário DIGITOU (evento input)
+   - 🛡️ NOVO: se tentar desbloquear sem digitar, recusa
+   - ✅ Mantidas todas as proteções da v1.2.0
    ============================================ */
 
 (function() {
     'use strict';
 
     // ============================================
-    // [NOVO v1.1.1] GUARDA — evita dupla inicialização
+    // GUARDA — evita dupla inicialização
     // ============================================
     if (window.__AIDEPOM_INACTIVITY_LOCK_INIT__) {
         console.log('ℹ️ inactivity-lock.js já foi inicializado. Ignorando.');
@@ -42,25 +41,27 @@
     // ============================================
     const TIMEOUT_MS = 5 * 60 * 1000;      // 5 minutos
     const WARNING_MS = 1 * 60 * 1000;      // Aviso 1 minuto antes
-    const CHECK_INTERVAL_MS = 1000;        // Verifica a cada 1 segundo
+    const CHECK_INTERVAL_MS = 1000;
 
     let timeoutId = null;
     let warningId = null;
     let countdownId = null;
+    let lockGuardId = null;
     let ultimaAtividade = Date.now();
     let bloqueado = false;
     let segundosRestantes = 0;
+
+    // 🛡️ [v1.2.1] Flag: o usuário DIGITOU a senha ou foi autofill?
+    let senhaDigitadaPeloUsuario = false;
 
     // ============================================
     // CRIAR ELEMENTOS DINAMICAMENTE
     // ============================================
     function criarElementos() {
-        // [v1.1.1] Evita duplicar se já existe
         if (document.getElementById('inactivity-lock-container')) {
             return;
         }
 
-        // 1. CSS
         const style = document.createElement('style');
         style.id = 'inactivity-lock-style';
         style.textContent = `
@@ -220,6 +221,15 @@
             .lock-form input::placeholder {
                 color: rgba(0, 255, 136, 0.15);
             }
+            /* 🛡️ [v1.2.1] Aviso visual quando readonly */
+            .lock-form input[readonly] {
+                background: rgba(0, 0, 0, 0.7);
+                cursor: pointer;
+                border-color: rgba(0, 255, 136, 0.2);
+            }
+            .lock-form input[readonly]::placeholder {
+                color: rgba(0, 255, 136, 0.5);
+            }
             .lock-btn {
                 width: 100%;
                 padding: 14px;
@@ -296,7 +306,6 @@
         `;
         document.head.appendChild(style);
 
-        // 2. HTML
         const html = document.createElement('div');
         html.id = 'inactivity-lock-container';
         html.innerHTML = `
@@ -328,7 +337,8 @@
                     <div class="lock-form">
                         <div class="form-group">
                             <label for="lockSenha">Digite sua senha para desbloquear</label>
-                            <input type="password" id="lockSenha" placeholder="Digite sua senha" autocomplete="current-password">
+                            <!-- 🛡️ [v1.2.1] readonly + autocomplete="new-password" impede autofill -->
+                            <input type="password" id="lockSenha" placeholder="Clique aqui e digite sua senha" autocomplete="new-password" readonly>
                         </div>
                         <button type="button" class="lock-btn" id="lockBtn">
                             <i class="fas fa-unlock"></i> DESBLOQUEAR
@@ -344,7 +354,7 @@
     }
 
     // ============================================
-    // [NOVO v1.1.1] Verifica se está logado
+    // Verifica se está logado
     // ============================================
     function estaLogado() {
         try {
@@ -357,15 +367,12 @@
         }
     }
 
-    // ============================================
-    // [NOVO v1.1.1] Aguarda window.supabaseClient
-    // ============================================
     function aguardarSupabaseClient(callback, tentativas = 0) {
         if (window.supabaseClient && window.supabaseClient.auth) {
             callback();
             return;
         }
-        if (tentativas > 50) { // ~5s
+        if (tentativas > 50) {
             console.warn('⚠️ inactivity-lock: supabaseClient não disponível após 5s');
             callback();
             return;
@@ -377,13 +384,11 @@
     // INICIALIZACAO
     // ============================================
     function init() {
-        // [NOVO v1.1.1] Não roda em páginas sem login (ex: 02-login.html)
         if (!estaLogado()) {
             console.log('ℹ️ inactivity-lock: usuário não logado, timers não iniciados.');
             return;
         }
 
-        // Criar elementos
         criarElementos();
 
         const lockScreen = document.getElementById('lockScreen');
@@ -399,15 +404,97 @@
         const lockUserEmail = document.getElementById('lockUserEmail');
 
         // ============================================
+        // 🛡️ PROTEÇÃO: intercepta classList.remove/toggle
+        // ============================================
+        const _originalRemove = DOMTokenList.prototype.remove;
+        const _originalToggle = DOMTokenList.prototype.toggle;
+
+        DOMTokenList.prototype.remove = function(...args) {
+            if (this === lockScreen.classList && args.includes('show') && bloqueado) {
+                console.warn('🛡️ [lock] Tentativa de remover .show bloqueada (bloqueado=true)');
+                console.trace('Origem:');
+                return;
+            }
+            return _originalRemove.apply(this, args);
+        };
+
+        DOMTokenList.prototype.toggle = function(...args) {
+            if (this === lockScreen.classList && args[0] === 'show' && bloqueado) {
+                console.warn('🛡️ [lock] Tentativa de toggle .show bloqueada');
+                return;
+            }
+            return _originalToggle.apply(this, args);
+        };
+
+        // ============================================
+        // 🛡️ GUARDA ATIVA: re-aplica o lock se removido
+        // ============================================
+        function ativarGuarda() {
+            if (lockGuardId) return;
+            lockGuardId = setInterval(() => {
+                if (bloqueado && !lockScreen.classList.contains('show')) {
+                    console.warn('🛡️ [guarda] Lock removido indevidamente. Re-aplicando...');
+                    lockScreen.classList.add('show');
+                }
+            }, 500);
+        }
+
+        function desativarGuarda() {
+            if (lockGuardId) {
+                clearInterval(lockGuardId);
+                lockGuardId = null;
+            }
+        }
+
+        // ============================================
+        // 🛡️ [v1.2.1] Controle de digitação real (anti-autofill)
+        // ============================================
+        function resetarFlagDigitacao() {
+            senhaDigitadaPeloUsuario = false;
+            lockSenha.value = '';
+            lockSenha.setAttribute('readonly', 'true');
+            lockSenha.placeholder = 'Clique aqui e digite sua senha';
+        }
+
+        // Remove readonly ao clicar/focar no campo
+        lockSenha.addEventListener('focus', function() {
+            if (lockSenha.hasAttribute('readonly')) {
+                lockSenha.removeAttribute('readonly');
+                lockSenha.placeholder = 'Digite sua senha';
+                console.log('🔓 [v1.2.1] readonly removido, pode digitar');
+            }
+        });
+
+        // Também remove readonly ao clicar (caso focus não pegue)
+        lockSenha.addEventListener('click', function() {
+            if (lockSenha.hasAttribute('readonly')) {
+                lockSenha.removeAttribute('readonly');
+                lockSenha.placeholder = 'Digite sua senha';
+            }
+        });
+
+        // 🛡️ Marca que o usuário DIGITOU (evento input real)
+        lockSenha.addEventListener('input', function() {
+            senhaDigitadaPeloUsuario = true;
+        });
+
+        // Também escuta keydown (backup)
+        lockSenha.addEventListener('keydown', function(e) {
+            if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete') {
+                senhaDigitadaPeloUsuario = true;
+            }
+        });
+
+        // ============================================
         // REGISTRAR ATIVIDADE
         // ============================================
-        function registrarAtividade() {
+        function registrarAtividade(e) {
             if (bloqueado) return;
+            if (e && e.target && lockScreen.contains(e.target)) return;
             ultimaAtividade = Date.now();
             resetarTimers();
         }
 
-        // [NOVO v1.1.1] Limpa TODOS os timers (usar antes de bloquear/resetar)
         function limparTodosTimers() {
             clearTimeout(timeoutId);
             clearTimeout(warningId);
@@ -456,20 +543,11 @@
         // BLOQUEAR TELA
         // ============================================
         function bloquearTela() {
-            if (bloqueado) return; // [NOVO v1.1.1] guarda contra dupla execução
+            if (bloqueado) return;
 
             bloqueado = true;
-
-            // [NOVO v1.1.1] Limpa TODOS os timers
             limparTodosTimers();
 
-            lockScreen.classList.add('show');
-            warningToast.classList.remove('show');
-
-            const agora = new Date();
-            lockTime.textContent = agora.toLocaleTimeString('pt-BR');
-
-            // Mostra dados do usuário logado
             try {
                 const usuarioStr = localStorage.getItem('usuario');
                 if (usuarioStr) {
@@ -484,28 +562,59 @@
             }
 
             lockError.classList.remove('show');
-            lockSenha.value = '';
+            lockError.textContent = '';
 
-            setTimeout(() => lockSenha.focus(), 300);
+            // 🛡️ [v1.2.1] Reseta flag de digitação + readonly
+            resetarFlagDigitacao();
+
+            lockScreen.classList.add('show');
+            warningToast.classList.remove('show');
+
+            ativarGuarda();
+
+            // 🛡️ [v1.2.1] NÃO faz focus automático (usuário precisa clicar)
+            // setTimeout(() => lockSenha.focus(), 300);
 
             console.log('🔒 Tela bloqueada por inatividade');
         }
 
         // ============================================
-        // DESBLOQUEAR — só com senha
+        // 🛡️ DESBLOQUEAR — valida senha + digitação real
         // ============================================
         async function desbloquear() {
-            const senha = lockSenha.value.trim();
+            const senha = (lockSenha.value || '').trim();
 
             lockError.classList.remove('show');
+            lockError.textContent = '';
 
-            if (!senha) {
-                lockError.textContent = 'Digite sua senha.';
+            // 🛡️ [v1.2.1] PROTEÇÃO 1: campo readonly (não clicou ainda)
+            if (lockSenha.hasAttribute('readonly')) {
+                console.warn('🛡️ [v1.2.1] Tentativa de desbloquear sem clicar no campo');
+                lockError.textContent = 'Clique no campo de senha e digite sua senha.';
                 lockError.classList.add('show');
                 return;
             }
 
-            if (!window.supabaseClient) {
+            // 🛡️ [v1.2.1] PROTEÇÃO 2: usuário não digitou (foi autofill ou vazio)
+            if (!senhaDigitadaPeloUsuario) {
+                console.warn('🛡️ [v1.2.1] Tentativa de desbloquear sem digitar (autofill?)');
+                lockError.textContent = 'Digite sua senha manualmente.';
+                lockError.classList.add('show');
+                lockSenha.value = '';
+                lockSenha.focus();
+                return;
+            }
+
+            // 🛡️ PROTEÇÃO 3: senha vazia
+            if (!senha) {
+                console.warn('🛡️ Tentativa de desbloquear com senha vazia');
+                lockError.textContent = 'Digite sua senha.';
+                lockError.classList.add('show');
+                lockSenha.focus();
+                return;
+            }
+
+            if (!window.supabaseClient || !window.supabaseClient.auth) {
                 lockError.textContent = 'Sistema nao conectado. Recarregue a pagina.';
                 lockError.classList.add('show');
                 return;
@@ -523,7 +632,7 @@
                         emailUsuario = usuario.email;
                     }
                 } catch (e) {
-                    console.warn('Erro ao ler usuário do localStorage:', e);
+                    console.warn('Erro ao ler usuário:', e);
                 }
 
                 if (!emailUsuario && window.supabaseClient.auth) {
@@ -543,18 +652,26 @@
                 });
 
                 if (authError) {
+                    console.warn('🛡️ Senha incorreta');
                     lockError.textContent = 'Senha incorreta. Tente novamente.';
                     lockError.classList.add('show');
+                    lockSenha.value = '';
+                    senhaDigitadaPeloUsuario = false;
+                    lockSenha.focus();
                     return;
                 }
 
+                console.log('🔓 Senha correta, desbloqueando...');
                 bloqueado = false;
+                desativarGuarda();
                 lockScreen.classList.remove('show');
+                resetarFlagDigitacao();
                 resetarTimers();
 
-                console.log('🔓 Tela desbloqueada');
+                console.log('✅ Tela desbloqueada');
 
             } catch (error) {
+                console.error('❌ Erro no desbloqueio:', error);
                 lockError.textContent = 'Erro: ' + error.message;
                 lockError.classList.add('show');
             } finally {
@@ -570,33 +687,43 @@
             document.addEventListener(evento, registrarAtividade, { passive: true });
         });
 
-        // [NOVO v1.1.1] Detecta retorno à aba
         document.addEventListener('visibilitychange', function() {
-            if (!document.hidden) {
+            if (!document.hidden && !bloqueado) {
                 registrarAtividade();
             }
         });
 
+        lockScreen.addEventListener('click', function(e) {
+            if (!e.target.closest('#lockBtn') &&
+                !e.target.closest('#lockSenha') &&
+                !e.target.closest('#lockLogout')) {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('🛡️ Clique fora do botão bloqueado');
+            }
+        }, true);
+
         lockBtn.addEventListener('click', desbloquear);
+
         lockSenha.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') desbloquear();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                desbloquear();
+            }
         });
 
-        // [ALTERADO v1.1.1] Logout robusto
         lockLogout.addEventListener('click', async function() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
 
             try {
-                // [v1.1.1] Usa AIDEPOM.logout() se disponível (limpa TUDO)
                 if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
                     await AIDEPOM.logout();
                     return;
                 }
             } catch (e) {
-                console.warn('⚠️ AIDEPOM.logout() falhou, usando fallback:', e);
+                console.warn('⚠️ AIDEPOM.logout() falhou:', e);
             }
 
-            // Fallback
             try {
                 if (window.supabaseClient?.auth) {
                     await window.supabaseClient.auth.signOut();
@@ -613,20 +740,14 @@
             window.location.href = '02-login.html';
         });
 
-        // Iniciar timers
         resetarTimers();
 
-        // Marca como inicializado
         window.__AIDEPOM_INACTIVITY_LOCK_INIT__ = true;
 
         console.log('✅ Temporizador de inatividade ativo (5 minutos)');
     }
 
-    // ============================================
-    // AGUARDAR DOM + SUPABASE
-    // ============================================
     function bootstrap() {
-        // [NOVO v1.1.1] Aguarda window.supabaseClient antes de inicializar
         aguardarSupabaseClient(function() {
             init();
         });
