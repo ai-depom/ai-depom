@@ -1,4 +1,21 @@
- <!DOCTYPE html>
+ <!-- ============================================================
+     AI-DEPOM - RELATÓRIOS E ESTATÍSTICAS
+     ============================================================
+     Arquivo: 08-relatorios.html
+     Versão: 1.1.0
+     Data: 14/09/2026 - 17:30
+     Autor: AI-DEPOM Team
+     ============================================================
+     ALTERAÇÕES RECENTES:
+     - [14/09/2026 17:30] ✨ Cabeçalho Regra de Ouro aplicado
+     - [14/09/2026 17:30] ✨ Sidebar com flexbox (footer sem overlap)
+     - [14/09/2026 17:30] ✨ fazerLogout() robusto (fallback duplo)
+     - [14/09/2026 17:30] ✨ closeWindow() robusto (fallback)
+     - [14/09/2026 17:30] ✨ <script> movido para dentro do <body>
+     - [14/09/2026 17:30] ✨ Aviso "sem dados" com ícone
+     ============================================================
+-->
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -23,11 +40,8 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            width: 100%; height: 100%; min-height: 100vh;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
@@ -61,13 +75,16 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
+
+        /* [ALTERADO v1.1.0] SIDEBAR com flexbox (footer não sobrepõe) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999; padding: 20px 0;
+            z-index: 999; padding: 20px 0 0 0;
             transition: transform 0.3s ease; overflow-y: auto;
+            display: flex; flex-direction: column;
         }
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .sidebar-brand .logo {
@@ -78,7 +95,8 @@
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
-        .sidebar-menu { padding: 0 12px; }
+        /* [ALTERADO v1.1.0] flex: 1 para empurrar footer */
+        .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
             display: flex; align-items: center; gap: 14px;
@@ -90,9 +108,13 @@
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
+        /* [ALTERADO v1.1.0] position relative + margin-top auto */
         .sidebar-footer {
-            position: absolute; bottom: 20px; left: 0; right: 0;
-            padding: 0 20px; border-top: 1px solid var(--border-color); padding-top: 15px;
+            position: relative;
+            padding: 15px 20px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.98);
+            margin-top: auto;
         }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar {
@@ -124,25 +146,6 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 12px; margin-bottom: 20px;
         }
-        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
-        .form-control, .form-select {
-            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
-            color: var(--text-primary); padding: 10px 14px;
-            border-radius: 10px; transition: all 0.3s; font-size: 14px;
-        }
-        .form-control:focus, .form-select:focus {
-            background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary);
-            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
-        }
-        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
-        .form-select option { background: #000; color: var(--text-primary); }
-        .btn-gold {
-            background: var(--gradient-green); color: #000; font-weight: 700;
-            padding: 10px 28px; border-radius: 10px; border: none;
-            transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px;
-        }
-        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
-        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-outline-gold {
             background: transparent; color: var(--text-primary);
             border: 1px solid var(--text-primary); padding: 10px 28px;
@@ -227,6 +230,22 @@
             font-weight: 700;
             min-width: 50px;
         }
+        /* [NOVO v1.1.0] Estilo de "sem dados" com ícone */
+        .no-data {
+            text-align: center;
+            padding: 30px 20px;
+            color: rgba(0, 255, 136, 0.2);
+        }
+        .no-data i {
+            font-size: 40px;
+            margin-bottom: 15px;
+            display: block;
+        }
+        .no-data small {
+            font-size: 12px;
+            display: block;
+            margin-top: 5px;
+        }
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
             min-width: 320px; max-width: 420px; padding: 16px 20px;
@@ -263,7 +282,7 @@
             .main-content { padding: 65px 15px 15px; }
             .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
             .form-card { padding: 18px; }
-            .btn-gold, .btn-outline-gold { width: 100%; }
+            .btn-outline-gold { width: 100%; }
             .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
             .chart-bar .label { min-width: 90px; font-size: 12px; }
         }
@@ -371,7 +390,7 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Relatorios iniciado');
+            console.log('AI-DEPOM - Relatorios v1.1.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -454,16 +473,23 @@
 
                 renderizarChart(mandados, 'status', 'chartMandados');
 
+                console.log('✅ Relatórios carregados');
             } catch (error) {
-                console.error('Erro ao carregar relatorios:', error);
+                console.error('❌ Erro ao carregar relatorios:', error);
                 showToast('error', 'Erro', error.message);
             }
         }
 
+        // [ALTERADO v1.1.0] Aviso "sem dados" com ícone
         function renderizarChart(dados, campo, containerId) {
             const container = document.getElementById(containerId);
             if (!dados || dados.length === 0) {
-                container.innerHTML = '<div style="color:rgba(0,255,136,0.3); font-size:13px; text-align:center; padding:20px;">Sem dados disponiveis</div>';
+                container.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-chart-bar"></i>
+                        <small>Sem dados disponíveis</small>
+                    </div>
+                `;
                 return;
             }
 
@@ -474,7 +500,6 @@
             });
 
             const max = Math.max(...Object.values(contagem));
-            const total = dados.length;
 
             let html = '';
             Object.entries(contagem).sort((a, b) => b[1] - a[1]).forEach(([valor, qtd]) => {
@@ -489,10 +514,16 @@
             container.innerHTML = html;
         }
 
+        // [ALTERADO v1.1.0] Aviso "sem dados" com ícone
         function renderizarTopBairros(dados, containerId) {
             const container = document.getElementById(containerId);
             if (!dados || dados.length === 0) {
-                container.innerHTML = '<div style="color:rgba(0,255,136,0.3); font-size:13px; text-align:center; padding:20px;">Sem dados de bairro</div>';
+                container.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <small>Sem dados de bairro</small>
+                    </div>
+                `;
                 return;
             }
 
@@ -504,7 +535,12 @@
             const ranking = Object.entries(contagem).sort((a, b) => b[1] - a[1]).slice(0, 10);
 
             if (ranking.length === 0) {
-                container.innerHTML = '<div style="color:rgba(0,255,136,0.3); font-size:13px; text-align:center; padding:20px;">Sem dados de bairro</div>';
+                container.innerHTML = `
+                    <div class="no-data">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <small>Sem dados de bairro</small>
+                    </div>
+                `;
                 return;
             }
 
@@ -562,22 +598,57 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
+        // [ALTERADO v1.1.0] Logout robusto
         async function fazerLogout() {
-            if (confirm('Deseja realmente sair do sistema?')) {
-                await AIDEPOM.logout();
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try {
+                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
+                    await AIDEPOM.logout();
+                    return;
+                }
+            } catch (error) {
+                console.warn('⚠️ AIDEPOM.logout() falhou, fazendo logout direto:', error);
             }
+
+            try {
+                if (window.supabaseClient && window.supabaseClient.auth) {
+                    await window.supabaseClient.auth.signOut();
+                }
+            } catch (error) {
+                console.error('❌ Erro no signOut:', error);
+            }
+
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) { /* ignore */ }
+
+            window.location.href = '02-login.html';
         }
 
+        // [ALTERADO v1.1.0] CloseWindow robusto
         function closeWindow() {
-            if (confirm('Deseja realmente fechar o sistema?')) {
-                try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) {
+                console.warn('⚠️ window.close() bloqueado pelo navegador');
             }
+
+            setTimeout(function() {
+                if (!window.closed) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }, 300);
         }
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
         }
     </script>
- <script src="assets/js/inactivity-lock.js"></script>
+    <!-- [ALTERADO v1.1.0] inactivity-lock dentro do <body> -->
+    <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
