@@ -2,17 +2,25 @@
      AI-DEPOM - CADASTRO DE SUSPEITO
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.2.0
-     Data: 14/09/2026 - 17:00
+     Versão: 3.2.1
+     Data: 15/09/2026 - 09:00
      Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES RECENTES:
-     - [14/09/2026 17:00] ✨ Lista exibe apenas os últimos 10 cadastrados
-     - [14/09/2026 17:00] ✨ Mostra "Exibindo 10 de X" no cabeçalho da lista
-     - [14/09/2026 17:00] ✨ Botão ATUALIZAR recarrega a lista
-     - [11/09/2026 19:30] Upload de foto salva em arquivo_midia
-     - [11/09/2026 19:30] Hash SHA-256 real (não o caminho)
-     - [11/09/2026 19:30] Reset completo do formulário + previews
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v3.2.1 (15/09/2026 09:00):
+     - 🐛 CORRIGIDO: HTML tinha dois </body></html> e script duplicado fora do documento
+     - 🔗 Menu: Mandados → 11-mandados.html
+     - 🔗 Menu: Auditoria → 12-auditoria.html
+     - 🎨 CSS: disabled/readonly com fundo preto + letras verdes
+     - 📜 Cabeçalho Regra de Ouro adicionado
      ============================================================
 -->
 <!DOCTYPE html>
@@ -76,7 +84,7 @@
             font-weight: 700; font-size: 12px; color: #000;
         }
 
-        /* [ALTERADO v3.2.0] Sidebar com flexbox (footer sem overlap) */
+        /* Sidebar com flexbox (footer sem overlap) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -156,8 +164,26 @@
         }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
+
+        /* [NOVO v3.2.1] Regra: campos desabilitados/somente leitura = fundo preto + letras verdes */
+        .form-control:disabled,
+        .form-control[readonly],
+        .form-select:disabled,
+        .form-control.disabled,
+        .form-select.disabled {
+            background: #000000 !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+        .form-control:disabled::placeholder,
+        .form-control[readonly]::placeholder { color: rgba(0, 255, 136, 0.35) !important; }
+
         .form-check-input { accent-color: var(--text-primary); }
+        .form-check-input:disabled { background-color: #000; border-color: var(--border-color); }
         .form-check-label { color: rgba(0, 255, 136, 0.5); font-size: 13px; }
+        .form-check-input:disabled + .form-check-label { color: rgba(0, 255, 136, 0.35); }
         .btn-gold {
             background: var(--gradient-green); color: #000; font-weight: 700;
             padding: 10px 28px; border-radius: 10px; border: none;
@@ -171,6 +197,7 @@
             border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
         }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+        .btn-outline-gold:disabled { opacity: 0.5; cursor: not-allowed; }
         .section-title {
             color: var(--text-primary); font-size: 13px; letter-spacing: 1px;
             margin: 25px 0 15px; padding-bottom: 10px;
@@ -198,7 +225,6 @@
         .status-liberado { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
         .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
-        /* [NOVO v3.2.0] Aviso de "mostrando X de Y" */
         .info-lista {
             background: rgba(0, 255, 136, 0.03);
             border: 1px solid var(--border-color);
@@ -289,8 +315,8 @@
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-gavel"></i> Mandados</a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -457,7 +483,7 @@
             </form>
         </div>
 
-        <!-- [ALTERADO v3.2.0] Cabeçalho da lista com contador -->
+        <!-- Lista de suspeitos -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Suspeitos Cadastrados</div>
@@ -479,173 +505,9 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         // ============================================================
-        // [ALTERADO v3.2.0] CONSTANTES
+        // CONSTANTES
         // ============================================================
-        const LIMITE_LISTA = 10;  // [NOVO v3.2.0] Limite de suspeitos exibidos na lista
-
-        let arquivoFotoPrincipal = null;
-        let arquivoFotoSecundaria = null;
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Cadastro de Suspeito v3.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
-
-            const usuario = AIDEPOM.getUsuario();
-            if (!usuario) {
-                showToast('error', 'Sessao expirada', 'Faca login novamente.');
-                setTimeout(() => window.location.href = '02-login.html', 1500);
-                return;
-            }
-
-            atualizarDadosUsuario(usuario);
-            carregarSuspeitos();
-
-            try {
-                configurarUploadFoto('fotoPrincipal', (f) => { arquivoFotoPrincipal = f; });
-                configurarUploadFoto('fotoSecundaria', (f) => { arquivoFotoSecundaria = f; });
-                console.log('✅ Uploads de foto configurados');
-            } catch (err) {
-                console.error('❌ Erro ao configurar uploads:', err);
-            }
-        });
-
-        function atualizarDadosUsuario(usuario) {
-            const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
-            const nome = usuario.nome_completo || 'Usuario';
-            const perfil = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
-            document.getElementById('topAvatar').textContent = inicial;
-            document.getElementById('topUserName').textContent = nome;
-            document.getElementById('sidebarAvatar').textContent = inicial;
-            document.getElementById('sidebarUserName').textContent = nome;
-            document.getElementById('sidebarUserRole').textContent = perfil;
-        }
-
-        // ============================================================
-        // [ALTERADO v3.2.0] CARREGAR SUSPEITOS
-        // - Limite reduzido para 10
-        // - Mostra contador "Exibindo 10 de X"
-        // ============================================================
-        async function carregarSuspeitos() {
-            const container = document.getElementById('listaSuspeitos');
-            const infoContainer = document.getElementById('infoLista');
-            if (!container) return;
-
-            // [NOVO v3.2.0] Mostra spinner
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando suspeitos...</div>';
-            infoContainer.innerHTML = '';
-
-            try {
-                // [NOVO v3.2.0] Primeiro, busca o TOTAL de suspeitos ativos
-                const { count: totalGeral, error: countError } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('deletado', false);
-
-                if (countError) {
-                    console.error('❌ Erro ao contar suspeitos:', countError);
-                }
-
-                // [ALTERADO v3.2.0] Limite de 10 (era 50)
-                const { data, error } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('id_suspeito, nome_completo, apelido, cpf, status_atual, nivel_periculosidade')
-                    .eq('deletado', false)
-                    .order('id_suspeito', { ascending: false })
-                    .limit(LIMITE_LISTA);  // [ALTERADO v3.2.0]
-
-                if (error || !data || data.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><i class="fas fa-user-secret"></i>Nenhum suspeito cadastrado</div>';
-                    return;
-                }
-
-                // [NOVO v3.2.0] Mostra aviso "Exibindo X de Y"
-                if (totalGeral !== null && totalGeral !== undefined) {
-                    const exibindo = data.length;
-                    const total = totalGeral;
-
-                    if (total > LIMITE_LISTA) {
-                        infoContainer.innerHTML = `
-                            <div class="info-lista">
-                                <i class="fas fa-info-circle"></i>
-                                <span>Exibindo os <strong>${exibindo}</strong> últimos cadastros de um total de <strong>${total}</strong> suspeitos.</span>
-                            </div>
-                        `;
-                    } else {
-                        infoContainer.innerHTML = `
-                            <div class="info-lista">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Exibindo <strong>${exibindo}</strong> de <strong>${total}</strong> suspeitos cadastrados.</span>
-                            </div>
-                        `;
-                    }
-                }
-
-                // Monta a tabela
-                let html = '<div style="overflow-x:auto;"><table class="suspeitos-table"><thead><tr>';
-                html += '<th>ID</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Status</th><th>Periculosidade</th>';
-                html += '</tr></thead><tbody>';
-
-                data.forEach(s => {
-                    const statusClass = {
-                        'INVESTIGADO': 'status-investigado', 'PRESO': 'status-preso',
-                        'FORAGIDO': 'status-foragido', 'PROCURADO': 'status-procurado',
-                        'CONDICIONAL': 'status-condicional', 'LIBERADO': 'status-liberado'
-                    }[s.status_atual] || 'status-investigado';
-
-                    html += '<tr>';
-                    html += '<td><strong style="color:var(--text-primary);">#' + s.id_suspeito + '</strong></td>';
-                    html += '<td>' + (s.nome_completo || '-') + '</td>';
-                    html += '<td>' + (s.apelido || '-') + '</td>';
-                    html += '<td>' + (s.cpf || '-') + '</td>';
-                    html += '<td><span class="status-badge ' + statusClass + '">' + (s.status_atual || '-') + '</span></td>';
-                    html += '<td>' + (s.nivel_periculosidade || '-') + '</td>';
-                    html += '</tr>';
-                });
-
-                html += '</tbody></table></div>';
-                container.innerHTML = html;
-
-                console.log(`✅ Lista carregada: ${data.length} de ${totalGeral} suspeitos`);
-
-            } catch (error) {
-                console.error('❌ Erro ao carregar suspeitos:', error);
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar suspeitos</div>';
-            }
-        }
-
-        // ============================================================
-        // [MANTIDO] Demais funções (showToast, configurarUploadFoto, resetFormularioCompleto, uploadFoto, registrarMidia, submit)
-        // ============================================================
-        // [NOTA] As funções abaixo não foram alteradas nesta versão.
-        // O conteúdo completo está na Parte 2.
-
-        function showToast(tipo, titulo, mensagem, duracao) {
-            duracao = duracao || 5000;
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = 'toast-ai ' + tipo;
-            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
-                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
-                '<div class="toast-message">' + mensagem + '</div></div>' +
-                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, duracao);
-        }
-
-        // ... demais funções continuam na Parte 2 ...
-    </script>
-</body>
-</html>
-    <script>
-        // ============================================================
-        // [ALTERADO v3.2.0] CONSTANTES
-        // ============================================================
-        const LIMITE_LISTA = 10;  // [NOVO v3.2.0] Limite de suspeitos exibidos na lista
-
+        const LIMITE_LISTA = 10;
         let arquivoFotoPrincipal = null;
         let arquivoFotoSecundaria = null;
 
@@ -653,7 +515,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Cadastro de Suspeito v3.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Cadastro de Suspeito v3.2.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -686,21 +548,17 @@
         }
 
         // ============================================================
-        // [ALTERADO v3.2.0] CARREGAR SUSPEITOS
-        // - Limite reduzido para 10
-        // - Mostra contador "Exibindo 10 de X"
+        // CARREGAR SUSPEITOS (limite 10 + contador "Exibindo X de Y")
         // ============================================================
         async function carregarSuspeitos() {
             const container = document.getElementById('listaSuspeitos');
             const infoContainer = document.getElementById('infoLista');
             if (!container) return;
 
-            // [NOVO v3.2.0] Mostra spinner
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando suspeitos...</div>';
             infoContainer.innerHTML = '';
 
             try {
-                // [NOVO v3.2.0] Primeiro, busca o TOTAL de suspeitos ativos
                 const { count: totalGeral, error: countError } = await window.supabaseClient
                     .from('suspeito')
                     .select('*', { count: 'exact', head: true })
@@ -710,20 +568,18 @@
                     console.error('❌ Erro ao contar suspeitos:', countError);
                 }
 
-                // [ALTERADO v3.2.0] Limite de 10 (era 50)
                 const { data, error } = await window.supabaseClient
                     .from('suspeito')
                     .select('id_suspeito, nome_completo, apelido, cpf, status_atual, nivel_periculosidade')
                     .eq('deletado', false)
                     .order('id_suspeito', { ascending: false })
-                    .limit(LIMITE_LISTA);  // [ALTERADO v3.2.0]
+                    .limit(LIMITE_LISTA);
 
                 if (error || !data || data.length === 0) {
                     container.innerHTML = '<div class="empty-state"><i class="fas fa-user-secret"></i>Nenhum suspeito cadastrado</div>';
                     return;
                 }
 
-                // [NOVO v3.2.0] Mostra aviso "Exibindo X de Y"
                 if (totalGeral !== null && totalGeral !== undefined) {
                     const exibindo = data.length;
                     const total = totalGeral;
@@ -745,7 +601,6 @@
                     }
                 }
 
-                // Monta a tabela
                 let html = '<div style="overflow-x:auto;"><table class="suspeitos-table"><thead><tr>';
                 html += '<th>ID</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Status</th><th>Periculosidade</th>';
                 html += '</tr></thead><tbody>';
@@ -779,7 +634,7 @@
         }
 
         // ============================================================
-        // [MANTIDO] TOAST
+        // TOAST
         // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
@@ -800,7 +655,7 @@
         }
 
         // ============================================================
-        // [MANTIDO] CONFIGURAR UPLOAD DE FOTO
+        // CONFIGURAR UPLOAD DE FOTO
         // ============================================================
         function configurarUploadFoto(prefixo, setArquivo) {
             const input = document.getElementById(prefixo + 'Input');
@@ -857,7 +712,7 @@
         }
 
         // ============================================================
-        // [MANTIDO] RESET COMPLETO DO FORMULÁRIO
+        // RESET COMPLETO DO FORMULÁRIO
         // ============================================================
         function resetFormularioCompleto() {
             const form = document.getElementById('formSuspeito');
@@ -876,21 +731,13 @@
                 );
 
                 if (input) input.value = '';
-
-                if (img) {
-                    img.src = '';
-                    img.style.display = 'none';
-                }
-
+                if (img) { img.src = ''; img.style.display = 'none'; }
                 if (placeholder) placeholder.style.display = 'block';
-
                 if (preview) {
                     preview.style.borderStyle = 'dashed';
                     preview.style.borderColor = 'var(--border-color)';
                 }
-
                 if (btnRemover) btnRemover.style.display = 'none';
-
                 if (btnEscolher) {
                     const icone = prefixo === 'fotoPrincipal' ? 'fa-camera' : 'fa-upload';
                     btnEscolher.innerHTML = `<i class="fas ${icone}"></i> ESCOLHER FOTO`;
@@ -901,7 +748,7 @@
         }
 
         // ============================================================
-        // [MANTIDO] UPLOAD DE FOTO
+        // UPLOAD DE FOTO
         // ============================================================
         async function uploadFoto(usuario, arquivo, prefixo, idSuspeito = null) {
             if (!arquivo) return null;
@@ -943,7 +790,7 @@
         }
 
         // ============================================================
-        // [MANTIDO] REGISTRAR MÍDIA
+        // REGISTRAR MÍDIA
         // ============================================================
         async function registrarMidia(infoUpload, idSuspeito, idUsuario, tipoMidia = 'FOTO') {
             if (!infoUpload) return null;
@@ -977,7 +824,7 @@
         }
 
         // ============================================================
-        // [MANTIDO] SUBMIT DO FORMULÁRIO
+        // SUBMIT DO FORMULÁRIO
         // ============================================================
         document.getElementById('formSuspeito').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1092,7 +939,7 @@
         });
 
         // ============================================================
-        // [MANTIDO] FULLSCREEN
+        // FULLSCREEN
         // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
@@ -1105,7 +952,7 @@
         document.addEventListener('keydown', function(e) { if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); } });
 
         // ============================================================
-        // [ALTERADO v3.2.0] LOGOUT ROBUSTO
+        // LOGOUT ROBUSTO
         // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
@@ -1135,7 +982,7 @@
         }
 
         // ============================================================
-        // [ALTERADO v3.2.0] CLOSE WINDOW ROBUSTO
+        // CLOSE WINDOW ROBUSTO
         // ============================================================
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
