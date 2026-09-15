@@ -1,16 +1,18 @@
  <!-- ============================================================
-     AI-DEPOM - CONFIGURACOES
+     AI-DEPOM - CONFIGURAÇÕES
      ============================================================
      Arquivo: 09-configuracoes.html
-     Versão: 1.0.1
-     Data: 12/09/2026 - 15:45
+     Versão: 1.0.2
+     Data: 15/09/2026 - 17:00
+     Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [12/09/2026 15:45] closeWindow() robusto (fallback)
-     - [12/09/2026 15:45] fazerLogout() com fallback duplo
-     - [12/09/2026 15:45] Sidebar flexbox (footer sem overlap)
-     - [12/09/2026 15:45] Correção do </body> antes do </html>
-     - [12/09/2026 15:45] alterarSenha() com envio de e-mail de reset
+     - [15/09/2026 17:00] ✨ Menu atualizado (Mandados + Auditoria)
+     - [15/09/2026 17:00] ✨ Layout padronizado (tema dark verde)
+     - [15/09/2026 17:00] ✨ Sidebar com flexbox (footer sem overlap)
+     - [15/09/2026 17:00] ✨ fazerLogout() robusto
+     - [15/09/2026 17:00] ✨ closeWindow() robusto
+     - [12/09/2026 14:00] alterarSenha() envia email de reset
      ============================================================
 -->
 <!DOCTYPE html>
@@ -74,7 +76,7 @@
             font-weight: 700; font-size: 12px; color: #000;
         }
 
-        /* SIDEBAR flexbox */
+        /* SIDEBAR com flexbox */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -288,8 +290,8 @@
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-gavel"></i> Mandados</a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item active" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -319,6 +321,7 @@
             </div>
         </header>
 
+        <!-- MEU PERFIL -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-user"></i>Meu Perfil</div>
             <div class="row g-3">
@@ -345,6 +348,7 @@
             </div>
         </div>
 
+        <!-- NOTIFICAÇÕES -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-bell"></i>Notificacoes</div>
             <div class="config-item">
@@ -376,6 +380,7 @@
             </div>
         </div>
 
+        <!-- PREFERÊNCIAS DE INTERFACE -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-palette"></i>Preferencias de Interface</div>
             <div class="config-item">
@@ -407,6 +412,7 @@
             </div>
         </div>
 
+        <!-- SEGURANÇA -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-shield-alt"></i>Seguranca</div>
             <div class="config-item">
@@ -421,7 +427,7 @@
             <div class="config-item">
                 <div class="info">
                     <div class="title">Bloqueio Automatico</div>
-                    <div class="description">Bloquear tela apos 15 minutos de inatividade</div>
+                    <div class="description">Bloquear tela apos 5 minutos de inatividade</div>
                 </div>
                 <div class="action">
                     <div class="toggle-switch active" onclick="toggleConfig(this, 'bloqueioAuto')"></div>
@@ -438,12 +444,13 @@
             </div>
         </div>
 
+        <!-- INFORMAÇÕES DO SISTEMA -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-info-circle"></i>Informacoes do Sistema</div>
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Versao</label>
-                    <input type="text" class="form-control" value="2.0.0" disabled>
+                    <input type="text" class="form-control" value="3.0.0" disabled>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Ambiente</label>
@@ -460,6 +467,7 @@
             </div>
         </div>
 
+        <!-- AÇÕES DE SEGURANÇA -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-key"></i>Acoes de Seguranca</div>
             <div class="row mt-3">
@@ -479,7 +487,7 @@
         let usuarioAtual = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('⚙️ AI-DEPOM - Configuracoes v1.0.1');
+            console.log('⚙️ AI-DEPOM - Configuracoes v1.0.2');
 
             usuarioAtual = AIDEPOM.getUsuario();
             if (!usuarioAtual) {
@@ -541,9 +549,6 @@
             showToast('success', 'Configuracoes salvas', 'Suas preferencias foram salvas com sucesso.');
         }
 
-        // ============================================================
-        // ALTERAR SENHA — envia link por e-mail
-        // ============================================================
         async function alterarSenha() {
             if (!usuarioAtual || !usuarioAtual.email) {
                 showToast('error', 'Erro', 'Email do usuário não encontrado.');
@@ -601,9 +606,6 @@
             }, duracao);
         }
 
-        // ============================================================
-        // FULLSCREEN
-        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
@@ -619,9 +621,6 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
-        // ============================================================
-        // LOGOUT — v1.0.1 (robusto)
-        // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
             try {
@@ -649,9 +648,6 @@
             window.location.href = '02-login.html';
         }
 
-        // ============================================================
-        // CLOSE WINDOW — v1.0.1 (robusto)
-        // ============================================================
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
 
@@ -673,7 +669,6 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
     </script>
-
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
