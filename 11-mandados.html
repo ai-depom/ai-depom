@@ -1,0 +1,1375 @@
+<!-- ============================================================
+     AI-DEPOM - MANDADOS DE PRISÃO
+     ============================================================
+     Arquivo: 11-mandados.html
+     Versão: 1.0.0
+     Data: 15/09/2026 - 13:00
+     Autor: AI-DEPOM Team
+     ============================================================
+     ALTERAÇÕES RECENTES:
+     - [15/09/2026 13:00] ✨ Tela criada do zero
+     - [15/09/2026 13:00] ✨ Cadastro de mandados com todos os campos
+     - [15/09/2026 13:00] ✨ Listagem dos últimos 10 mandados
+     - [15/09/2026 13:00] ✨ Modal de detalhes
+     - [15/09/2026 13:00] ✨ Modal de edição
+     - [15/09/2026 13:00] ✨ Marcar como cumprido
+     - [15/09/2026 13:00] ✨ Filtros por status/tipo/prioridade
+     - [15/09/2026 13:00] ✨ Impressão de mandado
+     - [15/09/2026 13:00] ✨ Geocodificação de endereço (Nominatim)
+     - [15/09/2026 13:00] ✨ Link direto pro mapa
+     ============================================================
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>AI-DEPOM - Mandados de Prisão</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-card: #0d0d0d;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc77;
+            --text-muted: #004d33;
+            --border-color: #003322;
+            --shadow-color: rgba(0, 255, 136, 0.08);
+            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+            --control-size: 36px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%; min-height: 100vh;
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* CONTROLS BAR */
+        .controls-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 15px; display: flex; justify-content: space-between;
+            align-items: center; height: 48px; width: 100vw;
+        }
+        .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-center { display: flex; align-items: center; gap: 8px; }
+        .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+        .control-btn {
+            width: var(--control-size); height: var(--control-size);
+            border-radius: 8px; border: none; background: transparent;
+            color: rgba(0, 255, 136, 0.3); font-size: 16px;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
+        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+        .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
+        .user-info .avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; color: #000;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed; top: 48px; left: 0;
+            width: 260px; height: calc(100vh - 48px);
+            background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            z-index: 999; padding: 20px 0 0 0;
+            transition: transform 0.3s ease; overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .sidebar-brand .logo {
+            width: 50px; height: 50px; margin: 0 auto 10px;
+            background: var(--gradient-green); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sidebar-brand .logo i { font-size: 24px; color: #000; }
+        .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
+        .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
+        .sidebar-menu { padding: 0 12px; flex: 1; }
+        .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
+        .sidebar-menu .menu-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 16px; border-radius: 10px;
+            color: rgba(0, 255, 136, 0.3); text-decoration: none;
+            transition: all 0.3s; cursor: pointer; margin-bottom: 2px; font-size: 14px;
+        }
+        .sidebar-menu .menu-item:hover { background: rgba(0, 255, 136, 0.03); color: var(--text-primary); }
+        .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
+        .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
+        .sidebar-footer {
+            position: relative;
+            padding: 15px 20px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.98);
+            margin-top: auto;
+        }
+        .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
+        .sidebar-footer .user-info-sidebar .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #000;
+        }
+        .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
+
+        /* MAIN */
+        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; width: calc(100vw - 260px); }
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px; background: var(--bg-secondary);
+            border-radius: 16px; padding: 15px 25px;
+            margin-bottom: 25px; border: 1px solid var(--border-color);
+        }
+        .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
+        .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
+        .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
+
+        /* CARDS */
+        .form-card {
+            background: var(--bg-secondary); border-radius: 14px;
+            padding: 25px; border: 1px solid var(--border-color); margin-bottom: 25px;
+        }
+        .form-card .card-title {
+            color: var(--text-primary); font-size: 14px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px; margin-bottom: 20px;
+        }
+        .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
+
+        /* FORM */
+        .section-title {
+            color: var(--text-primary); font-size: 13px; letter-spacing: 1px;
+            margin: 25px 0 15px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .section-title:first-child { margin-top: 0; }
+        .section-title i { margin-right: 10px; opacity: 0.7; }
+        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .form-control, .form-select {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
+            color: var(--text-primary); padding: 10px 14px;
+            border-radius: 10px; transition: all 0.3s; font-size: 14px;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
+        }
+        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+        .form-select option { background: #000; color: var(--text-primary); }
+        .btn-gold {
+            background: var(--gradient-green); color: #000; font-weight: 700;
+            padding: 10px 28px; border-radius: 10px; border: none;
+            transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px;
+        }
+        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-outline-gold {
+            background: transparent; color: var(--text-primary);
+            border: 1px solid var(--text-primary); padding: 10px 28px;
+            border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
+        }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+
+        /* TABELA */
+        .table-container { overflow-x: auto; }
+        .table-custom { width: 100%; border-collapse: collapse; }
+        .table-custom th {
+            color: rgba(0, 255, 136, 0.4); font-size: 11px; text-transform: uppercase;
+            letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .table-custom td {
+            color: var(--text-secondary); font-size: 13px; padding: 12px;
+            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+            vertical-align: middle;
+        }
+        .table-custom tr:hover td { background: rgba(0, 255, 136, 0.02); }
+
+        /* BADGES */
+        .badge-status { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+        .status-ativo { background: rgba(220, 53, 69, 0.15); color: #ff4444; border: 1px solid rgba(220, 53, 69, 0.3); }
+        .status-cumprido { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .status-vencido { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+        .status-cancelado { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); }
+        .status-suspenso { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.2); }
+        .badge-prioridade { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; margin-left: 6px; }
+        .prioridade-normal { background: rgba(108, 117, 125, 0.15); color: #adb5bd; }
+        .prioridade-alta { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .prioridade-urgente { background: rgba(220, 53, 69, 0.2); color: #ff4444; animation: pulse-urgent 1.5s infinite; }
+        @keyframes pulse-urgent { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+        .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 10px; border-radius: 8px; transition: all 0.3s; font-size: 12px; }
+        .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
+
+        /* INFO LISTA */
+        .info-lista {
+            background: rgba(0, 255, 136, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 10px 15px;
+            font-size: 12px;
+            color: rgba(0, 255, 136, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .info-lista i { color: var(--text-primary); }
+        .info-lista strong { color: var(--text-primary); }
+
+        /* EMPTY STATE */
+        .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
+        .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
+
+        /* MODAIS */
+        .modal-custom {
+            display: none; position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 9999; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-custom.open { display: flex; }
+        .modal-custom-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px; width: 100%; max-width: 700px;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
+        }
+        .modal-custom-content.modal-lg { max-width: 900px; }
+        .modal-custom-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 25px; border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
+        }
+        .modal-custom-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
+        .modal-custom-body { padding: 25px; }
+        .modal-custom-footer {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 15px 25px; border-top: 1px solid var(--border-color);
+            position: sticky; bottom: 0; background: var(--bg-secondary);
+        }
+
+        /* DETALHES */
+        .detalhe-campo { padding: 8px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
+        .detalhe-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 3px; }
+        .detalhe-campo .valor { color: var(--text-primary); font-size: 13px; }
+
+        /* TOASTS */
+        .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-ai {
+            min-width: 320px; max-width: 420px; padding: 16px 20px;
+            border-radius: 12px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: slideIn 0.3s ease; backdrop-filter: blur(20px);
+        }
+        .toast-ai.success { border-left: 4px solid var(--text-primary); }
+        .toast-ai.error { border-left: 4px solid #dc3545; }
+        .toast-ai.warning { border-left: 4px solid #ffc107; }
+        .toast-ai.info { border-left: 4px solid #0dcaf0; }
+        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .toast-ai.success .toast-icon { color: var(--text-primary); }
+        .toast-ai.error .toast-icon { color: #dc3545; }
+        .toast-ai.warning .toast-icon { color: #ffc107; }
+        .toast-ai.info .toast-icon { color: #0dcaf0; }
+        .toast-ai .toast-content { flex: 1; }
+        .toast-ai .toast-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
+        .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; font-size: 14px; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+
+        /* SIDEBAR TOGGLE */
+        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; width: 100vw; }
+            .sidebar-toggle { display: flex !important; }
+            .user-info .name { display: none; }
+        }
+        @media (max-width: 768px) {
+            .main-content { padding: 65px 15px 15px; }
+            .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
+            .form-card { padding: 18px; }
+            .btn-gold, .btn-outline-gold { width: 100%; }
+            .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <!-- CONTROLS BAR -->
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
+            <div class="controls-divider"></div>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="controls-center">
+            <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
+        </div>
+        <div class="controls-right">
+            <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
+        </div>
+    </header>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo"><i class="fas fa-shield-halved"></i></div>
+            <h5>AI-DEPOM</h5>
+            <small>SISTEMA POLICIAL INTELIGENTE</small>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-label">Navegacao</div>
+            <a class="menu-item" onclick="window.location.href='04-dashboard.html'"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a class="menu-item" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
+            <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
+            <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
+            <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <div class="menu-label">Administracao</div>
+            <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
+            <a class="menu-item active" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <div class="menu-label">Sistema</div>
+            <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
+            <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-sidebar">
+                <div class="avatar" id="sidebarAvatar">AM</div>
+                <div>
+                    <div class="name" id="sidebarUserName">Carregando...</div>
+                    <div class="role" id="sidebarUserRole">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="page-title">
+                    <h4><i class="fas fa-gavel me-2"></i>Mandados de Prisão</h4>
+                    <small><i class="fas fa-lock me-1"></i> Dados protegidos por criptografia</small>
+                </div>
+            </div>
+            <div class="top-actions">
+                <span class="badge" id="totalMandadosBadge"><i class="fas fa-list"></i> 0 mandados</span>
+                <span class="badge"><i class="fas fa-shield-alt" style="color:#00ff88;"></i> LGPD Compliance</span>
+            </div>
+        </header>
+
+        <!-- FORMULÁRIO DE CADASTRO -->
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-plus-circle"></i>Cadastrar Novo Mandado</div>
+
+            <form id="formMandado">
+                <!-- DADOS DO MANDADO -->
+                <div class="section-title"><i class="fas fa-file-alt"></i>DADOS DO MANDADO</div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Número do Mandado *</label>
+                        <input type="text" class="form-control" id="numeroMandado" placeholder="MP-2026-0001" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo *</label>
+                        <select class="form-select" id="tipoMandado" required>
+                            <option value="">Selecione...</option>
+                            <option value="PRISAO">Prisão</option>
+                            <option value="BUSCA_APREENSAO">Busca e Apreensão</option>
+                            <option value="CONDUCAO_COERCITIVA">Condução Coercitiva</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Status *</label>
+                        <select class="form-select" id="statusMandado" required>
+                            <option value="ATIVO">Ativo</option>
+                            <option value="CUMPRIDO">Cumprido</option>
+                            <option value="VENCIDO">Vencido</option>
+                            <option value="CANCELADO">Cancelado</option>
+                            <option value="SUSPENSO">Suspenso</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Prioridade *</label>
+                        <select class="form-select" id="prioridadeMandado" required>
+                            <option value="NORMAL">Normal</option>
+                            <option value="ALTA">Alta</option>
+                            <option value="URGENTE">Urgente</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- VÍNCULO COM SUSPEITO -->
+                <div class="section-title"><i class="fas fa-user-secret"></i>SUSPEITO VINCULADO</div>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label">Suspeito *</label>
+                        <select class="form-select" id="idSuspeito" required>
+                            <option value="">Carregando suspeitos...</option>
+                        </select>
+                        <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
+                            <i class="fas fa-info-circle"></i> Se o suspeito não estiver na lista, cadastre-o primeiro em <strong>Cadastro</strong>.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- DADOS JUDICIAIS -->
+                <div class="section-title"><i class="fas fa-balance-scale"></i>DADOS JUDICIAIS</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Juiz *</label>
+                        <input type="text" class="form-control" id="juizNome" placeholder="Nome do juiz" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Matrícula do Juiz</label>
+                        <input type="text" class="form-control" id="juizMatricula" placeholder="Matrícula (opcional)">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Vara/Tribunal *</label>
+                        <input type="text" class="form-control" id="varaTribunal" placeholder="Ex: 1ª Vara Criminal" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Número do Processo</label>
+                        <input type="text" class="form-control" id="processoNumero" placeholder="Ex: 0001234-56.2026.8.05.0001">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data de Emissão *</label>
+                        <input type="date" class="form-control" id="dataEmissao" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data de Validade</label>
+                        <input type="date" class="form-control" id="dataValidade">
+                    </div>
+                </div>
+
+                <!-- COORDENADAS -->
+                <div class="section-title"><i class="fas fa-map-marker-alt"></i>COORDENADAS GEOGRÁFICAS</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="0.00000001" class="form-control" id="latitude" placeholder="-12.9714">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="0.00000001" class="form-control" id="longitude" placeholder="-38.5014">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn-outline-gold w-100" onclick="geocodificarEndereco()">
+                            <i class="fas fa-search-location me-2"></i>BUSCAR PELO ENDEREÇO
+                        </button>
+                    </div>
+                </div>
+
+                <!-- DESCRIÇÃO -->
+                <div class="section-title"><i class="fas fa-align-left"></i>DESCRIÇÃO</div>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label">Descrição do Mandado *</label>
+                        <textarea class="form-control" id="descricao" rows="3" placeholder="Descreva o teor do mandado..." required></textarea>
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" rows="2" placeholder="Observações adicionais (opcional)"></textarea>
+                    </div>
+                </div>
+
+                <!-- BOTÕES -->
+                <div class="row mt-4">
+                    <div class="col-md-12 text-end">
+                        <button type="reset" class="btn-outline-gold me-2" onclick="resetFormulario()">
+                            <i class="fas fa-times me-2"></i>CANCELAR
+                        </button>
+                        <button type="submit" class="btn-gold" id="btnCadastrar">
+                            <i class="fas fa-save me-2"></i>CADASTRAR MANDADO
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- LISTA DE MANDADOS -->
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Mandados Cadastrados</div>
+                <button class="btn-outline-gold" onclick="carregarMandados()" style="padding:6px 16px; font-size:12px;">
+                    <i class="fas fa-sync-alt me-2"></i>ATUALIZAR
+                </button>
+            </div>
+
+            <!-- FILTROS -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroStatusLista">
+                        <option value="">Todos os status</option>
+                        <option value="ATIVO">Ativo</option>
+                        <option value="CUMPRIDO">Cumprido</option>
+                        <option value="VENCIDO">Vencido</option>
+                        <option value="CANCELADO">Cancelado</option>
+                        <option value="SUSPENSO">Suspenso</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroTipoLista">
+                        <option value="">Todos os tipos</option>
+                        <option value="PRISAO">Prisão</option>
+                        <option value="BUSCA_APREENSAO">Busca e Apreensão</option>
+                        <option value="CONDUCAO_COERCITIVA">Condução Coercitiva</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroPrioridadeLista">
+                        <option value="">Todas as prioridades</option>
+                        <option value="NORMAL">Normal</option>
+                        <option value="ALTA">Alta</option>
+                        <option value="URGENTE">Urgente</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn-gold w-100" onclick="carregarMandados()">
+                        <i class="fas fa-filter me-2"></i>FILTRAR
+                    </button>
+                </div>
+            </div>
+
+            <div id="infoLista"></div>
+            <div id="listaMandados">
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Carregando mandados...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DETALHES -->
+    <div class="modal-custom" id="modalDetalhes">
+        <div class="modal-custom-content modal-lg">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Detalhes do Mandado</h5>
+                <button class="btn-icon" onclick="fecharDetalhes()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalDetalhesBody"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-outline-gold" onclick="imprimirDetalhes()"><i class="fas fa-print me-2"></i>IMPRIMIR</button>
+                <button class="btn-gold" onclick="fecharDetalhes()"><i class="fas fa-check me-2"></i>FECHAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIÇÃO -->
+    <div class="modal-custom" id="modalEdicao">
+        <div class="modal-custom-content modal-lg">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-edit me-2"></i>Editar Mandado</h5>
+                <button class="btn-icon" onclick="fecharEdicao()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalEdicaoBody"></div>
+        </div>
+    </div>
+
+    <!-- MODAL CUMPRIR -->
+    <div class="modal-custom" id="modalCumprir">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-check-circle me-2"></i>Marcar como Cumprido</h5>
+                <button class="btn-icon" onclick="fecharCumprir()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body">
+                <form id="formCumprir">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Data do Cumprimento *</label>
+                            <input type="date" class="form-control" id="dataCumprimento" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Responsável</label>
+                            <input type="text" class="form-control" id="responsavelCumprimento" placeholder="Nome de quem cumpriu">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Observações</label>
+                            <textarea class="form-control" id="observacoesCumprimento" rows="3" placeholder="Detalhes do cumprimento..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-custom-footer">
+                <button class="btn-outline-gold" onclick="fecharCumprir()"><i class="fas fa-times me-2"></i>CANCELAR</button>
+                <button class="btn-gold" id="btnConfirmarCumprir" onclick="confirmarCumprimento()"><i class="fas fa-check me-2"></i>CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOASTS -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script>
+        // O JavaScript completo está na PARTE 2
+        console.log('📄 Parte 1 carregada — aguardando Parte 2 (JavaScript)');
+    </script>
+      <script>
+        // ============================================================
+        // ESTADO GLOBAL
+        // ============================================================
+        const LIMITE_LISTA = 10;
+        let usuarioAtual = null;
+        let mandadosAtuais = [];
+        let mandadoEditandoId = null;
+        let mandadoCumprindoId = null;
+
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('AI-DEPOM - Mandados v1.0.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+
+            const usuario = AIDEPOM.getUsuario();
+            if (!usuario) {
+                showToast('error', 'Sessao expirada', 'Faca login novamente.');
+                setTimeout(() => window.location.href = '02-login.html', 1500);
+                return;
+            }
+
+            usuarioAtual = usuario;
+            atualizarDadosUsuario(usuario);
+
+            // Define data de emissão como hoje
+            document.getElementById('dataEmissao').value = new Date().toISOString().split('T')[0];
+
+            // Carrega dados
+            await carregarSuspeitos();
+            await carregarMandados();
+
+            // Configura submit do formulário
+            document.getElementById('formMandado').addEventListener('submit', cadastrarMandado);
+            document.getElementById('formCumprir').addEventListener('submit', function(e) {
+                e.preventDefault();
+                confirmarCumprimento();
+            });
+        });
+
+        function atualizarDadosUsuario(usuario) {
+            const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+            const nome = usuario.nome_completo || 'Usuario';
+            const perfil = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
+            document.getElementById('topAvatar').textContent = inicial;
+            document.getElementById('topUserName').textContent = nome;
+            document.getElementById('sidebarAvatar').textContent = inicial;
+            document.getElementById('sidebarUserName').textContent = nome;
+            document.getElementById('sidebarUserRole').textContent = perfil;
+        }
+
+        // ============================================================
+        // CARREGAR SUSPEITOS NO SELECT
+        // ============================================================
+        async function carregarSuspeitos() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('suspeito')
+                    .select('id_suspeito, nome_completo, cpf, apelido')
+                    .eq('deletado', false)
+                    .order('nome_completo', { ascending: true });
+
+                if (error) throw error;
+
+                const select = document.getElementById('idSuspeito');
+                select.innerHTML = '<option value="">Selecione um suspeito...</option>';
+
+                if (!data || data.length === 0) {
+                    select.innerHTML = '<option value="">Nenhum suspeito cadastrado</option>';
+                    return;
+                }
+
+                data.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id_suspeito;
+                    const cpfFormatado = s.cpf ? ` - ${s.cpf}` : '';
+                    const apelido = s.apelido ? ` (${s.apelido})` : '';
+                    opt.textContent = `${s.nome_completo}${apelido}${cpfFormatado}`;
+                    select.appendChild(opt);
+                });
+
+                console.log(`✅ ${data.length} suspeitos carregados`);
+
+            } catch (error) {
+                console.error('❌ Erro ao carregar suspeitos:', error);
+                document.getElementById('idSuspeito').innerHTML = '<option value="">Erro ao carregar</option>';
+            }
+        }
+
+        // ============================================================
+        // CADASTRAR MANDADO
+        // ============================================================
+        async function cadastrarMandado(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnCadastrar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
+
+            try {
+                const dados = {
+                    numero_mandado: document.getElementById('numeroMandado').value.trim(),
+                    tipo_mandado: document.getElementById('tipoMandado').value,
+                    status: document.getElementById('statusMandado').value,
+                    prioridade: document.getElementById('prioridadeMandado').value,
+                    id_suspeito: parseInt(document.getElementById('idSuspeito').value) || null,
+                    juiz_nome: document.getElementById('juizNome').value.trim(),
+                    juiz_matricula: document.getElementById('juizMatricula').value.trim() || null,
+                    vara_tribunal: document.getElementById('varaTribunal').value.trim(),
+                    processo_numero: document.getElementById('processoNumero').value.trim() || null,
+                    data_emissao: document.getElementById('dataEmissao').value,
+                    data_validade: document.getElementById('dataValidade').value || null,
+                    latitude: parseFloat(document.getElementById('latitude').value) || null,
+                    longitude: parseFloat(document.getElementById('longitude').value) || null,
+                    descricao: document.getElementById('descricao').value.trim(),
+                    observacoes: document.getElementById('observacoes').value.trim() || null,
+                    id_usuario_emissao: usuarioAtual.id,
+                    deletado: false
+                };
+
+                // Validações
+                if (!dados.numero_mandado) throw new Error('Preencha o Número do Mandado.');
+                if (!dados.tipo_mandado) throw new Error('Selecione o Tipo.');
+                if (!dados.status) throw new Error('Selecione o Status.');
+                if (!dados.prioridade) throw new Error('Selecione a Prioridade.');
+                if (!dados.id_suspeito) throw new Error('Selecione o Suspeito.');
+                if (!dados.juiz_nome) throw new Error('Preencha o Nome do Juiz.');
+                if (!dados.vara_tribunal) throw new Error('Preencha a Vara/Tribunal.');
+                if (!dados.data_emissao) throw new Error('Preencha a Data de Emissão.');
+                if (!dados.descricao) throw new Error('Preencha a Descrição.');
+
+                console.log('📝 Cadastrando mandado:', dados.numero_mandado);
+
+                const { data, error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .insert(dados)
+                    .select()
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                console.log('✅ Mandado cadastrado:', data);
+
+                showToast('success', 'Mandado cadastrado!', 
+                    `<strong>${dados.numero_mandado}</strong> foi cadastrado com sucesso.`, 6000);
+
+                resetFormulario();
+                await carregarMandados();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showToast('error', 'Erro ao cadastrar', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>CADASTRAR MANDADO';
+            }
+        }
+
+        // ============================================================
+        // RESET FORMULÁRIO
+        // ============================================================
+        function resetFormulario() {
+            document.getElementById('formMandado').reset();
+            document.getElementById('dataEmissao').value = new Date().toISOString().split('T')[0];
+            document.getElementById('statusMandado').value = 'ATIVO';
+            document.getElementById('prioridadeMandado').value = 'NORMAL';
+            console.log('🧹 Formulário resetado');
+        }
+
+        // ============================================================
+        // CARREGAR MANDADOS
+        // ============================================================
+        async function carregarMandados() {
+            const container = document.getElementById('listaMandados');
+            const infoContainer = document.getElementById('infoLista');
+            if (!container) return;
+
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando mandados...</div>';
+            infoContainer.innerHTML = '';
+
+            try {
+                const status = document.getElementById('filtroStatusLista').value;
+                const tipo = document.getElementById('filtroTipoLista').value;
+                const prioridade = document.getElementById('filtroPrioridadeLista').value;
+
+                // Conta total
+                let countQuery = window.supabaseClient
+                    .from('mandado_prisao')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('deletado', false);
+                if (status) countQuery = countQuery.eq('status', status);
+                if (tipo) countQuery = countQuery.eq('tipo_mandado', tipo);
+                if (prioridade) countQuery = countQuery.eq('prioridade', prioridade);
+
+                const { count: totalGeral } = await countQuery;
+
+                // Busca os últimos N
+                let query = window.supabaseClient
+                    .from('mandado_prisao')
+                    .select(`
+                        *,
+                        suspeito:suspeito (
+                            id_suspeito,
+                            nome_completo,
+                            apelido,
+                            cpf
+                        )
+                    `)
+                    .eq('deletado', false);
+
+                if (status) query = query.eq('status', status);
+                if (tipo) query = query.eq('tipo_mandado', tipo);
+                if (prioridade) query = query.eq('prioridade', prioridade);
+
+                const { data, error } = await query
+                    .order('id_mandado', { ascending: false })
+                    .limit(LIMITE_LISTA);
+
+                if (error) throw error;
+
+                mandadosAtuais = data || [];
+                document.getElementById('totalMandadosBadge').innerHTML = 
+                    '<i class="fas fa-list"></i> ' + (totalGeral || 0) + ' mandado(s)';
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-gavel"></i>Nenhum mandado cadastrado</div>';
+                    return;
+                }
+
+                // Info "Exibindo X de Y"
+                if (totalGeral !== null && totalGeral !== undefined && totalGeral > LIMITE_LISTA) {
+                    infoContainer.innerHTML = `
+                        <div class="info-lista">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Exibindo os <strong>${data.length}</strong> últimos cadastros de um total de <strong>${totalGeral}</strong> mandados.</span>
+                        </div>
+                    `;
+                }
+
+                // Renderiza tabela
+                let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
+                html += '<th>Nº Mandado</th><th>Suspeito</th><th>Tipo</th><th>Status</th><th>Prioridade</th><th>Emissão</th><th>Ações</th>';
+                html += '</tr></thead><tbody>';
+
+                data.forEach(m => {
+                    const statusClass = `status-${(m.status || 'ativo').toLowerCase()}`;
+                    const prioridadeClass = `prioridade-${(m.prioridade || 'normal').toLowerCase()}`;
+                    const s = m.suspeito || {};
+
+                    html += '<tr>';
+                    html += `<td><strong style="color:var(--text-primary);">${m.numero_mandado || '#' + m.id_mandado}</strong></td>`;
+                    html += `<td>${s.nome_completo || '-'}<br><small style="color:rgba(0,255,136,0.3);">${s.cpf || ''}</small></td>`;
+                    html += `<td>${traduzirTipo(m.tipo_mandado)}</td>`;
+                    html += `<td><span class="badge-status ${statusClass}">${m.status || '-'}</span></td>`;
+                    html += `<td><span class="badge-prioridade ${prioridadeClass}">${m.prioridade || 'NORMAL'}</span></td>`;
+                    html += `<td>${formatarData(m.data_emissao)}</td>`;
+                    html += `<td>
+                        <button class="btn-icon" onclick="verDetalhes(${m.id_mandado})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
+                        <button class="btn-icon" onclick="editarMandado(${m.id_mandado})" title="Editar"><i class="fas fa-edit"></i></button>
+                        ${m.status !== 'CUMPRIDO' ? `<button class="btn-icon" onclick="abrirModalCumprir(${m.id_mandado})" title="Marcar como cumprido" style="color:#00ff88;"><i class="fas fa-check"></i></button>` : ''}
+                        <button class="btn-icon" onclick="imprimirMandado(${m.id_mandado})" title="Imprimir"><i class="fas fa-print"></i></button>
+                    </td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+
+                console.log(`✅ ${data.length} mandados carregados`);
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar mandados</div>';
+            }
+        }
+
+        // ============================================================
+        // VER DETALHES
+        // ============================================================
+        async function verDetalhes(id) {
+            const modal = document.getElementById('modalDetalhes');
+            const body = document.getElementById('modalDetalhesBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+            try {
+                const { data: m, error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select(`
+                        *,
+                        suspeito:suspeito (
+                            id_suspeito, nome_completo, apelido, cpf, rg,
+                            logradouro, numero, bairro, cidade, uf,
+                            status_atual, nivel_periculosidade
+                        )
+                    `)
+                    .eq('id_mandado', id)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!m) throw new Error('Mandado não encontrado');
+
+                const s = m.suspeito || {};
+
+                body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Número do Mandado</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div>
+                            <div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div>
+                            <div class="detalhe-campo"><span class="label">Status</span><span class="valor"><span class="badge-status status-${(m.status || 'ativo').toLowerCase()}">${m.status || '-'}</span></span></div>
+                            <div class="detalhe-campo"><span class="label">Prioridade</span><span class="valor"><span class="badge-prioridade prioridade-${(m.prioridade || 'normal').toLowerCase()}">${m.prioridade || '-'}</span></span></div>
+                            <div class="detalhe-campo"><span class="label">Data de Emissão</span><span class="valor">${formatarData(m.data_emissao)}</span></div>
+                            <div class="detalhe-campo"><span class="label">Data de Validade</span><span class="valor">${formatarData(m.data_validade) || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Data de Cumprimento</span><span class="valor">${formatarData(m.data_cumprimento) || '-'}</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor"><strong>${s.nome_completo || '-'}</strong></span></div>
+                            <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Endereço</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="detalhe-campo"><span class="label">Juiz</span><span class="valor">${m.juiz_nome || '-'} ${m.juiz_matricula ? '(' + m.juiz_matricula + ')' : ''}</span></div>
+                            <div class="detalhe-campo"><span class="label">Vara/Tribunal</span><span class="valor">${m.vara_tribunal || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Número do Processo</span><span class="valor">${m.processo_numero || '-'}</span></div>
+                            ${m.latitude && m.longitude ? `<div class="detalhe-campo"><span class="label">Coordenadas</span><span class="valor">${m.latitude}, ${m.longitude}</span></div>` : ''}
+                        </div>
+                        <div class="col-md-12">
+                            <div class="detalhe-campo"><span class="label">Descrição</span><span class="valor">${m.descricao || '-'}</span></div>
+                            ${m.observacoes ? `<div class="detalhe-campo"><span class="label">Observações</span><span class="valor">${m.observacoes}</span></div>` : ''}
+                        </div>
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharDetalhes() {
+            document.getElementById('modalDetalhes').classList.remove('open');
+        }
+
+        function imprimirDetalhes() {
+            window.print();
+        }
+
+        // ============================================================
+        // EDITAR MANDADO
+        // ============================================================
+        async function editarMandado(id) {
+            const modal = document.getElementById('modalEdicao');
+            const body = document.getElementById('modalEdicaoBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+            mandadoEditandoId = id;
+
+            try {
+                const { data: m, error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select('*')
+                    .eq('id_mandado', id)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!m) throw new Error('Mandado não encontrado');
+
+                body.innerHTML = `
+                    <form id="formEdicao">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label">Número *</label>
+                                <input type="text" class="form-control" id="editNumero" value="${m.numero_mandado || ''}" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo *</label>
+                                <select class="form-select" id="editTipo" required>
+                                    <option value="PRISAO" ${m.tipo_mandado === 'PRISAO' ? 'selected' : ''}>Prisão</option>
+                                    <option value="BUSCA_APREENSAO" ${m.tipo_mandado === 'BUSCA_APREENSAO' ? 'selected' : ''}>Busca e Apreensão</option>
+                                    <option value="CONDUCAO_COERCITIVA" ${m.tipo_mandado === 'CONDUCAO_COERCITIVA' ? 'selected' : ''}>Condução Coercitiva</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Status *</label>
+                                <select class="form-select" id="editStatus" required>
+                                    <option value="ATIVO" ${m.status === 'ATIVO' ? 'selected' : ''}>Ativo</option>
+                                    <option value="CUMPRIDO" ${m.status === 'CUMPRIDO' ? 'selected' : ''}>Cumprido</option>
+                                    <option value="VENCIDO" ${m.status === 'VENCIDO' ? 'selected' : ''}>Vencido</option>
+                                    <option value="CANCELADO" ${m.status === 'CANCELADO' ? 'selected' : ''}>Cancelado</option>
+                                    <option value="SUSPENSO" ${m.status === 'SUSPENSO' ? 'selected' : ''}>Suspenso</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Prioridade *</label>
+                                <select class="form-select" id="editPrioridade" required>
+                                    <option value="NORMAL" ${m.prioridade === 'NORMAL' ? 'selected' : ''}>Normal</option>
+                                    <option value="ALTA" ${m.prioridade === 'ALTA' ? 'selected' : ''}>Alta</option>
+                                    <option value="URGENTE" ${m.prioridade === 'URGENTE' ? 'selected' : ''}>Urgente</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Juiz *</label>
+                                <input type="text" class="form-control" id="editJuiz" value="${m.juiz_nome || ''}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Vara/Tribunal *</label>
+                                <input type="text" class="form-control" id="editVara" value="${m.vara_tribunal || ''}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Processo</label>
+                                <input type="text" class="form-control" id="editProcesso" value="${m.processo_numero || ''}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de Emissão *</label>
+                                <input type="date" class="form-control" id="editDataEmissao" value="${m.data_emissao || ''}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de Validade</label>
+                                <input type="date" class="form-control" id="editDataValidade" value="${m.data_validade || ''}">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Descrição *</label>
+                                <textarea class="form-control" id="editDescricao" rows="3" required>${m.descricao || ''}</textarea>
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Observações</label>
+                                <textarea class="form-control" id="editObservacoes" rows="2">${m.observacoes || ''}</textarea>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn-outline-gold" onclick="fecharEdicao()">
+                                <i class="fas fa-times me-2"></i>CANCELAR
+                            </button>
+                            <button type="submit" class="btn-gold" id="btnSalvarEdicao">
+                                <i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES
+                            </button>
+                        </div>
+                    </form>
+                `;
+
+                document.getElementById('formEdicao').addEventListener('submit', salvarEdicao);
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        async function salvarEdicao(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSalvarEdicao');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
+
+            try {
+                const dados = {
+                    numero_mandado: document.getElementById('editNumero').value.trim(),
+                    tipo_mandado: document.getElementById('editTipo').value,
+                    status: document.getElementById('editStatus').value,
+                    prioridade: document.getElementById('editPrioridade').value,
+                    juiz_nome: document.getElementById('editJuiz').value.trim(),
+                    vara_tribunal: document.getElementById('editVara').value.trim(),
+                    processo_numero: document.getElementById('editProcesso').value.trim() || null,
+                    data_emissao: document.getElementById('editDataEmissao').value,
+                    data_validade: document.getElementById('editDataValidade').value || null,
+                    descricao: document.getElementById('editDescricao').value.trim(),
+                    observacoes: document.getElementById('editObservacoes').value.trim() || null,
+                    data_atualizacao: new Date().toISOString()
+                };
+
+                const { error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .update(dados)
+                    .eq('id_mandado', mandadoEditandoId);
+
+                if (error) throw error;
+
+                showToast('success', 'Mandado atualizado!', 'As alterações foram salvas.', 5000);
+                fecharEdicao();
+                await carregarMandados();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showToast('error', 'Erro ao salvar', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+            }
+        }
+
+        function fecharEdicao() {
+            document.getElementById('modalEdicao').classList.remove('open');
+            mandadoEditandoId = null;
+        }
+
+        // ============================================================
+        // MARCAR COMO CUMPRIDO
+        // ============================================================
+        function abrirModalCumprir(id) {
+            mandadoCumprindoId = id;
+            document.getElementById('dataCumprimento').value = new Date().toISOString().split('T')[0];
+            document.getElementById('responsavelCumprimento').value = usuarioAtual?.nome_completo || '';
+            document.getElementById('observacoesCumprimento').value = '';
+            document.getElementById('modalCumprir').classList.add('open');
+        }
+
+        function fecharCumprir() {
+            document.getElementById('modalCumprir').classList.remove('open');
+            mandadoCumprindoId = null;
+        }
+
+        async function confirmarCumprimento() {
+            if (!mandadoCumprindoId) return;
+
+            const btn = document.getElementById('btnConfirmarCumprir');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
+
+            try {
+                const dataCumprimento = document.getElementById('dataCumprimento').value;
+                const responsavel = document.getElementById('responsavelCumprimento').value.trim();
+                const observacoes = document.getElementById('observacoesCumprimento').value.trim();
+
+                if (!dataCumprimento) throw new Error('Informe a data do cumprimento.');
+
+                const { error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .update({
+                        status: 'CUMPRIDO',
+                        data_cumprimento: dataCumprimento,
+                        observacoes: observacoes ? `[CUMPRIDO por ${responsavel}] ${observacoes}` : `Cumprido por ${responsavel}`,
+                        id_usuario_cumprimento: usuarioAtual.id,
+                        data_atualizacao: new Date().toISOString()
+                    })
+                    .eq('id_mandado', mandadoCumprindoId);
+
+                if (error) throw error;
+
+                showToast('success', 'Mandado cumprido!', 'O status foi atualizado para CUMPRIDO.', 5000);
+                fecharCumprir();
+                await carregarMandados();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showToast('error', 'Erro', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check me-2"></i>CONFIRMAR';
+            }
+        }
+
+        // ============================================================
+        // GEOCODIFICAÇÃO (Nominatim - OpenStreetMap)
+        // ============================================================
+        async function geocodificarEndereco() {
+            const idSuspeito = document.getElementById('idSuspeito').value;
+            if (!idSuspeito) {
+                showToast('warning', 'Selecione um suspeito', 'O endereço é buscado a partir do suspeito.');
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
+
+            try {
+                // Busca o endereço do suspeito
+                const { data: s, error } = await window.supabaseClient
+                    .from('suspeito')
+                    .select('logradouro, numero, bairro, cidade, uf, cep')
+                    .eq('id_suspeito', idSuspeito)
+                    .maybeSingle();
+
+                if (error || !s) throw new Error('Suspeito não encontrado.');
+
+                const endereco = [
+                    s.logradouro,
+                    s.numero,
+                    s.bairro,
+                    s.cidade,
+                    s.uf,
+                    s.cep,
+                    'Brasil'
+                ].filter(Boolean).join(', ');
+
+                if (endereco.length < 5) {
+                    throw new Error('Endereço do suspeito está incompleto.');
+                }
+
+                console.log('🌍 Geocodificando:', endereco);
+
+                // Nominatim (OpenStreetMap - gratuito)
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`;
+                const response = await fetch(url, {
+                    headers: { 'User-Agent': 'AI-DEPOM/1.0' }
+                });
+
+                const resultado = await response.json();
+
+                if (!resultado || resultado.length === 0) {
+                    throw new Error('Endereço não encontrado no mapa.');
+                }
+
+                const { lat, lon, display_name } = resultado[0];
+
+                document.getElementById('latitude').value = parseFloat(lat).toFixed(8);
+                document.getElementById('longitude').value = parseFloat(lon).toFixed(8);
+
+                showToast('success', 'Endereço encontrado!', 
+                    `Coordenadas preenchidas: ${parseFloat(lat).toFixed(4)}, ${parseFloat(lon).toFixed(4)}`, 6000);
+
+                console.log('✅ Geocodificado:', display_name);
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showToast('error', 'Erro ao buscar endereço', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-search-location me-2"></i>BUSCAR PELO ENDEREÇO';
+            }
+        }
+
+        // ============================================================
+        // IMPRIMIR MANDADO
+        // ============================================================
+        async function imprimirMandado(id) {
+            await verDetalhes(id);
+            setTimeout(() => window.print(), 800);
+        }
+
+        // ============================================================
+        // HELPERS
+        // ============================================================
+        function traduzirTipo(tipo) {
+            const tipos = {
+                'PRISAO': 'Prisão',
+                'BUSCA_APREENSAO': 'Busca e Apreensão',
+                'CONDUCAO_COERCITIVA': 'Condução Coercitiva'
+            };
+            return tipos[tipo] || tipo || '-';
+        }
+
+        function formatarData(data) {
+            if (!data) return '';
+            const [ano, mes, dia] = data.split('-');
+            return `${dia}/${mes}/${ano}`;
+        }
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
+                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
+                '<div class="toast-message">' + mensagem + '</div></div>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
+        }
+
+        // ============================================================
+        // CONTROLES
+        // ============================================================
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+            const req = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancel = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(docEl);
+            else cancel.call(doc);
+        }
+        document.addEventListener('keydown', function(e) { 
+            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); } 
+            if (e.key === 'Escape') {
+                fecharDetalhes();
+                fecharEdicao();
+                fecharCumprir();
+            }
+        });
+
+        async function fazerLogout() {
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try {
+                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
+                    await AIDEPOM.logout();
+                    return;
+                }
+            } catch (error) { console.warn('⚠️', error); }
+
+            try {
+                if (window.supabaseClient?.auth) {
+                    await window.supabaseClient.auth.signOut();
+                }
+            } catch (error) { console.error('❌', error); }
+
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+            window.location.href = '02-login.html';
+        }
+
+        function closeWindow() {
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) { console.warn('⚠️', e); }
+            setTimeout(function() {
+                if (!window.closed) window.location.href = '01-apresentacao.html';
+            }, 300);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        console.log('✅ Página de Mandados carregada em ' + new Date().toLocaleString('pt-BR'));
+    </script>
+</body>
+</html>
+</body>
+</html>
