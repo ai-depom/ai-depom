@@ -1,4 +1,23 @@
- <!DOCTYPE html>
+ <!-- ============================================================
+     AI-DEPOM - MAPA DE OPERAÇÕES
+     ============================================================
+     Arquivo: 10-mapa-operacoes.html
+     Versão: 1.1.0
+     Data: 15/09/2026 - 09:30
+     Autor: AI-DEPOM Team
+     ============================================================
+     ALTERAÇÕES RECENTES:
+     - [15/09/2026 09:30] ✨ Cabeçalho Regra de Ouro aplicado
+     - [15/09/2026 09:30] ✨ Sidebar com flexbox (footer sem overlap)
+     - [15/09/2026 09:30] ✨ fazerLogout() robusto (fallback duplo)
+     - [15/09/2026 09:30] ✨ closeWindow() robusto (fallback)
+     - [15/09/2026 09:30] ✨ <script> movido para dentro do <body>
+     - [15/09/2026 09:30] ✨ JOIN com suspeito usando coluna correta
+     - [15/09/2026 09:30] ✨ Popup com todos os campos da tabela
+     - [15/09/2026 09:30] ✨ Fallback de coordenadas com base no endereço
+     ============================================================
+-->
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -26,11 +45,8 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
-            width: 100%;
-            height: 100%;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            width: 100%; height: 100%; min-height: 100vh;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
@@ -64,13 +80,16 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
+
+        /* SIDEBAR com flexbox (footer não sobrepõe) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999; padding: 20px 0;
+            z-index: 999; padding: 20px 0 0 0;
             transition: transform 0.3s ease; overflow-y: auto;
+            display: flex; flex-direction: column;
         }
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .sidebar-brand .logo {
@@ -81,7 +100,7 @@
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
-        .sidebar-menu { padding: 0 12px; }
+        .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
             display: flex; align-items: center; gap: 14px;
@@ -94,8 +113,11 @@
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
         .sidebar-footer {
-            position: absolute; bottom: 20px; left: 0; right: 0;
-            padding: 0 20px; border-top: 1px solid var(--border-color); padding-top: 15px;
+            position: relative;
+            padding: 15px 20px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.98);
+            margin-top: auto;
         }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar {
@@ -422,7 +444,7 @@
         let mandadosAtuais = [];
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Operacoes iniciado');
+            console.log('AI-DEPOM - Mapa de Operacoes v1.1.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -466,6 +488,7 @@
             setTimeout(() => mapa.invalidateSize(), 300);
         }
 
+        // [ALTERADO v1.1.0] JOIN usando id_suspeito + colunas corretas
         async function carregarMandados() {
             const btn = document.getElementById('btnBuscar');
             if (btn) {
@@ -483,7 +506,7 @@
                     .from('mandado_prisao')
                     .select(`
                         *,
-                        suspeito:suspeito!mandado_prisao_id_suspeito_fkey (
+                        suspeito:suspeito (
                             id_suspeito,
                             nome_completo,
                             apelido,
@@ -509,6 +532,7 @@
                 const { data, error } = await query;
 
                 if (error) {
+                    console.error('❌ Erro:', error);
                     showToast('error', 'Erro ao carregar', error.message);
                     return;
                 }
@@ -533,6 +557,7 @@
                 }
 
             } catch (error) {
+                console.error('❌ Erro inesperado:', error);
                 showToast('error', 'Erro inesperado', error.message);
             } finally {
                 if (btn) {
@@ -573,6 +598,7 @@
                     <div class="popup-row"><strong>Bairro:</strong> ${s.bairro || '-'}</div>
                     <div class="popup-row"><strong>Cidade/UF:</strong> ${s.cidade || '-'}/${s.uf || '-'}</div>
                     <div class="popup-row"><strong>Juiz:</strong> ${m.juiz_nome || '-'}</div>
+                    <div class="popup-row"><strong>Vara:</strong> ${m.vara_tribunal || '-'}</div>
                     <div class="popup-row"><strong>Emissao:</strong> ${m.data_emissao || '-'}</div>
                     <div class="popup-row"><strong>Validade:</strong> ${m.data_validade || '-'}</div>
                 `;
@@ -587,14 +613,17 @@
             }
         }
 
+        // [ALTERADO v1.1.0] Usa latitude/longitude reais ou hash do endereço
         function obterCoordenadas(m) {
-            const s = m.suspeito || {};
-
             if (m.latitude && m.longitude) {
                 return { lat: parseFloat(m.latitude), lng: parseFloat(m.longitude) };
             }
 
+            const s = m.suspeito || {};
+
             const chave = (s.cep || '') + '|' + (s.logradouro || '') + '|' + (s.bairro || '') + '|' + (s.cidade || '');
+            if (!chave.trim()) return null;
+
             const hash = hashCode(chave);
 
             const baseLat = -12.9714;
@@ -728,22 +757,57 @@
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
+        // [ALTERADO v1.1.0] Logout robusto
         async function fazerLogout() {
-            if (confirm('Deseja realmente sair do sistema?')) {
-                await AIDEPOM.logout();
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try {
+                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
+                    await AIDEPOM.logout();
+                    return;
+                }
+            } catch (error) {
+                console.warn('⚠️ AIDEPOM.logout() falhou:', error);
             }
+
+            try {
+                if (window.supabaseClient && window.supabaseClient.auth) {
+                    await window.supabaseClient.auth.signOut();
+                }
+            } catch (error) {
+                console.error('❌ Erro no signOut:', error);
+            }
+
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) { /* ignore */ }
+
+            window.location.href = '02-login.html';
         }
 
+        // [ALTERADO v1.1.0] CloseWindow robusto
         function closeWindow() {
-            if (confirm('Deseja realmente fechar o sistema?')) {
-                try { window.close(); } catch (e) { window.location.href = '01-apresentacao.html'; }
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) {
+                console.warn('⚠️ window.close() bloqueado pelo navegador');
             }
+
+            setTimeout(function() {
+                if (!window.closed) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }, 300);
         }
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
         }
     </script>
- <script src="assets/js/inactivity-lock.js"></script>
+    <!-- [ALTERADO v1.1.0] inactivity-lock dentro do <body> -->
+    <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
