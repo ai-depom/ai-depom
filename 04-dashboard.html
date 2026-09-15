@@ -2,15 +2,15 @@
      AI-DEPOM - DASHBOARD
      ============================================================
      Arquivo: 04-dashboard.html
-     Versão: 1.0.1
-     Data: 14/09/2026 - 13:00
+     Versão: 1.0.2
+     Data: 15/09/2026 - 18:30
+     Autor: AI-DEPOM Team
      ============================================================
      ALTERAÇÕES RECENTES:
-     - [14/09/2026 13:00] ✨ Adicionado cabeçalho Regra de Ouro
-     - [14/09/2026 13:00] ✨ Corrigido fazerLogout (fallback robusto)
-     - [14/09/2026 13:00] ✨ Corrigido closeWindow (fallback robusto)
-     - [14/09/2026 13:00] ✨ Sidebar com flexbox (footer sem overlap)
-     - [14/09/2026 13:00] ✨ Correção de <script> antes de </body>
+     - [15/09/2026 18:30] ✨ Menu atualizado (Mandados + Auditoria)
+     - [15/09/2026 18:30] ✨ Sidebar com flexbox
+     - [15/09/2026 18:30] ✨ fazerLogout() robusto
+     - [15/09/2026 18:30] ✨ closeWindow() robusto
      ============================================================
 -->
 <!DOCTYPE html>
@@ -46,14 +46,11 @@
             overflow-x: hidden;
         }
         .controls-bar {
-            position: fixed; top: 0; left: 0; right: 0;
-            z-index: 1000;
-            background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(15px);
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--border-color);
-            padding: 6px 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            height: 48px; width: 100vw;
+            padding: 6px 15px; display: flex; justify-content: space-between;
+            align-items: center; height: 48px; width: 100vw;
         }
         .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
@@ -76,8 +73,6 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
-
-        /* [v1.0.1] SIDEBAR com flexbox (footer não sobrepõe) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -178,6 +173,31 @@
         .menu-card i { font-size: 40px; margin-bottom: 15px; display: block; color: var(--text-primary); }
         .menu-card .title { font-weight: 600; font-size: 15px; }
         .menu-card .description { font-size: 12px; color: rgba(0, 255, 136, 0.3); margin-top: 5px; }
+        .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-ai {
+            min-width: 320px; max-width: 420px; padding: 16px 20px;
+            border-radius: 12px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: slideIn 0.3s ease; backdrop-filter: blur(20px);
+        }
+        .toast-ai.success { border-left: 4px solid var(--text-primary); }
+        .toast-ai.error { border-left: 4px solid #dc3545; }
+        .toast-ai.warning { border-left: 4px solid #ffc107; }
+        .toast-ai.info { border-left: 4px solid #0dcaf0; }
+        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .toast-ai.success .toast-icon { color: var(--text-primary); }
+        .toast-ai.error .toast-icon { color: #dc3545; }
+        .toast-ai.warning .toast-icon { color: #ffc107; }
+        .toast-ai.info .toast-icon { color: #0dcaf0; }
+        .toast-ai .toast-content { flex: 1; }
+        .toast-ai .toast-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
+        .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; font-size: 14px; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -185,7 +205,6 @@
             .sidebar-toggle { display: flex !important; }
             .user-info .name { display: none; }
         }
-        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
         @media (max-width: 768px) {
             .main-content { padding: 65px 15px 15px; }
             .top-bar { flex-direction: column; align-items: flex-start; }
@@ -227,8 +246,8 @@
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-gavel"></i> Mandados</a>
-            <a class="menu-item" onclick="showToast('info','Em breve','Modulo em desenvolvimento.')"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -305,6 +324,16 @@
                 <div class="title">Relatorios</div>
                 <div class="description">Gerar relatorios e estatisticas</div>
             </a>
+            <a href="11-mandados.html" class="menu-card">
+                <i class="fas fa-gavel"></i>
+                <div class="title">Mandados</div>
+                <div class="description">Gerenciar mandados de prisao</div>
+            </a>
+            <a href="12-auditoria.html" class="menu-card">
+                <i class="fas fa-clipboard-list"></i>
+                <div class="title">Auditoria</div>
+                <div class="description">Historico de operacoes</div>
+            </a>
             <a href="10-mapa-operacoes.html" class="menu-card">
                 <i class="fas fa-map-marked-alt"></i>
                 <div class="title">Mapa de Operacoes</div>
@@ -318,11 +347,13 @@
         </div>
     </main>
 
+    <div class="toast-container" id="toastContainer"></div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Dashboard v1.0.1 iniciado');
+            console.log('AI-DEPOM - Dashboard v1.0.2 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -378,22 +409,35 @@
             }
         }
 
+        function showToast(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
+                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
+                '<div class="toast-message">' + mensagem + '</div></div>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
+        }
+
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
-            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-            const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-                requestFullScreen.call(docEl);
-            } else {
-                cancelFullScreen.call(doc);
-            }
+            const req = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancel = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(docEl);
+            else cancel.call(doc);
         }
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
 
-        // [v1.0.1] Logout robusto
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
             try {
@@ -421,7 +465,6 @@
             window.location.href = '02-login.html';
         }
 
-        // [v1.0.1] CloseWindow robusto
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
 
@@ -443,7 +486,6 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
     </script>
-    <!-- [v1.0.1] inactivity-lock carregado depois do body -->
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
