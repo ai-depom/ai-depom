@@ -2,17 +2,29 @@
      AI-DEPOM - CADASTRO DE USUÁRIO
      ============================================================
      Arquivo: 05-cadastro-usuario.html
-     Versão: 1.1.0
-     Data: 15/09/2026 - 19:00
+     Versão: 1.2.0
+     Data: 15/09/2026 - 19:30
      Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES RECENTES:
-     - [15/09/2026 19:00] ✨ Menu atualizado (Mandados + Auditoria)
-     - [15/09/2026 19:00] ✨ Sidebar com flexbox (footer sem overlap)
-     - [15/09/2026 19:00] ✨ fazerLogout() robusto
-     - [15/09/2026 19:00] ✨ closeWindow() robusto
-     - [15/09/2026 19:00] ✨ CSS disabled (fundo preto + letras verdes)
-     - [15/09/2026 19:00] ✨ <script> movido pra dentro do <body>
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v1.2.0 (15/09/2026 19:30):
+     - ➕ Coluna "Ações" na tabela (Ver, Editar, Resetar senha, Desativar)
+     - ➕ Modal de Edição com justificativa obrigatória
+     - ➕ Modal de Reset de Senha (envia email de recuperação)
+     - ➕ Confirmação de desativação/reativação
+     - ➕ Modal "Ver detalhes" (read-only)
+     - ➕ Verificação de permissão Master (botões ocultos se não for Master)
+     - ➕ Log de auditoria em todas as ações
+     - ➕ CSS dos modais + botões de ação
+     - ✅ Mantidas todas as features v1.1.0
      ============================================================
 -->
 <!DOCTYPE html>
@@ -76,7 +88,7 @@
             font-weight: 700; font-size: 12px; color: #000;
         }
 
-        /* SIDEBAR com flexbox */
+        /* SIDEBAR */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -155,8 +167,6 @@
             box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
         }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
-
-        /* CAMPOS DISABLED — FUNDO PRETO + LETRAS VERDES */
         .form-control:disabled,
         .form-control[readonly],
         .form-select:disabled,
@@ -168,12 +178,10 @@
             border-color: #003322 !important;
             cursor: not-allowed;
         }
-
         .form-control:disabled::placeholder {
             color: rgba(0, 255, 136, 0.3) !important;
             -webkit-text-fill-color: rgba(0, 255, 136, 0.3) !important;
         }
-
         .form-select option { background: #000; color: var(--text-primary); }
         .input-group-text { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.2); }
         .btn-gold {
@@ -198,6 +206,7 @@
         .users-table td {
             color: var(--text-secondary); font-size: 13px; padding: 12px;
             border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+            vertical-align: middle;
         }
         .users-table tr:hover td { background: rgba(0, 255, 136, 0.02); }
         .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
@@ -206,6 +215,80 @@
         .status-primeiro { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); }
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
         .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
+
+        /* [NOVO v1.2.0] BOTÕES DE AÇÃO */
+        .btn-action {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: rgba(0, 255, 136, 0.5);
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 13px;
+            margin: 0 2px;
+        }
+        .btn-action:hover {
+            background: rgba(0, 255, 136, 0.08);
+            border-color: var(--text-primary);
+            color: var(--text-primary);
+            transform: translateY(-2px);
+        }
+        .btn-action.btn-ver:hover { color: #0dcaf0; border-color: #0dcaf0; background: rgba(13, 202, 240, 0.08); }
+        .btn-action.btn-editar:hover { color: var(--text-primary); border-color: var(--text-primary); background: rgba(0, 255, 136, 0.08); }
+        .btn-action.btn-senha:hover { color: #ffc107; border-color: #ffc107; background: rgba(255, 193, 7, 0.08); }
+        .btn-action.btn-desativar:hover { color: #dc3545; border-color: #dc3545; background: rgba(220, 53, 69, 0.08); }
+        .btn-action.btn-reativar:hover { color: var(--text-primary); border-color: var(--text-primary); background: rgba(0, 255, 136, 0.08); }
+
+        /* [NOVO v1.2.0] MODAIS */
+        .modal-custom {
+            display: none; position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 9999; justify-content: center; align-items: center; padding: 20px;
+        }
+        .modal-custom.open { display: flex; }
+        .modal-custom-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 14px; width: 100%; max-width: 700px;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
+        }
+        .modal-custom-content.modal-sm { max-width: 500px; }
+        .modal-custom-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 25px; border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
+        }
+        .modal-custom-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
+        .modal-custom-body { padding: 25px; }
+        .modal-custom-footer {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 15px 25px; border-top: 1px solid var(--border-color);
+            position: sticky; bottom: 0; background: var(--bg-secondary);
+        }
+        .btn-close-modal {
+            background: none; border: none; color: rgba(0, 255, 136, 0.3);
+            cursor: pointer; font-size: 18px; padding: 5px 10px;
+            border-radius: 8px; transition: all 0.3s;
+        }
+        .btn-close-modal:hover { color: #dc3545; background: rgba(220, 53, 69, 0.1); }
+        .detalhe-campo { padding: 10px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
+        .detalhe-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
+        .detalhe-campo .valor { color: var(--text-primary); font-size: 14px; }
+        .aviso-justificativa {
+            background: rgba(255, 193, 7, 0.05);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
             min-width: 320px; max-width: 420px; padding: 16px 20px;
@@ -309,7 +392,7 @@
                 </div>
             </div>
             <div class="top-actions">
-                <span class="badge"><i class="fas fa-user-shield" style="color:#ffc107;"></i> Administrador Master</span>
+                <span class="badge" id="badgePerfil"><i class="fas fa-user-shield" style="color:#ffc107;"></i> Verificando permissao...</span>
             </div>
         </header>
 
@@ -397,26 +480,100 @@
         </div>
     </main>
 
+    <!-- [NOVO v1.2.0] MODAL: VER DETALHES -->
+    <div class="modal-custom" id="modalVerDetalhes">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-user-circle me-2"></i>Detalhes do Usuario</h5>
+                <button class="btn-close-modal" onclick="fecharModal('modalVerDetalhes')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalVerDetalhesBody"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-gold" onclick="fecharModal('modalVerDetalhes')"><i class="fas fa-check me-2"></i>FECHAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- [NOVO v1.2.0] MODAL: EDITAR -->
+    <div class="modal-custom" id="modalEditar">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-user-edit me-2"></i>Editar Usuario</h5>
+                <button class="btn-close-modal" onclick="fecharModal('modalEditar')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalEditarBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- [NOVO v1.2.0] MODAL: RESETAR SENHA -->
+    <div class="modal-custom" id="modalResetarSenha">
+        <div class="modal-custom-content modal-sm">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-key me-2"></i>Resetar Senha</h5>
+                <button class="btn-close-modal" onclick="fecharModal('modalResetarSenha')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalResetarSenhaBody"></div>
+        </div>
+    </div>
+
+    <!-- [NOVO v1.2.0] MODAL: CONFIRMAR DESATIVACAO -->
+    <div class="modal-custom" id="modalConfirmar">
+        <div class="modal-custom-content modal-sm">
+            <div class="modal-custom-header">
+                <h5 id="modalConfirmarTitulo"><i class="fas fa-exclamation-triangle me-2"></i>Confirmar</h5>
+                <button class="btn-close-modal" onclick="fecharModal('modalConfirmar')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalConfirmarBody"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-outline-gold" onclick="fecharModal('modalConfirmar')"><i class="fas fa-times me-2"></i>CANCELAR</button>
+                <button class="btn-gold" id="modalConfirmarBtn"><i class="fas fa-check me-2"></i>CONFIRMAR</button>
+            </div>
+        </div>
+    </div>
+
     <div class="toast-container" id="toastContainer"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
+        // ============================================================
+        // ESTADO
+        // ============================================================
+        let usuarioAtual = null;
+        let isMaster = false;
+        let usuarioEditandoId = null;
+        let usuarioResetandoId = null;
+        let acaoConfirmar = null;
+
+        // ============================================================
+        // INICIALIZACAO
+        // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Cadastro de Usuario v1.1.0 iniciado');
+            console.log('AI-DEPOM - Cadastro de Usuario v1.2.0 iniciado');
+
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
                 showToast('error', 'Sessao expirada', 'Faca login novamente.');
                 setTimeout(() => window.location.href = '02-login.html', 1500);
                 return;
             }
+
             const sessaoAtiva = await window.supabaseClient.auth.getSession();
             if (!sessaoAtiva.data.session) {
                 showToast('error', 'Sessao expirada', 'Faca login novamente.');
                 setTimeout(() => window.location.href = '02-login.html', 1500);
                 return;
             }
+
+            usuarioAtual = usuario;
             atualizarDadosUsuario(usuario);
+
+            // [v1.2.0] Verifica se é Master
+            isMaster = await AIDEPOM.isAdminMaster();
+            atualizarBadgePerfil();
+
             carregarUsuarios();
         });
 
@@ -431,21 +588,38 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
+        function atualizarBadgePerfil() {
+            const badge = document.getElementById('badgePerfil');
+            if (isMaster) {
+                badge.innerHTML = '<i class="fas fa-user-shield" style="color:#ffc107;"></i> Administrador Master';
+            } else {
+                badge.innerHTML = '<i class="fas fa-user" style="color:#dc3545;"></i> Somente Leitura';
+            }
+        }
+
+        // ============================================================
+        // CARREGAR USUARIOS
+        // ============================================================
         async function carregarUsuarios() {
             const container = document.getElementById('listaUsuarios');
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando usuarios...</div>';
+
             const { data, error } = await AIDEPOM.listarUsuarios();
             if (error) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar usuarios</div>';
                 return;
             }
+
             if (!data || data.length === 0) {
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i>Nenhum usuario cadastrado</div>';
                 return;
             }
+
             let html = '<div style="overflow-x:auto;"><table class="users-table"><thead><tr>';
             html += '<th>Matricula</th><th>Nome</th><th>Email</th><th>Setor</th><th>Perfil</th><th>Status</th>';
+            if (isMaster) html += '<th style="text-align:right;">Acoes</th>';
             html += '</tr></thead><tbody>';
+
             data.forEach(u => {
                 let status = '<span class="status-badge status-ativo"><i class="fas fa-check"></i> Ativo</span>';
                 if (!u.ativo) {
@@ -453,6 +627,7 @@
                 } else if (u.primeiro_acesso) {
                     status = '<span class="status-badge status-primeiro"><i class="fas fa-clock"></i> 1o Acesso</span>';
                 }
+
                 html += '<tr>';
                 html += '<td><strong style="color:var(--text-primary);">' + u.matricula + '</strong></td>';
                 html += '<td>' + u.nome_completo + '</td>';
@@ -460,12 +635,399 @@
                 html += '<td>' + u.setor + '</td>';
                 html += '<td>' + AIDEPOM.getNomePerfil(u.id_perfil_acesso) + '</td>';
                 html += '<td>' + status + '</td>';
+
+                if (isMaster) {
+                    html += '<td style="text-align:right; white-space:nowrap;">';
+                    html += '<button class="btn-action btn-ver" onclick="verDetalhes(\'' + u.id + '\')" title="Ver detalhes"><i class="fas fa-eye"></i></button>';
+                    html += '<button class="btn-action btn-editar" onclick="abrirEditar(\'' + u.id + '\')" title="Editar"><i class="fas fa-edit"></i></button>';
+                    html += '<button class="btn-action btn-senha" onclick="abrirResetarSenha(\'' + u.id + '\')" title="Resetar senha"><i class="fas fa-key"></i></button>';
+                    if (u.ativo) {
+                        html += '<button class="btn-action btn-desativar" onclick="confirmarDesativar(\'' + u.id + '\', \'' + u.nome_completo.replace(/'/g, "\\'") + '\')" title="Desativar"><i class="fas fa-user-slash"></i></button>';
+                    } else {
+                        html += '<button class="btn-action btn-reativar" onclick="confirmarReativar(\'' + u.id + '\', \'' + u.nome_completo.replace(/'/g, "\\'") + '\')" title="Reativar"><i class="fas fa-user-check"></i></button>';
+                    }
+                    html += '</td>';
+                }
                 html += '</tr>';
             });
+
             html += '</tbody></table></div>';
             container.innerHTML = html;
         }
 
+        // ============================================================
+        // MODAL: VER DETALHES
+        // ============================================================
+        async function verDetalhes(id) {
+            const modal = document.getElementById('modalVerDetalhes');
+            const body = document.getElementById('modalVerDetalhesBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+            const { data: u, error } = await AIDEPOM.buscarUsuarioPorId(id);
+            if (error || !u) {
+                body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro ao carregar</div>';
+                return;
+            }
+
+            const status = u.ativo
+                ? (u.primeiro_acesso ? '1o Acesso' : 'Ativo')
+                : 'Inativo';
+
+            body.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${u.nome_completo || '-'}</strong></span></div>
+                        <div class="detalhe-campo"><span class="label">Matricula</span><span class="valor">${u.matricula || '-'}</span></div>
+                        <div class="detalhe-campo"><span class="label">Email</span><span class="valor">${u.email || '-'}</span></div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="detalhe-campo"><span class="label">Setor</span><span class="valor">${u.setor || '-'}</span></div>
+                        <div class="detalhe-campo"><span class="label">Perfil de Acesso</span><span class="valor">${AIDEPOM.getNomePerfil(u.id_perfil_acesso)}</span></div>
+                        <div class="detalhe-campo"><span class="label">Status</span><span class="valor">${status}</span></div>
+                    </div>
+                    <div class="col-md-12">
+                        <div class="detalhe-campo"><span class="label">ID Interno</span><span class="valor" style="font-size:11px; color:rgba(0,255,136,0.4);">${u.id}</span></div>
+                        <div class="detalhe-campo"><span class="label">Data de Cadastro</span><span class="valor">${u.data_cadastro ? new Date(u.data_cadastro).toLocaleString('pt-BR') : '-'}</span></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // MODAL: EDITAR
+        // ============================================================
+        async function abrirEditar(id) {
+            usuarioEditandoId = id;
+            const modal = document.getElementById('modalEditar');
+            const body = document.getElementById('modalEditarBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+            const { data: u, error } = await AIDEPOM.buscarUsuarioPorId(id);
+            if (error || !u) {
+                body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro ao carregar</div>';
+                return;
+            }
+
+            const perfis = [
+                {v:1, l:'Administrador Master'}, {v:2, l:'Administrador'},
+                {v:3, l:'Delegado'}, {v:4, l:'Investigador'},
+                {v:5, l:'Perito'}, {v:6, l:'Analista'}, {v:7, l:'Consulta Externa'}
+            ];
+
+            body.innerHTML = `
+                <div class="aviso-justificativa">
+                    <div style="color:#ffc107; font-size:12px; font-weight:600;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Toda alteracao sera registrada na auditoria.
+                    </div>
+                </div>
+                <form id="formEditarUsuario">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome Completo *</label>
+                            <input type="text" class="form-control" id="editNome" value="${u.nome_completo || ''}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Matricula *</label>
+                            <input type="text" class="form-control" id="editMatricula" value="${u.matricula || ''}" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Setor *</label>
+                            <input type="text" class="form-control" id="editSetor" value="${u.setor || ''}" required>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="editEmail" value="${u.email || ''}" required>
+                            <small style="color:rgba(0,255,136,0.3); font-size:11px;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Alterar email aqui NAO altera o email de login (auth).
+                            </small>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Perfil de Acesso *</label>
+                            <select class="form-select" id="editPerfil" required>
+                                ${perfis.map(p => `<option value="${p.v}" ${u.id_perfil_acesso === p.v ? 'selected' : ''}>${p.l}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Justificativa da alteracao *</label>
+                            <textarea class="form-control" id="editJustificativa" rows="2" placeholder="Explique o motivo da alteracao (minimo 10 caracteres)" required></textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn-outline-gold" onclick="fecharModal('modalEditar')">
+                            <i class="fas fa-times me-2"></i>CANCELAR
+                        </button>
+                        <button type="submit" class="btn-gold" id="btnSalvarEdicao">
+                            <i class="fas fa-save me-2"></i>SALVAR
+                        </button>
+                    </div>
+                </form>
+            `;
+
+            document.getElementById('formEditarUsuario').addEventListener('submit', salvarEdicao);
+        }
+
+        async function salvarEdicao(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSalvarEdicao');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
+
+            try {
+                const nome = document.getElementById('editNome').value.trim();
+                const matricula = document.getElementById('editMatricula').value.trim();
+                const setor = document.getElementById('editSetor').value.trim();
+                const email = document.getElementById('editEmail').value.trim();
+                const perfil = parseInt(document.getElementById('editPerfil').value);
+                const justificativa = document.getElementById('editJustificativa').value.trim();
+
+                if (!nome || !matricula || !setor || !email || !perfil) {
+                    showToast('warning', 'Campos obrigatorios', 'Preencha todos os campos.');
+                    return;
+                }
+                if (justificativa.length < 10) {
+                    showToast('warning', 'Justificativa curta', 'Minimo 10 caracteres.');
+                    return;
+                }
+
+                // Busca dados antigos para o log
+                const { data: antigo } = await AIDEPOM.buscarUsuarioPorId(usuarioEditandoId);
+
+                const { data, error } = await window.supabaseClient
+                    .from('usuarios')
+                    .update({
+                        nome_completo: nome,
+                        matricula: matricula,
+                        setor: setor,
+                        email: email,
+                        id_perfil_acesso: perfil,
+                        data_atualizacao: new Date().toISOString()
+                    })
+                    .eq('id', usuarioEditandoId)
+                    .select()
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                // Log de auditoria
+                await registrarLog(usuarioEditandoId, 'UPDATE', antigo, data, justificativa);
+
+                showToast('success', 'Usuario atualizado!', 'As alteracoes foram salvas.', 5000);
+                fecharModal('modalEditar');
+                carregarUsuarios();
+
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('error', 'Erro ao salvar', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR';
+            }
+        }
+
+        // ============================================================
+        // MODAL: RESETAR SENHA
+        // ============================================================
+        async function abrirResetarSenha(id) {
+            usuarioResetandoId = id;
+            const modal = document.getElementById('modalResetarSenha');
+            const body = document.getElementById('modalResetarSenhaBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+            const { data: u } = await AIDEPOM.buscarUsuarioPorId(id);
+            if (!u) {
+                body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;">Erro ao carregar</div>';
+                return;
+            }
+
+            body.innerHTML = `
+                <div class="text-center mb-3">
+                    <i class="fas fa-key" style="font-size:40px; color:#ffc107;"></i>
+                </div>
+                <p style="color:var(--text-secondary); font-size:14px; text-align:center; margin-bottom:20px;">
+                    Resetar senha de <strong style="color:var(--text-primary);">${u.nome_completo}</strong>?
+                </p>
+                <div class="aviso-justificativa">
+                    <div style="color:#ffc107; font-size:12px;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Um email de recuperacao sera enviado para <strong>${u.email}</strong>.
+                        O usuario devera definir uma nova senha ao acessar.
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <button type="button" class="btn-outline-gold" onclick="fecharModal('modalResetarSenha')">
+                        <i class="fas fa-times me-2"></i>CANCELAR
+                    </button>
+                    <button type="button" class="btn-gold" id="btnResetar" onclick="confirmarReset()">
+                        <i class="fas fa-paper-plane me-2"></i>ENVIAR EMAIL
+                    </button>
+                </div>
+            `;
+        }
+
+        async function confirmarReset() {
+            const btn = document.getElementById('btnResetar');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>ENVIANDO...';
+
+            try {
+                const { data: u } = await AIDEPOM.buscarUsuarioPorId(usuarioResetandoId);
+                if (!u) throw new Error('Usuario nao encontrado');
+
+                const { error } = await window.supabaseClient.auth.resetPasswordForEmail(u.email, {
+                    redirectTo: window.location.origin + '/02-login.html'
+                });
+
+                if (error) throw error;
+
+                // Marca primeiro_acesso = true
+                await window.supabaseClient
+                    .from('usuarios')
+                    .update({ primeiro_acesso: true })
+                    .eq('id', usuarioResetandoId);
+
+                // Log
+                await registrarLog(usuarioResetandoId, 'RESET_SENHA', null, null, 'Reset de senha via painel admin');
+
+                showToast('success', 'Email enviado!', 'Instrucoes enviadas para ' + u.email, 6000);
+                fecharModal('modalResetarSenha');
+                carregarUsuarios();
+
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('error', 'Erro ao resetar', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>ENVIAR EMAIL';
+            }
+        }
+
+        // ============================================================
+        // CONFIRMAR DESATIVAR/REATIVAR
+        // ============================================================
+        function confirmarDesativar(id, nome) {
+            acaoConfirmar = { tipo: 'desativar', id: id };
+            document.getElementById('modalConfirmarTitulo').innerHTML = '<i class="fas fa-user-slash me-2" style="color:#dc3545;"></i>Desativar Usuario';
+            document.getElementById('modalConfirmarBody').innerHTML = `
+                <p style="color:var(--text-secondary); font-size:14px;">
+                    Deseja realmente <strong style="color:#dc3545;">desativar</strong> o usuario
+                    <strong style="color:var(--text-primary);">${nome}</strong>?
+                </p>
+                <div class="aviso-justificativa mt-3">
+                    <div style="color:#ffc107; font-size:12px;">
+                        <i class="fas fa-info-circle me-2"></i>
+                        O usuario nao podera fazer login enquanto estiver inativo.
+                    </div>
+                </div>
+            `;
+            const btn = document.getElementById('modalConfirmarBtn');
+            btn.className = 'btn-gold';
+            btn.style.background = '#dc3545';
+            btn.style.color = '#fff';
+            btn.innerHTML = '<i class="fas fa-user-slash me-2"></i>DESATIVAR';
+            btn.onclick = executarDesativar;
+            document.getElementById('modalConfirmar').classList.add('open');
+        }
+
+        function confirmarReativar(id, nome) {
+            acaoConfirmar = { tipo: 'reativar', id: id };
+            document.getElementById('modalConfirmarTitulo').innerHTML = '<i class="fas fa-user-check me-2" style="color:#00ff88;"></i>Reativar Usuario';
+            document.getElementById('modalConfirmarBody').innerHTML = `
+                <p style="color:var(--text-secondary); font-size:14px;">
+                    Deseja realmente <strong style="color:var(--text-primary);">reativar</strong> o usuario
+                    <strong style="color:var(--text-primary);">${nome}</strong>?
+                </p>
+            `;
+            const btn = document.getElementById('modalConfirmarBtn');
+            btn.className = 'btn-gold';
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.innerHTML = '<i class="fas fa-user-check me-2"></i>REATIVAR';
+            btn.onclick = executarReativar;
+            document.getElementById('modalConfirmar').classList.add('open');
+        }
+
+        async function executarDesativar() {
+            const btn = document.getElementById('modalConfirmarBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>PROCESSANDO...';
+
+            try {
+                const { error } = await AIDEPOM.desativarUsuario(acaoConfirmar.id);
+                if (error) throw error;
+
+                await registrarLog(acaoConfirmar.id, 'DELETE', null, null, 'Desativacao via painel admin');
+
+                showToast('success', 'Usuario desativado!', 'O usuario nao podera mais fazer login.', 5000);
+                fecharModal('modalConfirmar');
+                carregarUsuarios();
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('error', 'Erro', error.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function executarReativar() {
+            const btn = document.getElementById('modalConfirmarBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>PROCESSANDO...';
+
+            try {
+                const { error } = await AIDEPOM.reativarUsuario(acaoConfirmar.id);
+                if (error) throw error;
+
+                await registrarLog(acaoConfirmar.id, 'UPDATE', null, null, 'Reativacao via painel admin');
+
+                showToast('success', 'Usuario reativado!', 'O usuario pode fazer login novamente.', 5000);
+                fecharModal('modalConfirmar');
+                carregarUsuarios();
+            } catch (error) {
+                console.error('Erro:', error);
+                showToast('error', 'Erro', error.message);
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        // ============================================================
+        // LOG DE AUDITORIA
+        // ============================================================
+        async function registrarLog(idUsuarioAlvo, acao, dadosAntigos, dadosNovos, justificativa) {
+            try {
+                await window.supabaseClient
+                    .from('log_cadastro_usuario')
+                    .insert({
+                        id_usuario_cadastrador: usuarioAtual.id,
+                        id_usuario_cadastrado: idUsuarioAlvo,
+                        acao: acao,
+                        dados_anteriores: dadosAntigos,
+                        dados_novos: dadosNovos,
+                        justificativa: justificativa,
+                        ip_origem: 'web',
+                        sucesso: true
+                    });
+            } catch (e) {
+                console.warn('⚠️ Nao foi possivel registrar log:', e);
+            }
+        }
+
+        // ============================================================
+        // MODAL UTILS
+        // ============================================================
+        function fecharModal(id) {
+            const m = document.getElementById(id);
+            if (m) m.classList.remove('open');
+        }
+
+        // ============================================================
+        // TOAST
+        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -490,6 +1052,9 @@
             }, duracao);
         }
 
+        // ============================================================
+        // VALIDACAO DE EMAIL
+        // ============================================================
         document.getElementById('email').addEventListener('input', function() {
             const email = this.value;
             const feedback = document.getElementById('emailFeedback');
@@ -513,6 +1078,9 @@
             }
         });
 
+        // ============================================================
+        // SUBMIT CADASTRO
+        // ============================================================
         document.getElementById('formUsuario').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnCadastrar');
@@ -557,6 +1125,9 @@
             }
         });
 
+        // ============================================================
+        // CONTROLES
+        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
@@ -570,6 +1141,9 @@
         }
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-custom.open').forEach(m => m.classList.remove('open'));
+            }
         });
 
         async function fazerLogout() {
