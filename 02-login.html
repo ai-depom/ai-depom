@@ -2,17 +2,25 @@
      AI-DEPOM - LOGIN
      ============================================================
      Arquivo: 02-login.html
-     Versão: 2.2.0
-     Data: 14/09/2026 - 16:00
+     Versão: 2.3.0
+     Data: 16/09/2026 - 08:00
+     Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES RECENTES:
-     - [14/09/2026 16:00] ✨ Login por MATRÍCULA ou E-MAIL (detecção automática)
-     - [14/09/2026 16:00] ✨ Campo login vira type="text" (aceita "ADM-MASTER-001")
-     - [14/09/2026 16:00] ✨ Busca o e-mail pela matrícula na tabela usuarios
-     - [14/09/2026 16:00] ✨ Validação de usuário ativo/deletado antes do login
-     - [12/09/2026 15:00] Link "Esqueci minha senha" funcional
-     - [12/09/2026 15:00] Modal de recuperação de senha
-     - [12/09/2026 15:00] Redireciona para 03b-redefinir-senha.html
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v2.3.0 (16/09/2026 08:00):
+     - 🐛 CORRIGIDO: redirect de recuperação agora monta URL com /ai-depom/
+     - 🐛 CORRIGIDO: "Esqueci minha senha" aponta para 03b-redefinir-senha.html
+     - ✨ Detecta token de convite/recovery na URL e redireciona corretamente
+     - ✨ Verificação de sessão ativa respeita primeiro_acesso
+     - ✅ Mantidas: login por matrícula/email, modal, toggle senha
      ============================================================
 -->
 <!DOCTYPE html>
@@ -270,7 +278,6 @@
         </div>
 
         <form id="formLogin">
-            <!-- [ALTERADO v2.2.0] Campo: Email → Matrícula ou Email -->
             <div class="form-group">
                 <label for="login"><i class="fas fa-id-card"></i> Matrícula ou E-mail</label>
                 <div class="input-wrapper">
@@ -334,24 +341,75 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         // ============================================================
-        // ESTADO
+        // ESTADO GLOBAL
         // ============================================================
         let usuarioLogado = null;
 
         // ============================================================
-        // INICIALIZAÇÃO — [ALTERADO v2.2.0]
+        // INICIALIZAÇÃO — v2.3.0
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🔐 AI-DEPOM - Login v2.2.0');
+            console.log('🔐 AI-DEPOM - Login v2.3.0');
             console.log('📍 URL:', window.location.href);
+            console.log('📍 Hash:', window.location.hash);
 
-            // Verifica se já tem sessão ativa
+            // ============================================================
+            // [NOVO v2.3.0] PRIORIDADE MÁXIMA: veio de link de convite/recovery?
+            // ============================================================
+            const fullUrl = (window.location.hash || '') + (window.location.search || '');
+            const isConvite = fullUrl.includes('type=invite')
+                           || fullUrl.includes('type=recovery')
+                           || fullUrl.includes('type=signup')
+                           || fullUrl.includes('access_token=')
+                           || fullUrl.includes('code=');
+
+            if (isConvite) {
+                console.log('📧 Link de convite/recovery detectado');
+                console.log('🔀 Redirecionando...');
+
+                // [CORRIGIDO v2.3.0] Decide o destino com base no tipo
+                const tipo = fullUrl.includes('type=recovery') ? 'recovery'
+                           : fullUrl.includes('type=invite') ? 'invite'
+                           : fullUrl.includes('type=signup') ? 'signup'
+                           : 'desconhecido';
+
+                console.log('📋 Tipo do link:', tipo);
+
+                // [CORRIGIDO v2.3.0] Recovery → 03b-redefinir-senha.html
+                //                    Invite/signup → 03-primeiro-acesso.html
+                const destino = (tipo === 'recovery') ? '03b-redefinir-senha.html' : '03-primeiro-acesso.html';
+
+                // [CORRIGIDO v2.3.0] Preserva o hash/query ao redirecionar
+                const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+                const urlDestino = baseUrl + '/' + destino + window.location.search + window.location.hash;
+
+                console.log('🎯 Destino:', urlDestino);
+                window.location.href = urlDestino;
+                return;
+            }
+
+            // ============================================================
+            // [v2.3.0] Verifica sessão ativa
+            // ============================================================
             try {
                 const { data: { user } } = await window.supabaseClient.auth.getUser();
                 if (user) {
                     console.log('✅ Sessão ativa detectada:', user.email);
-                    // Redireciona automaticamente
-                    window.location.href = '04-dashboard.html';
+
+                    // Verifica se precisa trocar senha primeiro
+                    const { data: usuario } = await window.supabaseClient
+                        .from('usuarios')
+                        .select('primeiro_acesso')
+                        .eq('id', user.id)
+                        .maybeSingle();
+
+                    if (usuario?.primeiro_acesso) {
+                        console.log('🔑 Primeiro acesso pendente');
+                        window.location.href = '03-primeiro-acesso.html';
+                    } else {
+                        console.log('✅ Redirecionando pro dashboard');
+                        window.location.href = '04-dashboard.html';
+                    }
                     return;
                 }
             } catch (err) {
@@ -387,8 +445,7 @@
         }
 
         // ============================================================
-        // LOGIN — [ALTERADO v2.2.0]
-        // Aceita MATRÍCULA ou E-MAIL com detecção automática
+        // LOGIN — aceita MATRÍCULA ou E-MAIL
         // ============================================================
         document.getElementById('formLogin').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -407,11 +464,10 @@
             try {
                 let emailParaLogin = inputLogin;
 
-                // [NOVO v2.2.0] Detecta se é matrícula (sem @) ou e-mail (com @)
+                // Detecta se é matrícula (sem @) ou e-mail (com @)
                 if (!inputLogin.includes('@')) {
                     console.log('🔍 Matrícula detectada:', inputLogin);
 
-                    // Busca o e-mail pela matrícula
                     const { data: usuarioPorMatricula, error: errBusca } = await window.supabaseClient
                         .from('usuarios')
                         .select('id, email, nome_completo, ativo, deletado')
@@ -429,7 +485,6 @@
                         return;
                     }
 
-                    // Verifica se o usuário está ativo
                     if (usuarioPorMatricula.deletado) {
                         mostrarErro('Usuário desativado. Contate o administrador.');
                         return;
@@ -447,7 +502,7 @@
                     console.log('📧 E-mail detectado:', inputLogin);
                 }
 
-                // Faz o login com o e-mail (seja digitado ou encontrado pela matrícula)
+                // Faz o login
                 console.log('🔐 Tentando login com:', emailParaLogin);
 
                 const { data, error } = await window.supabaseClient.auth.signInWithPassword({
@@ -466,7 +521,7 @@
 
                 console.log('✅ Login OK:', data.user.email);
 
-                // Busca dados completos do usuário na tabela
+                // Busca dados completos do usuário
                 const { data: usuario, error: errUsuario } = await window.supabaseClient
                     .from('usuarios')
                     .select('id, nome_completo, email, setor, matricula, id_perfil_acesso, primeiro_acesso, ativo, deletado')
@@ -522,7 +577,6 @@
         // ============================================================
         function abrirModalRecuperar() {
             document.getElementById('modalRecuperar').classList.add('open');
-            // [ALTERADO v2.2.0] Não copia mais o valor do campo de login (que pode ser matrícula)
             document.getElementById('emailRecuperar').value = '';
             setTimeout(() => document.getElementById('emailRecuperar').focus(), 100);
         }
@@ -542,7 +596,8 @@
         });
 
         // ============================================================
-        // ENVIAR LINK DE RECUPERAÇÃO
+        // [CORRIGIDO v2.3.0] ENVIAR LINK DE RECUPERAÇÃO
+        // Agora monta a URL correta com base no path atual
         // ============================================================
         async function enviarLinkRecuperacao() {
             const email = document.getElementById('emailRecuperar').value.trim();
@@ -559,8 +614,16 @@
             try {
                 console.log('📧 Enviando link de recuperação para:', email);
 
+                // [CORRIGIDO v2.3.0] Monta URL correta com base no path atual
+                // Produção: https://ai-depom.github.io/ai-depom/02-login.html → https://ai-depom.github.io/ai-depom
+                // Local:    http://localhost:5500/02-login.html             → http://localhost:5500
+                const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/'));
+                const redirectUrl = baseUrl + '/03b-redefinir-senha.html';
+
+                console.log('🔗 Redirect URL montada:', redirectUrl);
+
                 const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
-                    redirectTo: window.location.origin + '/03b-redefinir-senha.html'
+                    redirectTo: redirectUrl
                 });
 
                 if (error) {
