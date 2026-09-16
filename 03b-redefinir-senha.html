@@ -1,19 +1,27 @@
  <!-- ============================================================
-     AI-DEPOM - REDEFINIR SENHA (via link do e-mail)
+     AI-DEPOM - REDEFINIR SENHA (v2.0.0)
      ============================================================
      Arquivo: 03b-redefinir-senha.html
-     Versão: 1.1.0
-     Data: 14/09/2026 - 10:30
+     Versão: 2.0.0
+     Data: 16/09/2026 - 10:00
      Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES RECENTES:
-     - [14/09/2026 10:30] ✨ Processa token do hash (implicit flow)
-     - [14/09/2026 10:30] ✨ Cria sessão com setSession() antes de mostrar form
-     - [14/09/2026 10:30] ✨ Suporte a PKCE (exchangeCodeForSession)
-     - [14/09/2026 10:30] ✨ Fallback se sessão já estiver ativa
-     - [12/09/2026 15:30] Página criada para fluxo de recovery
-     - [12/09/2026 15:30] Detecta type=recovery na URL
-     - [12/09/2026 15:30] Após salvar, faz logout e vai pro login
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v2.0.0 (16/09/2026 10:00):
+     - 🛡️ NOVO: Fluxo em 2 etapas (anti-prefetch de email)
+     - 🛡️ NOVO: Usa token_hash + verifyOtp() em vez de access_token
+     - 🛡️ NOVO: Token NÃO é consumido ao abrir o link
+     - 🛡️ NOVO: Botão "Confirmar acesso" antes de processar
+     - 🐛 CORRIGIDO: otp_expired por prefetch do Gmail/Outlook
+     - ✅ Mantido: validação de senha, requisitos, logout pós-sucesso
      ============================================================
 -->
 <!DOCTYPE html>
@@ -221,19 +229,39 @@
             color: var(--text-primary);
             border-left: 4px solid var(--text-primary);
         }
-        .loading-state {
+        /* Etapa de confirmação (anti-prefetch) */
+        .confirm-step {
             text-align: center;
-            padding: 40px 20px;
+            padding: 10px 0;
         }
-        .loading-state i {
-            font-size: 40px;
+        .confirm-step .icon-big {
+            font-size: 60px;
             color: var(--text-primary);
             margin-bottom: 20px;
-            display: block;
         }
-        .loading-state p {
-            color: rgba(0, 255, 136, 0.5);
+        .confirm-step h3 {
+            color: var(--text-primary);
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: 1px;
+        }
+        .confirm-step p {
+            color: rgba(0, 255, 136, 0.6);
             font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 25px;
+        }
+        .confirm-step .aviso-prefetch {
+            background: rgba(13, 202, 240, 0.05);
+            border-left: 4px solid #0dcaf0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            font-size: 12px;
+            color: rgba(13, 202, 240, 0.9);
+            text-align: left;
+            line-height: 1.6;
         }
         .footer-text {
             text-align: center;
@@ -244,6 +272,7 @@
             color: rgba(0, 255, 136, 0.2);
             letter-spacing: 1px;
         }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
@@ -254,28 +283,46 @@
             <p>REDEFINIR SENHA</p>
         </div>
 
-        <div id="errorMessage" class="error-message">
-            <i class="fas fa-exclamation-circle"></i>
-            <span id="errorText">Erro ao redefinir senha.</span>
+        <!-- ============================================
+             ETAPA 1 — Confirmação (anti-prefetch)
+             ============================================ -->
+        <div id="etapaConfirmacao" class="confirm-step hidden">
+            <div class="icon-big"><i class="fas fa-shield-alt"></i></div>
+            <h3>Acesso Identificado</h3>
+            <p>
+                Recebemos seu pedido de redefinição de senha.<br>
+                Para sua segurança, <strong>confirme abaixo</strong> antes de continuar.
+            </p>
+            <div class="aviso-prefetch">
+                <i class="fas fa-info-circle"></i>
+                Este passo é necessário porque alguns serviços de e-mail 
+                pré-carregam links automaticamente. Só ao clicar é que 
+                validamos seu acesso.
+            </div>
+            <button type="button" class="btn-primary" id="btnConfirmarAcesso">
+                <span class="spinner"></span>
+                <span class="btn-text"><i class="fas fa-check-circle"></i> CONFIRMAR ACESSO</span>
+            </button>
         </div>
 
-        <div id="successMessage" class="success-message">
-            <i class="fas fa-check-circle"></i>
-            <span id="successText">Senha alterada com sucesso!</span>
-        </div>
+        <!-- ============================================
+             ETAPA 2 — Formulário de nova senha
+             ============================================ -->
+        <div id="etapaFormulario" class="hidden">
+            <div id="errorMessage" class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span id="errorText">Erro ao redefinir senha.</span>
+            </div>
 
-        <!-- ESTADO DE CARREGAMENTO -->
-        <div id="loadingState" class="loading-state">
-            <i class="fas fa-spinner fa-spin"></i>
-            <p>Validando seu link de recuperação...</p>
-        </div>
+            <div id="successMessage" class="success-message">
+                <i class="fas fa-check-circle"></i>
+                <span id="successText">Senha alterada com sucesso!</span>
+            </div>
 
-        <!-- FORMULÁRIO -->
-        <div id="formContainer" style="display:none;">
             <div class="info-box">
                 <i class="fas fa-info-circle"></i>
                 <strong>Redefinição de senha</strong><br>
-                Você chegou aqui através do link de recuperação. Crie uma nova senha para acessar o sistema.
+                Crie uma nova senha para acessar o sistema.
             </div>
 
             <form id="formRedefinir">
@@ -283,7 +330,7 @@
                     <label for="novaSenha"><i class="fas fa-lock"></i> Nova Senha</label>
                     <div class="input-wrapper">
                         <i class="fas fa-key"></i>
-                        <input type="password" id="novaSenha" placeholder="Digite sua nova senha" required>
+                        <input type="password" id="novaSenha" placeholder="Digite sua nova senha" required autocomplete="new-password">
                         <button type="button" class="toggle-password" id="toggleNova"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
@@ -292,7 +339,7 @@
                     <label for="confirmarSenha"><i class="fas fa-check"></i> Confirmar Senha</label>
                     <div class="input-wrapper">
                         <i class="fas fa-check-circle"></i>
-                        <input type="password" id="confirmarSenha" placeholder="Confirme sua nova senha" required>
+                        <input type="password" id="confirmarSenha" placeholder="Confirme sua nova senha" required autocomplete="new-password">
                         <button type="button" class="toggle-password" id="toggleConfirmar"><i class="fas fa-eye"></i></button>
                     </div>
                 </div>
@@ -315,6 +362,21 @@
             </form>
         </div>
 
+        <!-- ============================================
+             ETAPA 3 — Erro (link inválido/expirado)
+             ============================================ -->
+        <div id="etapaErro" class="confirm-step hidden">
+            <div class="icon-big" style="color:#dc3545;"><i class="fas fa-times-circle"></i></div>
+            <h3 style="color:#dc3545;">Link Inválido ou Expirado</h3>
+            <p id="erroDetalhe">
+                Este link não é mais válido. Por favor, solicite um novo 
+                clicando em "Esqueci minha senha".
+            </p>
+            <button type="button" class="btn-primary" onclick="window.location.href='02-login.html'">
+                <span class="btn-text"><i class="fas fa-arrow-left"></i> VOLTAR AO LOGIN</span>
+            </button>
+        </div>
+
         <div class="footer-text">
             <i class="fas fa-shield-alt"></i> Sua segurança é nossa prioridade
         </div>
@@ -323,126 +385,201 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
+        // ============================================================
+        // ESTADO GLOBAL
+        // ============================================================
         let usuarioRecovery = null;
+        let tokenHashPendente = null;
+        let tipoPendente = null;
 
         // ============================================================
-        // INICIALIZAÇÃO — v1.1.0
-        // Trata token do hash (implicit flow), PKCE (code) e sessão ativa
+        // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🔓 AI-DEPOM - Redefinir Senha v1.1.0');
+            console.log('===========================================');
+            console.log('🔓 AI-DEPOM - Redefinir Senha v2.0.0');
             console.log('📍 URL:', window.location.href);
-            console.log('📍 Hash:', window.location.hash);
+            console.log('===========================================');
 
-            // ============================================================
-            // PASSO 1 — Extrair token do hash (implicit flow) [NOVO v1.1.0]
-            // ============================================================
-            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+            // ------------------------------------------------------------
+            // [1] LÊ o token_hash da query (NÃO CONSOME)
+            // ------------------------------------------------------------
             const queryParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
 
-            const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
-            const refreshToken = hashParams.get('refresh_token') || queryParams.get('refresh_token');
-            const type = hashParams.get('type') || queryParams.get('type');
+            // Suporta AMBOS formatos:
+            // - Formato NOVO: ?token_hash=xxx&type=recovery (não consome)
+            // - Formato ANTIGO: #access_token=xxx&type=recovery (já consumido)
+            const tokenHash = queryParams.get('token_hash');
+            const type = queryParams.get('type') || hashParams.get('type');
+            const accessToken = hashParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token');
             const code = queryParams.get('code');
 
+            console.log('🔑 token_hash:', tokenHash ? 'SIM (' + tokenHash.substring(0, 8) + '...)' : 'NÃO');
             console.log('🔑 access_token:', accessToken ? 'SIM' : 'NÃO');
-            console.log('🔑 refresh_token:', refreshToken ? 'SIM' : 'NÃO');
             console.log('🔑 type:', type);
-            console.log('🔑 code:', code);
+            console.log('🔑 code:', code ? 'SIM' : 'NÃO');
 
-            // ============================================================
-            // CASO 1 — Token no hash (implicit flow) [NOVO v1.1.0]
-            // ============================================================
-            if (accessToken && type === 'recovery') {
-                console.log('✅ Token de recovery detectado no hash');
+            // ------------------------------------------------------------
+            // [2] CASO A — Token no QUERY (formato novo) → 2 etapas
+            // ------------------------------------------------------------
+            if (tokenHash && (type === 'recovery' || type === 'invite')) {
+                console.log('✅ Formato NOVO detectado (token_hash na query)');
+                console.log('🛡️ Token NÃO será consumido até o usuário clicar');
+
+                tokenHashPendente = tokenHash;
+                tipoPendente = type;
+
+                // MOSTRA ETAPA 1 (confirmação) — não consome o token
+                mostrarEtapa('etapaConfirmacao');
+                return;
+            }
+
+            // ------------------------------------------------------------
+            // [3] CASO B — access_token no HASH (formato antigo) → consumido
+            // ------------------------------------------------------------
+            if (accessToken && (type === 'recovery' || type === 'invite')) {
+                console.log('⚠️ Formato ANTIGO detectado (access_token no hash)');
+                console.log('⚠️ Token pode já ter sido consumido por prefetch');
 
                 try {
-                    // Cria sessão temporária com o token recebido
                     const { data, error } = await window.supabaseClient.auth.setSession({
                         access_token: accessToken,
                         refresh_token: refreshToken || ''
                     });
 
-                    if (error) {
-                        console.error('❌ Erro ao criar sessão:', error);
-                        mostrarErro('Link inválido ou expirado. Solicite um novo.');
-                        setTimeout(() => window.location.href = '02-login.html', 3000);
-                        return;
-                    }
+                    if (error) throw error;
 
-                    console.log('✅ Sessão criada:', data.user.email);
                     usuarioRecovery = data.user;
-                    mostrarFormulario();
+                    console.log('✅ Sessão criada (formato antigo)');
+                    mostrarEtapa('etapaFormulario');
                     return;
 
                 } catch (err) {
-                    console.error('❌ Erro inesperado:', err);
-                    mostrarErro('Erro ao validar link: ' + err.message);
+                    console.error('❌ Erro ao criar sessão:', err);
+                    mostrarErroFatal('Link inválido ou expirado. Solicite um novo.');
                     return;
                 }
             }
 
-            // ============================================================
-            // CASO 2 — Code PKCE na query [NOVO v1.1.0]
-            // ============================================================
+            // ------------------------------------------------------------
+            // [4] CASO C — Code PKCE na query
+            // ------------------------------------------------------------
             if (code) {
-                console.log('✅ Code PKCE detectado na query');
+                console.log('✅ Code PKCE detectado');
 
                 try {
                     const { data, error } = await window.supabaseClient.auth.exchangeCodeForSession(code);
 
-                    if (error) {
-                        console.error('❌ Erro ao trocar code:', error);
-                        mostrarErro('Link inválido ou expirado. Solicite um novo.');
-                        setTimeout(() => window.location.href = '02-login.html', 3000);
-                        return;
-                    }
+                    if (error) throw error;
 
-                    console.log('✅ Sessão criada:', data.user.email);
                     usuarioRecovery = data.user;
-                    mostrarFormulario();
+                    console.log('✅ Sessão criada (PKCE)');
+                    mostrarEtapa('etapaFormulario');
                     return;
 
                 } catch (err) {
-                    console.error('❌ Erro inesperado:', err);
-                    mostrarErro('Erro ao validar link: ' + err.message);
+                    console.error('❌ Erro ao trocar code:', err);
+                    mostrarErroFatal('Link inválido ou expirado. Solicite um novo.');
                     return;
                 }
             }
 
-            // ============================================================
-            // CASO 3 — Verificar sessão ativa (fallback) [NOVO v1.1.0]
-            // ============================================================
-            console.log('ℹ️ Sem token no hash, verificando sessão...');
+            // ------------------------------------------------------------
+            // [5] CASO D — Erro no hash (otp_expired, etc.)
+            // ------------------------------------------------------------
+            const hashError = hashParams.get('error');
+            const errorCode = hashParams.get('error_code');
+            if (hashError || errorCode) {
+                console.warn('⚠️ Erro no hash:', hashError, errorCode);
+                mostrarErroFatal('Link inválido ou expirado. Solicite um novo.');
+                return;
+            }
 
+            // ------------------------------------------------------------
+            // [6] CASO E — Sessão já ativa (fallback)
+            // ------------------------------------------------------------
             try {
                 const { data: { user } } = await window.supabaseClient.auth.getUser();
-
                 if (user) {
-                    console.log('✅ Sessão ativa encontrada:', user.email);
+                    console.log('ℹ️ Sessão ativa detectada:', user.email);
                     usuarioRecovery = user;
-                    mostrarFormulario();
+                    mostrarEtapa('etapaFormulario');
                     return;
                 }
             } catch (err) {
                 console.warn('⚠️ Sem sessão:', err);
             }
 
-            // ============================================================
-            // NADA FUNCIONOU — Link inválido [NOVO v1.1.0]
-            // ============================================================
+            // ------------------------------------------------------------
+            // [7] NADA FUNCIONOU
+            // ------------------------------------------------------------
             console.warn('⚠️ Nenhum token válido encontrado');
-            mostrarErro('Link inválido. Solicite um novo em "Esqueci minha senha".');
-            setTimeout(() => window.location.href = '02-login.html', 4000);
+            mostrarErroFatal('Link inválido. Solicite um novo em "Esqueci minha senha".');
         });
 
         // ============================================================
-        // MOSTRAR FORMULÁRIO
+        // ETAPA 1 → 2 — Confirmar acesso (consome o token AQUI)
         // ============================================================
-        function mostrarFormulario() {
-            document.getElementById('loadingState').style.display = 'none';
-            document.getElementById('formContainer').style.display = 'block';
-            console.log('📝 Formulário exibido');
+        document.getElementById('btnConfirmarAcesso').addEventListener('click', async function() {
+            if (!tokenHashPendente || !tipoPendente) {
+                mostrarErroFatal('Token não encontrado. Solicite um novo link.');
+                return;
+            }
+
+            const btn = this;
+            btn.disabled = true;
+            btn.classList.add('loading');
+
+            try {
+                console.log('🔐 Validando token via verifyOtp()...');
+
+                // ⚡ AQUI o token é consumido (só no clique!)
+                const { data, error } = await window.supabaseClient.auth.verifyOtp({
+                    token_hash: tokenHashPendente,
+                    type: tipoPendente  // 'recovery' ou 'invite'
+                });
+
+                if (error) {
+                    console.error('❌ Erro verifyOtp:', error);
+                    mostrarErroFatal(
+                        'Link inválido ou expirado. Solicite um novo em "Esqueci minha senha".'
+                    );
+                    return;
+                }
+
+                console.log('✅ Token validado, sessão criada');
+                usuarioRecovery = data.user;
+
+                // Limpa os parâmetros da URL (por segurança)
+                window.history.replaceState({}, document.title, '03b-redefinir-senha.html');
+
+                // Mostra formulário
+                mostrarEtapa('etapaFormulario');
+
+            } catch (err) {
+                console.error('❌ Erro inesperado:', err);
+                mostrarErroFatal('Erro ao validar link: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('loading');
+            }
+        });
+
+        // ============================================================
+        // MOSTRAR ETAPA
+        // ============================================================
+        function mostrarEtapa(idEtapa) {
+            ['etapaConfirmacao', 'etapaFormulario', 'etapaErro'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(idEtapa).classList.remove('hidden');
+        }
+
+        function mostrarErroFatal(msg) {
+            document.getElementById('erroDetalhe').textContent = msg;
+            mostrarEtapa('etapaErro');
         }
 
         // ============================================================
@@ -510,7 +647,6 @@
             document.getElementById('errorText').textContent = msg;
             document.getElementById('errorMessage').classList.add('show');
             document.getElementById('successMessage').classList.remove('show');
-            document.getElementById('loadingState').style.display = 'none';
         }
 
         function mostrarSucesso(msg) {
@@ -562,7 +698,7 @@
 
                 mostrarSucesso('Senha redefinida com sucesso! Redirecionando para o login...');
 
-                // Desloga e vai pro login (por segurança)
+                // Desloga e vai pro login
                 setTimeout(async () => {
                     try {
                         await window.supabaseClient.auth.signOut();
