@@ -1,11 +1,14 @@
- <!-- ============================================================
+<!-- ============================================================
      AI-DEPOM - TELA DE APRESENTAÇÃO
      ============================================================
      Arquivo: 01-apresentacao.html
-     Versão: 1.0.3
-     Data: 16/09/2026 - 15:30
+     Versão: 1.1.0
+     Data: 16/09/2026 - 16:00
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [16/09/2026 16:00] ➕ Novo contador: OPERAÇÕES
+       - Grid adaptado para 5 colunas (row-cols-md-5)
+       - View v_contadores_publicos inclui total_operacoes
      - [16/09/2026 15:30] 🔧 Contadores via view pública
        v_contadores_publicos (contorna RLS anônimo)
      - [14/09/2026 12:00] ✨ Redirecionamento condicional se logado
@@ -127,10 +130,13 @@
         .security-badge-item { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 13px; letter-spacing: 0.5px; }
         .security-badge-item i { color: var(--text-primary); font-size: 18px; }
         .security-badge-item .lock-icon { color: #28a745; }
+
+        /* [v1.1.0] Stats — 5 colunas no desktop, 2 no mobile */
         .stats-section { background: var(--bg-secondary); border-top: 1px solid var(--border-color); padding: 40px 0; width: 100vw; }
-        .stat-item { text-align: center; padding: 20px; }
-        .stat-number { font-size: 2.5rem; font-weight: 700; color: var(--text-primary); display: block; }
-        .stat-label { color: rgba(0, 255, 136, 0.3); font-size: 14px; letter-spacing: 1px; margin-top: 5px; }
+        .stat-item { text-align: center; padding: 15px 10px; }
+        .stat-number { font-size: clamp(1.8rem, 3vw, 2.5rem); font-weight: 700; color: var(--text-primary); display: block; }
+        .stat-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; letter-spacing: 1px; margin-top: 5px; line-height: 1.4; }
+
         .scroll-indicator { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); animation: bounce 2s infinite; cursor: pointer; opacity: 0.6; transition: opacity 0.3s; }
         .scroll-indicator:hover { opacity: 1; }
         @keyframes bounce { 0%, 100% { transform: translateX(-50%) translateY(0); } 50% { transform: translateX(-50%) translateY(-15px); } }
@@ -213,13 +219,40 @@
         </div>
     </section>
 
+    <!-- [v1.1.0] 5 contadores — Operações adicionado -->
     <section class="stats-section">
         <div class="container-fluid">
-            <div class="row">
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statSuspeitos">0</span><span class="stat-label">SUSPEITOS CADASTRADOS</span></div></div>
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statInvestigacoes">0</span><span class="stat-label">INVESTIGAÇÕES</span></div></div>
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statMandados">0</span><span class="stat-label">MANDADOS CUMPRIDOS</span></div></div>
-                <div class="col-md-3 col-6"><div class="stat-item"><span class="stat-number" id="statDados">0.00</span><span class="stat-label">TB DE DADOS CRIPTOGRAFADOS</span></div></div>
+            <div class="row row-cols-md-5 row-cols-2 g-0">
+                <div class="col">
+                    <div class="stat-item">
+                        <span class="stat-number" id="statSuspeitos">0</span>
+                        <span class="stat-label">SUSPEITOS CADASTRADOS</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-item">
+                        <span class="stat-number" id="statInvestigacoes">0</span>
+                        <span class="stat-label">INVESTIGAÇÕES</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-item">
+                        <span class="stat-number" id="statMandados">0</span>
+                        <span class="stat-label">MANDADOS CUMPRIDOS</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-item">
+                        <span class="stat-number" id="statOperacoes">0</span>
+                        <span class="stat-label">OPERAÇÕES</span>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="stat-item">
+                        <span class="stat-number" id="statDados">0.00</span>
+                        <span class="stat-label">TB DE DADOS CRIPTOGRAFADOS</span>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -229,8 +262,6 @@
     <script>
         // ============================================
         // [v1.0.2] VERIFICAÇÃO DE SESSÃO NO LOAD
-        // Se o usuário já estiver logado, redireciona pro dashboard
-        // Se não estiver, mostra a tela de apresentação
         // ============================================
         (async function() {
             try {
@@ -341,12 +372,12 @@
         });
 
         // ============================================
-        // [v1.0.3] CONTADORES DINÂMICOS (via view pública)
-        // A view v_contadores_publicos é acessível por anon
-        // (a RLS das tabelas originais bloqueia leitura anônima)
+        // [v1.1.0] CONTADORES DINÂMICOS (via view pública)
+        // Agora com 5 contadores: suspeitos, investigações,
+        // mandados, OPERAÇÕES e TB de dados.
         // ============================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Apresentacao v1.0.3: carregando contadores...');
+            console.log('AI-DEPOM - Apresentacao v1.1.0: carregando contadores...');
 
             const animarContador = (elemento, valorFinal, isDecimal) => {
                 if (!elemento) return;
@@ -389,6 +420,7 @@
                 const totalSuspeitos = Number(data.total_suspeitos) || 0;
                 const totalInvestig  = Number(data.total_investigacoes) || 0;
                 const totalMandados  = Number(data.total_mandados_cumpridos) || 0;
+                const totalOperacoes = Number(data.total_operacoes) || 0;
                 const totalBytes     = Number(data.total_bytes) || 0;
                 const totalTB        = totalBytes / (1024 ** 4);
 
@@ -396,6 +428,7 @@
                     totalSuspeitos,
                     totalInvestig,
                     totalMandados,
+                    totalOperacoes,
                     totalBytes,
                     totalTB: totalTB.toFixed(4)
                 });
@@ -403,6 +436,7 @@
                 animarContador(document.getElementById('statSuspeitos'),     totalSuspeitos, false);
                 animarContador(document.getElementById('statInvestigacoes'), totalInvestig,  false);
                 animarContador(document.getElementById('statMandados'),      totalMandados,  false);
+                animarContador(document.getElementById('statOperacoes'),     totalOperacoes, false);
                 animarContador(document.getElementById('statDados'),         totalTB,        true);
 
                 console.log('✅ Contadores atualizados com dados reais do banco');
