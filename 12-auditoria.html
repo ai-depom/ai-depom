@@ -2,8 +2,8 @@
      AI-DEPOM - AUDITORIA DO SISTEMA
      ============================================================
      Arquivo: 12-auditoria.html
-     Versão: 2.1.0
-     Data: 16/09/2026 - 20:00
+     Versão: 2.2.0
+     Data: 17/09/2026 - 01:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,12 +15,17 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.2.0 (17/09/2026 01:00):
+     - ✨ NOVO: 6ª fonte de auditoria = AUDIT_TRAIL
+     - ✨ Auditoria completa em mandados, operações e presos
+     - ✨ Novo filtro "Todas Alteracoes"
+     - ✨ Novo ícone para OPERACAO_PRESO (🔒)
+     - ✨ Novo ícone para AUDIT (📜)
+     - ✅ Mantidas: todas as features da v2.1.0
+
      ALTERAÇÕES v2.1.0 (16/09/2026 20:00):
-     - ✨ NOVO: 5ª fonte de auditoria = OPERACOES
+     - ✨ 5ª fonte de auditoria = OPERACOES
      - ✨ Novo tipo OPERACAO com ícone 🎯
-     - ✨ Novo filtro "Operações"
-     - ✨ Severidade: CRIAR_OPERACAO / UPDATE_OPERACAO
-     - ✅ Mantidas: todas as features da v2.0.1
 
      ALTERAÇÕES v2.0.1 (16/09/2026 15:00):
      - 🐛 CORRIGIDO: eventos de suspeito mostravam "Desconhecido"
@@ -268,6 +273,8 @@
         .tipo-icon.midia { background: rgba(255, 193, 7, 0.08); color: #ffc107; }
         .tipo-icon.mandado { background: rgba(220, 53, 69, 0.08); color: #dc3545; }
         .tipo-icon.operacao { background: rgba(255, 87, 34, 0.08); color: #ff5722; }
+        .tipo-icon.operacao_preso { background: rgba(255, 87, 34, 0.08); color: #ff5722; }
+        .tipo-icon.audit { background: rgba(156, 39, 176, 0.08); color: #ba68c8; }
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 10px; border-radius: 8px; transition: all 0.3s; font-size: 12px; cursor: pointer; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
@@ -618,6 +625,7 @@
                         <option value="MIDIA">Fotos/Midia</option>
                         <option value="MANDADO">Mandados</option>
                         <option value="OPERACAO">Operacoes</option>
+                        <option value="AUDIT">Todas Alteracoes</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -751,7 +759,9 @@
                 'USUARIO': 'fa-user-cog',
                 'MIDIA': 'fa-image',
                 'MANDADO': 'fa-gavel',
-                'OPERACAO': 'fa-bullseye'
+                'OPERACAO': 'fa-bullseye',
+                'OPERACAO_PRESO': 'fa-user-lock',
+                'AUDIT': 'fa-history'
             };
             return icones[tipo] || 'fa-clipboard-list';
         }
@@ -791,7 +801,7 @@
         // INICIALIZACAO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Auditoria v2.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Auditoria v2.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -846,7 +856,7 @@
         }
 
         // ============================================================
-        // CARREGAR AUDITORIA (5 FONTES)
+        // CARREGAR AUDITORIA (6 FONTES)
         // ============================================================
         async function carregarAuditoria() {
             const container = document.getElementById('listaAuditoria');
@@ -1010,9 +1020,7 @@
                     } catch (e) { console.warn('⚠️ mandado_prisao:', e); }
                 }
 
-                // ============================================================
-                // FONTE 5: OPERACAO (NOVO v2.1.0)
-                // ============================================================
+                // FONTE 5: operacao
                 if (!tipo || tipo === 'OPERACAO') {
                     try {
                         let q5 = window.supabaseClient
@@ -1066,6 +1074,56 @@
                     } catch (e) { console.warn('⚠️ operacao:', e); }
                 }
 
+                // ============================================================
+                // FONTE 6: audit_trail (NOVO v2.2.0)
+                // Cobre alteracoes em mandados, operacoes e presos
+                // ============================================================
+                if (!tipo || tipo === 'AUDIT') {
+                    try {
+                        let q6 = window.supabaseClient
+                            .from('audit_trail')
+                            .select('*')
+                            .order('data_hora', { ascending: false })
+                            .limit(100);
+
+                        if (usuarioId) q6 = q6.eq('id_usuario', usuarioId);
+                        if (dataInicio) q6 = q6.gte('data_hora', dataInicio + 'T00:00:00');
+                        if (dataFim) q6 = q6.lte('data_hora', dataFim + 'T23:59:59');
+
+                        const { data } = await q6;
+
+                        (data || []).forEach(a => {
+                            const nomeUsuario = a.nome_usuario || resolverNomeUsuario({ id_usuario: a.id_usuario });
+                            const tipoMapeado = a.tabela === 'mandado_prisao' ? 'MANDADO'
+                                              : a.tabela === 'operacao' ? 'OPERACAO'
+                                              : a.tabela === 'operacao_preso' ? 'OPERACAO_PRESO'
+                                              : 'AUDIT';
+
+                            eventos.push({
+                                id: `audit-${a.id_audit}`,
+                                tipo: tipoMapeado,
+                                acao: a.acao,
+                                data: a.data_hora,
+                                usuario_id: a.id_usuario,
+                                usuario_nome: nomeUsuario,
+                                descricao: `${a.acao} em ${a.tabela} #${a.registro_id}`,
+                                entidade_id: a.registro_id,
+                                entidade_nome: `${a.tabela} #${a.registro_id}`,
+                                detalhes: {
+                                    tabela: a.tabela,
+                                    dados_anteriores: a.dados_antes,
+                                    dados_novos: a.dados_depois,
+                                    ip_origem: a.ip_origem,
+                                    user_agent: a.user_agent
+                                },
+                                raw: a
+                            });
+                        });
+
+                        console.log(`📋 Audit trail: ${data?.length || 0} eventos`);
+                    } catch (e) { console.warn('⚠️ audit_trail:', e); }
+                }
+
                 eventos.sort((a, b) => {
                     const da = a.data ? new Date(a.data).getTime() : 0;
                     const db = b.data ? new Date(b.data).getTime() : 0;
@@ -1107,7 +1165,7 @@
             const eventosSemana = eventos.filter(e => e.data && new Date(e.data) >= inicioSemana).length;
             const criticos = eventos.filter(e => classificarSeveridade(e.acao) === 'CRITICAL').length;
             const alertas = eventos.filter(e => classificarSeveridade(e.acao) === 'WARNING').length;
-            const operacoes = eventos.filter(e => e.tipo === 'OPERACAO').length;
+            const audit = eventos.filter(e => e.tipo === 'AUDIT' || e.tipo === 'OPERACAO_PRESO').length;
 
             document.getElementById('statsGrid').innerHTML = `
                 <div class="stat-card">
@@ -1136,9 +1194,9 @@
                     <div class="label">Alertas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="icon"><i class="fas fa-bullseye"></i></div>
-                    <div class="number">${operacoes}</div>
-                    <div class="label">Operacoes</div>
+                    <div class="icon"><i class="fas fa-history"></i></div>
+                    <div class="number">${audit}</div>
+                    <div class="label">Alteracoes Rastreadas</div>
                 </div>
             `;
         }
@@ -1285,7 +1343,6 @@
                 diffHTML += '</div>';
             }
 
-            // Detalhes adicionais para OPERACAO
             let operacaoDetalhesHTML = '';
             if (evento.tipo === 'OPERACAO') {
                 const d = detalhes;
@@ -1302,6 +1359,21 @@
                             ${d.viaturas_quantidade ? `<div class="contexto-item"><span class="ctx-label">Viaturas</span><span class="ctx-valor">${d.viaturas_quantidade} (${d.viaturas_padronizadas || 0} padr. / ${d.viaturas_descaracterizadas || 0} descar.)</span></div>` : ''}
                             ${d.viaturas_placas && d.viaturas_placas !== '-' ? `<div class="contexto-item"><span class="ctx-label">Placas</span><span class="ctx-valor">${d.viaturas_placas}</span></div>` : ''}
                             ${d.quilometragem ? `<div class="contexto-item"><span class="ctx-label">Quilometragem</span><span class="ctx-valor">${d.quilometragem} km</span></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            let auditDetalhesHTML = '';
+            if (evento.tipo === 'AUDIT' || evento.tipo === 'OPERACAO_PRESO') {
+                auditDetalhesHTML = `
+                    <div class="modal-section">
+                        <div class="modal-section-title"><i class="fas fa-history"></i> Detalhes da Alteracao</div>
+                        <div class="contexto-grid">
+                            ${detalhes.tabela ? `<div class="contexto-item"><span class="ctx-label">Tabela</span><span class="ctx-valor">${detalhes.tabela}</span></div>` : ''}
+                            ${evento.entidade_id ? `<div class="contexto-item"><span class="ctx-label">Registro ID</span><span class="ctx-valor">${evento.entidade_id}</span></div>` : ''}
+                            ${detalhes.ip_origem ? `<div class="contexto-item"><span class="ctx-label">IP de Origem</span><span class="ctx-valor">${detalhes.ip_origem}</span></div>` : ''}
+                            ${detalhes.user_agent ? `<div class="contexto-item"><span class="ctx-label">User Agent</span><span class="ctx-valor" style="font-size:10px;">${detalhes.user_agent.substring(0, 80)}...</span></div>` : ''}
                         </div>
                     </div>
                 `;
@@ -1354,13 +1426,14 @@
                         <div class="entidade-tipo">${evento.tipo || '-'}</div>
                         <div class="entidade-nome">${evento.entidade_nome}</div>
                         ${evento.entidade_id ? `<div class="entidade-id">ID: ${evento.entidade_id}</div>` : ''}
-                        ${evento.tipo !== 'OPERACAO' && evento.entidade_extra ? `<div class="entidade-id">Matricula: ${evento.entidade_extra}</div>` : ''}
+                        ${evento.tipo !== 'OPERACAO' && evento.tipo !== 'AUDIT' && evento.tipo !== 'OPERACAO_PRESO' && evento.entidade_extra ? `<div class="entidade-id">Matricula: ${evento.entidade_extra}</div>` : ''}
                         ${evento.tipo === 'OPERACAO' && evento.entidade_extra ? `<div class="entidade-id">Setor: ${evento.entidade_extra}</div>` : ''}
                     </div>
                 </div>
                 ` : ''}
 
                 ${operacaoDetalhesHTML}
+                ${auditDetalhesHTML}
 
                 ${diffHTML ? `
                 <div class="modal-section">
@@ -1514,7 +1587,9 @@
                 'USUARIO': 'Usuario',
                 'MIDIA': 'Midia',
                 'MANDADO': 'Mandado',
-                'OPERACAO': 'Operacao'
+                'OPERACAO': 'Operacao',
+                'OPERACAO_PRESO': 'Preso em Operacao',
+                'AUDIT': 'Alteracao'
             };
             return tipos[tipo] || tipo || '-';
         }
