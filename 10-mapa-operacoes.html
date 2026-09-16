@@ -2,8 +2,8 @@
      AI-DEPOM - MAPA DE OPERAÇÕES
      ============================================================
      Arquivo: 10-mapa-operacoes.html
-     Versão: 2.0.1
-     Data: 17/09/2026 - 05:00
+     Versão: 2.1.0
+     Data: 17/09/2026 - 06:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,17 +15,19 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.1.0 (17/09/2026 06:00):
+     - 🎨 Mandados com cores por status de execucao:
+       🔴 Vermelho = Novo (< 7 dias)
+       🟢 Verde = Em cumprimento
+       🔵 Azul = Cumprido
+       ⚪ Cinza = Vencido
+       🟡 Amarelo = Cancelado
+       🟣 Roxo = Suspenso
+     - 📋 Legenda expandida com todos os status
+     - 🗺️ Esri World Dark Gray Canvas (gratis, sem key)
+
      ALTERAÇÕES v2.0.1 (17/09/2026 05:00):
-     - 🐛 CORRIGIDO: CartoDB agora exige API Key (marca dagua)
-     - 🗺️ Trocado para Esri World Dark Gray Canvas (gratis, sem key)
-     - ✅ Mantidas: 3 fontes (alvos, mandados, operacoes)
-
-     ALTERAÇÕES v2.0.0 (17/09/2026 03:00):
-     - Plota 3 fontes: Alvos, Mandados e Operacoes
-     - Icones distintos por tipo
-
-     ALTERAÇÕES v1.3.0 (17/09/2026 02:00):
-     - Mapa minimalista
+     - CartoDB -> Esri (sem API Key)
      ============================================================
 -->
 <!DOCTYPE html>
@@ -211,6 +213,21 @@
             padding: 15px;
             margin-top: 15px;
         }
+        .legend-section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.05);
+        }
+        .legend-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+        .legend-section-title {
+            color: var(--text-primary);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
         .legend-item {
             display: flex; align-items: center; gap: 10px;
             padding: 4px 0; color: var(--text-secondary); font-size: 13px;
@@ -221,8 +238,13 @@
             font-size: 12px; border: 2px solid rgba(0,0,0,0.5);
         }
         .legend-icon.alvo { background: #0dcaf0; color: #000; }
-        .legend-icon.mandado { background: #ba68c8; color: #fff; }
         .legend-icon.operacao { background: #00ff88; color: #000; }
+        .legend-icon.novo { background: #dc3545; color: #fff; }
+        .legend-icon.ativo { background: #00ff88; color: #000; }
+        .legend-icon.cumprido { background: #0dcaf0; color: #000; }
+        .legend-icon.vencido { background: #6c757d; color: #fff; }
+        .legend-icon.cancelado { background: #ffc107; color: #000; }
+        .legend-icon.suspenso { background: #ba68c8; color: #fff; }
 
         /* CARDS DE TIPO (FILTROS) */
         .filtros-tipo {
@@ -276,6 +298,8 @@
         .stat-card .number.alvo { color: #0dcaf0; }
         .stat-card .number.mandado { color: #ba68c8; }
         .stat-card .number.operacao { color: #00ff88; }
+        .stat-card .number.novo { color: #dc3545; }
+        .stat-card .number.cumprido { color: #0dcaf0; }
         .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.4); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
 
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
@@ -304,7 +328,7 @@
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        /* ÍCONES DE MARCADORES */
+        /* 🎨 [v2.1.0] ÍCONES DE MARCADORES - CORES POR STATUS */
         .marker-custom {
             width: 30px; height: 30px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -313,8 +337,14 @@
             font-size: 13px;
         }
         .marker-alvo { background: #0dcaf0; color: #000; }
-        .marker-mandado { background: #ba68c8; color: #fff; }
         .marker-operacao { background: #00ff88; color: #000; }
+        /* Mandados por status */
+        .marker-novo { background: #dc3545; color: #fff; }
+        .marker-ativo { background: #00ff88; color: #000; }
+        .marker-cumprido { background: #0dcaf0; color: #000; }
+        .marker-vencido { background: #6c757d; color: #fff; }
+        .marker-cancelado { background: #ffc107; color: #000; }
+        .marker-suspenso { background: #ba68c8; color: #fff; }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -442,22 +472,49 @@
         <div class="form-card">
             <div class="card-title"><i class="fas fa-map"></i>Mapa</div>
             <div id="mapa"></div>
+
             <div class="legend">
-                <div style="color:var(--text-primary); font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">
-                    <i class="fas fa-info-circle"></i> Legenda
+                <div class="legend-section">
+                    <div class="legend-section-title"><i class="fas fa-crosshairs"></i> Alvos e Operacoes</div>
+                    <div class="d-flex flex-wrap gap-4">
+                        <div class="legend-item">
+                            <div class="legend-icon alvo"><i class="fas fa-crosshairs"></i></div>
+                            Alvo / Suspeito
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon operacao"><i class="fas fa-bullseye"></i></div>
+                            Operacao
+                        </div>
+                    </div>
                 </div>
-                <div class="d-flex flex-wrap gap-4">
-                    <div class="legend-item">
-                        <div class="legend-icon alvo"><i class="fas fa-crosshairs"></i></div>
-                        Alvo / Suspeito
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-icon mandado"><i class="fas fa-gavel"></i></div>
-                        Mandado
-                    </div>
-                    <div class="legend-item">
-                        <div class="legend-icon operacao"><i class="fas fa-bullseye"></i></div>
-                        Operacao
+
+                <div class="legend-section">
+                    <div class="legend-section-title"><i class="fas fa-gavel"></i> Mandados por Status de Execucao</div>
+                    <div class="d-flex flex-wrap gap-4">
+                        <div class="legend-item">
+                            <div class="legend-icon novo"><i class="fas fa-plus-circle"></i></div>
+                            Novo (recem-inserido, ate 7 dias)
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon ativo"><i class="fas fa-play-circle"></i></div>
+                            Em cumprimento / Ativo
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon cumprido"><i class="fas fa-check-circle"></i></div>
+                            Cumprido
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon vencido"><i class="fas fa-clock"></i></div>
+                            Vencido
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon cancelado"><i class="fas fa-ban"></i></div>
+                            Cancelado
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-icon suspenso"><i class="fas fa-pause-circle"></i></div>
+                            Suspenso
+                        </div>
                     </div>
                 </div>
             </div>
@@ -487,8 +544,11 @@
 
         const camadasAtivas = { alvo: true, mandado: true, operacao: true };
 
+        // 🎨 [v2.1.0] CONSTANTES DE COR POR STATUS
+        const DIAS_NOVO_MANDADO = 7;
+
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Operacoes v2.0.1 iniciado');
+            console.log('AI-DEPOM - Mapa de Operacoes v2.1.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -513,9 +573,7 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
-        // ============================================================
-        // 🗺️ [v2.0.1] MAPA - Esri World Dark Gray Canvas (gratis, sem API Key)
-        // ============================================================
+        // 🗺️ MAPA - Esri World Dark Gray Canvas
         function inicializarMapa() {
             console.log('🗺️ Inicializando mapa (Esri Dark Gray)...');
 
@@ -526,13 +584,11 @@
                 maxZoom: 16
             });
 
-            // [v2.0.1] Esri World Dark Gray Canvas - SEM API KEY
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
                 attribution: '&copy; Esri &copy; OpenStreetMap contributors',
                 maxZoom: 16
             }).addTo(mapa);
 
-            // [v2.0.1] Rotulos (nomes de cidades/ruas)
             L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
                 maxZoom: 16
             }).addTo(mapa);
@@ -598,7 +654,7 @@
                     .from('mandado_prisao')
                     .select(`
                         id_mandado, numero_mandado, tipo_mandado, status, prioridade,
-                        juiz_nome, vara_tribunal, data_emissao, data_validade,
+                        juiz_nome, vara_tribunal, data_emissao, data_validade, data_cadastro,
                         latitude, longitude,
                         suspeito:suspeito (
                             id_suspeito, nome_completo, apelido, cpf, bairro, cidade, uf
@@ -610,12 +666,16 @@
 
                 if (error) throw error;
 
-                todosMandados = (data || []).map(m => ({
-                    ...m,
-                    tipo_ponto: 'MANDADO',
-                    lat: parseFloat(m.latitude),
-                    lng: parseFloat(m.longitude)
-                }));
+                todosMandados = (data || []).map(m => {
+                    const cor = obterCorMandado(m);
+                    return {
+                        ...m,
+                        tipo_ponto: 'MANDADO',
+                        lat: parseFloat(m.latitude),
+                        lng: parseFloat(m.longitude),
+                        corStatus: cor
+                    };
+                });
 
                 document.getElementById('countMandados').textContent = todosMandados.length + ' ponto(s)';
                 console.log(`⚖️ ${todosMandados.length} mandados carregados`);
@@ -623,6 +683,28 @@
                 console.error('❌ Erro ao carregar mandados:', error);
                 todosMandados = [];
             }
+        }
+
+        // 🎨 [v2.1.0] Define a cor do mandado baseado no status
+        function obterCorMandado(m) {
+            const status = (m.status || '').toUpperCase();
+
+            if (status === 'CUMPRIDO') return 'cumprido';
+            if (status === 'VENCIDO') return 'vencido';
+            if (status === 'CANCELADO') return 'cancelado';
+            if (status === 'SUSPENSO') return 'suspenso';
+
+            // ATIVO — diferencar "novo" (< 7 dias) de "em cumprimento"
+            if (status === 'ATIVO' || status === '') {
+                const dataRef = m.data_emissao || m.data_cadastro;
+                if (dataRef) {
+                    const dias = (Date.now() - new Date(dataRef).getTime()) / (1000 * 60 * 60 * 24);
+                    if (dias <= DIAS_NOVO_MANDADO) return 'novo';
+                }
+                return 'ativo';
+            }
+
+            return 'ativo';
         }
 
         async function carregarOperacoes() {
@@ -677,7 +759,7 @@
                 todosMandados.forEach(m => {
                     const icone = L.divIcon({
                         className: '',
-                        html: '<div class="marker-custom marker-mandado"><i class="fas fa-gavel"></i></div>',
+                        html: `<div class="marker-custom marker-${m.corStatus}"><i class="fas fa-gavel"></i></div>`,
                         iconSize: [30, 30],
                         iconAnchor: [15, 15]
                     });
@@ -728,11 +810,19 @@
 
         function gerarPopupMandado(m) {
             const s = m.suspeito || {};
+            const coresLabel = {
+                'novo': '🔴 Novo mandado (recem-inserido)',
+                'ativo': '🟢 Em cumprimento',
+                'cumprido': '🔵 Cumprido',
+                'vencido': '⚪ Vencido',
+                'cancelado': '🟡 Cancelado',
+                'suspenso': '🟣 Suspenso'
+            };
             return `
                 <div class="popup-title mandado"><i class="fas fa-gavel"></i> MANDADO</div>
                 <div class="popup-row"><strong>Nº:</strong> ${m.numero_mandado || '#' + m.id_mandado}</div>
+                <div class="popup-row"><strong>Status Execucao:</strong> ${coresLabel[m.corStatus] || m.status || '-'}</div>
                 <div class="popup-row"><strong>Tipo:</strong> ${traduzirTipoMandado(m.tipo_mandado)}</div>
-                <div class="popup-row"><strong>Status:</strong> ${m.status || '-'}</div>
                 <div class="popup-row"><strong>Prioridade:</strong> ${m.prioridade || '-'}</div>
                 <div class="popup-row"><strong>Suspeito:</strong> ${s.nome_completo || '-'}</div>
                 <div class="popup-row"><strong>CPF:</strong> ${s.cpf || '-'}</div>
@@ -778,11 +868,16 @@
             console.log(`🔀 Camada ${tipo}: ${camadasAtivas[tipo] ? 'ATIVA' : 'INATIVA'}`);
         }
 
+        // 🎨 [v2.1.0] ESTATÍSTICAS com breakdown de mandados
         function renderizarEstatisticas() {
             const totalAlvos = todosAlvos.length;
             const totalMandados = todosMandados.length;
             const totalOperacoes = todasOperacoes.length;
             const total = totalAlvos + totalMandados + totalOperacoes;
+
+            const novos = todosMandados.filter(m => m.corStatus === 'novo').length;
+            const ativos = todosMandados.filter(m => m.corStatus === 'ativo').length;
+            const cumpridos = todosMandados.filter(m => m.corStatus === 'cumprido').length;
 
             const exibidos = 
                 (camadasAtivas.alvo ? totalAlvos : 0) +
@@ -805,6 +900,18 @@
                 <div class="stat-card">
                     <div class="number operacao">${totalOperacoes}</div>
                     <div class="label">Operacoes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number novo">${novos}</div>
+                    <div class="label">🔴 Mandados Novos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number" style="color: #00ff88;">${ativos}</div>
+                    <div class="label">🟢 Em Cumprimento</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number cumprido">${cumpridos}</div>
+                    <div class="label">🔵 Cumpridos</div>
                 </div>
                 <div class="stat-card">
                     <div class="number" style="color: #ffc107;">${exibidos}</div>
@@ -879,7 +986,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina de Mapa v2.0.1 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Mapa v2.1.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
