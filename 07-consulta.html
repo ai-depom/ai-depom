@@ -2,8 +2,8 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.7.3
-     Data: 15/09/2026 - 09:30
+     Versão: 2.7.4
+     Data: 16/09/2026 - 18:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,6 +15,13 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.7.4 (16/09/2026 18:00):
+     - 🐛 CORRIGIDO: perfil Admin (ID 2) não conseguia editar suspeito
+     - 🐛 CORRIGIDO: comparação com coerção de tipos (number ↔ string)
+     - ✨ NOVO: parsePerfisPermitidos() aceita qualquer formato
+     - ✨ NOVO: log detalhado no console para debug de permissão
+     - ✅ Mantidas: todas as features da v2.7.3
+
      ALTERAÇÕES v2.7.3 (15/09/2026 09:30):
      - 🔗 Menu: Mandados → 11-mandados.html
      - 🔗 Menu: Auditoria → 12-auditoria.html
@@ -22,9 +29,9 @@
      - ➕ Menu: Mapa de Operacoes → 10-mapa-operacoes.html
      - 🎨 CSS: disabled/readonly preto + verde FORTE
      - 🛡️ fazerLogout() com fallback AIDEPOM.logout()
-     - 🪟 minimizeWindow() sem resizeTo (window.blur)
+     - 🪟 minimizeWindow() sem resizeTo
      - 📜 Cabeçalho Regra de Ouro
-     - ✅ closeWindow() robusto mantido
+     - ✅ closeWindow() robusto
      - ✅ Sidebar flexbox mantido
      ============================================================
 -->
@@ -166,7 +173,7 @@
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
 
-        /* [NOVO v2.7.3] Regra: campos desabilitados/somente leitura = fundo preto + letras verdes FORTES */
+        /* [NOVO v2.7.4] Regra: campos desabilitados/somente leitura = fundo preto + letras verdes FORTES */
         .form-control:disabled,
         .form-control[readonly],
         .form-select:disabled,
@@ -334,6 +341,7 @@
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuários <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
             <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configurações</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -510,7 +518,7 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         // ============================================================
-        // [v2.7.3] Supabase client (com fallback)
+        // [v2.7.4] Supabase client (com fallback)
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
@@ -532,7 +540,7 @@
         })();
 
         // ============================================================
-        // [v2.7.3] LOGOUT ROBUSTO (AIDEPOM.logout → Supabase → hard redirect)
+        // [v2.7.4] LOGOUT ROBUSTO
         // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
@@ -543,7 +551,7 @@
                     return;
                 }
             } catch (error) {
-                console.warn('⚠️ AIDEPOM.logout() falhou, tentando Supabase direto:', error);
+                console.warn('⚠️ AIDEPOM.logout() falhou:', error);
             }
 
             try {
@@ -563,14 +571,12 @@
         }
 
         // ============================================================
-        // [v2.7.3] CONTROLES DE JANELA
+        // [v2.7.4] CONTROLES DE JANELA
         // ============================================================
         function minimizeWindow() {
-            // Browsers modernos não permitem minimizar programaticamente.
-            // Estratégia: blur + aviso discreto
             try {
                 window.blur();
-                console.log('🪟 Janela desfocada (minimizar real não suportado pelo navegador)');
+                console.log('🪟 Janela desfocada (minimizar real não suportado)');
             } catch (e) { console.warn('Minimizar não suportado:', e); }
         }
 
@@ -622,7 +628,7 @@
                         document.getElementById('sidebarAvatar').textContent = inicial;
                         document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin';
                         document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador';
-                        console.log('👤 Usuário logado:', usuario.nome_completo, '| Perfil:', perfilUsuarioAtual);
+                        console.log('👤 Usuário logado:', usuario.nome_completo, '| Perfil:', perfilUsuarioAtual, '(tipo:', typeof perfilUsuarioAtual + ')');
                     }
                 }
             } catch (error) { console.error('Erro ao carregar usuário:', error); }
@@ -644,6 +650,40 @@
             camposEditaveisCache = data || [];
             console.log('📋 Campos editáveis:', camposEditaveisCache.length);
             return camposEditaveisCache;
+        }
+
+        // ============================================================
+        // 🛡️ [v2.7.4] NOVO: parsePerfisPermitidos
+        // Aceita: array [1,2,3], string JSON "[1,2,3]", string CSV "1,2,3", string única "2"
+        // ============================================================
+        function parsePerfisPermitidos(raw) {
+            if (!raw) return [];
+
+            // Já é array?
+            if (Array.isArray(raw)) {
+                return raw.map(p => Number(p)).filter(n => !isNaN(n));
+            }
+
+            // É string?
+            if (typeof raw === 'string') {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) {
+                        return parsed.map(p => Number(p)).filter(n => !isNaN(n));
+                    }
+                } catch (e) { /* não era JSON */ }
+
+                // CSV?
+                if (raw.includes(',')) {
+                    return raw.split(',').map(p => Number(p.trim())).filter(n => !isNaN(n));
+                }
+
+                // String única?
+                const n = Number(raw);
+                return isNaN(n) ? [] : [n];
+            }
+
+            return [];
         }
 
         // ============================================================
@@ -919,6 +959,8 @@
                             <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Endereço</span><span class="valor">${[suspeito.logradouro, suspeito.numero, suspeito.bairro, suspeito.cidade, suspeito.uf].filter(Boolean).join(', ') || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Características Físicas</span><span class="valor">Altura: ${suspeito.altura || '-'}m · Peso: ${suspeito.peso || '-'}kg · Olhos: ${suspeito.cor_olhos || '-'} · Cabelo: ${suspeito.cor_cabelo || '-'}</span></div>
+                            ${suspeito.portador_deficiencia ? `<div class="ficha-campo"><span class="label">Portador de Deficiência</span><span class="valor">Sim ${suspeito.descricao_deficiencia ? '· ' + suspeito.descricao_deficiencia : ''}</span></div>` : ''}
+                            ${suspeito.cicatrizes ? `<div class="ficha-campo"><span class="label">Cicatrizes</span><span class="valor">${suspeito.cicatrizes}</span></div>` : ''}
                             ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
                             ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
                         </div>
@@ -969,14 +1011,38 @@
 
                 const campos = await carregarCamposEditaveis();
 
-                const camposPermitidos = campos.filter(c => 
-                    (c.perfis_permitidos || []).includes(perfilUsuarioAtual)
-                );
+                // 🛡️ [v2.7.4] CORREÇÃO: comparação com coerção de tipos
+                const perfilAtualNum = Number(perfilUsuarioAtual);
+
+                const camposPermitidos = campos.filter(c => {
+                    const perfis = parsePerfisPermitidos(c.perfis_permitidos);
+                    return perfis.includes(perfilAtualNum);
+                });
+
+                // 🔍 Log completo pra debug
+                console.log('🔐 DEBUG PERMISSÃO:', {
+                    perfilUsuarioAtual_raw: perfilUsuarioAtual,
+                    perfilUsuarioAtual_num: perfilAtualNum,
+                    tipoPerfil: typeof perfilUsuarioAtual,
+                    totalCampos: campos.length,
+                    camposPermitidos: camposPermitidos.length,
+                    amostra3: campos.slice(0, 3).map(c => ({
+                        nome: c.nome_campo,
+                        raw: c.perfis_permitidos,
+                        tipoRaw: typeof c.perfis_permitidos,
+                        isArray: Array.isArray(c.perfis_permitidos),
+                        parseado: parsePerfisPermitidos(c.perfis_permitidos),
+                        permitido: parsePerfisPermitidos(c.perfis_permitidos).includes(perfilAtualNum)
+                    }))
+                });
 
                 if (camposPermitidos.length === 0) {
                     body.innerHTML = `<div class="text-center py-4" style="color: #ffc107;">
                         <i class="fas fa-lock" style="font-size: 40px; display: block; margin-bottom: 15px;"></i>
-                        <div>Seu perfil (ID ${perfilUsuarioAtual}) não tem permissão para editar suspeitos.</div>
+                        <div>Seu perfil (ID ${perfilAtualNum}) não tem permissão para editar suspeitos.</div>
+                        <small style="display:block; margin-top:10px; color:rgba(0,255,136,0.4);">
+                            Verifique a tabela <code>suspeito_campos_editaveis</code> no Supabase.
+                        </small>
                     </div>`;
                     return;
                 }
@@ -1014,7 +1080,7 @@
                 let setorAtual = '';
 
                 campos.forEach(campo => {
-                    const podeEditar = (campo.perfis_permitidos || []).includes(perfilUsuarioAtual);
+                    const podeEditar = parsePerfisPermitidos(campo.perfis_permitidos).includes(perfilAtualNum);
                     const valorAtual = suspeito[campo.nome_campo] ?? '';
                     const setor = setores[campo.nome_campo] || 'Outros';
 
@@ -1314,7 +1380,7 @@
 
                 if (error) throw error;
 
-                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
+                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO' || m.tipo_midia === 'TATUAGEM');
 
                 if (fotos.length === 0) {
                     body.innerHTML = `
@@ -1338,6 +1404,7 @@
 
                     const dataUpload = foto.data_upload ? new Date(foto.data_upload).toLocaleDateString('pt-BR') : '-';
                     const isPrincipal = foto.nome_seguro && foto.nome_seguro.toLowerCase().includes('principal');
+                    const isTattoo = foto.tipo_midia === 'TATUAGEM';
 
                     html += `
                         <div class="foto-card">
@@ -1347,10 +1414,11 @@
                             }
                             <div class="info">
                                 ${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : ''}
+                                ${isTattoo ? '<span class="principal" style="background:#ffc107;color:#000;">TATUAGEM</span>' : ''}
                                 <div class="data mt-2">
                                     <i class="fas fa-calendar me-1"></i>${dataUpload}
                                 </div>
-                                ${foto.fonte ? `<div class="data"><i class="fas fa-tag me-1"></i>${foto.fonte}</div>` : ''}
+                                ${foto.nome_original ? `<div class="data"><i class="fas fa-tag me-1"></i>${foto.nome_original.substring(0, 30)}</div>` : ''}
                             </div>
                         </div>`;
                 }
@@ -1380,7 +1448,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.7.3 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.7.4 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
         });
 
@@ -1398,5 +1466,6 @@
             }
         });
     </script>
+    <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
