@@ -2,25 +2,15 @@
      AI-DEPOM - MAPA DE OPERAÇÕES
      ============================================================
      Arquivo: 10-mapa-operacoes.html
-     Versão: 2.1.1
-     Data: 17/09/2026 - 06:30
-     Autor: AI-DEPOM Team
+     Versão: 3.0.0
+     Data: 17/09/2026 - 12:00
      ============================================================
-     ALTERAÇÕES v2.1.1 (17/09/2026 06:30):
-     - 📋 Popup do mandado agora exibe "Descricao" e "Observacoes"
-     - 🔍 Query SELECT inclui descricao e observacoes
-     - (Edição desses campos fica na tela 11-mandados.html)
-
-     ALTERAÇÕES v2.1.0 (17/09/2026 06:00):
-     - 🎨 Mandados com cores por status de execucao:
-       🔴 Vermelho = Novo (< 7 dias)
-       🟢 Verde = Em cumprimento
-       🔵 Azul = Cumprido
-       ⚪ Cinza = Vencido
-       🟡 Amarelo = Cancelado
-       🟣 Roxo = Suspenso
-     - 📋 Legenda expandida com todos os status
-     - 🗺️ Esri World Dark Gray Canvas (gratis, sem key)
+     ALTERAÇÕES v3.0.0 (17/09/2026 12:00):
+     - 🗺️ SEPARADO: agora mostra APENAS OPERAÇÕES
+     - 🔀 Mandados foram movidos para 15-mapa-mandados.html
+     - 🔀 Alvos/Suspeitos removidos deste mapa
+     - ✨ Novo link "Mapa de Mandados" no menu
+     - ✨ Estatísticas só de operações
      ============================================================
 -->
 <!DOCTYPE html>
@@ -145,33 +135,12 @@
             border-bottom: 1px solid var(--border-color);
             padding-bottom: 12px; margin-bottom: 20px;
         }
-        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
-        .form-control, .form-select {
-            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
-            color: var(--text-primary); padding: 10px 14px;
-            border-radius: 10px; transition: all 0.3s; font-size: 14px;
-        }
-        .form-control:focus, .form-select:focus {
-            background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary);
-            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
-        }
-        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
-        .form-select option { background: #000; color: var(--text-primary); }
-        .btn-gold {
-            background: var(--gradient-green); color: #000; font-weight: 700;
-            padding: 10px 28px; border-radius: 10px; border: none;
-            transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px;
-        }
-        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
-        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-outline-gold {
             background: transparent; color: var(--text-primary);
             border: 1px solid var(--text-primary); padding: 10px 28px;
             border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
         }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-
-        /* MAPA */
         #mapa {
             height: 620px;
             width: 100%;
@@ -192,13 +161,9 @@
         .leaflet-popup-tip { background: var(--bg-secondary) !important; }
         .leaflet-popup-content { margin: 15px !important; }
         .popup-title { color: var(--text-primary); font-weight: 700; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        .popup-title.alvo { color: #0dcaf0; }
-        .popup-title.mandado { color: #ba68c8; }
         .popup-title.operacao { color: #00ff88; }
         .popup-row { color: var(--text-secondary); font-size: 12px; padding: 2px 0; }
         .popup-row strong { color: rgba(0, 255, 136, 0.5); }
-
-        /* LEGENDA */
         .legend {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
@@ -206,12 +171,6 @@
             padding: 15px;
             margin-top: 15px;
         }
-        .legend-section {
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(0, 255, 136, 0.05);
-        }
-        .legend-section:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
         .legend-section-title {
             color: var(--text-primary);
             font-size: 11px;
@@ -230,51 +189,7 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 12px; border: 2px solid rgba(0,0,0,0.5);
         }
-        .legend-icon.alvo { background: #0dcaf0; color: #000; }
         .legend-icon.operacao { background: #00ff88; color: #000; }
-        .legend-icon.novo { background: #dc3545; color: #fff; }
-        .legend-icon.ativo { background: #00ff88; color: #000; }
-        .legend-icon.cumprido { background: #0dcaf0; color: #000; }
-        .legend-icon.vencido { background: #6c757d; color: #fff; }
-        .legend-icon.cancelado { background: #ffc107; color: #000; }
-        .legend-icon.suspenso { background: #ba68c8; color: #fff; }
-
-        /* CARDS DE TIPO (FILTROS) */
-        .filtros-tipo {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .filtro-card {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 15px;
-            display: flex; align-items: center; gap: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            user-select: none;
-        }
-        .filtro-card:hover { border-color: var(--text-primary); }
-        .filtro-card.ativo {
-            background: rgba(0, 255, 136, 0.05);
-            border-color: var(--text-primary);
-        }
-        .filtro-card .fc-icon {
-            width: 42px; height: 42px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px; flex-shrink: 0;
-            border: 2px solid rgba(0,0,0,0.5);
-        }
-        .filtro-card .fc-icon.alvo { background: #0dcaf0; color: #000; }
-        .filtro-card .fc-icon.mandado { background: #ba68c8; color: #fff; }
-        .filtro-card .fc-icon.operacao { background: #00ff88; color: #000; }
-        .filtro-card .fc-info { flex: 1; }
-        .filtro-card .fc-label { color: var(--text-primary); font-size: 13px; font-weight: 700; letter-spacing: 0.5px; }
-        .filtro-card .fc-count { color: rgba(0, 255, 136, 0.5); font-size: 11px; margin-top: 2px; }
-
-        /* ESTATÍSTICAS */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -288,13 +203,11 @@
             text-align: center;
         }
         .stat-card .number { font-size: 28px; font-weight: 700; color: var(--text-primary); }
-        .stat-card .number.alvo { color: #0dcaf0; }
-        .stat-card .number.mandado { color: #ba68c8; }
-        .stat-card .number.operacao { color: #00ff88; }
-        .stat-card .number.novo { color: #dc3545; }
-        .stat-card .number.cumprido { color: #0dcaf0; }
+        .stat-card .number.planejada { color: #0dcaf0; }
+        .stat-card .number.andamento { color: #ffc107; }
+        .stat-card .number.concluida { color: #00ff88; }
+        .stat-card .number.cancelada { color: #dc3545; }
         .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.4); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
-
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
             min-width: 320px; max-width: 420px; padding: 16px 20px;
@@ -302,7 +215,6 @@
             border: 1px solid var(--border-color); color: var(--text-primary);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
             display: flex; align-items: flex-start; gap: 12px;
-            animation: slideIn 0.3s ease;
         }
         .toast-ai.success { border-left: 4px solid var(--text-primary); }
         .toast-ai.error { border-left: 4px solid #dc3545; }
@@ -320,8 +232,6 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
-
-        /* 🎨 [v2.1.0] ÍCONES DE MARCADORES - CORES POR STATUS */
         .marker-custom {
             width: 30px; height: 30px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -329,16 +239,7 @@
             box-shadow: 0 3px 10px rgba(0,0,0,0.6);
             font-size: 13px;
         }
-        .marker-alvo { background: #0dcaf0; color: #000; }
         .marker-operacao { background: #00ff88; color: #000; }
-        /* Mandados por status */
-        .marker-novo { background: #dc3545; color: #fff; }
-        .marker-ativo { background: #00ff88; color: #000; }
-        .marker-cumprido { background: #0dcaf0; color: #000; }
-        .marker-vencido { background: #6c757d; color: #fff; }
-        .marker-cancelado { background: #ffc107; color: #000; }
-        .marker-suspenso { background: #ba68c8; color: #fff; }
-
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -350,7 +251,7 @@
             .main-content { padding: 65px 15px 15px; }
             .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
             .form-card { padding: 18px; }
-            .btn-gold, .btn-outline-gold { width: 100%; }
+            .btn-outline-gold { width: 100%; }
             #mapa { height: 400px; }
             .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
         }
@@ -365,8 +266,8 @@
             <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
-            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
-            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()"><i class="fas fa-expand"></i></button>
             <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
         </div>
         <div class="controls-center">
@@ -390,7 +291,7 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item active" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
-            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
@@ -417,7 +318,7 @@
                 <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                 <div class="page-title">
                     <h4><i class="fas fa-map-marked-alt me-2"></i>Mapa de Operacoes</h4>
-                    <small><i class="fas fa-satellite-dish me-1"></i> Alvos, mandados e operacoes</small>
+                    <small><i class="fas fa-satellite-dish me-1"></i> Operacoes policiais georreferenciadas</small>
                 </div>
             </div>
             <div class="top-actions">
@@ -426,95 +327,27 @@
         </header>
 
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-layer-group"></i>Camadas do Mapa</div>
-            <div class="filtros-tipo">
-                <div class="filtro-card ativo" id="cardAlvos" onclick="toggleCamada('alvo')">
-                    <div class="fc-icon alvo"><i class="fas fa-crosshairs"></i></div>
-                    <div class="fc-info">
-                        <div class="fc-label">ALVOS / SUSPEITOS</div>
-                        <div class="fc-count" id="countAlvos">0 pontos</div>
-                    </div>
-                    <input type="checkbox" checked style="accent-color:#0dcaf0;width:20px;height:20px;" id="checkAlvo">
-                </div>
-                <div class="filtro-card ativo" id="cardMandados" onclick="toggleCamada('mandado')">
-                    <div class="fc-icon mandado"><i class="fas fa-gavel"></i></div>
-                    <div class="fc-info">
-                        <div class="fc-label">MANDADOS</div>
-                        <div class="fc-count" id="countMandados">0 pontos</div>
-                    </div>
-                    <input type="checkbox" checked style="accent-color:#ba68c8;width:20px;height:20px;" id="checkMandado">
-                </div>
-                <div class="filtro-card ativo" id="cardOperacoes" onclick="toggleCamada('operacao')">
-                    <div class="fc-icon operacao"><i class="fas fa-bullseye"></i></div>
-                    <div class="fc-info">
-                        <div class="fc-label">OPERACOES</div>
-                        <div class="fc-count" id="countOperacoes">0 pontos</div>
-                    </div>
-                    <input type="checkbox" checked style="accent-color:#00ff88;width:20px;height:20px;" id="checkOperacao">
-                </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-bullseye"></i>Operacoes no Mapa</div>
+                <button class="btn-outline-gold" onclick="carregarOperacoes()" style="padding:6px 16px; font-size:12px;">
+                    <i class="fas fa-sync-alt me-2"></i>ATUALIZAR MAPA
+                </button>
             </div>
-            <div class="row g-3 mt-3">
-                <div class="col-md-12 text-end">
-                    <button class="btn-outline-gold me-2" onclick="carregarTodosPontos()">
-                        <i class="fas fa-sync-alt me-2"></i>ATUALIZAR MAPA
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-card">
-            <div class="card-title"><i class="fas fa-map"></i>Mapa</div>
             <div id="mapa"></div>
 
             <div class="legend">
-                <div class="legend-section">
-                    <div class="legend-section-title"><i class="fas fa-crosshairs"></i> Alvos e Operacoes</div>
-                    <div class="d-flex flex-wrap gap-4">
-                        <div class="legend-item">
-                            <div class="legend-icon alvo"><i class="fas fa-crosshairs"></i></div>
-                            Alvo / Suspeito
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-icon operacao"><i class="fas fa-bullseye"></i></div>
-                            Operacao
-                        </div>
-                    </div>
-                </div>
-
-                <div class="legend-section">
-                    <div class="legend-section-title"><i class="fas fa-gavel"></i> Mandados por Status de Execucao</div>
-                    <div class="d-flex flex-wrap gap-4">
-                        <div class="legend-item">
-                            <div class="legend-icon novo"><i class="fas fa-plus-circle"></i></div>
-                            Novo (recem-inserido, ate 7 dias)
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-icon ativo"><i class="fas fa-play-circle"></i></div>
-                            Em cumprimento / Ativo
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-icon cumprido"><i class="fas fa-check-circle"></i></div>
-                            Cumprido
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-icon vencido"><i class="fas fa-clock"></i></div>
-                            Vencido
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-icon cancelado"><i class="fas fa-ban"></i></div>
-                            Cancelado
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-icon suspenso"><i class="fas fa-pause-circle"></i></div>
-                            Suspenso
-                        </div>
+                <div class="legend-section-title"><i class="fas fa-bullseye"></i> Legenda</div>
+                <div class="d-flex flex-wrap gap-4">
+                    <div class="legend-item">
+                        <div class="legend-icon operacao"><i class="fas fa-bullseye"></i></div>
+                        Operacao Policial
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-chart-pie"></i>Estatisticas</div>
+            <div class="card-title"><i class="fas fa-chart-pie"></i>Estatisticas das Operacoes</div>
             <div class="stats-grid" id="statsGrid"></div>
         </div>
     </main>
@@ -527,21 +360,11 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         let mapa = null;
-        let clusterAlvos = null;
-        let clusterMandados = null;
         let clusterOperacoes = null;
-
-        let todosAlvos = [];
-        let todosMandados = [];
         let todasOperacoes = [];
 
-        const camadasAtivas = { alvo: true, mandado: true, operacao: true };
-
-        // 🎨 [v2.1.0] CONSTANTES DE COR POR STATUS
-        const DIAS_NOVO_MANDADO = 7;
-
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Operacoes v2.1.1 iniciado');
+            console.log('AI-DEPOM - Mapa de Operacoes v3.0.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -552,7 +375,7 @@
 
             atualizarDadosUsuario(usuario);
             inicializarMapa();
-            await carregarTodosPontos();
+            await carregarOperacoes();
         });
 
         function atualizarDadosUsuario(usuario) {
@@ -566,9 +389,8 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
-        // 🗺️ MAPA - Esri World Dark Gray Canvas
         function inicializarMapa() {
-            console.log('🗺️ Inicializando mapa (Esri Dark Gray)...');
+            console.log('🗺️ Inicializando mapa de operacoes...');
 
             mapa = L.map('mapa', {
                 center: [-12.9714, -38.5014],
@@ -586,127 +408,23 @@
                 maxZoom: 16
             }).addTo(mapa);
 
-            const clusterOptions = {
+            clusterOperacoes = L.markerClusterGroup({
                 showCoverageOnHover: false,
                 maxClusterRadius: 50,
                 spiderfyOnMaxZoom: true
-            };
-            clusterAlvos = L.markerClusterGroup(clusterOptions);
-            clusterMandados = L.markerClusterGroup(clusterOptions);
-            clusterOperacoes = L.markerClusterGroup(clusterOptions);
-
-            mapa.addLayer(clusterAlvos);
-            mapa.addLayer(clusterMandados);
+            });
             mapa.addLayer(clusterOperacoes);
 
             setTimeout(() => mapa.invalidateSize(), 300);
-
             console.log('✅ Mapa inicializado');
         }
 
-        async function carregarTodosPontos() {
-            console.log('📡 Carregando pontos de 3 fontes...');
-            await Promise.all([
-                carregarAlvos(),
-                carregarMandados(),
-                carregarOperacoes()
-            ]);
-            renderizarMapa();
-            renderizarEstatisticas();
-        }
-
-        async function carregarAlvos() {
-            try {
-                const { data, error } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('id_suspeito, nome_completo, apelido, cpf, logradouro, numero, bairro, cidade, uf, cep, status_atual, nivel_periculosidade, latitude, longitude')
-                    .eq('deletado', false)
-                    .not('latitude', 'is', null)
-                    .not('longitude', 'is', null);
-
-                if (error) throw error;
-
-                todosAlvos = (data || []).map(s => ({
-                    ...s,
-                    tipo_ponto: 'ALVO',
-                    lat: parseFloat(s.latitude),
-                    lng: parseFloat(s.longitude)
-                }));
-
-                document.getElementById('countAlvos').textContent = todosAlvos.length + ' ponto(s)';
-                console.log(`🎯 ${todosAlvos.length} alvos carregados`);
-            } catch (error) {
-                console.error('❌ Erro ao carregar alvos:', error);
-                todosAlvos = [];
-            }
-        }
-
-        async function carregarMandados() {
-            try {
-                // 🔧 [v2.1.1] inclui descricao e observacoes no SELECT
-                const { data, error } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .select(`
-                        id_mandado, numero_mandado, tipo_mandado, status, prioridade,
-                        juiz_nome, vara_tribunal, data_emissao, data_validade, data_cadastro,
-                        descricao, observacoes,
-                        latitude, longitude,
-                        suspeito:suspeito (
-                            id_suspeito, nome_completo, apelido, cpf, bairro, cidade, uf
-                        )
-                    `)
-                    .eq('deletado', false)
-                    .not('latitude', 'is', null)
-                    .not('longitude', 'is', null);
-
-                if (error) throw error;
-
-                todosMandados = (data || []).map(m => {
-                    const cor = obterCorMandado(m);
-                    return {
-                        ...m,
-                        tipo_ponto: 'MANDADO',
-                        lat: parseFloat(m.latitude),
-                        lng: parseFloat(m.longitude),
-                        corStatus: cor
-                    };
-                });
-
-                document.getElementById('countMandados').textContent = todosMandados.length + ' ponto(s)';
-                console.log(`⚖️ ${todosMandados.length} mandados carregados`);
-            } catch (error) {
-                console.error('❌ Erro ao carregar mandados:', error);
-                todosMandados = [];
-            }
-        }
-
-        // 🎨 [v2.1.0] Define a cor do mandado baseado no status
-        function obterCorMandado(m) {
-            const status = (m.status || '').toUpperCase();
-
-            if (status === 'CUMPRIDO') return 'cumprido';
-            if (status === 'VENCIDO') return 'vencido';
-            if (status === 'CANCELADO') return 'cancelado';
-            if (status === 'SUSPENSO') return 'suspenso';
-
-            // ATIVO — diferencar "novo" (< 7 dias) de "em cumprimento"
-            if (status === 'ATIVO' || status === '') {
-                const dataRef = m.data_emissao || m.data_cadastro;
-                if (dataRef) {
-                    const dias = (Date.now() - new Date(dataRef).getTime()) / (1000 * 60 * 60 * 24);
-                    if (dias <= DIAS_NOVO_MANDADO) return 'novo';
-                }
-                return 'ativo';
-            }
-
-            return 'ativo';
-        }
-
         async function carregarOperacoes() {
+            console.log('📡 Carregando operacoes...');
             try {
                 const { data, error } = await window.supabaseClient
                     .from('operacao')
-                    .select('id_operacao, nome_operacao, data_prevista, horario, setor, natureza_operacao, objetivo_pratico, status, latitude, longitude')
+                    .select('*')
                     .eq('deletado', false)
                     .not('latitude', 'is', null)
                     .not('longitude', 'is', null);
@@ -720,217 +438,86 @@
                     lng: parseFloat(o.longitude)
                 }));
 
-                document.getElementById('countOperacoes').textContent = todasOperacoes.length + ' ponto(s)';
-                console.log(`💥 ${todasOperacoes.length} operações carregadas`);
+                console.log(`💥 ${todasOperacoes.length} operacoes carregadas`);
+                renderizarMapa();
+                renderizarEstatisticas();
             } catch (error) {
-                console.error('❌ Erro ao carregar operações:', error);
+                console.error('❌ Erro ao carregar operacoes:', error);
                 todasOperacoes = [];
+                renderizarEstatisticas();
             }
         }
 
         function renderizarMapa() {
-            clusterAlvos.clearLayers();
-            clusterMandados.clearLayers();
             clusterOperacoes.clearLayers();
-
             const bounds = [];
 
-            if (camadasAtivas.alvo) {
-                todosAlvos.forEach(a => {
-                    const icone = L.divIcon({
-                        className: '',
-                        html: '<div class="marker-custom marker-alvo"><i class="fas fa-crosshairs"></i></div>',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    });
-                    const marker = L.marker([a.lat, a.lng], { icon: icone });
-                    marker.bindPopup(gerarPopupAlvo(a));
-                    clusterAlvos.addLayer(marker);
-                    bounds.push([a.lat, a.lng]);
+            todasOperacoes.forEach(o => {
+                const icone = L.divIcon({
+                    className: '',
+                    html: '<div class="marker-custom marker-operacao"><i class="fas fa-bullseye"></i></div>',
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
                 });
-            }
-
-            if (camadasAtivas.mandado) {
-                todosMandados.forEach(m => {
-                    const icone = L.divIcon({
-                        className: '',
-                        html: `<div class="marker-custom marker-${m.corStatus}"><i class="fas fa-gavel"></i></div>`,
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    });
-                    const marker = L.marker([m.lat, m.lng], { icon: icone });
-                    marker.bindPopup(gerarPopupMandado(m));
-                    clusterMandados.addLayer(marker);
-                    bounds.push([m.lat, m.lng]);
-                });
-            }
-
-            if (camadasAtivas.operacao) {
-                todasOperacoes.forEach(o => {
-                    const icone = L.divIcon({
-                        className: '',
-                        html: '<div class="marker-custom marker-operacao"><i class="fas fa-bullseye"></i></div>',
-                        iconSize: [30, 30],
-                        iconAnchor: [15, 15]
-                    });
-                    const marker = L.marker([o.lat, o.lng], { icon: icone });
-                    marker.bindPopup(gerarPopupOperacao(o));
-                    clusterOperacoes.addLayer(marker);
-                    bounds.push([o.lat, o.lng]);
-                });
-            }
+                const marker = L.marker([o.lat, o.lng], { icon: icone });
+                marker.bindPopup(gerarPopupOperacao(o));
+                clusterOperacoes.addLayer(marker);
+                bounds.push([o.lat, o.lng]);
+            });
 
             if (bounds.length > 0) {
                 mapa.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-                console.log(`📍 ${bounds.length} pontos plotados`);
+                console.log(`📍 ${bounds.length} operacoes plotadas`);
             } else {
                 mapa.setView([-12.9714, -38.5014], 12);
-                console.log('🌍 Nenhum ponto — mostrando Salvador/BA');
+                console.log('🌍 Nenhuma operacao georreferenciada');
             }
         }
 
-        function gerarPopupAlvo(a) {
-            const endereco = [a.logradouro, a.numero, a.bairro, a.cidade, a.uf].filter(Boolean).join(', ') || '-';
-            return `
-                <div class="popup-title alvo"><i class="fas fa-crosshairs"></i> ALVO / SUSPEITO</div>
-                <div class="popup-row"><strong>ID:</strong> #${a.id_suspeito}</div>
-                <div class="popup-row"><strong>Nome:</strong> ${a.nome_completo || '-'}</div>
-                <div class="popup-row"><strong>Apelido:</strong> ${a.apelido || '-'}</div>
-                <div class="popup-row"><strong>CPF:</strong> ${a.cpf || '-'}</div>
-                <div class="popup-row"><strong>Endereco:</strong> ${endereco}</div>
-                <div class="popup-row"><strong>Status:</strong> ${a.status_atual || '-'}</div>
-                <div class="popup-row"><strong>Periculosidade:</strong> ${a.nivel_periculosidade || '-'}</div>
-            `;
-        }
-
-        function gerarPopupMandado(m) {
-            const s = m.suspeito || {};
-            const coresLabel = {
-                'novo': '🔴 Novo mandado (recem-inserido)',
-                'ativo': '🟢 Em cumprimento',
-                'cumprido': '🔵 Cumprido',
-                'vencido': '⚪ Vencido',
-                'cancelado': '🟡 Cancelado',
-                'suspenso': '🟣 Suspenso'
-            };
-            // 🔧 [v2.1.1] exibe descricao e observacoes (truncadas para caber no popup)
-            const descricao = m.descricao ? String(m.descricao).trim() : '';
-            const observacoes = m.observacoes ? String(m.observacoes).trim() : '';
-            return `
-                <div class="popup-title mandado"><i class="fas fa-gavel"></i> MANDADO</div>
-                <div class="popup-row"><strong>Nº:</strong> ${m.numero_mandado || '#' + m.id_mandado}</div>
-                <div class="popup-row"><strong>Status Execucao:</strong> ${coresLabel[m.corStatus] || m.status || '-'}</div>
-                <div class="popup-row"><strong>Tipo:</strong> ${traduzirTipoMandado(m.tipo_mandado)}</div>
-                <div class="popup-row"><strong>Prioridade:</strong> ${m.prioridade || '-'}</div>
-                <div class="popup-row"><strong>Suspeito:</strong> ${s.nome_completo || '-'}</div>
-                <div class="popup-row"><strong>CPF:</strong> ${s.cpf || '-'}</div>
-                <div class="popup-row"><strong>Bairro:</strong> ${s.bairro || '-'}</div>
-                <div class="popup-row"><strong>Juiz:</strong> ${m.juiz_nome || '-'}</div>
-                <div class="popup-row"><strong>Vara:</strong> ${m.vara_tribunal || '-'}</div>
-                <div class="popup-row"><strong>Emissao:</strong> ${m.data_emissao || '-'}</div>
-                <div class="popup-row" style="margin-top:8px;border-top:1px solid #003322;padding-top:6px;">
-                    <strong>Descricao:</strong><br>${descricao || '-'}
-                </div>
-                <div class="popup-row" style="margin-top:6px;">
-                    <strong>Observacoes:</strong><br>${observacoes || '-'}
-                </div>
-            `;
-        }
-
         function gerarPopupOperacao(o) {
+            const endereco = [o.logradouro, o.numero, o.bairro, o.cidade, o.uf].filter(Boolean).join(', ') || '-';
             return `
                 <div class="popup-title operacao"><i class="fas fa-bullseye"></i> OPERACAO</div>
                 <div class="popup-row"><strong>Nome:</strong> ${o.nome_operacao || '#' + o.id_operacao}</div>
                 <div class="popup-row"><strong>Data:</strong> ${o.data_prevista || '-'}</div>
                 <div class="popup-row"><strong>Horario:</strong> ${o.horario || '-'}</div>
                 <div class="popup-row"><strong>Setor:</strong> ${o.setor || '-'}</div>
+                <div class="popup-row"><strong>Endereco:</strong> ${endereco}</div>
                 <div class="popup-row"><strong>Natureza:</strong> ${o.natureza_operacao || '-'}</div>
                 <div class="popup-row"><strong>Objetivo:</strong> ${o.objetivo_pratico || '-'}</div>
                 <div class="popup-row"><strong>Status:</strong> ${o.status || '-'}</div>
             `;
         }
 
-        function toggleCamada(tipo) {
-            camadasAtivas[tipo] = !camadasAtivas[tipo];
-
-            const cardMap = { alvo: 'cardAlvos', mandado: 'cardMandados', operacao: 'cardOperacoes' };
-            const checkMap = { alvo: 'checkAlvo', mandado: 'checkMandado', operacao: 'checkOperacao' };
-
-            const card = document.getElementById(cardMap[tipo]);
-            const check = document.getElementById(checkMap[tipo]);
-
-            if (camadasAtivas[tipo]) {
-                card.classList.add('ativo');
-                check.checked = true;
-            } else {
-                card.classList.remove('ativo');
-                check.checked = false;
-            }
-
-            renderizarMapa();
-            renderizarEstatisticas();
-            console.log(`🔀 Camada ${tipo}: ${camadasAtivas[tipo] ? 'ATIVA' : 'INATIVA'}`);
-        }
-
-        // 🎨 [v2.1.0] ESTATÍSTICAS com breakdown de mandados
         function renderizarEstatisticas() {
-            const totalAlvos = todosAlvos.length;
-            const totalMandados = todosMandados.length;
-            const totalOperacoes = todasOperacoes.length;
-            const total = totalAlvos + totalMandados + totalOperacoes;
-
-            const novos = todosMandados.filter(m => m.corStatus === 'novo').length;
-            const ativos = todosMandados.filter(m => m.corStatus === 'ativo').length;
-            const cumpridos = todosMandados.filter(m => m.corStatus === 'cumprido').length;
-
-            const exibidos = 
-                (camadasAtivas.alvo ? totalAlvos : 0) +
-                (camadasAtivas.mandado ? totalMandados : 0) +
-                (camadasAtivas.operacao ? totalOperacoes : 0);
+            const total = todasOperacoes.length;
+            const planejadas = todasOperacoes.filter(o => o.status === 'PLANEJADA').length;
+            const andamento = todasOperacoes.filter(o => o.status === 'EM_ANDAMENTO').length;
+            const concluidas = todasOperacoes.filter(o => o.status === 'CONCLUIDA').length;
+            const canceladas = todasOperacoes.filter(o => o.status === 'CANCELADA').length;
 
             document.getElementById('statsGrid').innerHTML = `
                 <div class="stat-card">
                     <div class="number">${total}</div>
-                    <div class="label">Total Cadastrado</div>
+                    <div class="label">Total no Mapa</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number alvo">${totalAlvos}</div>
-                    <div class="label">Alvos / Suspeitos</div>
+                    <div class="number planejada">${planejadas}</div>
+                    <div class="label">🔵 Planejadas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number mandado">${totalMandados}</div>
-                    <div class="label">Mandados</div>
+                    <div class="number andamento">${andamento}</div>
+                    <div class="label">🟡 Em Andamento</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number operacao">${totalOperacoes}</div>
-                    <div class="label">Operacoes</div>
+                    <div class="number concluida">${concluidas}</div>
+                    <div class="label">🟢 Concluidas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="number novo">${novos}</div>
-                    <div class="label">🔴 Mandados Novos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="number" style="color: #00ff88;">${ativos}</div>
-                    <div class="label">🟢 Em Cumprimento</div>
-                </div>
-                <div class="stat-card">
-                    <div class="number cumprido">${cumpridos}</div>
-                    <div class="label">🔵 Cumpridos</div>
-                </div>
-                <div class="stat-card">
-                    <div class="number" style="color: #ffc107;">${exibidos}</div>
-                    <div class="label">Exibidos no Mapa</div>
+                    <div class="number cancelada">${canceladas}</div>
+                    <div class="label">🔴 Canceladas</div>
                 </div>
             `;
-        }
-
-        function traduzirTipoMandado(tipo) {
-            const tipos = {
-                'PRISAO': 'Prisao',
-                'BUSCA_APREENSAO': 'Busca e Apreensao',
-                'CONDUCAO_COERCITIVA': 'Conducao Coercitiva'
-            };
-            return tipos[tipo] || tipo || '-';
         }
 
         function showToast(tipo, titulo, mensagem, duracao) {
@@ -963,7 +550,7 @@
         });
 
         function minimizeWindow() {
-            try { window.blur(); } catch (e) { console.warn('Minimizar não suportado:', e); }
+            try { window.blur(); } catch (e) { console.warn('Minimizar nao suportado:', e); }
         }
 
         async function fazerLogout() {
@@ -990,7 +577,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina de Mapa v2.1.1 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina Mapa de Operacoes v3.0.0 carregada');
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
