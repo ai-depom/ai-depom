@@ -180,7 +180,6 @@
             opacity: 1 !important;
             cursor: not-allowed;
         }
-        /* [v1.1.0] Textarea livre para escrita — sempre editável */
         textarea.form-control {
             background: rgba(0, 0, 0, 0.5);
             color: var(--text-primary);
@@ -194,7 +193,6 @@
             border-color: var(--text-primary);
             box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08);
         }
-        /* [v1.1.0] Contador de caracteres */
         .char-counter {
             display: flex;
             justify-content: space-between;
@@ -516,9 +514,7 @@
                     </div>
                 </div>
 
-                <!-- ============================================
-                     [v1.2.0] DESCRIÇÃO — LIVRE PARA ESCRITA
-                     ============================================ -->
+                <!-- DESCRIÇÃO E OBSERVAÇÕES -->
                 <div class="section-title"><i class="fas fa-align-left"></i>DESCRIÇÃO E OBSERVAÇÕES</div>
                 <div class="row g-3">
                     <div class="col-md-12">
@@ -741,10 +737,7 @@
 
             document.getElementById('dataEmissao').value = new Date().toISOString().split('T')[0];
 
-            // [v1.1.0] Inicializa contadores de caracteres
             inicializarContadores();
-
-            // 🔐 [v1.2.0] Aplica permissão nos campos livres
             aplicarPermissaoCamposLivres();
 
             await carregarSuspeitos();
@@ -773,7 +766,6 @@
         // ============================================================
         function usuarioPodeEditarCamposLivres() {
             if (!usuarioAtual) return false;
-            // Tenta várias fontes do nome do perfil para ser resiliente
             const fontes = [
                 AIDEPOM.getNomePerfil ? AIDEPOM.getNomePerfil(usuarioAtual.id_perfil_acesso) : '',
                 usuarioAtual.perfil,
@@ -786,43 +778,32 @@
             );
         }
 
-        /**
-         * Aplica o estado readOnly nos textareas de Descrição/Observações.
-         * @param {string} prefixo '' para o form principal, 'edit' para o modal
-         */
         function aplicarPermissaoCamposLivres(prefixo) {
             prefixo = prefixo || '';
             const podeEditar = usuarioPodeEditarCamposLivres();
 
-            const pares = [
-                { id: prefixo + 'descricao',    hintId: prefixo + 'hint' + (prefixo ? '' : '') + 'Descricao' },
-                { id: prefixo + 'observacoes',  hintId: prefixo + 'hint' + (prefixo ? '' : '') + 'Observacoes' }
-            ];
-
-            // Mapeamento explícito dos hints (form principal)
             const hintsForm = {
                 'descricao': 'hintDescricao',
                 'observacoes': 'hintObservacoes'
             };
 
-            pares.forEach(({ id }) => {
+            ['descricao', 'observacoes'].forEach(base => {
+                const id = prefixo + base;
                 const el = document.getElementById(id);
                 if (!el) return;
 
-                // ⚠️ NÃO use .disabled = true — o valor não é enviado no submit.
-                //    Use apenas readOnly.
                 el.disabled = false;
                 el.readOnly = !podeEditar;
                 el.style.cursor = podeEditar ? 'text' : 'not-allowed';
                 el.style.background = podeEditar ? 'rgba(0,0,0,0.5)' : '#000000';
 
-                // Ajusta o hint (só existe no form principal)
-                const hintId = hintsForm[id];
-                const hintEl = hintId ? document.getElementById(hintId) : null;
-                if (hintEl) {
-                    hintEl.innerHTML = podeEditar
-                        ? '<i class="fas fa-info-circle"></i> Campo livre — você pode editar'
-                        : '<i class="fas fa-lock"></i> Somente leitura — perfil sem permissão de edição';
+                if (!prefixo) {
+                    const hintEl = document.getElementById(hintsForm[base]);
+                    if (hintEl) {
+                        hintEl.innerHTML = podeEditar
+                            ? '<i class="fas fa-info-circle"></i> Campo livre — você pode editar'
+                            : '<i class="fas fa-lock"></i> Somente leitura — perfil sem permissão de edição';
+                    }
                 }
             });
 
@@ -830,7 +811,7 @@
         }
 
         // ============================================================
-        // [v1.1.0] CONTADORES DE CARACTERES
+        // CONTADORES DE CARACTERES
         // ============================================================
         function inicializarContadores() {
             const descricao = document.getElementById('descricao');
@@ -966,13 +947,11 @@
             document.getElementById('statusMandado').value = 'ATIVO';
             document.getElementById('prioridadeMandado').value = 'NORMAL';
 
-            // [v1.1.0] Reseta contadores
             document.getElementById('counterDescricao').textContent = '0';
             document.getElementById('counterDescricao').className = 'counter';
             document.getElementById('counterObservacoes').textContent = '0';
             document.getElementById('counterObservacoes').className = 'counter';
 
-            // 🔐 [v1.2.0] Reaplica permissão (o reset não deve destravar p/ quem não pode)
             aplicarPermissaoCamposLivres();
 
             console.log('🧹 Formulário resetado');
@@ -1230,7 +1209,6 @@
                                 <label class="form-label">Data de Validade</label>
                                 <input type="date" class="form-control" id="editDataValidade" value="${m.data_validade || ''}">
                             </div>
-                            <!-- [v1.2.0] Descrição — LIVRE PARA ESCRITA (com permissão) -->
                             <div class="col-md-12">
                                 <label class="form-label">
                                     <i class="fas fa-file-alt me-1"></i> Descrição *
@@ -1279,8 +1257,6 @@
                 `;
 
                 document.getElementById('formEdicao').addEventListener('submit', salvarEdicao);
-
-                // 🔐 [v1.2.0] Aplica permissão nos textareas do modal
                 aplicarPermissaoCamposLivres('edit');
 
             } catch (error) {
