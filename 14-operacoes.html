@@ -1,0 +1,1308 @@
+<!-- ============================================================
+     AI-DEPOM - OPERAÇÕES POLICIAIS
+     ============================================================
+     Arquivo: 14-operacoes.html
+     Versão: 1.0.0
+     Data: 16/09/2026 - 19:00
+     Autor: AI-DEPOM Team
+     ============================================================
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v1.0.0 (16/09/2026 19:00):
+     - ✨ Tela de cadastro de Operações Policiais
+     - ✨ Campos: nome, data, hora, setor, viaturas, KM, natureza, objetivo
+     - ✨ Gerenciador de viaturas (quantidade + placas)
+     - ✨ Múltiplas naturezas: sigilosa, discreta, ostensiva, aberta, padrão, especial, inteligência
+     - ✨ Múltiplos objetivos: busca e apreensão, cumprimento de mandado, controle de distúrbios
+     - ✨ Cadastro de presos/capturados com autocomplete
+     - ✨ Comparação automática com suspeitos cadastrados
+     - ✨ Lista de operações com filtros
+     - ✨ Modal de detalhes completa
+     ============================================================
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI-DEPOM - Operações</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc77;
+            --border-color: #003322;
+            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+            --control-size: 36px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; min-height: 100vh;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        .controls-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 15px; display: flex; justify-content: space-between;
+            align-items: center; height: 48px;
+        }
+        .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+        .control-btn {
+            width: var(--control-size); height: var(--control-size);
+            border-radius: 8px; border: none; background: transparent;
+            color: rgba(0, 255, 136, 0.3); font-size: 16px;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+        .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
+        .user-info .avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; color: #000;
+        }
+        .sidebar {
+            position: fixed; top: 48px; left: 0;
+            width: 260px; height: calc(100vh - 48px);
+            background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            z-index: 999; padding: 20px 0 0 0;
+            transition: transform 0.3s ease; overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .sidebar-brand .logo {
+            width: 50px; height: 50px; margin: 0 auto 10px;
+            background: var(--gradient-green); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sidebar-brand .logo i { font-size: 24px; color: #000; }
+        .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
+        .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
+        .sidebar-menu { padding: 0 12px; flex: 1; }
+        .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
+        .sidebar-menu .menu-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 16px; border-radius: 10px;
+            color: rgba(0, 255, 136, 0.3); text-decoration: none;
+            transition: all 0.3s; cursor: pointer; margin-bottom: 2px; font-size: 14px;
+        }
+        .sidebar-menu .menu-item:hover { background: rgba(0, 255, 136, 0.03); color: var(--text-primary); }
+        .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
+        .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
+        .sidebar-footer {
+            position: relative; padding: 15px 20px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.98); margin-top: auto;
+        }
+        .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
+        .sidebar-footer .user-info-sidebar .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #000;
+        }
+        .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
+        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; width: calc(100vw - 260px); }
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px; background: var(--bg-secondary);
+            border-radius: 16px; padding: 15px 25px;
+            margin-bottom: 25px; border: 1px solid var(--border-color);
+        }
+        .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
+        .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
+        .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
+        .form-card {
+            background: var(--bg-secondary); border-radius: 14px;
+            padding: 25px; border: 1px solid var(--border-color); margin-bottom: 25px;
+        }
+        .form-card .card-title {
+            color: var(--text-primary); font-size: 14px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px; margin-bottom: 20px;
+        }
+        .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
+        .section-title {
+            color: var(--text-primary); font-size: 13px; letter-spacing: 1px;
+            margin: 25px 0 15px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .section-title:first-child { margin-top: 0; }
+        .section-title i { margin-right: 10px; opacity: 0.7; }
+        .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
+        .form-control, .form-select {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
+            color: var(--text-primary); padding: 10px 14px;
+            border-radius: 10px; transition: all 0.3s; font-size: 14px;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
+        }
+        .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
+        .form-select option { background: #000; color: var(--text-primary); }
+        .form-control:disabled, .form-control[readonly], .form-select:disabled {
+            background: #000 !important; color: var(--text-primary) !important;
+            border-color: var(--border-color) !important; opacity: 1 !important;
+        }
+        .btn-gold {
+            background: var(--gradient-green); color: #000; font-weight: 700;
+            padding: 10px 28px; border-radius: 10px; border: none;
+            transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px;
+        }
+        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-outline-gold {
+            background: transparent; color: var(--text-primary);
+            border: 1px solid var(--text-primary); padding: 10px 28px;
+            border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
+        }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+        .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 10px; border-radius: 8px; transition: all 0.3s; font-size: 12px; cursor: pointer; }
+        .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
+
+        /* Cards de viatura / presos */
+        .card-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            position: relative;
+        }
+        .card-item-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 12px; padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.05);
+        }
+        .card-item-header .titulo {
+            color: var(--text-primary); font-size: 12px; font-weight: 700;
+            letter-spacing: 1px; display: flex; align-items: center; gap: 8px;
+        }
+        .card-item-header .titulo .num {
+            background: var(--gradient-green); color: #000;
+            width: 22px; height: 22px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700;
+        }
+        .btn-remover-item {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545; width: 28px; height: 28px;
+            border-radius: 8px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .btn-remover-item:hover { background: #dc3545; color: #fff; }
+        .empty-item {
+            text-align: center; padding: 20px;
+            color: rgba(0, 255, 136, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px; margin-bottom: 12px;
+        }
+
+        /* Status badges */
+        .status-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
+        .status-planejada { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.3); }
+        .status-andamento { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
+        .status-concluida { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .status-cancelada { background: rgba(220, 53, 69, 0.15); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.3); }
+
+        .natureza-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; margin: 2px; }
+        .nat-sigilosa { background: rgba(156, 39, 176, 0.15); color: #ba68c8; }
+        .nat-discreta { background: rgba(255, 87, 34, 0.15); color: #ff5722; }
+        .nat-ostensiva { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .nat-aberta { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .nat-padrao { background: rgba(108, 117, 125, 0.2); color: #adb5bd; }
+        .nat-especial { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
+        .nat-inteligencia { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; }
+
+        .objetivo-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; margin: 2px; background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+
+        .table-container { overflow-x: auto; }
+        .table-custom { width: 100%; border-collapse: collapse; }
+        .table-custom th {
+            color: rgba(0, 255, 136, 0.4); font-size: 11px; text-transform: uppercase;
+            letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
+            text-align: left;
+        }
+        .table-custom td {
+            color: var(--text-secondary); font-size: 13px; padding: 12px;
+            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+            vertical-align: middle;
+        }
+        .table-custom tr:hover td { background: rgba(0, 255, 136, 0.02); cursor: pointer; }
+
+        .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
+        .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
+
+        .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-ai {
+            min-width: 320px; max-width: 420px; padding: 16px 20px;
+            border-radius: 12px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+        .toast-ai.success { border-left: 4px solid var(--text-primary); }
+        .toast-ai.error { border-left: 4px solid #dc3545; }
+        .toast-ai.warning { border-left: 4px solid #ffc107; }
+        .toast-ai.info { border-left: 4px solid #0dcaf0; }
+        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .toast-ai.success .toast-icon { color: var(--text-primary); }
+        .toast-ai.error .toast-icon { color: #dc3545; }
+        .toast-ai.warning .toast-icon { color: #ffc107; }
+        .toast-ai.info .toast-icon { color: #0dcaf0; }
+        .toast-ai .toast-content { flex: 1; }
+        .toast-ai .toast-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
+        .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Modal */
+        .modal-custom { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
+        .modal-custom.open { display: flex; }
+        .modal-custom-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; width: 100%; max-width: 900px; max-height: 92vh; overflow-y: auto; }
+        .modal-custom-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 25px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); z-index: 2; }
+        .modal-custom-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1.1rem; }
+        .modal-custom-body { padding: 25px; }
+        .modal-custom-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; background: var(--bg-secondary); }
+        .btn-close-modal { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; font-size: 18px; padding: 5px 10px; border-radius: 8px; }
+        .btn-close-modal:hover { color: #dc3545; background: rgba(220, 53, 69, 0.1); }
+        .detalhe-campo { padding: 10px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
+        .detalhe-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
+        .detalhe-campo .valor { color: var(--text-primary); font-size: 14px; }
+
+        /* Autocomplete */
+        .autocomplete-wrapper { position: relative; }
+        .autocomplete-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0 0 10px 10px;
+            max-height: 250px; overflow-y: auto;
+            z-index: 100; display: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+        }
+        .autocomplete-list.show { display: block; }
+        .autocomplete-item {
+            padding: 10px 15px; cursor: pointer;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.05);
+            font-size: 13px; color: var(--text-secondary);
+            transition: all 0.2s;
+        }
+        .autocomplete-item:hover,
+        .autocomplete-item.highlighted { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .autocomplete-item .match-info { font-size: 10px; color: rgba(0, 255, 136, 0.4); margin-top: 3px; }
+        .autocomplete-item .badge-match {
+            display: inline-block; background: rgba(0, 255, 136, 0.15);
+            color: var(--text-primary); padding: 1px 6px; border-radius: 6px;
+            font-size: 9px; font-weight: 700; margin-left: 6px;
+        }
+
+        /* Matched suspect */
+        .suspeito-match {
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid var(--text-primary);
+            border-radius: 10px; padding: 12px;
+            margin-top: 8px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .suspeito-match .avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px; color: #000;
+        }
+        .suspeito-match .info { flex: 1; }
+        .suspeito-match .nome { color: var(--text-primary); font-weight: 700; font-size: 14px; }
+        .suspeito-match .meta { color: rgba(0, 255, 136, 0.5); font-size: 11px; margin-top: 2px; }
+
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; width: 100vw; }
+            .sidebar-toggle { display: flex !important; }
+            .user-info .name { display: none; }
+        }
+        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        @media (max-width: 768px) {
+            .main-content { padding: 65px 15px 15px; }
+            .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
+            .form-card { padding: 18px; }
+            .btn-gold, .btn-outline-gold { width: 100%; }
+            .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
+            <div class="controls-divider"></div>
+            <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="controls-center">
+            <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
+        </div>
+        <div class="controls-right">
+            <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
+        </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo"><i class="fas fa-shield-halved"></i></div>
+            <h5>AI-DEPOM</h5>
+            <small>SISTEMA POLICIAL INTELIGENTE</small>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-label">Navegacao</div>
+            <a class="menu-item" onclick="window.location.href='04-dashboard.html'"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a class="menu-item" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
+            <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
+            <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
+            <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item active" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
+            <div class="menu-label">Administracao</div>
+            <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
+            <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
+            <div class="menu-label">Sistema</div>
+            <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
+            <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-sidebar">
+                <div class="avatar" id="sidebarAvatar">AM</div>
+                <div>
+                    <div class="name" id="sidebarUserName">Carregando...</div>
+                    <div class="role" id="sidebarUserRole">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="page-title">
+                    <h4><i class="fas fa-bullseye me-2"></i>Operacoes Policiais</h4>
+                    <small><i class="fas fa-shield-alt me-1"></i> Planejamento e registro de operacoes</small>
+                </div>
+            </div>
+            <div class="top-actions">
+                <span class="badge" id="badgeTotalOperacoes"><i class="fas fa-list"></i> 0 operacoes</span>
+                <button class="btn-outline-gold" onclick="carregarOperacoes()" style="padding:6px 16px; font-size:12px;">
+                    <i class="fas fa-sync-alt me-2"></i>ATUALIZAR
+                </button>
+            </div>
+        </header>
+
+        <!-- FORMULÁRIO DE OPERAÇÃO -->
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-plus-circle"></i>Nova Operacao</div>
+
+            <form id="formOperacao">
+                <!-- DADOS BÁSICOS -->
+                <div class="section-title"><i class="fas fa-info-circle"></i>DADOS BASICOS</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Nome da Operacao *</label>
+                        <input type="text" class="form-control" id="nomeOperacao" placeholder="Ex: Operacao Limpeza Urbana" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Data Prevista *</label>
+                        <input type="date" class="form-control" id="dataPrevista" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Horario</label>
+                        <input type="time" class="form-control" id="horario">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Setor Responsavel *</label>
+                        <input type="text" class="form-control" id="setorOperacao" placeholder="Ex: 1a Companhia" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="statusOperacao">
+                            <option value="PLANEJADA">Planejada</option>
+                            <option value="EM_ANDAMENTO">Em Andamento</option>
+                            <option value="CONCLUIDA">Concluida</option>
+                            <option value="CANCELADA">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Quilometragem Total (km)</label>
+                        <input type="number" step="0.01" class="form-control" id="quilometragem" placeholder="0.00">
+                    </div>
+                </div>
+
+                <!-- NATUREZA E OBJETIVO -->
+                <div class="section-title"><i class="fas fa-crosshairs"></i>NATUREZA E OBJETIVO</div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Natureza da Operacao</label>
+                        <select class="form-select" id="naturezaOperacao">
+                            <option value="">Selecione...</option>
+                            <option value="SIGILOSA">Sigilosa</option>
+                            <option value="DISCRETA">Discreta</option>
+                            <option value="OSTENSIVA">Ostensiva</option>
+                            <option value="ABERTA">Aberta</option>
+                            <option value="PADRAO">Padrao</option>
+                            <option value="ESPECIAL">Especial</option>
+                            <option value="INTELIGENCIA">Inteligencia</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Objetivo Pratico</label>
+                        <select class="form-select" id="objetivoOperacao">
+                            <option value="">Selecione...</option>
+                            <option value="BUSCA_APREENSAO">Busca e Apreensao</option>
+                            <option value="MANDADO_CAPTURA">Cumprimento de Mandado e Captura</option>
+                            <option value="CONTROLE_DISTURBIOS">Controle de Disturbios</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- VIATURAS -->
+                <div class="section-title"><i class="fas fa-truck"></i>VIATURAS USADAS</div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Quantidade Total</label>
+                        <input type="number" min="0" class="form-control" id="viaturasTotal" placeholder="0" oninput="atualizarContadoresViaturas()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Padronizadas</label>
+                        <input type="number" min="0" class="form-control" id="viaturasPadronizadas" placeholder="0">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Descaracterizadas</label>
+                        <input type="number" min="0" class="form-control" id="viaturasDescaracterizadas" placeholder="0">
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="button" class="btn-outline-gold w-100" onclick="adicionarViatura()" style="padding: 10px; font-size: 13px;">
+                            <i class="fas fa-plus-circle me-2"></i>ADICIONAR PLACA
+                        </button>
+                    </div>
+                </div>
+
+                <div id="viaturasContainer">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+
+                <!-- PESSOAS PRESAS / CAPTURADAS -->
+                <div class="section-title"><i class="fas fa-user-lock"></i>PESSOAS PRESAS / CAPTURADAS</div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-12">
+                        <button type="button" class="btn-outline-gold w-100" onclick="adicionarPreso()" style="padding: 12px;">
+                            <i class="fas fa-plus-circle me-2"></i>ADICIONAR PESSOA
+                        </button>
+                    </div>
+                </div>
+
+                <div id="presosContainer">
+                    <!-- Preenchido dinamicamente -->
+                </div>
+
+                <!-- OBSERVAÇÕES -->
+                <div class="section-title"><i class="fas fa-comment-alt"></i>OBSERVACOES</div>
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <textarea class="form-control" id="observacoesOperacao" rows="3" placeholder="Observacoes gerais sobre a operacao..."></textarea>
+                    </div>
+                </div>
+
+                <!-- BOTÕES -->
+                <div class="row mt-4">
+                    <div class="col-md-12 text-end">
+                        <button type="reset" class="btn-outline-gold me-2" onclick="setTimeout(resetFormularioOperacao, 0)">
+                            <i class="fas fa-times me-2"></i>CANCELAR
+                        </button>
+                        <button type="submit" class="btn-gold" id="btnCadastrarOperacao">
+                            <i class="fas fa-save me-2"></i>CADASTRAR OPERACAO
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- LISTA DE OPERAÇÕES -->
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Operacoes Cadastradas</div>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroStatusOperacao">
+                        <option value="">Todos os status</option>
+                        <option value="PLANEJADA">Planejada</option>
+                        <option value="EM_ANDAMENTO">Em Andamento</option>
+                        <option value="CONCLUIDA">Concluida</option>
+                        <option value="CANCELADA">Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroNaturezaOperacao">
+                        <option value="">Todas as naturezas</option>
+                        <option value="SIGILOSA">Sigilosa</option>
+                        <option value="DISCRETA">Discreta</option>
+                        <option value="OSTENSIVA">Ostensiva</option>
+                        <option value="ABERTA">Aberta</option>
+                        <option value="PADRAO">Padrao</option>
+                        <option value="ESPECIAL">Especial</option>
+                        <option value="INTELIGENCIA">Inteligencia</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="filtroObjetivoOperacao">
+                        <option value="">Todos os objetivos</option>
+                        <option value="BUSCA_APREENSAO">Busca e Apreensao</option>
+                        <option value="MANDADO_CAPTURA">Cumprimento de Mandado e Captura</option>
+                        <option value="CONTROLE_DISTURBIOS">Controle de Disturbios</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn-gold w-100" onclick="carregarOperacoes()">
+                        <i class="fas fa-filter me-2"></i>FILTRAR
+                    </button>
+                </div>
+            </div>
+
+            <div id="listaOperacoes">
+                <div class="empty-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Carregando operacoes...
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL DETALHES -->
+    <div class="modal-custom" id="modalDetalhesOperacao">
+        <div class="modal-custom-content">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-info-circle me-2"></i>Detalhes da Operacao</h5>
+                <button class="btn-close-modal" onclick="fecharDetalhesOperacao()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalDetalhesOperacaoBody"></div>
+            <div class="modal-custom-footer">
+                <button class="btn-outline-gold" onclick="fecharDetalhesOperacao()"><i class="fas fa-times me-2"></i>FECHAR</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script>
+        let usuarioAtual = null;
+        let viaturas = [];       // [{ placa }]
+        let presos = [];         // [{ nome_completo, apelido, cpf, data_nascimento, tipo, id_suspeito, foi_identificado }]
+        let suspeitosCache = [];
+        let autocompleteIndexAtivo = -1;
+
+        const NATUREZA_LABEL = {
+            'SIGILOSA': 'Sigilosa', 'DISCRETA': 'Discreta', 'OSTENSIVA': 'Ostensiva',
+            'ABERTA': 'Aberta', 'PADRAO': 'Padrao', 'ESPECIAL': 'Especial', 'INTELIGENCIA': 'Inteligencia'
+        };
+        const OBJETIVO_LABEL = {
+            'BUSCA_APREENSAO': 'Busca e Apreensao',
+            'MANDADO_CAPTURA': 'Cumprimento de Mandado e Captura',
+            'CONTROLE_DISTURBIOS': 'Controle de Disturbios'
+        };
+
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('AI-DEPOM - Operacoes v1.0.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+
+            const usuario = AIDEPOM.getUsuario();
+            if (!usuario) {
+                showToast('error', 'Sessao expirada', 'Faca login novamente.');
+                setTimeout(() => window.location.href = '02-login.html', 1500);
+                return;
+            }
+
+            usuarioAtual = usuario;
+            atualizarDadosUsuario(usuario);
+
+            document.getElementById('dataPrevista').value = new Date().toISOString().split('T')[0];
+
+            await carregarSuspeitosCache();
+            await carregarOperacoes();
+            renderizarViaturas();
+            renderizarPresos();
+
+            document.getElementById('formOperacao').addEventListener('submit', cadastrarOperacao);
+        });
+
+        function atualizarDadosUsuario(usuario) {
+            const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+            const nome = usuario.nome_completo || 'Usuario';
+            const perfil = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
+            document.getElementById('topAvatar').textContent = inicial;
+            document.getElementById('topUserName').textContent = nome;
+            document.getElementById('sidebarAvatar').textContent = inicial;
+            document.getElementById('sidebarUserName').textContent = nome;
+            document.getElementById('sidebarUserRole').textContent = perfil;
+        }
+
+        // ============================================================
+        // CARREGAR SUSPEITOS NO CACHE (para autocomplete)
+        // ============================================================
+        async function carregarSuspeitosCache() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('suspeito')
+                    .select('id_suspeito, nome_completo, apelido, cpf, data_nascimento, status_atual, nivel_periculosidade')
+                    .eq('deletado', false)
+                    .order('nome_completo', { ascending: true });
+
+                if (error) throw error;
+                suspeitosCache = data || [];
+                console.log(`✅ ${suspeitosCache.length} suspeitos carregados no cache`);
+            } catch (error) {
+                console.error('❌ Erro ao carregar suspeitos:', error);
+            }
+        }
+
+        // ============================================================
+        // VIATURAS
+        // ============================================================
+        function adicionarViatura() {
+            viaturas.push({ placa: '' });
+            renderizarViaturas();
+        }
+
+        function removerViatura(index) {
+            viaturas.splice(index, 1);
+            renderizarViaturas();
+        }
+
+        function atualizarPlacaViatura(index, valor) {
+            if (viaturas[index]) {
+                viaturas[index].placa = valor.toUpperCase();
+            }
+        }
+
+        function renderizarViaturas() {
+            const container = document.getElementById('viaturasContainer');
+
+            if (viaturas.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            viaturas.forEach((v, i) => {
+                html += `
+                    <div class="card-item">
+                        <div class="card-item-header">
+                            <div class="titulo"><span class="num">${i+1}</span>VIATURA #${i+1}</div>
+                            <button type="button" class="btn-remover-item" onclick="removerViatura(${i})" title="Remover">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Placa</label>
+                                <input type="text" class="form-control" 
+                                       placeholder="ABC-1D23" 
+                                       maxlength="10"
+                                       value="${v.placa || ''}"
+                                       oninput="atualizarPlacaViatura(${i}, this.value)"
+                                       style="text-transform: uppercase;">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function atualizarContadoresViaturas() {
+            // Apenas visual - não precisa fazer nada especial
+        }
+
+        // ============================================================
+        // PRESOS / CAPTURADOS
+        // ============================================================
+        function adicionarPreso() {
+            presos.push({
+                nome_completo: '',
+                apelido: '',
+                cpf: '',
+                data_nascimento: '',
+                tipo: 'PRESO',
+                id_suspeito: null,
+                foi_identificado: false
+            });
+            renderizarPresos();
+        }
+
+        function removerPreso(index) {
+            if (!confirm('Remover esta pessoa?')) return;
+            presos.splice(index, 1);
+            renderizarPresos();
+        }
+
+        function atualizarPreso(index, campo, valor) {
+            if (presos[index]) {
+                presos[index][campo] = valor;
+            }
+        }
+
+        function renderizarPresos() {
+            const container = document.getElementById('presosContainer');
+
+            if (presos.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-item">
+                        <i class="fas fa-user-lock" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
+                        Nenhuma pessoa cadastrada
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            presos.forEach((p, i) => {
+                const matchInfo = p.foi_identificado && p.id_suspeito
+                    ? `<div class="suspeito-match">
+                        <div class="avatar">${(p.nome_completo || 'S')[0].toUpperCase()}</div>
+                        <div class="info">
+                            <div class="nome">
+                                <i class="fas fa-check-circle" style="color: #00ff88;"></i>
+                                Suspeito JA CADASTRADO no sistema (ID #${p.id_suspeito})
+                            </div>
+                            <div class="meta">Os dados foram preenchidos automaticamente</div>
+                        </div>
+                       </div>`
+                    : '';
+
+                html += `
+                    <div class="card-item">
+                        <div class="card-item-header">
+                            <div class="titulo">
+                                <span class="num">${i+1}</span>PESSOA #${i+1}
+                                ${p.foi_identificado ? '<span class="badge-match">JA CADASTRADO</span>' : '<span class="badge-match" style="background:rgba(255,193,7,0.2); color:#ffc107;">NAO CADASTRADO</span>'}
+                            </div>
+                            <button type="button" class="btn-remover-item" onclick="removerPreso(${i})" title="Remover">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6 autocomplete-wrapper">
+                                <label class="form-label">Nome Completo *</label>
+                                <input type="text" class="form-control" 
+                                       id="presoNome_${i}"
+                                       placeholder="Digite o nome (busca automatica)"
+                                       value="${p.nome_completo || ''}"
+                                       autocomplete="off"
+                                       oninput="buscarSuspeito(${i}, this.value)"
+                                       onfocus="buscarSuspeito(${i}, this.value)"
+                                       onblur="setTimeout(() => fecharAutocomplete(${i}), 200)">
+                                <div class="autocomplete-list" id="autocomplete_${i}"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Apelido</label>
+                                <input type="text" class="form-control" 
+                                       value="${p.apelido || ''}"
+                                       oninput="atualizarPreso(${i}, 'apelido', this.value)">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">CPF</label>
+                                <input type="text" class="form-control" 
+                                       placeholder="000.000.000-00"
+                                       value="${p.cpf || ''}"
+                                       oninput="atualizarPreso(${i}, 'cpf', this.value)">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Data Nascimento</label>
+                                <input type="date" class="form-control" 
+                                       value="${p.data_nascimento || ''}"
+                                       oninput="atualizarPreso(${i}, 'data_nascimento', this.value)">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Tipo</label>
+                                <select class="form-select" onchange="atualizarPreso(${i}, 'tipo', this.value)">
+                                    <option value="PRESO" ${p.tipo === 'PRESO' ? 'selected' : ''}>Preso</option>
+                                    <option value="CAPTURADO" ${p.tipo === 'CAPTURADO' ? 'selected' : ''}>Capturado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Observacoes</label>
+                                <input type="text" class="form-control" 
+                                       placeholder="Ex: resistiu a prisao, portava arma..."
+                                       value="${p.observacoes || ''}"
+                                       oninput="atualizarPreso(${i}, 'observacoes', this.value)">
+                            </div>
+                            <div class="col-md-12">
+                                ${matchInfo}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // AUTOCOMPLETE — busca suspeitos
+        // ============================================================
+        function buscarSuspeito(index, termo) {
+            const listEl = document.getElementById('autocomplete_' + index);
+            if (!listEl) return;
+
+            termo = (termo || '').trim().toLowerCase();
+
+            if (termo.length < 2) {
+                listEl.classList.remove('show');
+                return;
+            }
+
+            // Filtra suspeitos por nome, apelido ou CPF
+            const matches = suspeitosCache.filter(s => {
+                const nome = (s.nome_completo || '').toLowerCase();
+                const apelido = (s.apelido || '').toLowerCase();
+                const cpf = (s.cpf || '').toLowerCase();
+                return nome.includes(termo) || apelido.includes(termo) || cpf.includes(termo);
+            }).slice(0, 8);
+
+            if (matches.length === 0) {
+                listEl.innerHTML = `
+                    <div class="autocomplete-item" style="cursor: default; color: rgba(255,193,7,0.8);">
+                        <i class="fas fa-exclamation-triangle"></i> Nenhum suspeito encontrado
+                    </div>
+                `;
+                listEl.classList.add('show');
+                return;
+            }
+
+            let html = '';
+            matches.forEach(s => {
+                const inicial = (s.nome_completo || 'S')[0].toUpperCase();
+                html += `
+                    <div class="autocomplete-item" onclick="selecionarSuspeito(${index}, ${s.id_suspeito})">
+                        <div><i class="fas fa-user-secret" style="color: #00ff88; margin-right: 6px;"></i>
+                            <strong>${s.nome_completo}</strong>
+                            <span class="badge-match">ID #${s.id_suspeito}</span>
+                        </div>
+                        <div class="match-info">
+                            ${s.apelido ? 'Apelido: ' + s.apelido + ' · ' : ''}
+                            ${s.cpf ? 'CPF: ' + s.cpf + ' · ' : ''}
+                            Status: ${s.status_atual || '-'}
+                        </div>
+                    </div>
+                `;
+            });
+
+            listEl.innerHTML = html;
+            listEl.classList.add('show');
+        }
+
+        function fecharAutocomplete(index) {
+            const listEl = document.getElementById('autocomplete_' + index);
+            if (listEl) listEl.classList.remove('show');
+        }
+
+        function selecionarSuspeito(index, idSuspeito) {
+            const s = suspeitosCache.find(x => x.id_suspeito === idSuspeito);
+            if (!s) return;
+
+            presos[index].id_suspeito = s.id_suspeito;
+            presos[index].nome_completo = s.nome_completo;
+            presos[index].apelido = s.apelido || '';
+            presos[index].cpf = s.cpf || '';
+            presos[index].data_nascimento = s.data_nascimento || '';
+            presos[index].foi_identificado = true;
+
+            console.log('✅ Suspeito vinculado:', s.nome_completo, '(ID:', s.id_suspeito, ')');
+            renderizarPresos();
+            showToast('success', 'Suspeito vinculado!', `<strong>${s.nome_completo}</strong> ja esta cadastrado (ID #${s.id_suspeito}).`);
+        }
+
+        // ============================================================
+        // CADASTRAR OPERAÇÃO
+        // ============================================================
+        async function cadastrarOperacao(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnCadastrarOperacao');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
+
+            try {
+                // Validações
+                const nome = document.getElementById('nomeOperacao').value.trim();
+                const dataPrevista = document.getElementById('dataPrevista').value;
+                const setor = document.getElementById('setorOperacao').value.trim();
+
+                if (!nome) throw new Error('Preencha o Nome da Operacao.');
+                if (!dataPrevista) throw new Error('Preencha a Data Prevista.');
+                if (!setor) throw new Error('Preencha o Setor Responsavel.');
+
+                const dados = {
+                    nome_operacao: nome,
+                    data_prevista: dataPrevista,
+                    horario: document.getElementById('horario').value || null,
+                    setor: setor,
+                    viaturas_quantidade: parseInt(document.getElementById('viaturasTotal').value) || 0,
+                    viaturas_padronizadas: parseInt(document.getElementById('viaturasPadronizadas').value) || 0,
+                    viaturas_descaracterizadas: parseInt(document.getElementById('viaturasDescaracterizadas').value) || 0,
+                    viaturas_placas: viaturas.filter(v => v.placa).map(v => v.placa),
+                    quilometragem: parseFloat(document.getElementById('quilometragem').value) || null,
+                    natureza_operacao: document.getElementById('naturezaOperacao').value || null,
+                    objetivo_pratico: document.getElementById('objetivoOperacao').value || null,
+                    observacoes: document.getElementById('observacoesOperacao').value.trim() || null,
+                    status: document.getElementById('statusOperacao').value,
+                    id_usuario_cadastro: usuarioAtual.id,
+                    deletado: false
+                };
+
+                console.log('📝 Cadastrando operacao:', dados);
+
+                const { data: inserted, error: insertError } = await window.supabaseClient
+                    .from('operacao')
+                    .insert(dados)
+                    .select()
+                    .maybeSingle();
+
+                if (insertError) throw insertError;
+
+                const idOperacao = inserted.id_operacao;
+                console.log('✅ Operacao cadastrada ID:', idOperacao);
+
+                // Inserir presos
+                if (presos.length > 0) {
+                    const presosValidos = presos.filter(p => p.nome_completo && p.nome_completo.trim());
+                    if (presosValidos.length > 0) {
+                        const presosInsert = presosValidos.map(p => ({
+                            id_operacao: idOperacao,
+                            id_suspeito: p.id_suspeito || null,
+                            nome_completo: p.nome_completo.trim(),
+                            apelido: p.apelido || null,
+                            cpf: p.cpf || null,
+                            data_nascimento: p.data_nascimento || null,
+                            tipo: p.tipo || 'PRESO',
+                            foi_identificado: p.foi_identificado || false,
+                            observacoes: p.observacoes || null,
+                            id_usuario_cadastro: usuarioAtual.id,
+                            deletado: false
+                        }));
+
+                        const { error: presosError } = await window.supabaseClient
+                            .from('operacao_preso')
+                            .insert(presosInsert);
+
+                        if (presosError) {
+                            console.error('❌ Erro ao inserir presos:', presosError);
+                            showToast('warning', 'Operacao salva, mas presos falharam', presosError.message);
+                        } else {
+                            console.log(`✅ ${presosInsert.length} pessoa(s) inserida(s)`);
+                        }
+                    }
+                }
+
+                showToast('success', 'Operacao cadastrada!',
+                    `<strong>${dados.nome_operacao}</strong> foi cadastrada com ID #${idOperacao}.`, 8000);
+
+                resetFormularioOperacao();
+                await carregarOperacoes();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showToast('error', 'Erro ao cadastrar', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>CADASTRAR OPERACAO';
+            }
+        }
+
+        function resetFormularioOperacao() {
+            document.getElementById('formOperacao').reset();
+            document.getElementById('dataPrevista').value = new Date().toISOString().split('T')[0];
+            viaturas = [];
+            presos = [];
+            renderizarViaturas();
+            renderizarPresos();
+            console.log('🧹 Formulario resetado');
+        }
+
+        // ============================================================
+        // LISTAR OPERAÇÕES
+        // ============================================================
+        async function carregarOperacoes() {
+            const container = document.getElementById('listaOperacoes');
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando operacoes...</div>';
+
+            try {
+                const status = document.getElementById('filtroStatusOperacao').value;
+                const natureza = document.getElementById('filtroNaturezaOperacao').value;
+                const objetivo = document.getElementById('filtroObjetivoOperacao').value;
+
+                let query = window.supabaseClient
+                    .from('operacao')
+                    .select('*')
+                    .eq('deletado', false);
+
+                if (status) query = query.eq('status', status);
+                if (natureza) query = query.eq('natureza_operacao', natureza);
+                if (objetivo) query = query.eq('objetivo_pratico', objetivo);
+
+                const { data, error } = await query
+                    .order('data_prevista', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                document.getElementById('badgeTotalOperacoes').innerHTML =
+                    '<i class="fas fa-list"></i> ' + (data?.length || 0) + ' operacoes';
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><i class="fas fa-bullseye"></i>Nenhuma operacao cadastrada</div>';
+                    return;
+                }
+
+                let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
+                html += '<th>Nome</th><th>Data</th><th>Setor</th><th>Natureza</th><th>Objetivo</th><th>Status</th><th>Acoes</th>';
+                html += '</tr></thead><tbody>';
+
+                data.forEach(o => {
+                    const statusClass = `status-${(o.status || 'planejada').toLowerCase()}`;
+                    const naturezaClass = `nat-${(o.natureza_operacao || 'padrao').toLowerCase()}`;
+                    const dataFormatada = o.data_prevista ? o.data_prevista.split('-').reverse().join('/') : '-';
+
+                    html += '<tr onclick="verDetalhesOperacao(' + o.id_operacao + ')">';
+                    html += `<td><strong style="color:var(--text-primary);">${o.nome_operacao || '-'}</strong></td>`;
+                    html += `<td>${dataFormatada}${o.horario ? ' ' + o.horario.substring(0,5) : ''}</td>`;
+                    html += `<td>${o.setor || '-'}</td>`;
+                    html += `<td>${o.natureza_operacao ? `<span class="natureza-badge ${naturezaClass}">${NATUREZA_LABEL[o.natureza_operacao] || o.natureza_operacao}</span>` : '-'}</td>`;
+                    html += `<td>${o.objetivo_pratico ? `<span class="objetivo-badge">${OBJETIVO_LABEL[o.objetivo_pratico] || o.objetivo_pratico}</span>` : '-'}</td>`;
+                    html += `<td><span class="status-badge ${statusClass}">${o.status || '-'}</span></td>`;
+                    html += `<td><button class="btn-icon" title="Ver detalhes"><i class="fas fa-eye"></i></button></td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+
+                console.log(`✅ ${data.length} operacoes carregadas`);
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar operacoes. As tabelas existem?</div>';
+            }
+        }
+
+        // ============================================================
+        // VER DETALHES
+        // ============================================================
+        async function verDetalhesOperacao(id) {
+            const modal = document.getElementById('modalDetalhesOperacao');
+            const body = document.getElementById('modalDetalhesOperacaoBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+            try {
+                const { data: o, error } = await window.supabaseClient
+                    .from('operacao')
+                    .select('*')
+                    .eq('id_operacao', id)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!o) throw new Error('Operacao nao encontrada');
+
+                const { data: presosData } = await window.supabaseClient
+                    .from('operacao_preso')
+                    .select('*')
+                    .eq('id_operacao', id)
+                    .eq('deletado', false);
+
+                const dataFormatada = o.data_prevista ? o.data_prevista.split('-').reverse().join('/') : '-';
+                const naturezaClass = `nat-${(o.natureza_operacao || 'padrao').toLowerCase()}`;
+                const statusClass = `status-${(o.status || 'planejada').toLowerCase()}`;
+                const placas = Array.isArray(o.viaturas_placas) ? o.viaturas_placas : [];
+
+                body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <div class="detalhe-campo">
+                                <span class="label">Nome da Operacao</span>
+                                <span class="valor"><strong>${o.nome_operacao}</strong></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Data Prevista</span><span class="valor">${dataFormatada}</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Horario</span><span class="valor">${o.horario || '-'}</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Setor</span><span class="valor">${o.setor || '-'}</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Natureza</span>
+                                <span class="valor">${o.natureza_operacao ? `<span class="natureza-badge ${naturezaClass}">${NATUREZA_LABEL[o.natureza_operacao]}</span>` : '-'}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Objetivo Pratico</span>
+                                <span class="valor">${o.objetivo_pratico ? `<span class="objetivo-badge">${OBJETIVO_LABEL[o.objetivo_pratico]}</span>` : '-'}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Status</span>
+                                <span class="valor"><span class="status-badge ${statusClass}">${o.status}</span></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Quilometragem</span><span class="valor">${o.quilometragem ? o.quilometragem + ' km' : '-'}</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Total Viaturas</span><span class="valor">${o.viaturas_quantidade || 0}</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Padronizadas</span><span class="valor">${o.viaturas_padronizadas || 0}</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Descaracterizadas</span><span class="valor">${o.viaturas_descaracterizadas || 0}</span></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="detalhe-campo"><span class="label">Placas</span>
+                                <span class="valor">${placas.length > 0 ? placas.join(', ') : '-'}</span>
+                            </div>
+                        </div>
+                        ${o.observacoes ? `
+                        <div class="col-md-12">
+                            <div class="detalhe-campo"><span class="label">Observacoes</span><span class="valor">${o.observacoes}</span></div>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    ${presosData && presosData.length > 0 ? `
+                    <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <h6 style="color: var(--text-primary); font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;">
+                            <i class="fas fa-user-lock"></i> PESSOAS PRESAS / CAPTURADAS (${presosData.length})
+                        </h6>
+                        ${presosData.map(p => `
+                            <div class="card-item">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <div>
+                                        <strong style="color: var(--text-primary);">${p.nome_completo}</strong>
+                                        ${p.foi_identificado ? '<span class="badge-match" style="margin-left: 8px;">JA CADASTRADO</span>' : ''}
+                                    </div>
+                                    <span class="natureza-badge nat-${p.tipo === 'PRESO' ? 'ostensiva' : 'aberta'}">${p.tipo}</span>
+                                </div>
+                                <div style="margin-top: 6px; font-size: 12px; color: rgba(0,255,136,0.5);">
+                                    ${p.apelido ? 'Apelido: ' + p.apelido + ' · ' : ''}
+                                    ${p.cpf ? 'CPF: ' + p.cpf + ' · ' : ''}
+                                    ${p.data_nascimento ? 'Nasc: ' + p.data_nascimento.split('-').reverse().join('/') + ' · ' : ''}
+                                    ${p.id_suspeito ? 'Vinculado ao suspeito #' + p.id_suspeito : 'Nao vinculado'}
+                                </div>
+                                ${p.observacoes ? `<div style="margin-top: 6px; font-size: 11px; color: rgba(0,255,136,0.4); font-style: italic;">${p.observacoes}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                `;
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharDetalhesOperacao() {
+            document.getElementById('modalDetalhesOperacao').classList.remove('open');
+        }
+
+        // ============================================================
+        // TOAST
+        // ============================================================
+        function showToast(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
+                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
+                '<div class="toast-message">' + mensagem + '</div></div>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), duracao);
+        }
+
+        // ============================================================
+        // CONTROLES
+        // ============================================================
+        async function fazerLogout() {
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try {
+                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
+                    await AIDEPOM.logout();
+                    return;
+                }
+            } catch (e) {}
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+            window.location.href = '02-login.html';
+        }
+
+        function closeWindow() {
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+            try { window.open('', '_self', ''); window.close(); } catch (e) {}
+            setTimeout(function() {
+                if (!window.closed) window.location.href = '01-apresentacao.html';
+            }, 300);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') fecharDetalhesOperacao();
+        });
+
+        console.log('✅ Pagina de Operacoes carregada em ' + new Date().toLocaleString('pt-BR'));
+    </script>
+    <script src="assets/js/inactivity-lock.js"></script>
+</body>
+</html>
