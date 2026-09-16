@@ -2,8 +2,8 @@
    AI-DEPOM - TEMPORIZADOR DE INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-lock.js
-   Versao: 1.2.2
-   Data: 16/09/2026 - 12:30
+   Versao: 1.2.3
+   Data: 16/09/2026 - 14:30
    Autor: AI-DEPOM Team
    ============================================
    REGRA DE OURO:
@@ -15,29 +15,27 @@
    6. Todo módulo DEVE estar conectado
    7. Nenhuma linha deve ser removida sem substituição
 
+   ALTERAÇÕES v1.2.3 (16/09/2026 14:30):
+   - 🐛 CORRIGIDO: relógio do lock não exibia a hora do bloqueio
+   - ✨ NOVO: exibe hora/minuto/segundo (HH:MM:SS) no momento do bloqueio
+   - ✨ NOVO: log no console confirmando o relógio preenchido
+   - ✅ Mantidas: todas as proteções da v1.2.2
+
    ALTERAÇÕES v1.2.2 (16/09/2026 12:30):
-   - 🚨 CORRIGIDO: F5 burlava o lock screen (bug crítico de segurança)
+   - 🚨 CORRIGIDO: F5 burlava o lock screen (bug crítico)
    - 🛡️ NOVO: estado de bloqueio persistido em localStorage
-   - 🛡️ NOVO: re-aplica lock automaticamente ao recarregar a página
+   - 🛡️ NOVO: re-aplica lock automaticamente ao recarregar
    - 🛡️ NOVO: força logout se lock ficou ativo >24h
-   - 🛡️ NOVO: desbloqueio limpa o estado persistido
-   - 🛡️ NOVO: logout limpa o estado persistido
-   - ✅ Mantidas: todas as proteções da v1.2.1 (anti-autofill, guarda)
 
    ALTERAÇÕES v1.2.1 (16/09/2026 09:30):
-   - 🐛 CORRIGIDO: autofill do navegador (Edge) preenchia a senha automaticamente
-   - 🐛 CORRIGIDO: campo agora exige digitação manual (readonly + flag)
-   - 🐛 CORRIGIDO: autocomplete="new-password" (não autofill)
-   - 🐛 CORRIGIDO: readonly removido só ao clicar/focar no campo
+   - 🐛 CORRIGIDO: autofill do navegador preenchia a senha
+   - 🐛 CORRIGIDO: campo exige digitação manual (readonly + flag)
    - 🛡️ NOVO: rastreia se o usuário DIGITOU (evento input)
-   - 🛡️ NOVO: se tentar desbloquear sem digitar, recusa
 
    ALTERAÇÕES v1.2.0 (16/09/2026 09:00):
-   - 🐛 CORRIGIDO: desbloquear() agora valida senha ANTES de remover o lock
-   - 🐛 CORRIGIDO: botão DESBLOQUEAR não desbloqueia com senha vazia
-   - 🛡️ NOVO: guarda ativa re-aplica o lock se for removido indevidamente
+   - 🐛 CORRIGIDO: desbloquear() valida senha ANTES de remover lock
+   - 🛡️ NOVO: guarda ativa re-aplica o lock se removido
    - 🛡️ NOVO: intercepta classList.remove/toggle do lockScreen
-   - 🛡️ NOVO: stopPropagation em cliques fora do botão
    ============================================ */
 
 (function() {
@@ -59,7 +57,7 @@
     const CHECK_INTERVAL_MS = 1000;
     const LOCK_MAX_AGE_MS = 24 * 60 * 60 * 1000;  // 24 horas
 
-    // 🛡️ [v1.2.2] Chaves do localStorage
+    // Chaves do localStorage
     const LOCK_KEY = 'aidepom_locked';
     const LOCK_AT_KEY = 'aidepom_locked_at';
 
@@ -71,7 +69,7 @@
     let bloqueado = false;
     let segundosRestantes = 0;
 
-    // 🛡️ [v1.2.1] Flag: o usuário DIGITOU a senha ou foi autofill?
+    // Flag: o usuário DIGITOU a senha ou foi autofill?
     let senhaDigitadaPeloUsuario = false;
 
     // ============================================
@@ -241,7 +239,6 @@
             .lock-form input::placeholder {
                 color: rgba(0, 255, 136, 0.15);
             }
-            /* 🛡️ [v1.2.1] Aviso visual quando readonly */
             .lock-form input[readonly] {
                 background: rgba(0, 0, 0, 0.7);
                 cursor: pointer;
@@ -387,7 +384,7 @@
     }
 
     // ============================================
-    // 🛡️ [v1.2.2] Verifica se havia lock pendente (F5 bypass)
+    // Verifica se havia lock pendente (F5 bypass)
     // ============================================
     function verificarLockPendente() {
         try {
@@ -398,9 +395,8 @@
             const agora = Date.now();
             const tempoDecorrido = agora - lockedAt;
 
-            // Se ficou bloqueado por mais de 24h → força logout
             if (tempoDecorrido > LOCK_MAX_AGE_MS || lockedAt === 0) {
-                console.warn('🛡️ [v1.2.2] Lock expirado (>24h). Forçando logout.');
+                console.warn('🛡️ [v1.2.3] Lock expirado (>24h). Forçando logout.');
                 try {
                     localStorage.removeItem(LOCK_KEY);
                     localStorage.removeItem(LOCK_AT_KEY);
@@ -413,7 +409,7 @@
                 return false;
             }
 
-            console.log('🔒 [v1.2.2] Lock pendente detectado. Re-aplicando...');
+            console.log('🔒 [v1.2.3] Lock pendente detectado. Re-aplicando...');
             console.log('⏱️ Bloqueado há', Math.round(tempoDecorrido / 1000), 'segundos');
             return true;
 
@@ -503,7 +499,7 @@
         }
 
         // ============================================
-        // 🛡️ [v1.2.1] Controle de digitação real (anti-autofill)
+        // Controle de digitação real (anti-autofill)
         // ============================================
         function resetarFlagDigitacao() {
             senhaDigitadaPeloUsuario = false;
@@ -512,16 +508,14 @@
             lockSenha.placeholder = 'Clique aqui e digite sua senha';
         }
 
-        // Remove readonly ao clicar/focar no campo
         lockSenha.addEventListener('focus', function() {
             if (lockSenha.hasAttribute('readonly')) {
                 lockSenha.removeAttribute('readonly');
                 lockSenha.placeholder = 'Digite sua senha';
-                console.log('🔓 [v1.2.1] readonly removido, pode digitar');
+                console.log('🔓 [v1.2.3] readonly removido, pode digitar');
             }
         });
 
-        // Também remove readonly ao clicar (caso focus não pegue)
         lockSenha.addEventListener('click', function() {
             if (lockSenha.hasAttribute('readonly')) {
                 lockSenha.removeAttribute('readonly');
@@ -529,12 +523,10 @@
             }
         });
 
-        // 🛡️ Marca que o usuário DIGITOU (evento input real)
         lockSenha.addEventListener('input', function() {
             senhaDigitadaPeloUsuario = true;
         });
 
-        // Também escuta keydown (backup)
         lockSenha.addEventListener('keydown', function(e) {
             if (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete') {
                 senhaDigitadaPeloUsuario = true;
@@ -604,15 +596,16 @@
             bloqueado = true;
             limparTodosTimers();
 
-            // 🛡️ [v1.2.2] Persiste o estado de bloqueio no localStorage
+            // Persiste o estado de bloqueio no localStorage
             try {
                 localStorage.setItem(LOCK_KEY, 'true');
                 localStorage.setItem(LOCK_AT_KEY, Date.now().toString());
-                console.log('🛡️ [v1.2.2] Estado de bloqueio persistido');
+                console.log('🛡️ [v1.2.3] Estado de bloqueio persistido');
             } catch (e) {
                 console.warn('⚠️ Não foi possível persistir lock:', e);
             }
 
+            // Preenche dados do usuário
             try {
                 const usuarioStr = localStorage.getItem('usuario');
                 if (usuarioStr) {
@@ -626,10 +619,22 @@
                 console.warn('Erro ao carregar dados do usuário:', e);
             }
 
+            // 🕐 [v1.2.3] CORREÇÃO: Preenche o relógio com a hora do bloqueio
+            try {
+                const agora = new Date();
+                lockTime.textContent = agora.toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                console.log('🕐 Relógio do bloqueio:', lockTime.textContent);
+            } catch (e) {
+                console.warn('⚠️ Erro ao preencher relógio:', e);
+            }
+
             lockError.classList.remove('show');
             lockError.textContent = '';
 
-            // 🛡️ [v1.2.1] Reseta flag de digitação + readonly
             resetarFlagDigitacao();
 
             lockScreen.classList.add('show');
@@ -641,7 +646,7 @@
         }
 
         // ============================================
-        // 🛡️ DESBLOQUEAR — valida senha + digitação real
+        // DESBLOQUEAR — valida senha + digitação real
         // ============================================
         async function desbloquear() {
             const senha = (lockSenha.value || '').trim();
@@ -649,17 +654,15 @@
             lockError.classList.remove('show');
             lockError.textContent = '';
 
-            // 🛡️ [v1.2.1] PROTEÇÃO 1: campo readonly (não clicou ainda)
             if (lockSenha.hasAttribute('readonly')) {
-                console.warn('🛡️ [v1.2.1] Tentativa de desbloquear sem clicar no campo');
+                console.warn('🛡️ [v1.2.3] Tentativa de desbloquear sem clicar no campo');
                 lockError.textContent = 'Clique no campo de senha e digite sua senha.';
                 lockError.classList.add('show');
                 return;
             }
 
-            // 🛡️ [v1.2.1] PROTEÇÃO 2: usuário não digitou (foi autofill ou vazio)
             if (!senhaDigitadaPeloUsuario) {
-                console.warn('🛡️ [v1.2.1] Tentativa de desbloquear sem digitar (autofill?)');
+                console.warn('🛡️ [v1.2.3] Tentativa de desbloquear sem digitar (autofill?)');
                 lockError.textContent = 'Digite sua senha manualmente.';
                 lockError.classList.add('show');
                 lockSenha.value = '';
@@ -667,7 +670,6 @@
                 return;
             }
 
-            // 🛡️ PROTEÇÃO 3: senha vazia
             if (!senha) {
                 console.warn('🛡️ Tentativa de desbloquear com senha vazia');
                 lockError.textContent = 'Digite sua senha.';
@@ -729,11 +731,10 @@
                 lockScreen.classList.remove('show');
                 resetarFlagDigitacao();
 
-                // 🛡️ [v1.2.2] Limpa o estado persistido do lock
                 try {
                     localStorage.removeItem(LOCK_KEY);
                     localStorage.removeItem(LOCK_AT_KEY);
-                    console.log('🛡️ [v1.2.2] Estado de bloqueio limpo');
+                    console.log('🛡️ [v1.2.3] Estado de bloqueio limpo');
                 } catch (e) {
                     console.warn('⚠️ Erro ao limpar lock:', e);
                 }
@@ -807,7 +808,6 @@
                 localStorage.removeItem('authData');
                 localStorage.removeItem('usuarioId');
                 localStorage.removeItem('logado');
-                // 🛡️ [v1.2.2] Limpa também o estado de lock
                 localStorage.removeItem(LOCK_KEY);
                 localStorage.removeItem(LOCK_AT_KEY);
             } catch (e) { /* ignore */ }
@@ -816,22 +816,20 @@
         });
 
         // ============================================
-        // 🛡️ [v1.2.2] Inicialização: verifica lock pendente (F5)
+        // Inicialização: verifica lock pendente (F5)
         // ============================================
         const lockPendente = verificarLockPendente();
 
         if (lockPendente) {
-            console.log('🛡️ [v1.2.2] Re-aplicando bloqueio após reload...');
-            // Re-aplica o bloqueio imediatamente (sem esperar 5min)
+            console.log('🛡️ [v1.2.3] Re-aplicando bloqueio após reload...');
             bloquearTela();
         } else {
-            // Iniciar timers normalmente
             resetarTimers();
         }
 
         window.__AIDEPOM_INACTIVITY_LOCK_INIT__ = true;
 
-        console.log('✅ Temporizador de inatividade ativo (5 minutos) [v1.2.2]');
+        console.log('✅ Temporizador de inatividade ativo (5 minutos) [v1.2.3]');
     }
 
     function bootstrap() {
