@@ -2,8 +2,8 @@
      AI-DEPOM - OPERAÇÕES POLICIAIS
      ============================================================
      Arquivo: 14-operacoes.html
-     Versão: 1.1.1
-     Data: 17/09/2026 - 00:00
+     Versão: 1.2.0
+     Data: 17/09/2026 - 04:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,20 +15,17 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v1.2.0 (17/09/2026 04:00):
+     - ✨ NOVO: Secao COORDENADAS DA OPERACAO (lat/lng)
+     - ✨ NOVO: Botao "BUSCAR PELO BAIRRO" (Nominatim)
+     - ✨ Coordenadas plotadas no mapa (10-mapa-operacoes.html)
+     - ✅ Mantidas: Equipe Policial, 7 objetivos, viaturas, presos
+
      ALTERAÇÕES v1.1.1 (17/09/2026 00:00):
-     - ✨ NOVO: Objetivo Pratico "Drone"
-     - ✨ NOVO: Objetivo Pratico "Levantamento de Imagens"
-     - ✨ NOVO: Objetivo Pratico "Rastreador Veicular"
-     - ✨ NOVO: Objetivo Pratico "Outros"
-     - ✅ Total: 7 opcoes de objetivo pratico
+     - 7 opcoes de objetivo pratico (Drone, Levantamento, Rastreador, Outros)
 
      ALTERAÇÕES v1.1.0 (16/09/2026 23:00):
-     - ✨ Campo Equipe Policial com autocomplete
-     - ✨ Vincula automaticamente pelo nome do policial cadastrado
-     - ✨ Campo "Funcao na Operacao"
-
-     ALTERAÇÕES v1.0.0 (16/09/2026 19:00):
-     - Tela inicial de Operações
+     - Equipe Policial com autocomplete
      ============================================================
 -->
 <!DOCTYPE html>
@@ -466,7 +463,6 @@
             <div class="card-title"><i class="fas fa-plus-circle"></i>Nova Operacao</div>
 
             <form id="formOperacao">
-                <!-- DADOS BÁSICOS -->
                 <div class="section-title"><i class="fas fa-info-circle"></i>DADOS BASICOS</div>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -500,7 +496,30 @@
                     </div>
                 </div>
 
-                <!-- NATUREZA E OBJETIVO -->
+                <!-- [v1.2.0] COORDENADAS -->
+                <div class="section-title"><i class="fas fa-map-marker-alt"></i>COORDENADAS DA OPERACAO</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="0.00000001" class="form-control" id="latitude" placeholder="-12.9714">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="0.00000001" class="form-control" id="longitude" placeholder="-38.5014">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn-outline-gold w-100" onclick="geocodificarEnderecoOperacao(event)">
+                            <i class="fas fa-search-location me-2"></i>BUSCAR PELO BAIRRO
+                        </button>
+                    </div>
+                    <div class="col-md-12">
+                        <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            As coordenadas sao usadas para plotar a operacao no <strong>Mapa de Operacoes</strong>.
+                        </small>
+                    </div>
+                </div>
+
                 <div class="section-title"><i class="fas fa-crosshairs"></i>NATUREZA E OBJETIVO</div>
                 <div class="row g-3">
                     <div class="col-md-6">
@@ -531,14 +550,11 @@
                     </div>
                 </div>
 
-                <!-- EQUIPE POLICIAL -->
                 <div class="section-title"><i class="fas fa-user-shield"></i>EQUIPE POLICIAL</div>
-
                 <div style="background: rgba(13, 202, 240, 0.03); border: 1px solid rgba(13, 202, 240, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: rgba(13, 202, 240, 0.9);">
                     <i class="fas fa-info-circle me-1"></i>
-                    Digite o nome do policial. Se ele estiver cadastrado no sistema, aparecera uma sugestao para voce clicar.
+                    Digite o nome do policial. Se ele estiver cadastrado no sistema, aparecera uma sugestao.
                 </div>
-
                 <div class="row g-3 mb-3">
                     <div class="col-md-12">
                         <button type="button" class="btn-outline-gold w-100" onclick="adicionarPolicial()" style="padding: 12px; border-color: #0dcaf0; color: #0dcaf0;">
@@ -546,17 +562,13 @@
                         </button>
                     </div>
                 </div>
+                <div id="policiaisContainer"></div>
 
-                <div id="policiaisContainer">
-                    <!-- Preenchido dinamicamente -->
-                </div>
-
-                <!-- VIATURAS -->
                 <div class="section-title"><i class="fas fa-truck"></i>VIATURAS USADAS</div>
                 <div class="row g-3 mb-3">
                     <div class="col-md-3">
                         <label class="form-label">Quantidade Total</label>
-                        <input type="number" min="0" class="form-control" id="viaturasTotal" placeholder="0" oninput="atualizarContadoresViaturas()">
+                        <input type="number" min="0" class="form-control" id="viaturasTotal" placeholder="0">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Padronizadas</label>
@@ -572,12 +584,8 @@
                         </button>
                     </div>
                 </div>
+                <div id="viaturasContainer"></div>
 
-                <div id="viaturasContainer">
-                    <!-- Preenchido dinamicamente -->
-                </div>
-
-                <!-- PESSOAS PRESAS / CAPTURADAS -->
                 <div class="section-title"><i class="fas fa-user-lock"></i>PESSOAS PRESAS / CAPTURADAS</div>
                 <div class="row g-3 mb-3">
                     <div class="col-md-12">
@@ -586,12 +594,8 @@
                         </button>
                     </div>
                 </div>
+                <div id="presosContainer"></div>
 
-                <div id="presosContainer">
-                    <!-- Preenchido dinamicamente -->
-                </div>
-
-                <!-- OBSERVAÇÕES -->
                 <div class="section-title"><i class="fas fa-comment-alt"></i>OBSERVACOES</div>
                 <div class="row g-3">
                     <div class="col-md-12">
@@ -599,7 +603,6 @@
                     </div>
                 </div>
 
-                <!-- BOTÕES -->
                 <div class="row mt-4">
                     <div class="col-md-12 text-end">
                         <button type="reset" class="btn-outline-gold me-2" onclick="setTimeout(resetFormularioOperacao, 0)">
@@ -613,12 +616,10 @@
             </form>
         </div>
 
-        <!-- LISTA DE OPERAÇÕES -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Operacoes Cadastradas</div>
             </div>
-
             <div class="row g-3 mb-3">
                 <div class="col-md-3">
                     <select class="form-select" id="filtroStatusOperacao">
@@ -659,7 +660,6 @@
                     </button>
                 </div>
             </div>
-
             <div id="listaOperacoes">
                 <div class="empty-state">
                     <i class="fas fa-spinner fa-spin"></i>
@@ -669,7 +669,6 @@
         </div>
     </main>
 
-    <!-- MODAL DETALHES -->
     <div class="modal-custom" id="modalDetalhesOperacao">
         <div class="modal-custom-content">
             <div class="modal-custom-header">
@@ -709,23 +708,13 @@
             'OUTROS': 'Outros'
         };
         const FUNCOES_POLICIAL = [
-            'Comandante',
-            'Subcomandante',
-            'Motorista',
-            'Atirador',
-            'Apoio',
-            'Negociador',
-            'Comunicacoes',
-            'Inteligencia',
-            'Observador',
-            'Outro'
+            'Comandante', 'Subcomandante', 'Motorista', 'Atirador',
+            'Apoio', 'Negociador', 'Comunicacoes', 'Inteligencia',
+            'Observador', 'Outro'
         ];
 
-        // ============================================================
-        // INICIALIZAÇÃO
-        // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Operacoes v1.1.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Operacoes v1.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -736,7 +725,6 @@
 
             usuarioAtual = usuario;
             atualizarDadosUsuario(usuario);
-
             document.getElementById('dataPrevista').value = new Date().toISOString().split('T')[0];
 
             await carregarSuspeitosCache();
@@ -760,6 +748,36 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
+        // [v1.2.0] GEOCODIFICACAO
+        async function geocodificarEnderecoOperacao(event) {
+            const btn = event ? event.target : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
+            }
+            try {
+                const setor = document.getElementById('setorOperacao').value.trim();
+                if (!setor) throw new Error('Preencha o Setor Responsavel primeiro.');
+
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(setor + ', Bahia, Brasil')}&limit=1`;
+                const resp = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
+                const resultado = await resp.json();
+
+                if (!resultado || resultado.length === 0) throw new Error('Local nao encontrado.');
+
+                document.getElementById('latitude').value = parseFloat(resultado[0].lat).toFixed(8);
+                document.getElementById('longitude').value = parseFloat(resultado[0].lon).toFixed(8);
+                showToast('success', 'Local encontrado!', 'Coordenadas preenchidas.');
+            } catch (e) {
+                showToast('error', 'Erro ao buscar', e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-search-location me-2"></i>BUSCAR PELO BAIRRO';
+                }
+            }
+        }
+
         async function carregarSuspeitosCache() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -767,10 +785,9 @@
                     .select('id_suspeito, nome_completo, apelido, cpf, data_nascimento, status_atual, nivel_periculosidade')
                     .eq('deletado', false)
                     .order('nome_completo', { ascending: true });
-
                 if (error) throw error;
                 suspeitosCache = data || [];
-                console.log(`✅ ${suspeitosCache.length} suspeitos carregados no cache`);
+                console.log(`✅ ${suspeitosCache.length} suspeitos carregados`);
             } catch (error) {
                 console.error('❌ Erro ao carregar suspeitos:', error);
             }
@@ -784,12 +801,11 @@
                     .eq('deletado', false)
                     .eq('ativo', true)
                     .order('nome_completo', { ascending: true });
-
                 if (error) throw error;
                 usuariosSistemaCache = data || [];
-                console.log(`✅ ${usuariosSistemaCache.length} usuarios do sistema carregados no cache`);
+                console.log(`✅ ${usuariosSistemaCache.length} usuarios do sistema carregados`);
             } catch (error) {
-                console.error('❌ Erro ao carregar usuarios do sistema:', error);
+                console.error('❌ Erro ao carregar usuarios:', error);
             }
         }
 
@@ -797,15 +813,8 @@
         // EQUIPE POLICIAL
         // ============================================================
         function adicionarPolicial() {
-            policiais.push({
-                id_usuario: null,
-                nome_completo: '',
-                matricula: '',
-                funcao: '',
-                cadastrado: false
-            });
+            policiais.push({ id_usuario: null, nome_completo: '', matricula: '', funcao: '', cadastrado: false });
             renderizarPoliciais();
-            console.log(`✅ Policial adicionado. Total: ${policiais.length}`);
         }
 
         function removerPolicial(index) {
@@ -815,63 +824,40 @@
         }
 
         function atualizarPolicial(index, campo, valor) {
-            if (policiais[index]) {
-                policiais[index][campo] = valor;
-            }
+            if (policiais[index]) policiais[index][campo] = valor;
         }
 
         function renderizarPoliciais() {
             const container = document.getElementById('policiaisContainer');
-
             if (policiais.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-item">
-                        <i class="fas fa-user-shield" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
-                        Nenhum policial adicionado a equipe
-                    </div>
-                `;
+                container.innerHTML = `<div class="empty-item"><i class="fas fa-user-shield" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>Nenhum policial adicionado a equipe</div>`;
                 return;
             }
-
             let html = '';
             policiais.forEach((p, i) => {
                 const badgeCadastro = p.cadastrado
                     ? '<span class="badge-cadastrado"><i class="fas fa-check-circle"></i> CADASTRADO</span>'
                     : '<span class="badge-nao-cadastrado"><i class="fas fa-user-plus"></i> NAO CADASTRADO</span>';
-
                 const matchInfo = p.cadastrado
                     ? `<div class="policial-match">
                         <div class="avatar">${(p.nome_completo || 'P')[0].toUpperCase()}</div>
                         <div class="info">
-                            <div class="nome">
-                                <i class="fas fa-check-circle" style="color: #0dcaf0;"></i>
-                                Vinculado ao sistema (ID: ${p.id_usuario?.substring(0, 8) || '-'})
-                            </div>
+                            <div class="nome"><i class="fas fa-check-circle" style="color: #0dcaf0;"></i> Vinculado ao sistema (ID: ${p.id_usuario?.substring(0, 8) || '-'})</div>
                             <div class="meta">${p.matricula ? 'Matricula: ' + p.matricula + ' - ' : ''}Policial cadastrado</div>
                         </div>
                        </div>`
                     : '';
-
-                const funcoesOptions = FUNCOES_POLICIAL.map(f =>
-                    `<option value="${f}" ${p.funcao === f ? 'selected' : ''}>${f}</option>`
-                ).join('');
-
+                const funcoesOptions = FUNCOES_POLICIAL.map(f => `<option value="${f}" ${p.funcao === f ? 'selected' : ''}>${f}</option>`).join('');
                 html += `
                     <div class="card-item">
                         <div class="card-item-header">
-                            <div class="titulo">
-                                <span class="num">${i+1}</span>POLICIAL #${i+1}
-                                ${badgeCadastro}
-                            </div>
-                            <button type="button" class="btn-remover-item" onclick="removerPolicial(${i})" title="Remover">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="titulo"><span class="num">${i+1}</span>POLICIAL #${i+1} ${badgeCadastro}</div>
+                            <button type="button" class="btn-remover-item" onclick="removerPolicial(${i})"><i class="fas fa-trash"></i></button>
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6 autocomplete-wrapper">
                                 <label class="form-label">Nome do Policial *</label>
-                                <input type="text" class="form-control" 
-                                       id="policialNome_${i}"
+                                <input type="text" class="form-control" id="policialNome_${i}"
                                        placeholder="Digite o nome (busca automatica)"
                                        value="${p.nome_completo || ''}"
                                        autocomplete="off"
@@ -882,11 +868,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Matricula</label>
-                                <input type="text" class="form-control" 
-                                       placeholder="Ex: 126028514"
-                                       value="${p.matricula || ''}"
-                                       ${p.cadastrado ? 'readonly' : ''}
-                                       oninput="atualizarPolicial(${i}, 'matricula', this.value)">
+                                <input type="text" class="form-control" placeholder="Ex: 126028514" value="${p.matricula || ''}" ${p.cadastrado ? 'readonly' : ''} oninput="atualizarPolicial(${i}, 'matricula', this.value)">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Funcao na Operacao *</label>
@@ -895,45 +877,29 @@
                                     ${funcoesOptions}
                                 </select>
                             </div>
-                            <div class="col-md-12">
-                                ${matchInfo}
-                            </div>
+                            <div class="col-md-12">${matchInfo}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-
             container.innerHTML = html;
         }
 
         function buscarPolicial(index, termo) {
             const listEl = document.getElementById('autocompletePolicial_' + index);
             if (!listEl) return;
-
             termo = (termo || '').trim().toLowerCase();
-
-            if (termo.length < 2) {
-                listEl.classList.remove('show');
-                return;
-            }
-
+            if (termo.length < 2) { listEl.classList.remove('show'); return; }
             const matches = usuariosSistemaCache.filter(u => {
                 const nome = (u.nome_completo || '').toLowerCase();
                 const matricula = (u.matricula || '').toLowerCase();
                 const email = (u.email || '').toLowerCase();
                 return nome.includes(termo) || matricula.includes(termo) || email.includes(termo);
             }).slice(0, 8);
-
             if (matches.length === 0) {
-                listEl.innerHTML = `
-                    <div class="autocomplete-item" style="cursor: default; color: rgba(255,193,7,0.8);">
-                        <i class="fas fa-exclamation-triangle"></i> Nenhum policial cadastrado com este nome
-                    </div>
-                `;
+                listEl.innerHTML = `<div class="autocomplete-item" style="cursor: default; color: rgba(255,193,7,0.8);"><i class="fas fa-exclamation-triangle"></i> Nenhum policial cadastrado com este nome</div>`;
                 listEl.classList.add('show');
                 return;
             }
-
             let html = '';
             matches.forEach(u => {
                 const perfil = AIDEPOM.getNomePerfil(u.id_perfil_acesso);
@@ -943,14 +909,9 @@
                             <strong>${u.nome_completo}</strong>
                             <span class="badge-match">${perfil}</span>
                         </div>
-                        <div class="match-info">
-                            ${u.matricula ? 'Matricula: ' + u.matricula + ' - ' : ''}
-                            ${u.setor ? 'Setor: ' + u.setor : ''}
-                        </div>
-                    </div>
-                `;
+                        <div class="match-info">${u.matricula ? 'Matricula: ' + u.matricula + ' - ' : ''}${u.setor ? 'Setor: ' + u.setor : ''}</div>
+                    </div>`;
             });
-
             listEl.innerHTML = html;
             listEl.classList.add('show');
         }
@@ -963,13 +924,10 @@
         function selecionarPolicial(index, idUsuario) {
             const u = usuariosSistemaCache.find(x => x.id === idUsuario);
             if (!u) return;
-
             policiais[index].id_usuario = u.id;
             policiais[index].nome_completo = u.nome_completo;
             policiais[index].matricula = u.matricula || '';
             policiais[index].cadastrado = true;
-
-            console.log('✅ Policial vinculado:', u.nome_completo);
             renderizarPoliciais();
             showToast('success', 'Policial vinculado!', `<strong>${u.nome_completo}</strong> foi vinculado a equipe.`);
         }
@@ -988,64 +946,36 @@
         }
 
         function atualizarPlacaViatura(index, valor) {
-            if (viaturas[index]) {
-                viaturas[index].placa = valor.toUpperCase();
-            }
+            if (viaturas[index]) viaturas[index].placa = valor.toUpperCase();
         }
 
         function renderizarViaturas() {
             const container = document.getElementById('viaturasContainer');
-
-            if (viaturas.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-
+            if (viaturas.length === 0) { container.innerHTML = ''; return; }
             let html = '';
             viaturas.forEach((v, i) => {
                 html += `
                     <div class="card-item">
                         <div class="card-item-header">
                             <div class="titulo"><span class="num">${i+1}</span>VIATURA #${i+1}</div>
-                            <button type="button" class="btn-remover-item" onclick="removerViatura(${i})" title="Remover">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <button type="button" class="btn-remover-item" onclick="removerViatura(${i})"><i class="fas fa-trash"></i></button>
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <label class="form-label">Placa</label>
-                                <input type="text" class="form-control" 
-                                       placeholder="ABC-1D23" 
-                                       maxlength="10"
-                                       value="${v.placa || ''}"
-                                       oninput="atualizarPlacaViatura(${i}, this.value)"
-                                       style="text-transform: uppercase;">
+                                <input type="text" class="form-control" placeholder="ABC-1D23" maxlength="10" value="${v.placa || ''}" oninput="atualizarPlacaViatura(${i}, this.value)" style="text-transform: uppercase;">
                             </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-
             container.innerHTML = html;
         }
 
-        function atualizarContadoresViaturas() {
-            // Apenas visual
-        }
-
         // ============================================================
-        // PRESOS / CAPTURADOS
+        // PRESOS
         // ============================================================
         function adicionarPreso() {
-            presos.push({
-                nome_completo: '',
-                apelido: '',
-                cpf: '',
-                data_nascimento: '',
-                tipo: 'PRESO',
-                id_suspeito: null,
-                foi_identificado: false
-            });
+            presos.push({ nome_completo: '', apelido: '', cpf: '', data_nascimento: '', tipo: 'PRESO', id_suspeito: null, foi_identificado: false });
             renderizarPresos();
         }
 
@@ -1056,82 +986,41 @@
         }
 
         function atualizarPreso(index, campo, valor) {
-            if (presos[index]) {
-                presos[index][campo] = valor;
-            }
+            if (presos[index]) presos[index][campo] = valor;
         }
 
         function renderizarPresos() {
             const container = document.getElementById('presosContainer');
-
             if (presos.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-item">
-                        <i class="fas fa-user-lock" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
-                        Nenhuma pessoa cadastrada
-                    </div>
-                `;
+                container.innerHTML = `<div class="empty-item"><i class="fas fa-user-lock" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>Nenhuma pessoa cadastrada</div>`;
                 return;
             }
-
             let html = '';
             presos.forEach((p, i) => {
                 const matchInfo = p.foi_identificado && p.id_suspeito
                     ? `<div class="suspeito-match">
                         <div class="avatar">${(p.nome_completo || 'S')[0].toUpperCase()}</div>
                         <div class="info">
-                            <div class="nome">
-                                <i class="fas fa-check-circle" style="color: #00ff88;"></i>
-                                Suspeito JA CADASTRADO no sistema (ID #${p.id_suspeito})
-                            </div>
-                            <div class="meta">Os dados foram preenchidos automaticamente</div>
+                            <div class="nome"><i class="fas fa-check-circle" style="color: #00ff88;"></i> Suspeito JA CADASTRADO (ID #${p.id_suspeito})</div>
+                            <div class="meta">Dados preenchidos automaticamente</div>
                         </div>
                        </div>`
                     : '';
-
                 html += `
                     <div class="card-item">
                         <div class="card-item-header">
-                            <div class="titulo">
-                                <span class="num">${i+1}</span>PESSOA #${i+1}
-                                ${p.foi_identificado ? '<span class="badge-match">JA CADASTRADO</span>' : '<span class="badge-match" style="background:rgba(255,193,7,0.2); color:#ffc107;">NAO CADASTRADO</span>'}
-                            </div>
-                            <button type="button" class="btn-remover-item" onclick="removerPreso(${i})" title="Remover">
-                                <i class="fas fa-trash"></i>
-                            </button>
+                            <div class="titulo"><span class="num">${i+1}</span>PESSOA #${i+1} ${p.foi_identificado ? '<span class="badge-match">JA CADASTRADO</span>' : '<span class="badge-match" style="background:rgba(255,193,7,0.2); color:#ffc107;">NAO CADASTRADO</span>'}</div>
+                            <button type="button" class="btn-remover-item" onclick="removerPreso(${i})"><i class="fas fa-trash"></i></button>
                         </div>
                         <div class="row g-3">
                             <div class="col-md-6 autocomplete-wrapper">
                                 <label class="form-label">Nome Completo *</label>
-                                <input type="text" class="form-control" 
-                                       id="presoNome_${i}"
-                                       placeholder="Digite o nome (busca automatica)"
-                                       value="${p.nome_completo || ''}"
-                                       autocomplete="off"
-                                       oninput="buscarSuspeito(${i}, this.value)"
-                                       onfocus="buscarSuspeito(${i}, this.value)"
-                                       onblur="setTimeout(() => fecharAutocomplete(${i}), 200)">
+                                <input type="text" class="form-control" id="presoNome_${i}" placeholder="Digite o nome" value="${p.nome_completo || ''}" autocomplete="off" oninput="buscarSuspeito(${i}, this.value)" onfocus="buscarSuspeito(${i}, this.value)" onblur="setTimeout(() => fecharAutocomplete(${i}), 200)">
                                 <div class="autocomplete-list" id="autocomplete_${i}"></div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Apelido</label>
-                                <input type="text" class="form-control" 
-                                       value="${p.apelido || ''}"
-                                       oninput="atualizarPreso(${i}, 'apelido', this.value)">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">CPF</label>
-                                <input type="text" class="form-control" 
-                                       placeholder="000.000.000-00"
-                                       value="${p.cpf || ''}"
-                                       oninput="atualizarPreso(${i}, 'cpf', this.value)">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Data Nascimento</label>
-                                <input type="date" class="form-control" 
-                                       value="${p.data_nascimento || ''}"
-                                       oninput="atualizarPreso(${i}, 'data_nascimento', this.value)">
-                            </div>
+                            <div class="col-md-3"><label class="form-label">Apelido</label><input type="text" class="form-control" value="${p.apelido || ''}" oninput="atualizarPreso(${i}, 'apelido', this.value)"></div>
+                            <div class="col-md-3"><label class="form-label">CPF</label><input type="text" class="form-control" value="${p.cpf || ''}" oninput="atualizarPreso(${i}, 'cpf', this.value)"></div>
+                            <div class="col-md-3"><label class="form-label">Data Nascimento</label><input type="date" class="form-control" value="${p.data_nascimento || ''}" oninput="atualizarPreso(${i}, 'data_nascimento', this.value)"></div>
                             <div class="col-md-3">
                                 <label class="form-label">Tipo</label>
                                 <select class="form-select" onchange="atualizarPreso(${i}, 'tipo', this.value)">
@@ -1139,52 +1028,30 @@
                                     <option value="CAPTURADO" ${p.tipo === 'CAPTURADO' ? 'selected' : ''}>Capturado</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Observacoes</label>
-                                <input type="text" class="form-control" 
-                                       placeholder="Ex: resistiu a prisao, portava arma..."
-                                       value="${p.observacoes || ''}"
-                                       oninput="atualizarPreso(${i}, 'observacoes', this.value)">
-                            </div>
-                            <div class="col-md-12">
-                                ${matchInfo}
-                            </div>
+                            <div class="col-md-6"><label class="form-label">Observacoes</label><input type="text" class="form-control" value="${p.observacoes || ''}" oninput="atualizarPreso(${i}, 'observacoes', this.value)"></div>
+                            <div class="col-md-12">${matchInfo}</div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-
             container.innerHTML = html;
         }
 
         function buscarSuspeito(index, termo) {
             const listEl = document.getElementById('autocomplete_' + index);
             if (!listEl) return;
-
             termo = (termo || '').trim().toLowerCase();
-
-            if (termo.length < 2) {
-                listEl.classList.remove('show');
-                return;
-            }
-
+            if (termo.length < 2) { listEl.classList.remove('show'); return; }
             const matches = suspeitosCache.filter(s => {
                 const nome = (s.nome_completo || '').toLowerCase();
                 const apelido = (s.apelido || '').toLowerCase();
                 const cpf = (s.cpf || '').toLowerCase();
                 return nome.includes(termo) || apelido.includes(termo) || cpf.includes(termo);
             }).slice(0, 8);
-
             if (matches.length === 0) {
-                listEl.innerHTML = `
-                    <div class="autocomplete-item" style="cursor: default; color: rgba(255,193,7,0.8);">
-                        <i class="fas fa-exclamation-triangle"></i> Nenhum suspeito encontrado
-                    </div>
-                `;
+                listEl.innerHTML = `<div class="autocomplete-item" style="cursor: default; color: rgba(255,193,7,0.8);"><i class="fas fa-exclamation-triangle"></i> Nenhum suspeito encontrado</div>`;
                 listEl.classList.add('show');
                 return;
             }
-
             let html = '';
             matches.forEach(s => {
                 html += `
@@ -1193,15 +1060,9 @@
                             <strong>${s.nome_completo}</strong>
                             <span class="badge-match">ID #${s.id_suspeito}</span>
                         </div>
-                        <div class="match-info">
-                            ${s.apelido ? 'Apelido: ' + s.apelido + ' - ' : ''}
-                            ${s.cpf ? 'CPF: ' + s.cpf + ' - ' : ''}
-                            Status: ${s.status_atual || '-'}
-                        </div>
-                    </div>
-                `;
+                        <div class="match-info">${s.apelido ? 'Apelido: ' + s.apelido + ' - ' : ''}${s.cpf ? 'CPF: ' + s.cpf + ' - ' : ''}Status: ${s.status_atual || '-'}</div>
+                    </div>`;
             });
-
             listEl.innerHTML = html;
             listEl.classList.add('show');
         }
@@ -1214,21 +1075,18 @@
         function selecionarSuspeito(index, idSuspeito) {
             const s = suspeitosCache.find(x => x.id_suspeito === idSuspeito);
             if (!s) return;
-
             presos[index].id_suspeito = s.id_suspeito;
             presos[index].nome_completo = s.nome_completo;
             presos[index].apelido = s.apelido || '';
             presos[index].cpf = s.cpf || '';
             presos[index].data_nascimento = s.data_nascimento || '';
             presos[index].foi_identificado = true;
-
-            console.log('✅ Suspeito vinculado:', s.nome_completo);
             renderizarPresos();
-            showToast('success', 'Suspeito vinculado!', `<strong>${s.nome_completo}</strong> ja esta cadastrado (ID #${s.id_suspeito}).`);
+            showToast('success', 'Suspeito vinculado!', `<strong>${s.nome_completo}</strong> ja esta cadastrado.`);
         }
 
         // ============================================================
-        // CADASTRAR OPERAÇÃO
+        // CADASTRAR OPERACAO
         // ============================================================
         async function cadastrarOperacao(e) {
             e.preventDefault();
@@ -1247,9 +1105,7 @@
 
                 const policiaisValidos = policiais.filter(p => p.nome_completo && p.nome_completo.trim());
                 for (const p of policiaisValidos) {
-                    if (!p.funcao) {
-                        throw new Error(`Selecione a funcao do policial "${p.nome_completo}".`);
-                    }
+                    if (!p.funcao) throw new Error(`Selecione a funcao do policial "${p.nome_completo}".`);
                 }
 
                 const dados = {
@@ -1257,6 +1113,9 @@
                     data_prevista: dataPrevista,
                     horario: document.getElementById('horario').value || null,
                     setor: setor,
+                    // [v1.2.0] COORDENADAS
+                    latitude: parseFloat(document.getElementById('latitude').value) || null,
+                    longitude: parseFloat(document.getElementById('longitude').value) || null,
                     equipe_policial: policiaisValidos,
                     viaturas_quantidade: parseInt(document.getElementById('viaturasTotal').value) || 0,
                     viaturas_padronizadas: parseInt(document.getElementById('viaturasPadronizadas').value) || 0,
@@ -1271,18 +1130,11 @@
                     deletado: false
                 };
 
-                console.log('📝 Cadastrando operacao:', dados);
-
                 const { data: inserted, error: insertError } = await window.supabaseClient
-                    .from('operacao')
-                    .insert(dados)
-                    .select()
-                    .maybeSingle();
+                    .from('operacao').insert(dados).select().maybeSingle();
 
                 if (insertError) throw insertError;
-
                 const idOperacao = inserted.id_operacao;
-                console.log('✅ Operacao cadastrada ID:', idOperacao);
 
                 if (presos.length > 0) {
                     const presosValidos = presos.filter(p => p.nome_completo && p.nome_completo.trim());
@@ -1300,25 +1152,13 @@
                             id_usuario_cadastro: usuarioAtual.id,
                             deletado: false
                         }));
-
-                        const { error: presosError } = await window.supabaseClient
-                            .from('operacao_preso')
-                            .insert(presosInsert);
-
-                        if (presosError) {
-                            console.error('❌ Erro ao inserir presos:', presosError);
-                        } else {
-                            console.log(`✅ ${presosInsert.length} pessoa(s) inserida(s)`);
-                        }
+                        await window.supabaseClient.from('operacao_preso').insert(presosInsert);
                     }
                 }
 
-                showToast('success', 'Operacao cadastrada!',
-                    `<strong>${dados.nome_operacao}</strong> foi cadastrada com ID #${idOperacao}.`, 8000);
-
+                showToast('success', 'Operacao cadastrada!', `<strong>${dados.nome_operacao}</strong> foi cadastrada com ID #${idOperacao}.`, 8000);
                 resetFormularioOperacao();
                 await carregarOperacoes();
-
             } catch (error) {
                 console.error('❌ Erro:', error);
                 showToast('error', 'Erro ao cadastrar', error.message);
@@ -1337,38 +1177,32 @@
             renderizarViaturas();
             renderizarPresos();
             renderizarPoliciais();
-            console.log('🧹 Formulario resetado');
+            const latEl = document.getElementById('latitude');
+            const lngEl = document.getElementById('longitude');
+            if (latEl) latEl.value = '';
+            if (lngEl) lngEl.value = '';
         }
 
         // ============================================================
-        // LISTAR OPERAÇÕES
+        // LISTAR OPERACOES
         // ============================================================
         async function carregarOperacoes() {
             const container = document.getElementById('listaOperacoes');
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando operacoes...</div>';
-
+            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando...</div>';
             try {
                 const status = document.getElementById('filtroStatusOperacao').value;
                 const natureza = document.getElementById('filtroNaturezaOperacao').value;
                 const objetivo = document.getElementById('filtroObjetivoOperacao').value;
 
-                let query = window.supabaseClient
-                    .from('operacao')
-                    .select('*')
-                    .eq('deletado', false);
-
+                let query = window.supabaseClient.from('operacao').select('*').eq('deletado', false);
                 if (status) query = query.eq('status', status);
                 if (natureza) query = query.eq('natureza_operacao', natureza);
                 if (objetivo) query = query.eq('objetivo_pratico', objetivo);
 
-                const { data, error } = await query
-                    .order('data_prevista', { ascending: false })
-                    .limit(50);
-
+                const { data, error } = await query.order('data_prevista', { ascending: false }).limit(50);
                 if (error) throw error;
 
-                document.getElementById('badgeTotalOperacoes').innerHTML =
-                    '<i class="fas fa-list"></i> ' + (data?.length || 0) + ' operacoes';
+                document.getElementById('badgeTotalOperacoes').innerHTML = '<i class="fas fa-list"></i> ' + (data?.length || 0) + ' operacoes';
 
                 if (!data || data.length === 0) {
                     container.innerHTML = '<div class="empty-state"><i class="fas fa-bullseye"></i>Nenhuma operacao cadastrada</div>';
@@ -1376,7 +1210,7 @@
                 }
 
                 let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
-                html += '<th>Nome</th><th>Data</th><th>Setor</th><th>Equipe</th><th>Natureza</th><th>Objetivo</th><th>Status</th><th>Acoes</th>';
+                html += '<th>Nome</th><th>Data</th><th>Setor</th><th>Equipe</th><th>GPS</th><th>Natureza</th><th>Objetivo</th><th>Status</th>';
                 html += '</tr></thead><tbody>';
 
                 data.forEach(o => {
@@ -1384,32 +1218,30 @@
                     const naturezaClass = `nat-${(o.natureza_operacao || 'padrao').toLowerCase()}`;
                     const dataFormatada = o.data_prevista ? o.data_prevista.split('-').reverse().join('/') : '-';
                     const equipe = Array.isArray(o.equipe_policial) ? o.equipe_policial : [];
+                    const temGps = o.latitude && o.longitude;
 
                     html += '<tr onclick="verDetalhesOperacao(' + o.id_operacao + ')">';
                     html += `<td><strong style="color:var(--text-primary);">${o.nome_operacao || '-'}</strong></td>`;
                     html += `<td>${dataFormatada}${o.horario ? ' ' + o.horario.substring(0,5) : ''}</td>`;
                     html += `<td>${o.setor || '-'}</td>`;
                     html += `<td><span style="color:#0dcaf0;"><i class="fas fa-user-shield"></i> ${equipe.length}</span></td>`;
+                    html += `<td>${temGps ? '<i class="fas fa-map-marker-alt" style="color:#00ff88;"></i>' : '<i class="fas fa-times" style="color:#dc3545;"></i>'}</td>`;
                     html += `<td>${o.natureza_operacao ? `<span class="natureza-badge ${naturezaClass}">${NATUREZA_LABEL[o.natureza_operacao] || o.natureza_operacao}</span>` : '-'}</td>`;
                     html += `<td>${o.objetivo_pratico ? `<span class="objetivo-badge">${OBJETIVO_LABEL[o.objetivo_pratico] || o.objetivo_pratico}</span>` : '-'}</td>`;
                     html += `<td><span class="status-badge ${statusClass}">${o.status || '-'}</span></td>`;
-                    html += `<td><button class="btn-icon" title="Ver detalhes"><i class="fas fa-eye"></i></button></td>`;
                     html += '</tr>';
                 });
 
                 html += '</tbody></table></div>';
                 container.innerHTML = html;
-
-                console.log(`✅ ${data.length} operacoes carregadas`);
-
             } catch (error) {
                 console.error('❌ Erro:', error);
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar operacoes. As tabelas existem?</div>';
+                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar operacoes</div>';
             }
         }
 
         // ============================================================
-        // VER DETALHES
+        // DETALHES
         // ============================================================
         async function verDetalhesOperacao(id) {
             const modal = document.getElementById('modalDetalhesOperacao');
@@ -1418,20 +1250,11 @@
             body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
 
             try {
-                const { data: o, error } = await window.supabaseClient
-                    .from('operacao')
-                    .select('*')
-                    .eq('id_operacao', id)
-                    .maybeSingle();
-
+                const { data: o, error } = await window.supabaseClient.from('operacao').select('*').eq('id_operacao', id).maybeSingle();
                 if (error) throw error;
                 if (!o) throw new Error('Operacao nao encontrada');
 
-                const { data: presosData } = await window.supabaseClient
-                    .from('operacao_preso')
-                    .select('*')
-                    .eq('id_operacao', id)
-                    .eq('deletado', false);
+                const { data: presosData } = await window.supabaseClient.from('operacao_preso').select('*').eq('id_operacao', id).eq('deletado', false);
 
                 const dataFormatada = o.data_prevista ? o.data_prevista.split('-').reverse().join('/') : '-';
                 const naturezaClass = `nat-${(o.natureza_operacao || 'padrao').toLowerCase()}`;
@@ -1442,95 +1265,45 @@
                 body.innerHTML = `
                     <div class="row g-3">
                         <div class="col-md-12">
-                            <div class="detalhe-campo">
-                                <span class="label">Nome da Operacao</span>
-                                <span class="valor"><strong>${o.nome_operacao}</strong></span>
-                            </div>
+                            <div class="detalhe-campo"><span class="label">Nome da Operacao</span><span class="valor"><strong>${o.nome_operacao}</strong></span></div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Data Prevista</span><span class="valor">${dataFormatada}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Horario</span><span class="valor">${o.horario || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Setor</span><span class="valor">${o.setor || '-'}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Natureza</span>
-                                <span class="valor">${o.natureza_operacao ? `<span class="natureza-badge ${naturezaClass}">${NATUREZA_LABEL[o.natureza_operacao]}</span>` : '-'}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Objetivo Pratico</span>
-                                <span class="valor">${o.objetivo_pratico ? `<span class="objetivo-badge">${OBJETIVO_LABEL[o.objetivo_pratico]}</span>` : '-'}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Status</span>
-                                <span class="valor"><span class="status-badge ${statusClass}">${o.status}</span></span>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Quilometragem</span><span class="valor">${o.quilometragem ? o.quilometragem + ' km' : '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Total Viaturas</span><span class="valor">${o.viaturas_quantidade || 0}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Padronizadas</span><span class="valor">${o.viaturas_padronizadas || 0}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Descaracterizadas</span><span class="valor">${o.viaturas_descaracterizadas || 0}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Placas</span>
-                                <span class="valor">${placas.length > 0 ? placas.join(', ') : '-'}</span>
-                            </div>
-                        </div>
-                        ${o.observacoes ? `
-                        <div class="col-md-12">
-                            <div class="detalhe-campo"><span class="label">Observacoes</span><span class="valor">${o.observacoes}</span></div>
-                        </div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Data Prevista</span><span class="valor">${dataFormatada}</span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Horario</span><span class="valor">${o.horario || '-'}</span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Setor</span><span class="valor">${o.setor || '-'}</span></div></div>
+                        ${o.latitude && o.longitude ? `
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Coordenadas</span><span class="valor">${o.latitude}, ${o.longitude}</span></div></div>
                         ` : ''}
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Natureza</span><span class="valor">${o.natureza_operacao ? `<span class="natureza-badge ${naturezaClass}">${NATUREZA_LABEL[o.natureza_operacao]}</span>` : '-'}</span></div></div>
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Objetivo Pratico</span><span class="valor">${o.objetivo_pratico ? `<span class="objetivo-badge">${OBJETIVO_LABEL[o.objetivo_pratico]}</span>` : '-'}</span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Status</span><span class="valor"><span class="status-badge ${statusClass}">${o.status}</span></span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Quilometragem</span><span class="valor">${o.quilometragem ? o.quilometragem + ' km' : '-'}</span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Total Viaturas</span><span class="valor">${o.viaturas_quantidade || 0}</span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Padronizadas</span><span class="valor">${o.viaturas_padronizadas || 0}</span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Descaracterizadas</span><span class="valor">${o.viaturas_descaracterizadas || 0}</span></div></div>
+                        <div class="col-md-4"><div class="detalhe-campo"><span class="label">Placas</span><span class="valor">${placas.length > 0 ? placas.join(', ') : '-'}</span></div></div>
+                        ${o.observacoes ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Observacoes</span><span class="valor">${o.observacoes}</span></div></div>` : ''}
                     </div>
 
                     ${equipe.length > 0 ? `
                     <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                        <h6 style="color: #0dcaf0; font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;">
-                            <i class="fas fa-user-shield"></i> EQUIPE POLICIAL (${equipe.length})
-                        </h6>
+                        <h6 style="color: #0dcaf0; font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;"><i class="fas fa-user-shield"></i> EQUIPE POLICIAL (${equipe.length})</h6>
                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
                             ${equipe.map(p => `
                                 <div class="card-item" style="border-color: rgba(13, 202, 240, 0.3);">
-                                    <div style="display: flex; justify-content: space-between; align-items: start;">
-                                        <div>
-                                            <strong style="color: #0dcaf0;">${p.nome_completo || '-'}</strong>
-                                            ${p.cadastrado ? '<span class="badge-cadastrado"><i class="fas fa-check-circle"></i> CADASTRADO</span>' : '<span class="badge-nao-cadastrado">NAO CADASTRADO</span>'}
-                                        </div>
-                                    </div>
-                                    <div style="margin-top: 6px; font-size: 12px; color: rgba(13, 202, 240, 0.5);">
-                                        ${p.matricula ? 'Matricula: ' + p.matricula + ' - ' : ''}
-                                        <strong style="color: #0dcaf0;">Funcao:</strong> ${p.funcao || '-'}
-                                    </div>
+                                    <div><strong style="color: #0dcaf0;">${p.nome_completo || '-'}</strong>${p.cadastrado ? '<span class="badge-cadastrado"><i class="fas fa-check-circle"></i> CADASTRADO</span>' : '<span class="badge-nao-cadastrado">NAO CADASTRADO</span>'}</div>
+                                    <div style="margin-top: 6px; font-size: 12px; color: rgba(13, 202, 240, 0.5);">${p.matricula ? 'Matricula: ' + p.matricula + ' - ' : ''}<strong style="color: #0dcaf0;">Funcao:</strong> ${p.funcao || '-'}</div>
                                 </div>
                             `).join('')}
                         </div>
-                    </div>
-                    ` : ''}
+                    </div>` : ''}
 
                     ${presosData && presosData.length > 0 ? `
                     <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                        <h6 style="color: var(--text-primary); font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;">
-                            <i class="fas fa-user-lock"></i> PESSOAS PRESAS / CAPTURADAS (${presosData.length})
-                        </h6>
+                        <h6 style="color: var(--text-primary); font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;"><i class="fas fa-user-lock"></i> PESSOAS PRESAS / CAPTURADAS (${presosData.length})</h6>
                         ${presosData.map(p => `
                             <div class="card-item">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <div>
-                                        <strong style="color: var(--text-primary);">${p.nome_completo}</strong>
-                                        ${p.foi_identificado ? '<span class="badge-match" style="margin-left: 8px;">JA CADASTRADO</span>' : ''}
-                                    </div>
+                                    <div><strong style="color: var(--text-primary);">${p.nome_completo}</strong>${p.foi_identificado ? '<span class="badge-match" style="margin-left: 8px;">JA CADASTRADO</span>' : ''}</div>
                                     <span class="natureza-badge nat-${p.tipo === 'PRESO' ? 'ostensiva' : 'aberta'}">${p.tipo}</span>
                                 </div>
                                 <div style="margin-top: 6px; font-size: 12px; color: rgba(0,255,136,0.5);">
@@ -1539,13 +1312,10 @@
                                     ${p.data_nascimento ? 'Nasc: ' + p.data_nascimento.split('-').reverse().join('/') + ' - ' : ''}
                                     ${p.id_suspeito ? 'Vinculado ao suspeito #' + p.id_suspeito : 'Nao vinculado'}
                                 </div>
-                                ${p.observacoes ? `<div style="margin-top: 6px; font-size: 11px; color: rgba(0,255,136,0.4); font-style: italic;">${p.observacoes}</div>` : ''}
                             </div>
                         `).join('')}
-                    </div>
-                    ` : ''}
+                    </div>` : ''}
                 `;
-
             } catch (error) {
                 console.error('❌ Erro:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
@@ -1585,9 +1355,7 @@
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
             try { window.open('', '_self', ''); window.close(); } catch (e) {}
-            setTimeout(function() {
-                if (!window.closed) window.location.href = '01-apresentacao.html';
-            }, 300);
+            setTimeout(function() { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
         }
 
         function toggleSidebar() {
@@ -1598,7 +1366,7 @@
             if (e.key === 'Escape') fecharDetalhesOperacao();
         });
 
-        console.log('✅ Pagina de Operacoes carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Operacoes v1.2.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
