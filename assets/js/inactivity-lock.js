@@ -2,8 +2,8 @@
    AI-DEPOM - TEMPORIZADOR DE INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-lock.js
-   Versao: 1.2.1
-   Data: 16/09/2026 - 09:30
+   Versao: 1.2.2
+   Data: 16/09/2026 - 12:30
    Autor: AI-DEPOM Team
    ============================================
    REGRA DE OURO:
@@ -15,6 +15,15 @@
    6. Todo módulo DEVE estar conectado
    7. Nenhuma linha deve ser removida sem substituição
 
+   ALTERAÇÕES v1.2.2 (16/09/2026 12:30):
+   - 🚨 CORRIGIDO: F5 burlava o lock screen (bug crítico de segurança)
+   - 🛡️ NOVO: estado de bloqueio persistido em localStorage
+   - 🛡️ NOVO: re-aplica lock automaticamente ao recarregar a página
+   - 🛡️ NOVO: força logout se lock ficou ativo >24h
+   - 🛡️ NOVO: desbloqueio limpa o estado persistido
+   - 🛡️ NOVO: logout limpa o estado persistido
+   - ✅ Mantidas: todas as proteções da v1.2.1 (anti-autofill, guarda)
+
    ALTERAÇÕES v1.2.1 (16/09/2026 09:30):
    - 🐛 CORRIGIDO: autofill do navegador (Edge) preenchia a senha automaticamente
    - 🐛 CORRIGIDO: campo agora exige digitação manual (readonly + flag)
@@ -22,7 +31,13 @@
    - 🐛 CORRIGIDO: readonly removido só ao clicar/focar no campo
    - 🛡️ NOVO: rastreia se o usuário DIGITOU (evento input)
    - 🛡️ NOVO: se tentar desbloquear sem digitar, recusa
-   - ✅ Mantidas todas as proteções da v1.2.0
+
+   ALTERAÇÕES v1.2.0 (16/09/2026 09:00):
+   - 🐛 CORRIGIDO: desbloquear() agora valida senha ANTES de remover o lock
+   - 🐛 CORRIGIDO: botão DESBLOQUEAR não desbloqueia com senha vazia
+   - 🛡️ NOVO: guarda ativa re-aplica o lock se for removido indevidamente
+   - 🛡️ NOVO: intercepta classList.remove/toggle do lockScreen
+   - 🛡️ NOVO: stopPropagation em cliques fora do botão
    ============================================ */
 
 (function() {
@@ -42,6 +57,11 @@
     const TIMEOUT_MS = 5 * 60 * 1000;      // 5 minutos
     const WARNING_MS = 1 * 60 * 1000;      // Aviso 1 minuto antes
     const CHECK_INTERVAL_MS = 1000;
+    const LOCK_MAX_AGE_MS = 24 * 60 * 60 * 1000;  // 24 horas
+
+    // 🛡️ [v1.2.2] Chaves do localStorage
+    const LOCK_KEY = 'aidepom_locked';
+    const LOCK_AT_KEY = 'aidepom_locked_at';
 
     let timeoutId = null;
     let warningId = null;
@@ -337,7 +357,6 @@
                     <div class="lock-form">
                         <div class="form-group">
                             <label for="lockSenha">Digite sua senha para desbloquear</label>
-                            <!-- 🛡️ [v1.2.1] readonly + autocomplete="new-password" impede autofill -->
                             <input type="password" id="lockSenha" placeholder="Clique aqui e digite sua senha" autocomplete="new-password" readonly>
                         </div>
                         <button type="button" class="lock-btn" id="lockBtn">
@@ -363,6 +382,43 @@
             const parsed = JSON.parse(u);
             return !!(parsed && parsed.id);
         } catch (e) {
+            return false;
+        }
+    }
+
+    // ============================================
+    // 🛡️ [v1.2.2] Verifica se havia lock pendente (F5 bypass)
+    // ============================================
+    function verificarLockPendente() {
+        try {
+            const locked = localStorage.getItem(LOCK_KEY);
+            if (locked !== 'true') return false;
+
+            const lockedAt = parseInt(localStorage.getItem(LOCK_AT_KEY) || '0');
+            const agora = Date.now();
+            const tempoDecorrido = agora - lockedAt;
+
+            // Se ficou bloqueado por mais de 24h → força logout
+            if (tempoDecorrido > LOCK_MAX_AGE_MS || lockedAt === 0) {
+                console.warn('🛡️ [v1.2.2] Lock expirado (>24h). Forçando logout.');
+                try {
+                    localStorage.removeItem(LOCK_KEY);
+                    localStorage.removeItem(LOCK_AT_KEY);
+                    localStorage.removeItem('usuario');
+                    localStorage.removeItem('authData');
+                    localStorage.removeItem('usuarioId');
+                    localStorage.removeItem('logado');
+                } catch (e) { /* ignore */ }
+                window.location.href = '02-login.html';
+                return false;
+            }
+
+            console.log('🔒 [v1.2.2] Lock pendente detectado. Re-aplicando...');
+            console.log('⏱️ Bloqueado há', Math.round(tempoDecorrido / 1000), 'segundos');
+            return true;
+
+        } catch (e) {
+            console.warn('⚠️ Erro ao verificar lock pendente:', e);
             return false;
         }
     }
@@ -548,6 +604,15 @@
             bloqueado = true;
             limparTodosTimers();
 
+            // 🛡️ [v1.2.2] Persiste o estado de bloqueio no localStorage
+            try {
+                localStorage.setItem(LOCK_KEY, 'true');
+                localStorage.setItem(LOCK_AT_KEY, Date.now().toString());
+                console.log('🛡️ [v1.2.2] Estado de bloqueio persistido');
+            } catch (e) {
+                console.warn('⚠️ Não foi possível persistir lock:', e);
+            }
+
             try {
                 const usuarioStr = localStorage.getItem('usuario');
                 if (usuarioStr) {
@@ -571,9 +636,6 @@
             warningToast.classList.remove('show');
 
             ativarGuarda();
-
-            // 🛡️ [v1.2.1] NÃO faz focus automático (usuário precisa clicar)
-            // setTimeout(() => lockSenha.focus(), 300);
 
             console.log('🔒 Tela bloqueada por inatividade');
         }
@@ -666,6 +728,16 @@
                 desativarGuarda();
                 lockScreen.classList.remove('show');
                 resetarFlagDigitacao();
+
+                // 🛡️ [v1.2.2] Limpa o estado persistido do lock
+                try {
+                    localStorage.removeItem(LOCK_KEY);
+                    localStorage.removeItem(LOCK_AT_KEY);
+                    console.log('🛡️ [v1.2.2] Estado de bloqueio limpo');
+                } catch (e) {
+                    console.warn('⚠️ Erro ao limpar lock:', e);
+                }
+
                 resetarTimers();
 
                 console.log('✅ Tela desbloqueada');
@@ -735,16 +807,31 @@
                 localStorage.removeItem('authData');
                 localStorage.removeItem('usuarioId');
                 localStorage.removeItem('logado');
+                // 🛡️ [v1.2.2] Limpa também o estado de lock
+                localStorage.removeItem(LOCK_KEY);
+                localStorage.removeItem(LOCK_AT_KEY);
             } catch (e) { /* ignore */ }
 
             window.location.href = '02-login.html';
         });
 
-        resetarTimers();
+        // ============================================
+        // 🛡️ [v1.2.2] Inicialização: verifica lock pendente (F5)
+        // ============================================
+        const lockPendente = verificarLockPendente();
+
+        if (lockPendente) {
+            console.log('🛡️ [v1.2.2] Re-aplicando bloqueio após reload...');
+            // Re-aplica o bloqueio imediatamente (sem esperar 5min)
+            bloquearTela();
+        } else {
+            // Iniciar timers normalmente
+            resetarTimers();
+        }
 
         window.__AIDEPOM_INACTIVITY_LOCK_INIT__ = true;
 
-        console.log('✅ Temporizador de inatividade ativo (5 minutos)');
+        console.log('✅ Temporizador de inatividade ativo (5 minutos) [v1.2.2]');
     }
 
     function bootstrap() {
