@@ -1,28 +1,26 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
-     ============================================================
      Arquivo: 11-mandados.html
-     Versão: 1.3.0
-     Data: 17/09/2026 - 10:00
+     Versão: 1.3.1
+     Data: 17/09/2026 - 11:00
      ============================================================
+     ALTERAÇÕES v1.3.1 (17/09/2026 11:00):
+     - 🐛 CORRIGIDO: permissão de Descrição/Observações agora usa
+       ID do perfil (1=Master, 2=Admin, 3=Delegado, 4=Investigador)
+       - Antes: comparação por nome falhava ("Administrador" ≠ "MASTER")
+       - Agora: comparação por ID é robusta
+     - ✨ Mantido fallback por nome (retrocompatibilidade)
+     - ✅ Mantidas todas as features da v1.3.0
+
      ALTERAÇÕES v1.3.0 (17/09/2026 10:00):
      - ✨ Validação manual campo-por-campo com toast em português
-     - ✨ Aviso se Descrição > 5000 caracteres (com contagem atual)
+     - ✨ Aviso se Descrição > 5000 caracteres
      - ✨ Foco + destaque amarelo no campo inválido
-     - ✨ Logs completos no console ([campos], [dados], [erro])
-     - 🐛 Mensagens de erro mais claras ("Erro ao cadastrar")
-     - ✅ Mantidas todas as features da v1.2.0
+     - ✨ Logs completos no console
 
      ALTERAÇÕES v1.2.0 (17/09/2026 07:00):
      - 🐛 CORRIGIDO: campos Descrição/Observações estavam travados
-       por causa de readonly="false" / disabled="false"
-     - 🔐 Controle de permissão por perfil:
-       MASTER, ADMINISTRATIVO, DELEGADO, INVESTIGADOR
-
-     ALTERAÇÕES v1.1.0 (16/09/2026 13:00):
-     - ✨ Descrição e Observações maiores (6 + 4 linhas)
-     - ✨ Contador de caracteres em tempo real
-     - ✨ Spellcheck e autocorrect ativados
+     - 🔐 Controle de permissão por perfil
      ============================================================
 -->
 <!DOCTYPE html>
@@ -414,7 +412,6 @@
             </div>
         </header>
 
-        <!-- FORMULÁRIO DE CADASTRO -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-plus-circle"></i>Cadastrar Novo Mandado</div>
 
@@ -534,7 +531,7 @@
                         <div class="char-counter">
                             <span class="hint" id="hintDescricao">
                                 <i class="fas fa-info-circle"></i>
-                                Campo livre — você pode editar
+                                Verificando permissão...
                             </span>
                             <span>
                                 <span class="counter" id="counterDescricao">0</span>
@@ -562,7 +559,7 @@
                         <div class="char-counter">
                             <span class="hint" id="hintObservacoes">
                                 <i class="fas fa-info-circle"></i>
-                                Campo livre — você pode editar
+                                Verificando permissão...
                             </span>
                             <span>
                                 <span class="counter" id="counterObservacoes">0</span>
@@ -585,7 +582,6 @@
             </form>
         </div>
 
-        <!-- LISTA DE MANDADOS -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Mandados Cadastrados</div>
@@ -707,14 +703,24 @@
         let mandadoEditandoId = null;
         let mandadoCumprindoId = null;
 
-        // 🔐 [v1.2.0] Perfis autorizados a editar Descrição/Observações
-        const PERFIS_EDITORES_CAMPOS = ['MASTER', 'ADMINISTRATIVO', 'DELEGADO', 'INVESTIGADOR'];
+        // 🔐 [v1.3.1] Perfis autorizados (por ID — tabela perfil_acesso)
+        // 1 = ADMINISTRADOR_MASTER
+        // 2 = ADMINISTRADOR
+        // 3 = DELEGADO
+        // 4 = INVESTIGADOR
+        const IDS_PERFIS_EDITORES = [1, 2, 3, 4];
+
+        // Fallback por nome (para robustez)
+        const NOMES_PERFIS_EDITORES = [
+            'ADMINISTRADOR_MASTER', 'ADMINISTRADOR', 'DELEGADO', 'INVESTIGADOR',
+            'MASTER', 'ADMINISTRATIVO' // legados
+        ];
 
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.3.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.3.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -753,20 +759,37 @@
         }
 
         // ============================================================
-        // 🔐 PERMISSÃO DE EDIÇÃO DOS CAMPOS LIVRES
+        // 🔐 [v1.3.1] PERMISSÃO DE EDIÇÃO DOS CAMPOS LIVRES
         // ============================================================
         function usuarioPodeEditarCamposLivres() {
             if (!usuarioAtual) return false;
+
+            // Tentativa 1: comparar por ID do perfil (mais confiável)
+            const idPerfil = parseInt(usuarioAtual.id_perfil_acesso);
+            if (IDS_PERFIS_EDITORES.includes(idPerfil)) {
+                console.log('🔐 [Permissão] Autorizado por ID:', idPerfil);
+                return true;
+            }
+
+            // Tentativa 2 (fallback): comparar por nome
             const fontes = [
                 AIDEPOM.getNomePerfil ? AIDEPOM.getNomePerfil(usuarioAtual.id_perfil_acesso) : '',
                 usuarioAtual.perfil,
                 usuarioAtual.nome_perfil,
                 usuarioAtual.role
-            ].filter(Boolean).map(s => String(s).toUpperCase().trim());
+            ].filter(Boolean).map(s => String(s).toUpperCase().trim().replace(/\s+/g, '_'));
 
-            return fontes.some(nome =>
-                PERFIS_EDITORES_CAMPOS.some(p => nome.includes(p))
+            const autorizadoPorNome = fontes.some(nome =>
+                NOMES_PERFIS_EDITORES.some(p => nome.includes(p))
             );
+
+            console.log('🔐 [Permissão]', {
+                id_perfil: idPerfil,
+                nomes: fontes,
+                autorizado: autorizadoPorNome
+            });
+
+            return autorizadoPorNome;
         }
 
         function aplicarPermissaoCamposLivres(prefixo) {
@@ -793,12 +816,12 @@
                     if (hintEl) {
                         hintEl.innerHTML = podeEditar
                             ? '<i class="fas fa-info-circle"></i> Campo livre — você pode editar'
-                            : '<i class="fas fa-lock"></i> Somente leitura — perfil sem permissão de edição';
+                            : '<i class="fas fa-lock"></i> Somente leitura — perfil sem permissão';
                     }
                 }
             });
 
-            console.log(`🔐 Campos livres — ${podeEditar ? 'EDITÁVEIS' : 'SOMENTE LEITURA'} para este perfil`);
+            console.log(`🔐 Campos livres — ${podeEditar ? 'EDITÁVEIS' : 'SOMENTE LEITURA'}`);
         }
 
         // ============================================================
@@ -863,12 +886,11 @@
         }
 
         // ============================================================
-        // ✅ [v1.3.0] CADASTRAR MANDADO (validação detalhada)
+        // CADASTRAR MANDADO
         // ============================================================
         async function cadastrarMandado(e) {
             e.preventDefault();
 
-            // 🔍 1) Valida campo por campo e avisa em português
             const camposObrigatorios = [
                 { id: 'numeroMandado',     nome: 'Número do Mandado' },
                 { id: 'tipoMandado',       nome: 'Tipo' },
@@ -896,7 +918,6 @@
                 }
             }
 
-            // 2) Valida tamanho da descrição
             const descricaoValor = document.getElementById('descricao').value.trim();
             if (descricaoValor.length > 5000) {
                 showToast('error', 'Descrição muito longa',
@@ -960,7 +981,7 @@
         }
 
         // ============================================================
-        // RESET FORMULÁRIO
+        // RESET
         // ============================================================
         function resetFormulario() {
             document.getElementById('formMandado').reset();
@@ -1540,7 +1561,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.3.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.3.1 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
