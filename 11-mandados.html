@@ -2,27 +2,26 @@
      AI-DEPOM - MANDADOS DE PRISÃO
      ============================================================
      Arquivo: 11-mandados.html
-     Versão: 1.1.0
-     Data: 16/09/2026 - 13:00
+     Versão: 1.2.0
+     Data: 17/09/2026 - 07:00
      Autor: AI-DEPOM Team
-     ===========================================================
-     REGRA DE OURO:
-     1. Zero placeholders quebrados
-     2. Zero TODOs esquecidos
-     3. Zero duplicações
-     4. Toda função referenciada DEVE existir
-     5. Todo botão DEVE ter handler real
-     6. Todo módulo DEVE estar conectado
-     7. Nenhuma linha deve ser removida sem substituição
+     ============================================================
+     ALTERAÇÕES v1.2.0 (17/09/2026 07:00):
+     - 🐛 CORRIGIDO: campos Descrição/Observações estavam travados
+       por causa de readonly="false" / disabled="false"
+       (atributos booleanos em HTML: presença = ativo)
+     - 🔐 Adicionado controle de permissão por perfil:
+       MASTER, ADMINISTRATIVO, DELEGADO, INVESTIGADOR podem editar
+       Outros perfis veem os campos em modo somente-leitura
+     - ✨ Aplica também no modal de edição
+     - ✅ Mantidas todas as features da v1.1.0
 
      ALTERAÇÕES v1.1.0 (16/09/2026 13:00):
-     - ✨ Descrição e Observações MAIORES (6 + 4 linhas)
+     - ✨ Descrição e Observações maiores (6 + 4 linhas)
      - ✨ Contador de caracteres em tempo real
      - ✨ Auto-resize conforme digita
-     - ✨ Explicitamente editáveis por TODOS os usuários
      - ✨ Spellcheck e autocorrect ativados
      - ✨ Mesma melhoria no modal de edição
-     - ✅ Mantidas todas as features da v1.0.1
      ============================================================
 -->
 <!DOCTYPE html>
@@ -518,7 +517,7 @@
                 </div>
 
                 <!-- ============================================
-                     [v1.1.0] DESCRIÇÃO — LIVRE PARA ESCRITA
+                     [v1.2.0] DESCRIÇÃO — LIVRE PARA ESCRITA
                      ============================================ -->
                 <div class="section-title"><i class="fas fa-align-left"></i>DESCRIÇÃO E OBSERVAÇÕES</div>
                 <div class="row g-3">
@@ -535,15 +534,13 @@
                             rows="6" 
                             placeholder="Descreva detalhadamente o teor do mandado, incluindo fundamentação, artigos legais, circunstâncias, local de cumprimento, etc."
                             required
-                            readonly="false"
-                            disabled="false"
                             maxlength="5000"
                             spellcheck="true"
                             autocorrect="on"
                             autocapitalize="sentences"
                             style="min-height: 140px; resize: vertical;"></textarea>
                         <div class="char-counter">
-                            <span class="hint">
+                            <span class="hint" id="hintDescricao">
                                 <i class="fas fa-info-circle"></i>
                                 Campo livre — todos os usuários podem escrever
                             </span>
@@ -565,15 +562,13 @@
                             id="observacoes" 
                             rows="4" 
                             placeholder="Observações adicionais: dados complementares, alertas, informações de campo, etc."
-                            readonly="false"
-                            disabled="false"
                             maxlength="3000"
                             spellcheck="true"
                             autocorrect="on"
                             autocapitalize="sentences"
                             style="min-height: 100px; resize: vertical;"></textarea>
                         <div class="char-counter">
-                            <span class="hint">
+                            <span class="hint" id="hintObservacoes">
                                 <i class="fas fa-info-circle"></i>
                                 Campo livre — todos os usuários podem escrever
                             </span>
@@ -725,11 +720,14 @@
         let mandadoEditandoId = null;
         let mandadoCumprindoId = null;
 
+        // 🔐 [v1.2.0] Perfis autorizados a editar Descrição/Observações
+        const PERFIS_EDITORES_CAMPOS = ['MASTER', 'ADMINISTRATIVO', 'DELEGADO', 'INVESTIGADOR'];
+
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -745,6 +743,9 @@
 
             // [v1.1.0] Inicializa contadores de caracteres
             inicializarContadores();
+
+            // 🔐 [v1.2.0] Aplica permissão nos campos livres
+            aplicarPermissaoCamposLivres();
 
             await carregarSuspeitos();
             await carregarMandados();
@@ -768,6 +769,67 @@
         }
 
         // ============================================================
+        // 🔐 [v1.2.0] PERMISSÃO DE EDIÇÃO DOS CAMPOS LIVRES
+        // ============================================================
+        function usuarioPodeEditarCamposLivres() {
+            if (!usuarioAtual) return false;
+            // Tenta várias fontes do nome do perfil para ser resiliente
+            const fontes = [
+                AIDEPOM.getNomePerfil ? AIDEPOM.getNomePerfil(usuarioAtual.id_perfil_acesso) : '',
+                usuarioAtual.perfil,
+                usuarioAtual.nome_perfil,
+                usuarioAtual.role
+            ].filter(Boolean).map(s => String(s).toUpperCase().trim());
+
+            return fontes.some(nome =>
+                PERFIS_EDITORES_CAMPOS.some(p => nome.includes(p))
+            );
+        }
+
+        /**
+         * Aplica o estado readOnly nos textareas de Descrição/Observações.
+         * @param {string} prefixo '' para o form principal, 'edit' para o modal
+         */
+        function aplicarPermissaoCamposLivres(prefixo) {
+            prefixo = prefixo || '';
+            const podeEditar = usuarioPodeEditarCamposLivres();
+
+            const pares = [
+                { id: prefixo + 'descricao',    hintId: prefixo + 'hint' + (prefixo ? '' : '') + 'Descricao' },
+                { id: prefixo + 'observacoes',  hintId: prefixo + 'hint' + (prefixo ? '' : '') + 'Observacoes' }
+            ];
+
+            // Mapeamento explícito dos hints (form principal)
+            const hintsForm = {
+                'descricao': 'hintDescricao',
+                'observacoes': 'hintObservacoes'
+            };
+
+            pares.forEach(({ id }) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                // ⚠️ NÃO use .disabled = true — o valor não é enviado no submit.
+                //    Use apenas readOnly.
+                el.disabled = false;
+                el.readOnly = !podeEditar;
+                el.style.cursor = podeEditar ? 'text' : 'not-allowed';
+                el.style.background = podeEditar ? 'rgba(0,0,0,0.5)' : '#000000';
+
+                // Ajusta o hint (só existe no form principal)
+                const hintId = hintsForm[id];
+                const hintEl = hintId ? document.getElementById(hintId) : null;
+                if (hintEl) {
+                    hintEl.innerHTML = podeEditar
+                        ? '<i class="fas fa-info-circle"></i> Campo livre — você pode editar'
+                        : '<i class="fas fa-lock"></i> Somente leitura — perfil sem permissão de edição';
+                }
+            });
+
+            console.log(`🔐 Campos livres — ${podeEditar ? 'EDITÁVEIS' : 'SOMENTE LEITURA'} para este perfil`);
+        }
+
+        // ============================================================
         // [v1.1.0] CONTADORES DE CARACTERES
         // ============================================================
         function inicializarContadores() {
@@ -787,7 +849,6 @@
             descricao.addEventListener('input', () => atualizarContador(descricao, counterDesc, 5000));
             observacoes.addEventListener('input', () => atualizarContador(observacoes, counterObs, 3000));
 
-            // Inicializa com 0
             atualizarContador(descricao, counterDesc, 5000);
             atualizarContador(observacoes, counterObs, 3000);
         }
@@ -910,6 +971,9 @@
             document.getElementById('counterDescricao').className = 'counter';
             document.getElementById('counterObservacoes').textContent = '0';
             document.getElementById('counterObservacoes').className = 'counter';
+
+            // 🔐 [v1.2.0] Reaplica permissão (o reset não deve destravar p/ quem não pode)
+            aplicarPermissaoCamposLivres();
 
             console.log('🧹 Formulário resetado');
         }
@@ -1166,7 +1230,7 @@
                                 <label class="form-label">Data de Validade</label>
                                 <input type="date" class="form-control" id="editDataValidade" value="${m.data_validade || ''}">
                             </div>
-                            <!-- [v1.1.0] Descrição — LIVRE PARA ESCRITA no modal de edição -->
+                            <!-- [v1.2.0] Descrição — LIVRE PARA ESCRITA (com permissão) -->
                             <div class="col-md-12">
                                 <label class="form-label">
                                     <i class="fas fa-file-alt me-1"></i> Descrição *
@@ -1179,8 +1243,6 @@
                                     id="editDescricao" 
                                     rows="6" 
                                     required
-                                    readonly="false"
-                                    disabled="false"
                                     maxlength="5000"
                                     spellcheck="true"
                                     autocorrect="on"
@@ -1198,8 +1260,6 @@
                                     class="form-control" 
                                     id="editObservacoes" 
                                     rows="4"
-                                    readonly="false"
-                                    disabled="false"
                                     maxlength="3000"
                                     spellcheck="true"
                                     autocorrect="on"
@@ -1219,6 +1279,9 @@
                 `;
 
                 document.getElementById('formEdicao').addEventListener('submit', salvarEdicao);
+
+                // 🔐 [v1.2.0] Aplica permissão nos textareas do modal
+                aplicarPermissaoCamposLivres('edit');
 
             } catch (error) {
                 console.error('❌ Erro:', error);
@@ -1509,7 +1572,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.2.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
