@@ -2,8 +2,8 @@
      AI-DEPOM - OPERAÇÕES POLICIAIS
      ============================================================
      Arquivo: 14-operacoes.html
-     Versão: 1.1.0
-     Data: 16/09/2026 - 23:00
+     Versão: 1.1.1
+     Data: 17/09/2026 - 00:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,13 +15,17 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v1.1.1 (17/09/2026 00:00):
+     - ✨ NOVO: Objetivo Pratico "Drone"
+     - ✨ NOVO: Objetivo Pratico "Levantamento de Imagens"
+     - ✨ NOVO: Objetivo Pratico "Rastreador Veicular"
+     - ✨ NOVO: Objetivo Pratico "Outros"
+     - ✅ Total: 7 opcoes de objetivo pratico
+
      ALTERAÇÕES v1.1.0 (16/09/2026 23:00):
-     - ✨ NOVO: Campo Equipe Policial com autocomplete
-     - ✨ Autocomplete busca policiais cadastrados no sistema
-     - ✨ Vincula automaticamente pelo nome
-     - ✨ Campo "Função na Operação" (Comandante, Motorista, etc)
-     - ✨ Modal de detalhes exibe a equipe
-     - ✅ Mantidas: viaturas, presos, natureza, objetivo, etc
+     - ✨ Campo Equipe Policial com autocomplete
+     - ✨ Vincula automaticamente pelo nome do policial cadastrado
+     - ✨ Campo "Funcao na Operacao"
 
      ALTERAÇÕES v1.0.0 (16/09/2026 19:00):
      - Tela inicial de Operações
@@ -337,7 +341,6 @@
         .suspeito-match .nome { color: var(--text-primary); font-weight: 700; font-size: 14px; }
         .suspeito-match .meta { color: rgba(0, 255, 136, 0.5); font-size: 11px; margin-top: 2px; }
 
-        /* [v1.1.0] Equipe Policial */
         .policial-match {
             background: rgba(13, 202, 240, 0.08);
             border: 1px solid #0dcaf0;
@@ -520,18 +523,20 @@
                             <option value="BUSCA_APREENSAO">Busca e Apreensao</option>
                             <option value="MANDADO_CAPTURA">Cumprimento de Mandado e Captura</option>
                             <option value="CONTROLE_DISTURBIOS">Controle de Disturbios</option>
+                            <option value="DRONE">Drone</option>
+                            <option value="LEVANTAMENTO_IMAGENS">Levantamento de Imagens</option>
+                            <option value="RASTREADOR_VEICULAR">Rastreador Veicular</option>
+                            <option value="OUTROS">Outros</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- ============================================
-                     [v1.1.0] EQUIPE POLICIAL
-                     ============================================ -->
+                <!-- EQUIPE POLICIAL -->
                 <div class="section-title"><i class="fas fa-user-shield"></i>EQUIPE POLICIAL</div>
 
                 <div style="background: rgba(13, 202, 240, 0.03); border: 1px solid rgba(13, 202, 240, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: rgba(13, 202, 240, 0.9);">
                     <i class="fas fa-info-circle me-1"></i>
-                    Digite o nome do policial. Se ele estiver cadastrado no sistema, aparecerá uma sugestão para você clicar.
+                    Digite o nome do policial. Se ele estiver cadastrado no sistema, aparecera uma sugestao para voce clicar.
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -642,6 +647,10 @@
                         <option value="BUSCA_APREENSAO">Busca e Apreensao</option>
                         <option value="MANDADO_CAPTURA">Cumprimento de Mandado e Captura</option>
                         <option value="CONTROLE_DISTURBIOS">Controle de Disturbios</option>
+                        <option value="DRONE">Drone</option>
+                        <option value="LEVANTAMENTO_IMAGENS">Levantamento de Imagens</option>
+                        <option value="RASTREADOR_VEICULAR">Rastreador Veicular</option>
+                        <option value="OUTROS">Outros</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -682,9 +691,9 @@
         let usuarioAtual = null;
         let viaturas = [];
         let presos = [];
-        let policiais = [];       // [v1.1.0] Equipe policial
+        let policiais = [];
         let suspeitosCache = [];
-        let usuariosSistemaCache = [];   // [v1.1.0] Para autocomplete de policiais
+        let usuariosSistemaCache = [];
 
         const NATUREZA_LABEL = {
             'SIGILOSA': 'Sigilosa', 'DISCRETA': 'Discreta', 'OSTENSIVA': 'Ostensiva',
@@ -693,7 +702,11 @@
         const OBJETIVO_LABEL = {
             'BUSCA_APREENSAO': 'Busca e Apreensao',
             'MANDADO_CAPTURA': 'Cumprimento de Mandado e Captura',
-            'CONTROLE_DISTURBIOS': 'Controle de Disturbios'
+            'CONTROLE_DISTURBIOS': 'Controle de Disturbios',
+            'DRONE': 'Drone',
+            'LEVANTAMENTO_IMAGENS': 'Levantamento de Imagens',
+            'RASTREADOR_VEICULAR': 'Rastreador Veicular',
+            'OUTROS': 'Outros'
         };
         const FUNCOES_POLICIAL = [
             'Comandante',
@@ -712,7 +725,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Operacoes v1.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Operacoes v1.1.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -727,11 +740,11 @@
             document.getElementById('dataPrevista').value = new Date().toISOString().split('T')[0];
 
             await carregarSuspeitosCache();
-            await carregarUsuariosSistemaCache();   // [v1.1.0]
+            await carregarUsuariosSistemaCache();
             await carregarOperacoes();
             renderizarViaturas();
             renderizarPresos();
-            renderizarPoliciais();                 // [v1.1.0]
+            renderizarPoliciais();
 
             document.getElementById('formOperacao').addEventListener('submit', cadastrarOperacao);
         });
@@ -747,9 +760,6 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
-        // ============================================================
-        // CARREGAR SUSPEITOS NO CACHE (autocomplete de presos)
-        // ============================================================
         async function carregarSuspeitosCache() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -766,9 +776,6 @@
             }
         }
 
-        // ============================================================
-        // [v1.1.0] CARREGAR USUÁRIOS DO SISTEMA (autocomplete de policiais)
-        // ============================================================
         async function carregarUsuariosSistemaCache() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -787,7 +794,7 @@
         }
 
         // ============================================================
-        // [v1.1.0] EQUIPE POLICIAL
+        // EQUIPE POLICIAL
         // ============================================================
         function adicionarPolicial() {
             policiais.push({
@@ -805,7 +812,6 @@
             if (!confirm('Remover este policial?')) return;
             policiais.splice(index, 1);
             renderizarPoliciais();
-            console.log(`🗑️ Policial removido. Total: ${policiais.length}`);
         }
 
         function atualizarPolicial(index, campo, valor) {
@@ -900,9 +906,6 @@
             container.innerHTML = html;
         }
 
-        // ============================================================
-        // [v1.1.0] AUTOCOMPLETE — busca policiais (usuarios do sistema)
-        // ============================================================
         function buscarPolicial(index, termo) {
             const listEl = document.getElementById('autocompletePolicial_' + index);
             if (!listEl) return;
@@ -914,7 +917,6 @@
                 return;
             }
 
-            // Filtra usuários do sistema por nome ou matrícula
             const matches = usuariosSistemaCache.filter(u => {
                 const nome = (u.nome_completo || '').toLowerCase();
                 const matricula = (u.matricula || '').toLowerCase();
@@ -1155,9 +1157,6 @@
             container.innerHTML = html;
         }
 
-        // ============================================================
-        // AUTOCOMPLETE — busca suspeitos
-        // ============================================================
         function buscarSuspeito(index, termo) {
             const listEl = document.getElementById('autocomplete_' + index);
             if (!listEl) return;
@@ -1246,7 +1245,6 @@
                 if (!dataPrevista) throw new Error('Preencha a Data Prevista.');
                 if (!setor) throw new Error('Preencha o Setor Responsavel.');
 
-                // Valida equipe policial
                 const policiaisValidos = policiais.filter(p => p.nome_completo && p.nome_completo.trim());
                 for (const p of policiaisValidos) {
                     if (!p.funcao) {
@@ -1259,7 +1257,7 @@
                     data_prevista: dataPrevista,
                     horario: document.getElementById('horario').value || null,
                     setor: setor,
-                    equipe_policial: policiaisValidos,   // [v1.1.0]
+                    equipe_policial: policiaisValidos,
                     viaturas_quantidade: parseInt(document.getElementById('viaturasTotal').value) || 0,
                     viaturas_padronizadas: parseInt(document.getElementById('viaturasPadronizadas').value) || 0,
                     viaturas_descaracterizadas: parseInt(document.getElementById('viaturasDescaracterizadas').value) || 0,
@@ -1274,7 +1272,6 @@
                 };
 
                 console.log('📝 Cadastrando operacao:', dados);
-                console.log(`👥 Equipe: ${policiaisValidos.length} policiais`);
 
                 const { data: inserted, error: insertError } = await window.supabaseClient
                     .from('operacao')
@@ -1287,7 +1284,6 @@
                 const idOperacao = inserted.id_operacao;
                 console.log('✅ Operacao cadastrada ID:', idOperacao);
 
-                // Inserir presos
                 if (presos.length > 0) {
                     const presosValidos = presos.filter(p => p.nome_completo && p.nome_completo.trim());
                     if (presosValidos.length > 0) {
@@ -1337,10 +1333,10 @@
             document.getElementById('dataPrevista').value = new Date().toISOString().split('T')[0];
             viaturas = [];
             presos = [];
-            policiais = [];      // [v1.1.0]
+            policiais = [];
             renderizarViaturas();
             renderizarPresos();
-            renderizarPoliciais();   // [v1.1.0]
+            renderizarPoliciais();
             console.log('🧹 Formulario resetado');
         }
 
@@ -1560,9 +1556,6 @@
             document.getElementById('modalDetalhesOperacao').classList.remove('open');
         }
 
-        // ============================================================
-        // TOAST
-        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -1577,9 +1570,6 @@
             setTimeout(() => toast.remove(), duracao);
         }
 
-        // ============================================================
-        // CONTROLES
-        // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
             try {
