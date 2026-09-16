@@ -1,26 +1,23 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.3.1
-     Data: 17/09/2026 - 11:00
+     Versão: 1.3.2
+     Data: 17/09/2026 - 13:00
      ============================================================
+     ALTERAÇÕES v1.3.2 (17/09/2026 13:00):
+     - ✨ maxlength atualizado nos 3 campos ampliados no banco:
+       - numeroMandado: 70 (antes era 30 no banco)
+       - juizMatricula: 70
+       - processoNumero: 70
+     - ✨ Validação JS reforçada (limite 70 caracteres)
+     - ✅ Mantidas todas as features da v1.3.1
+
      ALTERAÇÕES v1.3.1 (17/09/2026 11:00):
-     - 🐛 CORRIGIDO: permissão de Descrição/Observações agora usa
-       ID do perfil (1=Master, 2=Admin, 3=Delegado, 4=Investigador)
-       - Antes: comparação por nome falhava ("Administrador" ≠ "MASTER")
-       - Agora: comparação por ID é robusta
-     - ✨ Mantido fallback por nome (retrocompatibilidade)
-     - ✅ Mantidas todas as features da v1.3.0
+     - 🐛 CORRIGIDO: permissão por ID do perfil
+       IDS = [1=Master, 2=Admin, 3=Delegado, 4=Investigador]
 
      ALTERAÇÕES v1.3.0 (17/09/2026 10:00):
-     - ✨ Validação manual campo-por-campo com toast em português
-     - ✨ Aviso se Descrição > 5000 caracteres
-     - ✨ Foco + destaque amarelo no campo inválido
-     - ✨ Logs completos no console
-
-     ALTERAÇÕES v1.2.0 (17/09/2026 07:00):
-     - 🐛 CORRIGIDO: campos Descrição/Observações estavam travados
-     - 🔐 Controle de permissão por perfil
+     - ✨ Validação manual campo-por-campo com toast
      ============================================================
 -->
 <!DOCTYPE html>
@@ -114,11 +111,9 @@
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
         .sidebar-footer {
-            position: relative;
-            padding: 15px 20px 20px;
+            position: relative; padding: 15px 20px 20px;
             border-top: 1px solid var(--border-color);
-            background: rgba(0, 0, 0, 0.98);
-            margin-top: auto;
+            background: rgba(0, 0, 0, 0.98); margin-top: auto;
         }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar {
@@ -376,6 +371,7 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
             <a class="menu-item active" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
@@ -407,7 +403,7 @@
             </div>
             <div class="top-actions">
                 <span class="badge" id="totalMandadosBadge"><i class="fas fa-list"></i> 0 mandados</span>
-                <a class="badge" href="10-mapa-operacoes.html" style="text-decoration:none; cursor:pointer;"><i class="fas fa-map-marked-alt" style="color:#00ff88;"></i> Ver no Mapa</a>
+                <a class="badge" href="15-mapa-mandados.html" style="text-decoration:none; cursor:pointer;"><i class="fas fa-map-marked-alt" style="color:#00ff88;"></i> Ver no Mapa</a>
                 <span class="badge"><i class="fas fa-shield-alt" style="color:#00ff88;"></i> LGPD Compliance</span>
             </div>
         </header>
@@ -420,7 +416,7 @@
                 <div class="row g-3">
                     <div class="col-md-3">
                         <label class="form-label">Número do Mandado *</label>
-                        <input type="text" class="form-control" id="numeroMandado" placeholder="MP-2026-0001">
+                        <input type="text" class="form-control" id="numeroMandado" maxlength="70" placeholder="MP-2026-0001">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Tipo *</label>
@@ -472,7 +468,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Matrícula do Juiz</label>
-                        <input type="text" class="form-control" id="juizMatricula" placeholder="Matrícula (opcional)">
+                        <input type="text" class="form-control" id="juizMatricula" maxlength="70" placeholder="Matrícula (opcional)">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Vara/Tribunal *</label>
@@ -480,7 +476,7 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Número do Processo</label>
-                        <input type="text" class="form-control" id="processoNumero" placeholder="Ex: 0001234-56.2026.8.05.0001">
+                        <input type="text" class="form-control" id="processoNumero" maxlength="70" placeholder="Ex: 0001234-56.2026.8.05.0001">
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Data de Emissão *</label>
@@ -698,29 +694,29 @@
         // ESTADO GLOBAL
         // ============================================================
         const LIMITE_LISTA = 10;
+        const LIMITE_NUMERO_MANDADO = 70;
+        const LIMITE_JUIZ_MATRICULA = 70;
+        const LIMITE_PROCESSO_NUMERO = 70;
+        const LIMITE_DESCRICAO = 5000;
+        const LIMITE_OBSERVACOES = 3000;
+
         let usuarioAtual = null;
         let mandadosAtuais = [];
         let mandadoEditandoId = null;
         let mandadoCumprindoId = null;
 
-        // 🔐 [v1.3.1] Perfis autorizados (por ID — tabela perfil_acesso)
-        // 1 = ADMINISTRADOR_MASTER
-        // 2 = ADMINISTRADOR
-        // 3 = DELEGADO
-        // 4 = INVESTIGADOR
+        // 🔐 Perfis autorizados (por ID)
         const IDS_PERFIS_EDITORES = [1, 2, 3, 4];
-
-        // Fallback por nome (para robustez)
         const NOMES_PERFIS_EDITORES = [
             'ADMINISTRADOR_MASTER', 'ADMINISTRADOR', 'DELEGADO', 'INVESTIGADOR',
-            'MASTER', 'ADMINISTRATIVO' // legados
+            'MASTER', 'ADMINISTRATIVO'
         ];
 
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.3.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.3.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -759,19 +755,19 @@
         }
 
         // ============================================================
-        // 🔐 [v1.3.1] PERMISSÃO DE EDIÇÃO DOS CAMPOS LIVRES
+        // 🔐 PERMISSÃO DE EDIÇÃO DOS CAMPOS LIVRES
         // ============================================================
         function usuarioPodeEditarCamposLivres() {
             if (!usuarioAtual) return false;
 
-            // Tentativa 1: comparar por ID do perfil (mais confiável)
+            // Tentativa 1: por ID
             const idPerfil = parseInt(usuarioAtual.id_perfil_acesso);
             if (IDS_PERFIS_EDITORES.includes(idPerfil)) {
                 console.log('🔐 [Permissão] Autorizado por ID:', idPerfil);
                 return true;
             }
 
-            // Tentativa 2 (fallback): comparar por nome
+            // Tentativa 2: fallback por nome
             const fontes = [
                 AIDEPOM.getNomePerfil ? AIDEPOM.getNomePerfil(usuarioAtual.id_perfil_acesso) : '',
                 usuarioAtual.perfil,
@@ -841,11 +837,11 @@
                 else if (len > max * 0.75) counter.classList.add('warn');
             }
 
-            descricao.addEventListener('input', () => atualizarContador(descricao, counterDesc, 5000));
-            observacoes.addEventListener('input', () => atualizarContador(observacoes, counterObs, 3000));
+            descricao.addEventListener('input', () => atualizarContador(descricao, counterDesc, LIMITE_DESCRICAO));
+            observacoes.addEventListener('input', () => atualizarContador(observacoes, counterObs, LIMITE_OBSERVACOES));
 
-            atualizarContador(descricao, counterDesc, 5000);
-            atualizarContador(observacoes, counterObs, 3000);
+            atualizarContador(descricao, counterDesc, LIMITE_DESCRICAO);
+            atualizarContador(observacoes, counterObs, LIMITE_OBSERVACOES);
         }
 
         // ============================================================
@@ -891,8 +887,9 @@
         async function cadastrarMandado(e) {
             e.preventDefault();
 
+            // Valida campos obrigatórios
             const camposObrigatorios = [
-                { id: 'numeroMandado',     nome: 'Número do Mandado' },
+                { id: 'numeroMandado',     nome: 'Número do Mandado',     max: LIMITE_NUMERO_MANDADO },
                 { id: 'tipoMandado',       nome: 'Tipo' },
                 { id: 'statusMandado',     nome: 'Status' },
                 { id: 'prioridadeMandado', nome: 'Prioridade' },
@@ -900,7 +897,7 @@
                 { id: 'juizNome',          nome: 'Juiz' },
                 { id: 'varaTribunal',      nome: 'Vara/Tribunal' },
                 { id: 'dataEmissao',       nome: 'Data de Emissão' },
-                { id: 'descricao',         nome: 'Descrição' }
+                { id: 'descricao',         nome: 'Descrição',             max: LIMITE_DESCRICAO }
             ];
 
             for (const c of camposObrigatorios) {
@@ -916,15 +913,34 @@
                     setTimeout(() => { el.style.boxShadow = ''; }, 2500);
                     return;
                 }
+                if (c.max && valor.length > c.max) {
+                    showToast('error', `${c.nome} muito longo`,
+                        `Máximo ${c.max} caracteres. Atual: <strong>${valor.length}</strong>`, 6000);
+                    el.focus();
+                    return;
+                }
+            }
+
+            // Valida campos opcionais com limite
+            const camposOpcionais = [
+                { id: 'juizMatricula',   nome: 'Matrícula do Juiz',    max: LIMITE_JUIZ_MATRICULA },
+                { id: 'processoNumero',  nome: 'Número do Processo',   max: LIMITE_PROCESSO_NUMERO },
+                { id: 'observacoes',     nome: 'Observações',          max: LIMITE_OBSERVACOES }
+            ];
+
+            for (const c of camposOpcionais) {
+                const el = document.getElementById(c.id);
+                if (!el) continue;
+                const valor = (el.value || '').trim();
+                if (valor.length > c.max) {
+                    showToast('error', `${c.nome} muito longo`,
+                        `Máximo ${c.max} caracteres. Atual: <strong>${valor.length}</strong>`, 6000);
+                    el.focus();
+                    return;
+                }
             }
 
             const descricaoValor = document.getElementById('descricao').value.trim();
-            if (descricaoValor.length > 5000) {
-                showToast('error', 'Descrição muito longa',
-                    `Máximo 5000 caracteres. Atual: <strong>${descricaoValor.length}</strong>`, 6000);
-                document.getElementById('descricao').focus();
-                return;
-            }
 
             const btn = document.getElementById('btnCadastrar');
             btn.disabled = true;
@@ -981,7 +997,7 @@
         }
 
         // ============================================================
-        // RESET
+        // RESET FORMULÁRIO
         // ============================================================
         function resetFormulario() {
             document.getElementById('formMandado').reset();
@@ -1199,11 +1215,11 @@
                 if (!m) throw new Error('Mandado não encontrado');
 
                 body.innerHTML = `
-                    <form id="formEdicao">
+                    <form id="formEdicao" novalidate>
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <label class="form-label">Número *</label>
-                                <input type="text" class="form-control" id="editNumero" value="${m.numero_mandado || ''}" required>
+                                <input type="text" class="form-control" id="editNumero" maxlength="${LIMITE_NUMERO_MANDADO}" value="${m.numero_mandado || ''}" required>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Tipo *</label>
@@ -1241,7 +1257,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Processo</label>
-                                <input type="text" class="form-control" id="editProcesso" value="${m.processo_numero || ''}">
+                                <input type="text" class="form-control" id="editProcesso" maxlength="${LIMITE_PROCESSO_NUMERO}" value="${m.processo_numero || ''}">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Data de Emissão *</label>
@@ -1263,7 +1279,7 @@
                                     id="editDescricao" 
                                     rows="6" 
                                     required
-                                    maxlength="5000"
+                                    maxlength="${LIMITE_DESCRICAO}"
                                     spellcheck="true"
                                     autocorrect="on"
                                     autocapitalize="sentences"
@@ -1280,7 +1296,7 @@
                                     class="form-control" 
                                     id="editObservacoes" 
                                     rows="4"
-                                    maxlength="3000"
+                                    maxlength="${LIMITE_OBSERVACOES}"
                                     spellcheck="true"
                                     autocorrect="on"
                                     autocapitalize="sentences"
@@ -1561,7 +1577,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.3.1 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.3.2 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
