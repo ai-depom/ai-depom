@@ -1,0 +1,687 @@
+<!-- ============================================================
+     AI-DEPOM - MAPA DE MANDADOS
+     ============================================================
+     Arquivo: 15-mapa-mandados.html
+     Versão: 1.0.0
+     Data: 17/09/2026 - 12:00
+     ============================================================
+     ALTERAÇÕES v1.0.0 (17/09/2026 12:00):
+     - ✨ NOVO: Mapa exclusivo de Mandados
+     - 🎨 Cores por status de execução:
+       🔴 Vermelho = Novo (< 7 dias)
+       🟢 Verde = Em cumprimento
+       🔵 Azul = Cumprido
+       ⚪ Cinza = Vencido
+       🟡 Amarelo = Cancelado
+       🟣 Roxo = Suspenso
+     - 📋 Legenda completa
+     - 📊 Estatísticas com breakdown por status
+     ============================================================
+-->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI-DEPOM - Mapa de Mandados</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --text-primary: #00ff88;
+            --text-secondary: #00cc77;
+            --border-color: #003322;
+            --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
+            --control-size: 36px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            width: 100%; height: 100%; min-height: 100vh;
+            font-family: 'Segoe UI', 'Roboto', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+        .controls-bar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 6px 15px; display: flex; justify-content: space-between;
+            align-items: center; height: 48px; width: 100vw;
+        }
+        .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
+        .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+        .control-btn {
+            width: var(--control-size); height: var(--control-size);
+            border-radius: 8px; border: none; background: transparent;
+            color: rgba(0, 255, 136, 0.3); font-size: 16px;
+            cursor: pointer; transition: all 0.3s ease;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+        .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
+        .user-info .avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 12px; color: #000;
+        }
+        .sidebar {
+            position: fixed; top: 48px; left: 0;
+            width: 260px; height: calc(100vh - 48px);
+            background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
+            border-right: 1px solid var(--border-color);
+            z-index: 999; padding: 20px 0 0 0;
+            transition: transform 0.3s ease; overflow-y: auto;
+            display: flex; flex-direction: column;
+        }
+        .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
+        .sidebar-brand .logo {
+            width: 50px; height: 50px; margin: 0 auto 10px;
+            background: var(--gradient-green); border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .sidebar-brand .logo i { font-size: 24px; color: #000; }
+        .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
+        .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
+        .sidebar-menu { padding: 0 12px; flex: 1; }
+        .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
+        .sidebar-menu .menu-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: 10px 16px; border-radius: 10px;
+            color: rgba(0, 255, 136, 0.3); text-decoration: none;
+            transition: all 0.3s; cursor: pointer; margin-bottom: 2px; font-size: 14px;
+        }
+        .sidebar-menu .menu-item:hover { background: rgba(0, 255, 136, 0.03); color: var(--text-primary); }
+        .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
+        .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
+        .sidebar-footer {
+            position: relative; padding: 15px 20px 20px;
+            border-top: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.98); margin-top: auto;
+        }
+        .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
+        .sidebar-footer .user-info-sidebar .avatar {
+            width: 36px; height: 36px; border-radius: 50%;
+            background: var(--gradient-green);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 14px; color: #000;
+        }
+        .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+        .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
+        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; width: calc(100vw - 260px); }
+        .top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            flex-wrap: wrap; gap: 15px; background: var(--bg-secondary);
+            border-radius: 16px; padding: 15px 25px;
+            margin-bottom: 25px; border: 1px solid var(--border-color);
+        }
+        .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
+        .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
+        .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
+        .form-card {
+            background: var(--bg-secondary); border-radius: 14px;
+            padding: 25px; border: 1px solid var(--border-color); margin-bottom: 25px;
+        }
+        .form-card .card-title {
+            color: var(--text-primary); font-size: 14px; font-weight: 700;
+            letter-spacing: 1px; text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px; margin-bottom: 20px;
+        }
+        .btn-outline-gold {
+            background: transparent; color: var(--text-primary);
+            border: 1px solid var(--text-primary); padding: 10px 28px;
+            border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
+        }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+        #mapa {
+            height: 620px;
+            width: 100%;
+            border-radius: 14px;
+            border: 1px solid var(--border-color);
+            background: #0a0a0a;
+        }
+        .leaflet-container {
+            background: #0a0a0a !important;
+            font-family: 'Segoe UI', sans-serif !important;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-secondary) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: 10px !important;
+        }
+        .leaflet-popup-tip { background: var(--bg-secondary) !important; }
+        .leaflet-popup-content { margin: 15px !important; }
+        .popup-title { color: var(--text-primary); font-weight: 700; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .popup-title.mandado { color: #ba68c8; }
+        .popup-row { color: var(--text-secondary); font-size: 12px; padding: 2px 0; }
+        .popup-row strong { color: rgba(0, 255, 136, 0.5); }
+        .legend {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .legend-section-title {
+            color: var(--text-primary);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .legend-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 4px 0; color: var(--text-secondary); font-size: 13px;
+        }
+        .legend-icon {
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; border: 2px solid rgba(0,0,0,0.5);
+        }
+        .legend-icon.novo { background: #dc3545; color: #fff; }
+        .legend-icon.ativo { background: #00ff88; color: #000; }
+        .legend-icon.cumprido { background: #0dcaf0; color: #000; }
+        .legend-icon.vencido { background: #6c757d; color: #fff; }
+        .legend-icon.cancelado { background: #ffc107; color: #000; }
+        .legend-icon.suspenso { background: #ba68c8; color: #fff; }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .stat-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+        .stat-card .number { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        .stat-card .number.novo { color: #dc3545; }
+        .stat-card .number.ativo { color: #00ff88; }
+        .stat-card .number.cumprido { color: #0dcaf0; }
+        .stat-card .number.vencido { color: #6c757d; }
+        .stat-card .number.cancelado { color: #ffc107; }
+        .stat-card .number.suspenso { color: #ba68c8; }
+        .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.4); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+        .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-ai {
+            min-width: 320px; max-width: 420px; padding: 16px 20px;
+            border-radius: 12px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: flex; align-items: flex-start; gap: 12px;
+        }
+        .toast-ai.success { border-left: 4px solid var(--text-primary); }
+        .toast-ai.error { border-left: 4px solid #dc3545; }
+        .toast-ai.warning { border-left: 4px solid #ffc107; }
+        .toast-ai.info { border-left: 4px solid #0dcaf0; }
+        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .toast-ai.success .toast-icon { color: var(--text-primary); }
+        .toast-ai.error .toast-icon { color: #dc3545; }
+        .toast-ai.warning .toast-icon { color: #ffc107; }
+        .toast-ai.info .toast-icon { color: #0dcaf0; }
+        .toast-ai .toast-content { flex: 1; }
+        .toast-ai .toast-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
+        .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        .marker-custom {
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            border: 3px solid white;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.6);
+            font-size: 13px;
+        }
+        .marker-novo { background: #dc3545; color: #fff; }
+        .marker-ativo { background: #00ff88; color: #000; }
+        .marker-cumprido { background: #0dcaf0; color: #000; }
+        .marker-vencido { background: #6c757d; color: #fff; }
+        .marker-cancelado { background: #ffc107; color: #000; }
+        .marker-suspenso { background: #ba68c8; color: #fff; }
+        @media (max-width: 992px) {
+            .sidebar { transform: translateX(-100%); width: 280px; }
+            .sidebar.open { transform: translateX(0); }
+            .main-content { margin-left: 0; width: 100vw; }
+            .sidebar-toggle { display: flex !important; }
+            .user-info .name { display: none; }
+        }
+        @media (max-width: 768px) {
+            .main-content { padding: 65px 15px 15px; }
+            .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
+            .form-card { padding: 18px; }
+            .btn-outline-gold { width: 100%; }
+            #mapa { height: 400px; }
+            .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg-primary); }
+        ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <header class="controls-bar">
+        <div class="controls-left">
+            <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
+            <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()"><i class="fas fa-expand"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="controls-center">
+            <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
+        </div>
+        <div class="controls-right">
+            <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
+        </div>
+    </header>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="logo"><i class="fas fa-shield-halved"></i></div>
+            <h5>AI-DEPOM</h5>
+            <small>SISTEMA POLICIAL INTELIGENTE</small>
+        </div>
+        <nav class="sidebar-menu">
+            <div class="menu-label">Navegacao</div>
+            <a class="menu-item" onclick="window.location.href='04-dashboard.html'"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a class="menu-item" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
+            <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
+            <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
+            <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item active" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
+            <div class="menu-label">Administracao</div>
+            <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
+            <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
+            <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
+            <div class="menu-label">Sistema</div>
+            <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
+            <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info-sidebar">
+                <div class="avatar" id="sidebarAvatar">AM</div>
+                <div>
+                    <div class="name" id="sidebarUserName">Carregando...</div>
+                    <div class="role" id="sidebarUserRole">Carregando...</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="top-bar">
+            <div class="d-flex align-items-center gap-3">
+                <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <div class="page-title">
+                    <h4><i class="fas fa-gavel me-2"></i>Mapa de Mandados</h4>
+                    <small><i class="fas fa-satellite-dish me-1"></i> Mandados de prisao georreferenciados</small>
+                </div>
+            </div>
+            <div class="top-actions">
+                <a class="badge" href="11-mandados.html" style="text-decoration:none; cursor:pointer;"><i class="fas fa-list" style="color:#ba68c8;"></i> Ver Lista</a>
+                <span class="badge"><i class="fas fa-shield-alt" style="color:#00ff88;"></i> LGPD Compliance</span>
+            </div>
+        </header>
+
+        <div class="form-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-gavel"></i>Mandados no Mapa</div>
+                <button class="btn-outline-gold" onclick="carregarMandados()" style="padding:6px 16px; font-size:12px;">
+                    <i class="fas fa-sync-alt me-2"></i>ATUALIZAR MAPA
+                </button>
+            </div>
+            <div id="mapa"></div>
+
+            <div class="legend">
+                <div class="legend-section-title"><i class="fas fa-gavel"></i> Mandados por Status de Execucao</div>
+                <div class="d-flex flex-wrap gap-4">
+                    <div class="legend-item">
+                        <div class="legend-icon novo"><i class="fas fa-plus-circle"></i></div>
+                        Novo (recem-inserido, ate 7 dias)
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon ativo"><i class="fas fa-play-circle"></i></div>
+                        Em cumprimento / Ativo
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon cumprido"><i class="fas fa-check-circle"></i></div>
+                        Cumprido
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon vencido"><i class="fas fa-clock"></i></div>
+                        Vencido
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon cancelado"><i class="fas fa-ban"></i></div>
+                        Cancelado
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-icon suspenso"><i class="fas fa-pause-circle"></i></div>
+                        Suspenso
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-chart-pie"></i>Estatisticas dos Mandados</div>
+            <div class="stats-grid" id="statsGrid"></div>
+        </div>
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="assets/js/supabase-config.js"></script>
+    <script>
+        let mapa = null;
+        let clusterMandados = null;
+        let todosMandados = [];
+
+        const DIAS_NOVO_MANDADO = 7;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('AI-DEPOM - Mapa de Mandados v1.0.0 iniciado');
+
+            const usuario = AIDEPOM.getUsuario();
+            if (!usuario) {
+                showToast('error', 'Sessao expirada', 'Faca login novamente.');
+                setTimeout(() => window.location.href = '02-login.html', 1500);
+                return;
+            }
+
+            atualizarDadosUsuario(usuario);
+            inicializarMapa();
+            await carregarMandados();
+        });
+
+        function atualizarDadosUsuario(usuario) {
+            const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+            const nome = usuario.nome_completo || 'Usuario';
+            const perfil = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
+            document.getElementById('topAvatar').textContent = inicial;
+            document.getElementById('topUserName').textContent = nome;
+            document.getElementById('sidebarAvatar').textContent = inicial;
+            document.getElementById('sidebarUserName').textContent = nome;
+            document.getElementById('sidebarUserRole').textContent = perfil;
+        }
+
+        function inicializarMapa() {
+            console.log('🗺️ Inicializando mapa de mandados...');
+
+            mapa = L.map('mapa', {
+                center: [-12.9714, -38.5014],
+                zoom: 12,
+                minZoom: 2,
+                maxZoom: 16
+            });
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri &copy; OpenStreetMap contributors',
+                maxZoom: 16
+            }).addTo(mapa);
+
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 16
+            }).addTo(mapa);
+
+            clusterMandados = L.markerClusterGroup({
+                showCoverageOnHover: false,
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true
+            });
+            mapa.addLayer(clusterMandados);
+
+            setTimeout(() => mapa.invalidateSize(), 300);
+            console.log('✅ Mapa inicializado');
+        }
+
+        function obterCorMandado(m) {
+            const status = (m.status || '').toUpperCase();
+            if (status === 'CUMPRIDO') return 'cumprido';
+            if (status === 'VENCIDO') return 'vencido';
+            if (status === 'CANCELADO') return 'cancelado';
+            if (status === 'SUSPENSO') return 'suspenso';
+            if (status === 'ATIVO' || status === '') {
+                const dataRef = m.data_emissao || m.data_cadastro;
+                if (dataRef) {
+                    const dias = (Date.now() - new Date(dataRef).getTime()) / 86400000;
+                    if (dias <= DIAS_NOVO_MANDADO) return 'novo';
+                }
+                return 'ativo';
+            }
+            return 'ativo';
+        }
+
+        async function carregarMandados() {
+            console.log('📡 Carregando mandados...');
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select(`
+                        id_mandado, numero_mandado, tipo_mandado, status, prioridade,
+                        juiz_nome, vara_tribunal, data_emissao, data_validade, data_cadastro,
+                        descricao, observacoes,
+                        latitude, longitude,
+                        suspeito:suspeito (
+                            id_suspeito, nome_completo, apelido, cpf, bairro, cidade, uf
+                        )
+                    `)
+                    .eq('deletado', false)
+                    .not('latitude', 'is', null)
+                    .not('longitude', 'is', null);
+
+                if (error) throw error;
+
+                todosMandados = (data || []).map(m => ({
+                    ...m,
+                    tipo_ponto: 'MANDADO',
+                    lat: parseFloat(m.latitude),
+                    lng: parseFloat(m.longitude),
+                    corStatus: obterCorMandado(m)
+                }));
+
+                console.log(`⚖️ ${todosMandados.length} mandados carregados`);
+                renderizarMapa();
+                renderizarEstatisticas();
+            } catch (error) {
+                console.error('❌ Erro ao carregar mandados:', error);
+                todosMandados = [];
+                renderizarEstatisticas();
+            }
+        }
+
+        function renderizarMapa() {
+            clusterMandados.clearLayers();
+            const bounds = [];
+
+            todosMandados.forEach(m => {
+                const icone = L.divIcon({
+                    className: '',
+                    html: `<div class="marker-custom marker-${m.corStatus}"><i class="fas fa-gavel"></i></div>`,
+                    iconSize: [30, 30],
+                    iconAnchor: [15, 15]
+                });
+                const marker = L.marker([m.lat, m.lng], { icon: icone });
+                marker.bindPopup(gerarPopupMandado(m));
+                clusterMandados.addLayer(marker);
+                bounds.push([m.lat, m.lng]);
+            });
+
+            if (bounds.length > 0) {
+                mapa.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+                console.log(`📍 ${bounds.length} mandados plotados`);
+            } else {
+                mapa.setView([-12.9714, -38.5014], 12);
+                console.log('🌍 Nenhum mandado georreferenciado');
+            }
+        }
+
+        function gerarPopupMandado(m) {
+            const s = m.suspeito || {};
+            const coresLabel = {
+                'novo': '🔴 Novo mandado (recem-inserido)',
+                'ativo': '🟢 Em cumprimento',
+                'cumprido': '🔵 Cumprido',
+                'vencido': '⚪ Vencido',
+                'cancelado': '🟡 Cancelado',
+                'suspenso': '🟣 Suspenso'
+            };
+            const descricao = m.descricao ? String(m.descricao).trim() : '';
+            const observacoes = m.observacoes ? String(m.observacoes).trim() : '';
+            return `
+                <div class="popup-title mandado"><i class="fas fa-gavel"></i> MANDADO</div>
+                <div class="popup-row"><strong>Nº:</strong> ${m.numero_mandado || '#' + m.id_mandado}</div>
+                <div class="popup-row"><strong>Status Execucao:</strong> ${coresLabel[m.corStatus] || m.status || '-'}</div>
+                <div class="popup-row"><strong>Tipo:</strong> ${traduzirTipoMandado(m.tipo_mandado)}</div>
+                <div class="popup-row"><strong>Prioridade:</strong> ${m.prioridade || '-'}</div>
+                <div class="popup-row"><strong>Suspeito:</strong> ${s.nome_completo || '-'}</div>
+                <div class="popup-row"><strong>CPF:</strong> ${s.cpf || '-'}</div>
+                <div class="popup-row"><strong>Bairro:</strong> ${s.bairro || '-'}</div>
+                <div class="popup-row"><strong>Juiz:</strong> ${m.juiz_nome || '-'}</div>
+                <div class="popup-row"><strong>Vara:</strong> ${m.vara_tribunal || '-'}</div>
+                <div class="popup-row"><strong>Emissao:</strong> ${m.data_emissao || '-'}</div>
+                <div class="popup-row" style="margin-top:8px;border-top:1px solid #003322;padding-top:6px;">
+                    <strong>Descricao:</strong><br>${descricao || '-'}
+                </div>
+                <div class="popup-row" style="margin-top:6px;">
+                    <strong>Observacoes:</strong><br>${observacoes || '-'}
+                </div>
+            `;
+        }
+
+        function traduzirTipoMandado(tipo) {
+            const tipos = {
+                'PRISAO': 'Prisao',
+                'BUSCA_APREENSAO': 'Busca e Apreensao',
+                'CONDUCAO_COERCITIVA': 'Conducao Coercitiva'
+            };
+            return tipos[tipo] || tipo || '-';
+        }
+
+        function renderizarEstatisticas() {
+            const total = todosMandados.length;
+            const novos = todosMandados.filter(m => m.corStatus === 'novo').length;
+            const ativos = todosMandados.filter(m => m.corStatus === 'ativo').length;
+            const cumpridos = todosMandados.filter(m => m.corStatus === 'cumprido').length;
+            const vencidos = todosMandados.filter(m => m.corStatus === 'vencido').length;
+            const cancelados = todosMandados.filter(m => m.corStatus === 'cancelado').length;
+            const suspensos = todosMandados.filter(m => m.corStatus === 'suspenso').length;
+
+            document.getElementById('statsGrid').innerHTML = `
+                <div class="stat-card">
+                    <div class="number">${total}</div>
+                    <div class="label">Total no Mapa</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number novo">${novos}</div>
+                    <div class="label">🔴 Novos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number ativo">${ativos}</div>
+                    <div class="label">🟢 Em Cumprimento</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number cumprido">${cumpridos}</div>
+                    <div class="label">🔵 Cumpridos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number vencido">${vencidos}</div>
+                    <div class="label">⚪ Vencidos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number cancelado">${cancelados}</div>
+                    <div class="label">🟡 Cancelados</div>
+                </div>
+                <div class="stat-card">
+                    <div class="number suspenso">${suspensos}</div>
+                    <div class="label">🟣 Suspensos</div>
+                </div>
+            `;
+        }
+
+        function showToast(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
+                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
+                '<div class="toast-message">' + mensagem + '</div></div>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
+        }
+
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+            const req = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancel = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(docEl);
+            else cancel.call(doc);
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
+        });
+
+        function minimizeWindow() {
+            try { window.blur(); } catch (e) { console.warn('Minimizar nao suportado:', e); }
+        }
+
+        async function fazerLogout() {
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try {
+                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
+                    await AIDEPOM.logout();
+                    return;
+                }
+            } catch (e) {}
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+            window.location.href = '02-login.html';
+        }
+
+        function closeWindow() {
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+            try { window.open('', '_self', ''); window.close(); } catch (e) {}
+            setTimeout(function() {
+                if (!window.closed) window.location.href = '01-apresentacao.html';
+            }, 300);
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        console.log('✅ Pagina Mapa de Mandados v1.0.0 carregada');
+    </script>
+    <script src="assets/js/inactivity-lock.js"></script>
+</body>
+</html>
