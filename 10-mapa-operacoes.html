@@ -2,18 +2,14 @@
      AI-DEPOM - MAPA DE OPERAÇÕES
      ============================================================
      Arquivo: 10-mapa-operacoes.html
-     Versão: 2.1.0
-     Data: 17/09/2026 - 06:00
+     Versão: 2.1.1
+     Data: 17/09/2026 - 06:30
      Autor: AI-DEPOM Team
      ============================================================
-     REGRA DE OURO:
-     1. Zero placeholders quebrados
-     2. Zero TODOs esquecidos
-     3. Zero duplicações
-     4. Toda função referenciada DEVE existir
-     5. Todo botão DEVE ter handler real
-     6. Todo módulo DEVE estar conectado
-     7. Nenhuma linha deve ser removida sem substituição
+     ALTERAÇÕES v2.1.1 (17/09/2026 06:30):
+     - 📋 Popup do mandado agora exibe "Descricao" e "Observacoes"
+     - 🔍 Query SELECT inclui descricao e observacoes
+     - (Edição desses campos fica na tela 11-mandados.html)
 
      ALTERAÇÕES v2.1.0 (17/09/2026 06:00):
      - 🎨 Mandados com cores por status de execucao:
@@ -25,9 +21,6 @@
        🟣 Roxo = Suspenso
      - 📋 Legenda expandida com todos os status
      - 🗺️ Esri World Dark Gray Canvas (gratis, sem key)
-
-     ALTERAÇÕES v2.0.1 (17/09/2026 05:00):
-     - CartoDB -> Esri (sem API Key)
      ============================================================
 -->
 <!DOCTYPE html>
@@ -548,7 +541,7 @@
         const DIAS_NOVO_MANDADO = 7;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Operacoes v2.1.0 iniciado');
+            console.log('AI-DEPOM - Mapa de Operacoes v2.1.1 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -650,11 +643,13 @@
 
         async function carregarMandados() {
             try {
+                // 🔧 [v2.1.1] inclui descricao e observacoes no SELECT
                 const { data, error } = await window.supabaseClient
                     .from('mandado_prisao')
                     .select(`
                         id_mandado, numero_mandado, tipo_mandado, status, prioridade,
                         juiz_nome, vara_tribunal, data_emissao, data_validade, data_cadastro,
+                        descricao, observacoes,
                         latitude, longitude,
                         suspeito:suspeito (
                             id_suspeito, nome_completo, apelido, cpf, bairro, cidade, uf
@@ -818,6 +813,9 @@
                 'cancelado': '🟡 Cancelado',
                 'suspenso': '🟣 Suspenso'
             };
+            // 🔧 [v2.1.1] exibe descricao e observacoes (truncadas para caber no popup)
+            const descricao = m.descricao ? String(m.descricao).trim() : '';
+            const observacoes = m.observacoes ? String(m.observacoes).trim() : '';
             return `
                 <div class="popup-title mandado"><i class="fas fa-gavel"></i> MANDADO</div>
                 <div class="popup-row"><strong>Nº:</strong> ${m.numero_mandado || '#' + m.id_mandado}</div>
@@ -830,6 +828,12 @@
                 <div class="popup-row"><strong>Juiz:</strong> ${m.juiz_nome || '-'}</div>
                 <div class="popup-row"><strong>Vara:</strong> ${m.vara_tribunal || '-'}</div>
                 <div class="popup-row"><strong>Emissao:</strong> ${m.data_emissao || '-'}</div>
+                <div class="popup-row" style="margin-top:8px;border-top:1px solid #003322;padding-top:6px;">
+                    <strong>Descricao:</strong><br>${descricao || '-'}
+                </div>
+                <div class="popup-row" style="margin-top:6px;">
+                    <strong>Observacoes:</strong><br>${observacoes || '-'}
+                </div>
             `;
         }
 
@@ -986,7 +990,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina de Mapa v2.1.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Mapa v2.1.1 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
