@@ -1,9 +1,9 @@
-<!-- ============================================================
+ <!-- ============================================================
      AI-DEPOM - OPERAÇÕES POLICIAIS
      ============================================================
      Arquivo: 14-operacoes.html
-     Versão: 1.0.0
-     Data: 16/09/2026 - 19:00
+     Versão: 1.1.0
+     Data: 16/09/2026 - 23:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,16 +15,16 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v1.1.0 (16/09/2026 23:00):
+     - ✨ NOVO: Campo Equipe Policial com autocomplete
+     - ✨ Autocomplete busca policiais cadastrados no sistema
+     - ✨ Vincula automaticamente pelo nome
+     - ✨ Campo "Função na Operação" (Comandante, Motorista, etc)
+     - ✨ Modal de detalhes exibe a equipe
+     - ✅ Mantidas: viaturas, presos, natureza, objetivo, etc
+
      ALTERAÇÕES v1.0.0 (16/09/2026 19:00):
-     - ✨ Tela de cadastro de Operações Policiais
-     - ✨ Campos: nome, data, hora, setor, viaturas, KM, natureza, objetivo
-     - ✨ Gerenciador de viaturas (quantidade + placas)
-     - ✨ Múltiplas naturezas: sigilosa, discreta, ostensiva, aberta, padrão, especial, inteligência
-     - ✨ Múltiplos objetivos: busca e apreensão, cumprimento de mandado, controle de distúrbios
-     - ✨ Cadastro de presos/capturados com autocomplete
-     - ✨ Comparação automática com suspeitos cadastrados
-     - ✨ Lista de operações com filtros
-     - ✨ Modal de detalhes completa
+     - Tela inicial de Operações
      ============================================================
 -->
 <!DOCTYPE html>
@@ -184,7 +184,6 @@
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 10px; border-radius: 8px; transition: all 0.3s; font-size: 12px; cursor: pointer; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
 
-        /* Cards de viatura / presos */
         .card-item {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
@@ -224,7 +223,6 @@
             border-radius: 12px; margin-bottom: 12px;
         }
 
-        /* Status badges */
         .status-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
         .status-planejada { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.3); }
         .status-andamento { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
@@ -283,7 +281,6 @@
         .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        /* Modal */
         .modal-custom { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-custom.open { display: flex; }
         .modal-custom-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; width: 100%; max-width: 900px; max-height: 92vh; overflow-y: auto; }
@@ -297,7 +294,6 @@
         .detalhe-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
         .detalhe-campo .valor { color: var(--text-primary); font-size: 14px; }
 
-        /* Autocomplete */
         .autocomplete-wrapper { position: relative; }
         .autocomplete-list {
             position: absolute; top: 100%; left: 0; right: 0;
@@ -324,7 +320,6 @@
             font-size: 9px; font-weight: 700; margin-left: 6px;
         }
 
-        /* Matched suspect */
         .suspeito-match {
             background: rgba(0, 255, 136, 0.08);
             border: 1px solid var(--text-primary);
@@ -341,6 +336,41 @@
         .suspeito-match .info { flex: 1; }
         .suspeito-match .nome { color: var(--text-primary); font-weight: 700; font-size: 14px; }
         .suspeito-match .meta { color: rgba(0, 255, 136, 0.5); font-size: 11px; margin-top: 2px; }
+
+        /* [v1.1.0] Equipe Policial */
+        .policial-match {
+            background: rgba(13, 202, 240, 0.08);
+            border: 1px solid #0dcaf0;
+            border-radius: 10px; padding: 12px;
+            margin-top: 8px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .policial-match .avatar {
+            width: 42px; height: 42px; border-radius: 50%;
+            background: linear-gradient(135deg, #0dcaf0 0%, #0099cc 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 16px; color: #000;
+        }
+        .policial-match .info { flex: 1; }
+        .policial-match .nome { color: #0dcaf0; font-weight: 700; font-size: 14px; }
+        .policial-match .meta { color: rgba(13, 202, 240, 0.6); font-size: 11px; margin-top: 2px; }
+
+        .badge-cadastrado {
+            display: inline-block; padding: 2px 8px; border-radius: 8px;
+            font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+            background: rgba(13, 202, 240, 0.15);
+            color: #0dcaf0;
+            border: 1px solid rgba(13, 202, 240, 0.3);
+            margin-left: 8px;
+        }
+        .badge-nao-cadastrado {
+            display: inline-block; padding: 2px 8px; border-radius: 8px;
+            font-size: 9px; font-weight: 700; letter-spacing: 0.5px;
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            margin-left: 8px;
+        }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -429,7 +459,6 @@
             </div>
         </header>
 
-        <!-- FORMULÁRIO DE OPERAÇÃO -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-plus-circle"></i>Nova Operacao</div>
 
@@ -493,6 +522,28 @@
                             <option value="CONTROLE_DISTURBIOS">Controle de Disturbios</option>
                         </select>
                     </div>
+                </div>
+
+                <!-- ============================================
+                     [v1.1.0] EQUIPE POLICIAL
+                     ============================================ -->
+                <div class="section-title"><i class="fas fa-user-shield"></i>EQUIPE POLICIAL</div>
+
+                <div style="background: rgba(13, 202, 240, 0.03); border: 1px solid rgba(13, 202, 240, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: rgba(13, 202, 240, 0.9);">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Digite o nome do policial. Se ele estiver cadastrado no sistema, aparecerá uma sugestão para você clicar.
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-12">
+                        <button type="button" class="btn-outline-gold w-100" onclick="adicionarPolicial()" style="padding: 12px; border-color: #0dcaf0; color: #0dcaf0;">
+                            <i class="fas fa-plus-circle me-2"></i>ADICIONAR POLICIAL
+                        </button>
+                    </div>
+                </div>
+
+                <div id="policiaisContainer">
+                    <!-- Preenchido dinamicamente -->
                 </div>
 
                 <!-- VIATURAS -->
@@ -629,10 +680,11 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         let usuarioAtual = null;
-        let viaturas = [];       // [{ placa }]
-        let presos = [];         // [{ nome_completo, apelido, cpf, data_nascimento, tipo, id_suspeito, foi_identificado }]
+        let viaturas = [];
+        let presos = [];
+        let policiais = [];       // [v1.1.0] Equipe policial
         let suspeitosCache = [];
-        let autocompleteIndexAtivo = -1;
+        let usuariosSistemaCache = [];   // [v1.1.0] Para autocomplete de policiais
 
         const NATUREZA_LABEL = {
             'SIGILOSA': 'Sigilosa', 'DISCRETA': 'Discreta', 'OSTENSIVA': 'Ostensiva',
@@ -643,12 +695,24 @@
             'MANDADO_CAPTURA': 'Cumprimento de Mandado e Captura',
             'CONTROLE_DISTURBIOS': 'Controle de Disturbios'
         };
+        const FUNCOES_POLICIAL = [
+            'Comandante',
+            'Subcomandante',
+            'Motorista',
+            'Atirador',
+            'Apoio',
+            'Negociador',
+            'Comunicacoes',
+            'Inteligencia',
+            'Observador',
+            'Outro'
+        ];
 
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Operacoes v1.0.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Operacoes v1.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -663,9 +727,11 @@
             document.getElementById('dataPrevista').value = new Date().toISOString().split('T')[0];
 
             await carregarSuspeitosCache();
+            await carregarUsuariosSistemaCache();   // [v1.1.0]
             await carregarOperacoes();
             renderizarViaturas();
             renderizarPresos();
+            renderizarPoliciais();                 // [v1.1.0]
 
             document.getElementById('formOperacao').addEventListener('submit', cadastrarOperacao);
         });
@@ -682,7 +748,7 @@
         }
 
         // ============================================================
-        // CARREGAR SUSPEITOS NO CACHE (para autocomplete)
+        // CARREGAR SUSPEITOS NO CACHE (autocomplete de presos)
         // ============================================================
         async function carregarSuspeitosCache() {
             try {
@@ -698,6 +764,212 @@
             } catch (error) {
                 console.error('❌ Erro ao carregar suspeitos:', error);
             }
+        }
+
+        // ============================================================
+        // [v1.1.0] CARREGAR USUÁRIOS DO SISTEMA (autocomplete de policiais)
+        // ============================================================
+        async function carregarUsuariosSistemaCache() {
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('usuarios')
+                    .select('id, nome_completo, matricula, email, setor, id_perfil_acesso')
+                    .eq('deletado', false)
+                    .eq('ativo', true)
+                    .order('nome_completo', { ascending: true });
+
+                if (error) throw error;
+                usuariosSistemaCache = data || [];
+                console.log(`✅ ${usuariosSistemaCache.length} usuarios do sistema carregados no cache`);
+            } catch (error) {
+                console.error('❌ Erro ao carregar usuarios do sistema:', error);
+            }
+        }
+
+        // ============================================================
+        // [v1.1.0] EQUIPE POLICIAL
+        // ============================================================
+        function adicionarPolicial() {
+            policiais.push({
+                id_usuario: null,
+                nome_completo: '',
+                matricula: '',
+                funcao: '',
+                cadastrado: false
+            });
+            renderizarPoliciais();
+            console.log(`✅ Policial adicionado. Total: ${policiais.length}`);
+        }
+
+        function removerPolicial(index) {
+            if (!confirm('Remover este policial?')) return;
+            policiais.splice(index, 1);
+            renderizarPoliciais();
+            console.log(`🗑️ Policial removido. Total: ${policiais.length}`);
+        }
+
+        function atualizarPolicial(index, campo, valor) {
+            if (policiais[index]) {
+                policiais[index][campo] = valor;
+            }
+        }
+
+        function renderizarPoliciais() {
+            const container = document.getElementById('policiaisContainer');
+
+            if (policiais.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-item">
+                        <i class="fas fa-user-shield" style="font-size: 24px; display: block; margin-bottom: 8px;"></i>
+                        Nenhum policial adicionado a equipe
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            policiais.forEach((p, i) => {
+                const badgeCadastro = p.cadastrado
+                    ? '<span class="badge-cadastrado"><i class="fas fa-check-circle"></i> CADASTRADO</span>'
+                    : '<span class="badge-nao-cadastrado"><i class="fas fa-user-plus"></i> NAO CADASTRADO</span>';
+
+                const matchInfo = p.cadastrado
+                    ? `<div class="policial-match">
+                        <div class="avatar">${(p.nome_completo || 'P')[0].toUpperCase()}</div>
+                        <div class="info">
+                            <div class="nome">
+                                <i class="fas fa-check-circle" style="color: #0dcaf0;"></i>
+                                Vinculado ao sistema (ID: ${p.id_usuario?.substring(0, 8) || '-'})
+                            </div>
+                            <div class="meta">${p.matricula ? 'Matricula: ' + p.matricula + ' - ' : ''}Policial cadastrado</div>
+                        </div>
+                       </div>`
+                    : '';
+
+                const funcoesOptions = FUNCOES_POLICIAL.map(f =>
+                    `<option value="${f}" ${p.funcao === f ? 'selected' : ''}>${f}</option>`
+                ).join('');
+
+                html += `
+                    <div class="card-item">
+                        <div class="card-item-header">
+                            <div class="titulo">
+                                <span class="num">${i+1}</span>POLICIAL #${i+1}
+                                ${badgeCadastro}
+                            </div>
+                            <button type="button" class="btn-remover-item" onclick="removerPolicial(${i})" title="Remover">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-6 autocomplete-wrapper">
+                                <label class="form-label">Nome do Policial *</label>
+                                <input type="text" class="form-control" 
+                                       id="policialNome_${i}"
+                                       placeholder="Digite o nome (busca automatica)"
+                                       value="${p.nome_completo || ''}"
+                                       autocomplete="off"
+                                       oninput="buscarPolicial(${i}, this.value)"
+                                       onfocus="buscarPolicial(${i}, this.value)"
+                                       onblur="setTimeout(() => fecharAutocompletePolicial(${i}), 200)">
+                                <div class="autocomplete-list" id="autocompletePolicial_${i}"></div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Matricula</label>
+                                <input type="text" class="form-control" 
+                                       placeholder="Ex: 126028514"
+                                       value="${p.matricula || ''}"
+                                       ${p.cadastrado ? 'readonly' : ''}
+                                       oninput="atualizarPolicial(${i}, 'matricula', this.value)">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Funcao na Operacao *</label>
+                                <select class="form-select" onchange="atualizarPolicial(${i}, 'funcao', this.value)">
+                                    <option value="">Selecione...</option>
+                                    ${funcoesOptions}
+                                </select>
+                            </div>
+                            <div class="col-md-12">
+                                ${matchInfo}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // [v1.1.0] AUTOCOMPLETE — busca policiais (usuarios do sistema)
+        // ============================================================
+        function buscarPolicial(index, termo) {
+            const listEl = document.getElementById('autocompletePolicial_' + index);
+            if (!listEl) return;
+
+            termo = (termo || '').trim().toLowerCase();
+
+            if (termo.length < 2) {
+                listEl.classList.remove('show');
+                return;
+            }
+
+            // Filtra usuários do sistema por nome ou matrícula
+            const matches = usuariosSistemaCache.filter(u => {
+                const nome = (u.nome_completo || '').toLowerCase();
+                const matricula = (u.matricula || '').toLowerCase();
+                const email = (u.email || '').toLowerCase();
+                return nome.includes(termo) || matricula.includes(termo) || email.includes(termo);
+            }).slice(0, 8);
+
+            if (matches.length === 0) {
+                listEl.innerHTML = `
+                    <div class="autocomplete-item" style="cursor: default; color: rgba(255,193,7,0.8);">
+                        <i class="fas fa-exclamation-triangle"></i> Nenhum policial cadastrado com este nome
+                    </div>
+                `;
+                listEl.classList.add('show');
+                return;
+            }
+
+            let html = '';
+            matches.forEach(u => {
+                const perfil = AIDEPOM.getNomePerfil(u.id_perfil_acesso);
+                html += `
+                    <div class="autocomplete-item" onclick="selecionarPolicial(${index}, '${u.id}')">
+                        <div><i class="fas fa-user-shield" style="color: #0dcaf0; margin-right: 6px;"></i>
+                            <strong>${u.nome_completo}</strong>
+                            <span class="badge-match">${perfil}</span>
+                        </div>
+                        <div class="match-info">
+                            ${u.matricula ? 'Matricula: ' + u.matricula + ' - ' : ''}
+                            ${u.setor ? 'Setor: ' + u.setor : ''}
+                        </div>
+                    </div>
+                `;
+            });
+
+            listEl.innerHTML = html;
+            listEl.classList.add('show');
+        }
+
+        function fecharAutocompletePolicial(index) {
+            const listEl = document.getElementById('autocompletePolicial_' + index);
+            if (listEl) listEl.classList.remove('show');
+        }
+
+        function selecionarPolicial(index, idUsuario) {
+            const u = usuariosSistemaCache.find(x => x.id === idUsuario);
+            if (!u) return;
+
+            policiais[index].id_usuario = u.id;
+            policiais[index].nome_completo = u.nome_completo;
+            policiais[index].matricula = u.matricula || '';
+            policiais[index].cadastrado = true;
+
+            console.log('✅ Policial vinculado:', u.nome_completo);
+            renderizarPoliciais();
+            showToast('success', 'Policial vinculado!', `<strong>${u.nome_completo}</strong> foi vinculado a equipe.`);
         }
 
         // ============================================================
@@ -756,7 +1028,7 @@
         }
 
         function atualizarContadoresViaturas() {
-            // Apenas visual - não precisa fazer nada especial
+            // Apenas visual
         }
 
         // ============================================================
@@ -897,7 +1169,6 @@
                 return;
             }
 
-            // Filtra suspeitos por nome, apelido ou CPF
             const matches = suspeitosCache.filter(s => {
                 const nome = (s.nome_completo || '').toLowerCase();
                 const apelido = (s.apelido || '').toLowerCase();
@@ -917,7 +1188,6 @@
 
             let html = '';
             matches.forEach(s => {
-                const inicial = (s.nome_completo || 'S')[0].toUpperCase();
                 html += `
                     <div class="autocomplete-item" onclick="selecionarSuspeito(${index}, ${s.id_suspeito})">
                         <div><i class="fas fa-user-secret" style="color: #00ff88; margin-right: 6px;"></i>
@@ -925,8 +1195,8 @@
                             <span class="badge-match">ID #${s.id_suspeito}</span>
                         </div>
                         <div class="match-info">
-                            ${s.apelido ? 'Apelido: ' + s.apelido + ' · ' : ''}
-                            ${s.cpf ? 'CPF: ' + s.cpf + ' · ' : ''}
+                            ${s.apelido ? 'Apelido: ' + s.apelido + ' - ' : ''}
+                            ${s.cpf ? 'CPF: ' + s.cpf + ' - ' : ''}
                             Status: ${s.status_atual || '-'}
                         </div>
                     </div>
@@ -953,7 +1223,7 @@
             presos[index].data_nascimento = s.data_nascimento || '';
             presos[index].foi_identificado = true;
 
-            console.log('✅ Suspeito vinculado:', s.nome_completo, '(ID:', s.id_suspeito, ')');
+            console.log('✅ Suspeito vinculado:', s.nome_completo);
             renderizarPresos();
             showToast('success', 'Suspeito vinculado!', `<strong>${s.nome_completo}</strong> ja esta cadastrado (ID #${s.id_suspeito}).`);
         }
@@ -968,7 +1238,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
 
             try {
-                // Validações
                 const nome = document.getElementById('nomeOperacao').value.trim();
                 const dataPrevista = document.getElementById('dataPrevista').value;
                 const setor = document.getElementById('setorOperacao').value.trim();
@@ -977,11 +1246,20 @@
                 if (!dataPrevista) throw new Error('Preencha a Data Prevista.');
                 if (!setor) throw new Error('Preencha o Setor Responsavel.');
 
+                // Valida equipe policial
+                const policiaisValidos = policiais.filter(p => p.nome_completo && p.nome_completo.trim());
+                for (const p of policiaisValidos) {
+                    if (!p.funcao) {
+                        throw new Error(`Selecione a funcao do policial "${p.nome_completo}".`);
+                    }
+                }
+
                 const dados = {
                     nome_operacao: nome,
                     data_prevista: dataPrevista,
                     horario: document.getElementById('horario').value || null,
                     setor: setor,
+                    equipe_policial: policiaisValidos,   // [v1.1.0]
                     viaturas_quantidade: parseInt(document.getElementById('viaturasTotal').value) || 0,
                     viaturas_padronizadas: parseInt(document.getElementById('viaturasPadronizadas').value) || 0,
                     viaturas_descaracterizadas: parseInt(document.getElementById('viaturasDescaracterizadas').value) || 0,
@@ -996,6 +1274,7 @@
                 };
 
                 console.log('📝 Cadastrando operacao:', dados);
+                console.log(`👥 Equipe: ${policiaisValidos.length} policiais`);
 
                 const { data: inserted, error: insertError } = await window.supabaseClient
                     .from('operacao')
@@ -1032,7 +1311,6 @@
 
                         if (presosError) {
                             console.error('❌ Erro ao inserir presos:', presosError);
-                            showToast('warning', 'Operacao salva, mas presos falharam', presosError.message);
                         } else {
                             console.log(`✅ ${presosInsert.length} pessoa(s) inserida(s)`);
                         }
@@ -1059,8 +1337,10 @@
             document.getElementById('dataPrevista').value = new Date().toISOString().split('T')[0];
             viaturas = [];
             presos = [];
+            policiais = [];      // [v1.1.0]
             renderizarViaturas();
             renderizarPresos();
+            renderizarPoliciais();   // [v1.1.0]
             console.log('🧹 Formulario resetado');
         }
 
@@ -1100,18 +1380,20 @@
                 }
 
                 let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
-                html += '<th>Nome</th><th>Data</th><th>Setor</th><th>Natureza</th><th>Objetivo</th><th>Status</th><th>Acoes</th>';
+                html += '<th>Nome</th><th>Data</th><th>Setor</th><th>Equipe</th><th>Natureza</th><th>Objetivo</th><th>Status</th><th>Acoes</th>';
                 html += '</tr></thead><tbody>';
 
                 data.forEach(o => {
                     const statusClass = `status-${(o.status || 'planejada').toLowerCase()}`;
                     const naturezaClass = `nat-${(o.natureza_operacao || 'padrao').toLowerCase()}`;
                     const dataFormatada = o.data_prevista ? o.data_prevista.split('-').reverse().join('/') : '-';
+                    const equipe = Array.isArray(o.equipe_policial) ? o.equipe_policial : [];
 
                     html += '<tr onclick="verDetalhesOperacao(' + o.id_operacao + ')">';
                     html += `<td><strong style="color:var(--text-primary);">${o.nome_operacao || '-'}</strong></td>`;
                     html += `<td>${dataFormatada}${o.horario ? ' ' + o.horario.substring(0,5) : ''}</td>`;
                     html += `<td>${o.setor || '-'}</td>`;
+                    html += `<td><span style="color:#0dcaf0;"><i class="fas fa-user-shield"></i> ${equipe.length}</span></td>`;
                     html += `<td>${o.natureza_operacao ? `<span class="natureza-badge ${naturezaClass}">${NATUREZA_LABEL[o.natureza_operacao] || o.natureza_operacao}</span>` : '-'}</td>`;
                     html += `<td>${o.objetivo_pratico ? `<span class="objetivo-badge">${OBJETIVO_LABEL[o.objetivo_pratico] || o.objetivo_pratico}</span>` : '-'}</td>`;
                     html += `<td><span class="status-badge ${statusClass}">${o.status || '-'}</span></td>`;
@@ -1159,6 +1441,7 @@
                 const naturezaClass = `nat-${(o.natureza_operacao || 'padrao').toLowerCase()}`;
                 const statusClass = `status-${(o.status || 'planejada').toLowerCase()}`;
                 const placas = Array.isArray(o.viaturas_placas) ? o.viaturas_placas : [];
+                const equipe = Array.isArray(o.equipe_policial) ? o.equipe_policial : [];
 
                 body.innerHTML = `
                     <div class="row g-3">
@@ -1216,6 +1499,30 @@
                         ` : ''}
                     </div>
 
+                    ${equipe.length > 0 ? `
+                    <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <h6 style="color: #0dcaf0; font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;">
+                            <i class="fas fa-user-shield"></i> EQUIPE POLICIAL (${equipe.length})
+                        </h6>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 10px;">
+                            ${equipe.map(p => `
+                                <div class="card-item" style="border-color: rgba(13, 202, 240, 0.3);">
+                                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                                        <div>
+                                            <strong style="color: #0dcaf0;">${p.nome_completo || '-'}</strong>
+                                            ${p.cadastrado ? '<span class="badge-cadastrado"><i class="fas fa-check-circle"></i> CADASTRADO</span>' : '<span class="badge-nao-cadastrado">NAO CADASTRADO</span>'}
+                                        </div>
+                                    </div>
+                                    <div style="margin-top: 6px; font-size: 12px; color: rgba(13, 202, 240, 0.5);">
+                                        ${p.matricula ? 'Matricula: ' + p.matricula + ' - ' : ''}
+                                        <strong style="color: #0dcaf0;">Funcao:</strong> ${p.funcao || '-'}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
                     ${presosData && presosData.length > 0 ? `
                     <div style="margin-top: 20px; border-top: 1px solid var(--border-color); padding-top: 20px;">
                         <h6 style="color: var(--text-primary); font-weight: 700; letter-spacing: 1px; margin-bottom: 15px;">
@@ -1231,9 +1538,9 @@
                                     <span class="natureza-badge nat-${p.tipo === 'PRESO' ? 'ostensiva' : 'aberta'}">${p.tipo}</span>
                                 </div>
                                 <div style="margin-top: 6px; font-size: 12px; color: rgba(0,255,136,0.5);">
-                                    ${p.apelido ? 'Apelido: ' + p.apelido + ' · ' : ''}
-                                    ${p.cpf ? 'CPF: ' + p.cpf + ' · ' : ''}
-                                    ${p.data_nascimento ? 'Nasc: ' + p.data_nascimento.split('-').reverse().join('/') + ' · ' : ''}
+                                    ${p.apelido ? 'Apelido: ' + p.apelido + ' - ' : ''}
+                                    ${p.cpf ? 'CPF: ' + p.cpf + ' - ' : ''}
+                                    ${p.data_nascimento ? 'Nasc: ' + p.data_nascimento.split('-').reverse().join('/') + ' - ' : ''}
                                     ${p.id_suspeito ? 'Vinculado ao suspeito #' + p.id_suspeito : 'Nao vinculado'}
                                 </div>
                                 ${p.observacoes ? `<div style="margin-top: 6px; font-size: 11px; color: rgba(0,255,136,0.4); font-style: italic;">${p.observacoes}</div>` : ''}
