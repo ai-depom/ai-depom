@@ -2,8 +2,8 @@
      AI-DEPOM - AUDITORIA DO SISTEMA
      ============================================================
      Arquivo: 12-auditoria.html
-     Versão: 2.0.1
-     Data: 16/09/2026 - 15:00
+     Versão: 2.1.0
+     Data: 16/09/2026 - 20:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,24 +15,16 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.1.0 (16/09/2026 20:00):
+     - ✨ NOVO: 5ª fonte de auditoria = OPERACOES
+     - ✨ Novo tipo OPERACAO com ícone 🎯
+     - ✨ Novo filtro "Operações"
+     - ✨ Severidade: CRIAR_OPERACAO / UPDATE_OPERACAO
+     - ✅ Mantidas: todas as features da v2.0.1
+
      ALTERAÇÕES v2.0.1 (16/09/2026 15:00):
      - 🐛 CORRIGIDO: eventos de suspeito mostravam "Desconhecido"
-     - ✨ NOVO: resolverNomeUsuario() com fallback em 3 camadas
-     - ✨ NOVO: fallback mostra UUID truncado em vez de "Desconhecido"
-     - ✅ Mantidas: todas as features da v2.0.0
-
-     ALTERAÇÕES v2.0.0 (16/09/2026 11:00):
-     - ✨ Modal de Detalhes RADICALMENTE enriquecido (7 seções)
-     - ✨ Classificação de severidade (CRÍTICO / ALERTA / INFO)
-     - ✨ Timeline visual do evento
-     - ✨ Card "Quem executou" (nome, matrícula, perfil, setor)
-     - ✨ Card "O que foi afetado" (entidade, ID, nome)
-     - ✨ Diff visual Antes/Depois lado a lado
-     - ✨ Contexto técnico (IP, sessão, user agent)
-     - ✨ Eventos relacionados (últimos 5 do mesmo usuário/entidade)
-     - ✨ JSON bruto colapsável
-     - ✨ Gráfico de atividade por hora
-     - ✨ Filtro por severidade
+     - ✨ resolverNomeUsuario() com fallback em 3 camadas
      ============================================================
 -->
 <!DOCTYPE html>
@@ -186,7 +178,6 @@
             border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
         }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -212,7 +203,6 @@
         .stat-card.critical .number { color: var(--sev-critical); }
         .stat-card.warning .number { color: var(--sev-warning); }
         .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
-
         .chart-activity {
             display: flex; gap: 4px; align-items: flex-end;
             height: 80px; padding: 10px 0; margin-top: 10px;
@@ -228,7 +218,6 @@
             font-size: 10px; color: rgba(0, 255, 136, 0.3);
             margin-top: 25px; padding: 0 4px;
         }
-
         .table-container { overflow-x: auto; }
         .table-custom { width: 100%; border-collapse: collapse; }
         .table-custom th {
@@ -244,7 +233,6 @@
         .table-custom tr:hover td { background: rgba(0, 255, 136, 0.02); }
         .table-custom tr.row-critical td { background: rgba(220, 53, 69, 0.04); }
         .table-custom tr.row-critical:hover td { background: rgba(220, 53, 69, 0.08); }
-
         .user-cell { display: flex; align-items: center; gap: 8px; }
         .user-cell .mini-avatar {
             width: 28px; height: 28px; border-radius: 50%;
@@ -254,16 +242,14 @@
         }
         .user-cell .user-nome { font-size: 12px; color: var(--text-primary); font-weight: 600; }
         .user-cell .user-meta { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
-
         .badge-acao { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
-        .acao-insert, .acao-criar_usuario { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
-        .acao-update, .acao-editar { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.2); }
+        .acao-insert, .acao-criar_usuario, .acao-criar_operacao { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
+        .acao-update, .acao-editar, .acao-update_operacao { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.2); }
         .acao-delete, .acao-desativar { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
         .acao-upload, .acao-foto { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); }
         .acao-reset_senha { background: rgba(156, 39, 176, 0.1); color: #ba68c8; border: 1px solid rgba(156, 39, 176, 0.2); }
         .acao-troca_perfil { background: rgba(255, 87, 34, 0.1); color: #ff5722; border: 1px solid rgba(255, 87, 34, 0.3); }
         .acao-login { background: rgba(0, 255, 136, 0.05); color: var(--text-secondary); border: 1px solid var(--border-color); }
-
         .sev-badge {
             display: inline-flex; align-items: center; gap: 4px;
             padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700;
@@ -272,7 +258,6 @@
         .sev-critical { background: rgba(220, 53, 69, 0.15); color: var(--sev-critical); border: 1px solid rgba(220, 53, 69, 0.4); }
         .sev-warning { background: rgba(255, 193, 7, 0.15); color: var(--sev-warning); border: 1px solid rgba(255, 193, 7, 0.3); }
         .sev-info { background: rgba(13, 202, 240, 0.1); color: var(--sev-info); border: 1px solid rgba(13, 202, 240, 0.2); }
-
         .tipo-icon {
             width: 32px; height: 32px; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
@@ -282,12 +267,11 @@
         .tipo-icon.usuario { background: rgba(13, 202, 240, 0.08); color: #0dcaf0; }
         .tipo-icon.midia { background: rgba(255, 193, 7, 0.08); color: #ffc107; }
         .tipo-icon.mandado { background: rgba(220, 53, 69, 0.08); color: #dc3545; }
-
+        .tipo-icon.operacao { background: rgba(255, 87, 34, 0.08); color: #ff5722; }
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 10px; border-radius: 8px; transition: all 0.3s; font-size: 12px; cursor: pointer; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
         .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
-
         .modal-custom {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -332,7 +316,6 @@
             border-radius: 8px; transition: all 0.3s;
         }
         .btn-close-modal:hover { color: #dc3545; background: rgba(220, 53, 69, 0.1); }
-
         .modal-section {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
@@ -351,7 +334,6 @@
             color: var(--text-primary); font-size: 10px; padding: 2px 8px;
             border-radius: 10px; font-weight: 600;
         }
-
         .user-card-full {
             display: flex; align-items: center; gap: 15px;
             padding: 12px; background: rgba(0, 255, 136, 0.02);
@@ -376,7 +358,6 @@
         .user-card-full .user-linha-meta span {
             display: flex; align-items: center; gap: 5px;
         }
-
         .entidade-card {
             padding: 12px; background: rgba(0, 255, 136, 0.02);
             border-radius: 10px; border: 1px solid var(--border-color);
@@ -394,7 +375,6 @@
         .entidade-card .entidade-id {
             color: rgba(0, 255, 136, 0.4); font-size: 11px; font-family: monospace;
         }
-
         .diff-tabela { width: 100%; }
         .diff-linha {
             display: grid; grid-template-columns: 180px 1fr 1fr;
@@ -418,7 +398,6 @@
             padding: 6px 10px; border-radius: 6px; border-left: 3px solid var(--text-primary);
             word-break: break-word;
         }
-
         .contexto-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 12px;
@@ -436,7 +415,6 @@
             color: var(--text-primary); font-size: 12px;
             font-family: monospace; word-break: break-all;
         }
-
         .timeline { position: relative; padding-left: 30px; }
         .timeline::before {
             content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
@@ -462,7 +440,6 @@
         .timeline-item .tl-desc {
             color: rgba(0, 255, 136, 0.5); font-size: 12px; margin-top: 3px;
         }
-
         .relacionado-item {
             display: flex; align-items: center; gap: 10px;
             padding: 8px 10px; background: rgba(0, 0, 0, 0.3);
@@ -482,7 +459,6 @@
             color: var(--text-secondary); font-size: 12px; flex: 1;
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
-
         .json-details summary {
             color: rgba(0, 255, 136, 0.5); font-size: 12px; cursor: pointer;
             padding: 8px 0; user-select: none;
@@ -497,7 +473,6 @@
             white-space: pre-wrap; word-break: break-all;
             max-height: 300px; overflow-y: auto;
         }
-
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
             min-width: 320px; max-width: 420px; padding: 16px 20px;
@@ -574,10 +549,12 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
             <a class="menu-item active" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -599,7 +576,7 @@
                 <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                 <div class="page-title">
                     <h4><i class="fas fa-clipboard-list me-2"></i>Auditoria do Sistema</h4>
-                    <small><i class="fas fa-history me-1"></i> Rastreabilidade completa de operações</small>
+                    <small><i class="fas fa-history me-1"></i> Rastreabilidade completa de operacoes</small>
                 </div>
             </div>
             <div class="top-actions">
@@ -622,7 +599,7 @@
         </div>
 
         <div class="form-card" id="cardGrafico">
-            <div class="card-title"><i class="fas fa-chart-area"></i>Atividade nas Últimas 24h</div>
+            <div class="card-title"><i class="fas fa-chart-area"></i>Atividade nas Ultimas 24h</div>
             <div class="chart-activity" id="chartActivity"></div>
             <div class="chart-legend">
                 <span>00h</span><span>04h</span><span>08h</span><span>12h</span><span>16h</span><span>20h</span><span>23h</span>
@@ -630,35 +607,36 @@
         </div>
 
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-filter"></i>Filtros Avançados</div>
+            <div class="card-title"><i class="fas fa-filter"></i>Filtros Avancados</div>
             <div class="row g-3">
                 <div class="col-md-2">
                     <label class="form-label">Tipo</label>
                     <select class="form-select" id="filtroTipo">
                         <option value="">Todos</option>
                         <option value="SUSPEITO">Suspeitos</option>
-                        <option value="USUARIO">Usuários</option>
-                        <option value="MIDIA">Fotos/Mídia</option>
+                        <option value="USUARIO">Usuarios</option>
+                        <option value="MIDIA">Fotos/Midia</option>
                         <option value="MANDADO">Mandados</option>
+                        <option value="OPERACAO">Operacoes</option>
                     </select>
                 </div>
                 <div class="col-md-2">
                     <label class="form-label">Severidade</label>
                     <select class="form-select" id="filtroSeveridade">
                         <option value="">Todas</option>
-                        <option value="CRITICAL">🔴 Crítico</option>
-                        <option value="WARNING">🟡 Alerta</option>
-                        <option value="INFO">🟢 Info</option>
+                        <option value="CRITICAL">Critico</option>
+                        <option value="WARNING">Alerta</option>
+                        <option value="INFO">Info</option>
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Usuário</label>
+                    <label class="form-label">Usuario</label>
                     <select class="form-select" id="filtroUsuario">
-                        <option value="">Todos os usuários</option>
+                        <option value="">Todos os usuarios</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label">Data Início</label>
+                    <label class="form-label">Data Inicio</label>
                     <input type="date" class="form-control" id="filtroDataInicio">
                 </div>
                 <div class="col-md-2">
@@ -673,7 +651,7 @@
                 </div>
                 <div class="col-md-12">
                     <label class="form-label">Busca</label>
-                    <input type="text" class="form-control" id="filtroBusca" placeholder="Nome, matrícula, descrição, ID...">
+                    <input type="text" class="form-control" id="filtroBusca" placeholder="Nome, matricula, descricao, ID...">
                 </div>
             </div>
             <div class="row mt-3">
@@ -740,7 +718,7 @@
         let usuariosCache = {};
 
         // ============================================================
-        // CLASSIFICAÇÃO DE SEVERIDADE
+        // CLASSIFICACAO DE SEVERIDADE
         // ============================================================
         const SEVERIDADE_MAP = {
             'DELETE': 'CRITICAL',
@@ -749,6 +727,8 @@
             'TROCA_PERFIL': 'CRITICAL',
             'EXCLUSAO': 'CRITICAL',
             'CRIAR_USUARIO': 'WARNING',
+            'CRIAR_OPERACAO': 'WARNING',
+            'UPDATE_OPERACAO': 'WARNING',
             'UPDATE': 'WARNING',
             'UPLOAD': 'WARNING',
             'FOTO': 'WARNING',
@@ -770,7 +750,8 @@
                 'SUSPEITO': 'fa-user-secret',
                 'USUARIO': 'fa-user-cog',
                 'MIDIA': 'fa-image',
-                'MANDADO': 'fa-gavel'
+                'MANDADO': 'fa-gavel',
+                'OPERACAO': 'fa-bullseye'
             };
             return icones[tipo] || 'fa-clipboard-list';
         }
@@ -780,51 +761,37 @@
             const agora = new Date();
             const d = new Date(data);
             const diff = Math.floor((agora - d) / 1000);
-
             if (diff < 60) return 'agora';
-            if (diff < 3600) return `há ${Math.floor(diff/60)} min`;
-            if (diff < 86400) return `há ${Math.floor(diff/3600)}h`;
-            if (diff < 604800) return `há ${Math.floor(diff/86400)}d`;
+            if (diff < 3600) return `ha ${Math.floor(diff/60)} min`;
+            if (diff < 86400) return `ha ${Math.floor(diff/3600)}h`;
+            if (diff < 604800) return `ha ${Math.floor(diff/86400)}d`;
             return d.toLocaleDateString('pt-BR');
         }
 
         // ============================================================
-        // 🛡️ [v2.0.1] RESOLVE NOME DO USUÁRIO EM 3 CAMADAS
-        // ============================================================
-        // 1ª: campo `nome_usuario` do próprio registro
-        // 2ª: cache `usuariosCache` pelo UUID
-        // 3ª: UUID truncado (mais informativo que "Desconhecido")
-        // 4ª: fallback final "Sistema"
+        // RESOLVE NOME DO USUARIO EM 3 CAMADAS
         // ============================================================
         function resolverNomeUsuario(registro) {
             if (!registro) return 'Sistema';
-
-            // 1ª camada: campo nome_usuario
             if (registro.nome_usuario && String(registro.nome_usuario).trim() !== '') {
                 return registro.nome_usuario;
             }
-
-            // 2ª camada: cache de usuários (pelo UUID)
-            const idUsuario = registro.id_usuario || registro.id_usuario_cadastrador || registro.id_usuario_upload || registro.id_usuario_emissao;
+            const idUsuario = registro.id_usuario || registro.id_usuario_cadastrador || registro.id_usuario_upload || registro.id_usuario_emissao || registro.id_usuario_cadastro;
             if (idUsuario && usuariosCache[idUsuario]) {
                 return usuariosCache[idUsuario].nome_completo;
             }
-
-            // 3ª camada: UUID truncado
             if (idUsuario) {
                 const uuidCurto = String(idUsuario).substring(0, 8);
-                return `Usuário ${uuidCurto}...`;
+                return `Usuario ${uuidCurto}...`;
             }
-
-            // 4ª camada: fallback final
             return 'Sistema';
         }
 
         // ============================================================
-        // INICIALIZAÇÃO
+        // INICIALIZACAO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Auditoria v2.0.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Auditoria v2.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -851,9 +818,6 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
-        // ============================================================
-        // CARREGAR USUÁRIOS
-        // ============================================================
         async function carregarUsuarios() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -865,24 +829,24 @@
                 if (error) throw error;
 
                 const select = document.getElementById('filtroUsuario');
-                select.innerHTML = '<option value="">Todos os usuários</option>';
+                select.innerHTML = '<option value="">Todos os usuarios</option>';
 
                 (data || []).forEach(u => {
                     usuariosCache[u.id] = u;
                     const opt = document.createElement('option');
                     opt.value = u.id;
-                    opt.textContent = `${u.nome_completo} (${u.matricula || 's/ matrícula'})`;
+                    opt.textContent = `${u.nome_completo} (${u.matricula || 's/ matricula'})`;
                     select.appendChild(opt);
                 });
 
-                console.log(`✅ ${data?.length || 0} usuários carregados no cache`);
+                console.log(`✅ ${data?.length || 0} usuarios carregados`);
             } catch (error) {
-                console.error('❌ Erro ao carregar usuários:', error);
+                console.error('❌ Erro ao carregar usuarios:', error);
             }
         }
 
         // ============================================================
-        // CARREGAR AUDITORIA
+        // CARREGAR AUDITORIA (5 FONTES)
         // ============================================================
         async function carregarAuditoria() {
             const container = document.getElementById('listaAuditoria');
@@ -904,22 +868,14 @@
                 // FONTE 1: suspeito_historico
                 if (!tipo || tipo === 'SUSPEITO') {
                     try {
-                        let q1 = window.supabaseClient
-                            .from('suspeito_historico')
-                            .select('*')
-                            .order('data_alteracao', { ascending: false })
-                            .limit(50);
-
+                        let q1 = window.supabaseClient.from('suspeito_historico').select('*').order('data_alteracao', { ascending: false }).limit(50);
                         if (usuarioId) q1 = q1.eq('id_usuario', usuarioId);
                         if (dataInicio) q1 = q1.gte('data_alteracao', dataInicio + 'T00:00:00');
                         if (dataFim) q1 = q1.lte('data_alteracao', dataFim + 'T23:59:59');
-
                         const { data } = await q1;
 
                         (data || []).forEach(h => {
-                            // 🛡️ [v2.0.1] Resolve o nome do usuário em 3 camadas
                             const nomeUsuario = resolverNomeUsuario(h);
-
                             eventos.push({
                                 id: `suspeito-${h.id_historico}`,
                                 tipo: 'SUSPEITO',
@@ -946,22 +902,15 @@
                 // FONTE 2: log_cadastro_usuario
                 if (!tipo || tipo === 'USUARIO') {
                     try {
-                        let q2 = window.supabaseClient
-                            .from('log_cadastro_usuario')
-                            .select('*')
-                            .order('data_hora', { ascending: false })
-                            .limit(50);
-
+                        let q2 = window.supabaseClient.from('log_cadastro_usuario').select('*').order('data_hora', { ascending: false }).limit(50);
                         if (usuarioId) q2 = q2.eq('id_usuario_cadastrador', usuarioId);
                         if (dataInicio) q2 = q2.gte('data_hora', dataInicio + 'T00:00:00');
                         if (dataFim) q2 = q2.lte('data_hora', dataFim + 'T23:59:59');
-
                         const { data } = await q2;
 
                         (data || []).forEach(l => {
                             const u = usuariosCache[l.id_usuario_cadastrado];
                             const nomeUsuario = resolverNomeUsuario(l);
-
                             eventos.push({
                                 id: `usuario-${l.id_log}`,
                                 tipo: 'USUARIO',
@@ -969,9 +918,9 @@
                                 data: l.data_hora,
                                 usuario_id: l.id_usuario_cadastrador,
                                 usuario_nome: nomeUsuario,
-                                descricao: `${l.acao || 'Ação'} em usuário. ${l.sucesso ? '✅ Sucesso' : '❌ Erro'}`,
+                                descricao: `${l.acao || 'Acao'} em usuario. ${l.sucesso ? 'Sucesso' : 'Erro'}`,
                                 entidade_id: l.id_usuario_cadastrado,
-                                entidade_nome: u?.nome_completo || 'Usuário',
+                                entidade_nome: u?.nome_completo || 'Usuario',
                                 entidade_extra: u?.matricula || '',
                                 detalhes: {
                                     acao: l.acao,
@@ -990,21 +939,14 @@
                 // FONTE 3: arquivo_midia
                 if (!tipo || tipo === 'MIDIA') {
                     try {
-                        let q3 = window.supabaseClient
-                            .from('arquivo_midia')
-                            .select('*')
-                            .order('data_upload', { ascending: false })
-                            .limit(50);
-
+                        let q3 = window.supabaseClient.from('arquivo_midia').select('*').order('data_upload', { ascending: false }).limit(50);
                         if (usuarioId) q3 = q3.eq('id_usuario_upload', usuarioId);
                         if (dataInicio) q3 = q3.gte('data_upload', dataInicio + 'T00:00:00');
                         if (dataFim) q3 = q3.lte('data_upload', dataFim + 'T23:59:59');
-
                         const { data } = await q3;
 
                         (data || []).forEach(m => {
                             const nomeUsuario = resolverNomeUsuario(m);
-
                             eventos.push({
                                 id: `midia-${m.id_arquivo}`,
                                 tipo: 'MIDIA',
@@ -1034,21 +976,14 @@
                 // FONTE 4: mandado_prisao
                 if (!tipo || tipo === 'MANDADO') {
                     try {
-                        let q4 = window.supabaseClient
-                            .from('mandado_prisao')
-                            .select('*')
-                            .order('data_cadastro', { ascending: false })
-                            .limit(50);
-
+                        let q4 = window.supabaseClient.from('mandado_prisao').select('*').order('data_cadastro', { ascending: false }).limit(50);
                         if (usuarioId) q4 = q4.eq('id_usuario_emissao', usuarioId);
                         if (dataInicio) q4 = q4.gte('data_cadastro', dataInicio + 'T00:00:00');
                         if (dataFim) q4 = q4.lte('data_cadastro', dataFim + 'T23:59:59');
-
                         const { data } = await q4;
 
                         (data || []).forEach(md => {
                             const nomeUsuario = resolverNomeUsuario(md);
-
                             eventos.push({
                                 id: `mandado-${md.id_mandado}`,
                                 tipo: 'MANDADO',
@@ -1075,6 +1010,62 @@
                     } catch (e) { console.warn('⚠️ mandado_prisao:', e); }
                 }
 
+                // ============================================================
+                // FONTE 5: OPERACAO (NOVO v2.1.0)
+                // ============================================================
+                if (!tipo || tipo === 'OPERACAO') {
+                    try {
+                        let q5 = window.supabaseClient
+                            .from('operacao')
+                            .select('*')
+                            .order('data_cadastro', { ascending: false })
+                            .limit(50);
+
+                        if (usuarioId) q5 = q5.eq('id_usuario_cadastro', usuarioId);
+                        if (dataInicio) q5 = q5.gte('data_cadastro', dataInicio + 'T00:00:00');
+                        if (dataFim) q5 = q5.lte('data_cadastro', dataFim + 'T23:59:59');
+
+                        const { data } = await q5;
+
+                        (data || []).forEach(op => {
+                            const nomeUsuario = resolverNomeUsuario({ id_usuario: op.id_usuario_cadastro });
+                            const placas = Array.isArray(op.viaturas_placas) ? op.viaturas_placas : [];
+
+                            eventos.push({
+                                id: `operacao-${op.id_operacao}`,
+                                tipo: 'OPERACAO',
+                                acao: 'CRIAR_OPERACAO',
+                                data: op.data_cadastro,
+                                usuario_id: op.id_usuario_cadastro,
+                                usuario_nome: nomeUsuario,
+                                descricao: `Operacao: ${op.nome_operacao || '#' + op.id_operacao} (${op.status || '-'})`,
+                                entidade_id: op.id_operacao,
+                                entidade_nome: op.nome_operacao || `Operacao #${op.id_operacao}`,
+                                entidade_extra: op.setor || '',
+                                detalhes: {
+                                    nome_operacao: op.nome_operacao,
+                                    data_prevista: op.data_prevista,
+                                    horario: op.horario,
+                                    setor: op.setor,
+                                    natureza_operacao: op.natureza_operacao,
+                                    objetivo_pratico: op.objetivo_pratico,
+                                    status: op.status,
+                                    viaturas_quantidade: op.viaturas_quantidade,
+                                    viaturas_padronizadas: op.viaturas_padronizadas,
+                                    viaturas_descaracterizadas: op.viaturas_descaracterizadas,
+                                    viaturas_placas: placas.join(', ') || '-',
+                                    quilometragem: op.quilometragem,
+                                    observacoes: op.observacoes,
+                                    ip_origem: 'web'
+                                },
+                                raw: op
+                            });
+                        });
+
+                        console.log(`📋 Operacoes: ${data?.length || 0} eventos`);
+                    } catch (e) { console.warn('⚠️ operacao:', e); }
+                }
+
                 eventos.sort((a, b) => {
                     const da = a.data ? new Date(a.data).getTime() : 0;
                     const db = b.data ? new Date(b.data).getTime() : 0;
@@ -1085,7 +1076,6 @@
                 if (severidade) {
                     eventosFiltrados = eventosFiltrados.filter(e => classificarSeveridade(e.acao) === severidade);
                 }
-
                 if (busca) {
                     eventosFiltrados = eventosFiltrados.filter(e => 
                         (e.usuario_nome || '').toLowerCase().includes(busca) ||
@@ -1097,7 +1087,6 @@
                 }
 
                 eventosAtuais = eventosFiltrados;
-
                 renderizarEstatisticas(eventosFiltrados);
                 renderizarGraficoAtividade(eventosFiltrados);
                 renderizarLista(eventosFiltrados);
@@ -1109,9 +1098,6 @@
             }
         }
 
-        // ============================================================
-        // RENDERIZAR ESTATÍSTICAS
-        // ============================================================
         function renderizarEstatisticas(eventos) {
             const agora = new Date();
             const inicioDia = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
@@ -1121,13 +1107,7 @@
             const eventosSemana = eventos.filter(e => e.data && new Date(e.data) >= inicioSemana).length;
             const criticos = eventos.filter(e => classificarSeveridade(e.acao) === 'CRITICAL').length;
             const alertas = eventos.filter(e => classificarSeveridade(e.acao) === 'WARNING').length;
-
-            const contagem = {};
-            eventos.forEach(e => {
-                const nome = e.usuario_nome || 'Desconhecido';
-                contagem[nome] = (contagem[nome] || 0) + 1;
-            });
-            const maisAtivo = Object.entries(contagem).sort((a, b) => b[1] - a[1])[0];
+            const operacoes = eventos.filter(e => e.tipo === 'OPERACAO').length;
 
             document.getElementById('statsGrid').innerHTML = `
                 <div class="stat-card">
@@ -1138,7 +1118,7 @@
                 <div class="stat-card">
                     <div class="icon"><i class="fas fa-calendar-week"></i></div>
                     <div class="number">${eventosSemana}</div>
-                    <div class="label">Últimos 7 Dias</div>
+                    <div class="label">Ultimos 7 Dias</div>
                 </div>
                 <div class="stat-card">
                     <div class="icon"><i class="fas fa-database"></i></div>
@@ -1148,7 +1128,7 @@
                 <div class="stat-card critical">
                     <div class="icon"><i class="fas fa-exclamation-triangle"></i></div>
                     <div class="number">${criticos}</div>
-                    <div class="label">Críticos</div>
+                    <div class="label">Criticos</div>
                 </div>
                 <div class="stat-card warning">
                     <div class="icon"><i class="fas fa-bell"></i></div>
@@ -1156,16 +1136,13 @@
                     <div class="label">Alertas</div>
                 </div>
                 <div class="stat-card">
-                    <div class="icon"><i class="fas fa-user-shield"></i></div>
-                    <div class="number" style="font-size: 16px;">${maisAtivo ? maisAtivo[0].split(' ')[0] : '-'}</div>
-                    <div class="label">Mais Ativo</div>
+                    <div class="icon"><i class="fas fa-bullseye"></i></div>
+                    <div class="number">${operacoes}</div>
+                    <div class="label">Operacoes</div>
                 </div>
             `;
         }
 
-        // ============================================================
-        // RENDERIZAR GRÁFICO DE ATIVIDADE
-        // ============================================================
         function renderizarGraficoAtividade(eventos) {
             const horas = new Array(24).fill(0);
             const agora = new Date();
@@ -1186,9 +1163,6 @@
             }).join('');
         }
 
-        // ============================================================
-        // RENDERIZAR LISTA
-        // ============================================================
         function renderizarLista(eventos) {
             const container = document.getElementById('listaAuditoria');
             document.getElementById('totalEventos').innerHTML = `<i class="fas fa-list"></i> ${eventos.length} evento(s)`;
@@ -1207,7 +1181,7 @@
             }
 
             let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
-            html += '<th>Quando</th><th>Usuário</th><th>Tipo</th><th>Ação</th><th>Severidade</th><th>Descrição</th><th>Ações</th>';
+            html += '<th>Quando</th><th>Usuario</th><th>Tipo</th><th>Acao</th><th>Severidade</th><th>Descricao</th><th>Acoes</th>';
             html += '</tr></thead><tbody>';
 
             eventos.slice(0, 50).forEach(e => {
@@ -1217,7 +1191,7 @@
                 const sev = classificarSeveridade(e.acao);
                 const sevClass = `sev-${sev.toLowerCase()}`;
                 const sevIcon = sev === 'CRITICAL' ? 'fa-exclamation-circle' : sev === 'WARNING' ? 'fa-exclamation-triangle' : 'fa-info-circle';
-                const sevLabel = sev === 'CRITICAL' ? 'CRÍTICO' : sev === 'WARNING' ? 'ALERTA' : 'INFO';
+                const sevLabel = sev === 'CRITICAL' ? 'CRITICO' : sev === 'WARNING' ? 'ALERTA' : 'INFO';
                 const usuarioInfo = usuariosCache[e.usuario_id];
                 const inicial = (e.usuario_nome || 'U')[0].toUpperCase();
                 const matricula = usuarioInfo?.matricula || '';
@@ -1238,15 +1212,11 @@
             container.innerHTML = html;
         }
 
-        // ============================================================
-        // VER DETALHES
-        // ============================================================
         function verDetalhes(id) {
             const evento = eventosAtuais.find(e => e.id === id);
             if (!evento) return;
 
             eventoSelecionado = evento;
-
             const modal = document.getElementById('modalDetalhes');
             const body = document.getElementById('modalDetalhesBody');
             const icone = document.getElementById('modalIcone');
@@ -1255,13 +1225,13 @@
 
             const sev = classificarSeveridade(evento.acao);
             const sevIcon = sev === 'CRITICAL' ? 'fa-exclamation-circle' : sev === 'WARNING' ? 'fa-exclamation-triangle' : 'fa-info-circle';
-            const sevLabel = sev === 'CRITICAL' ? 'CRÍTICO' : sev === 'WARNING' ? 'ALERTA' : 'INFO';
+            const sevLabel = sev === 'CRITICAL' ? 'CRITICO' : sev === 'WARNING' ? 'ALERTA' : 'INFO';
             const tipoIcon = iconePorTipo(evento.tipo);
 
             icone.className = `tipo-icon ${(evento.tipo || '').toLowerCase()}`;
             icone.innerHTML = `<i class="fas ${tipoIcon}"></i>`;
             titulo.textContent = evento.descricao || 'Detalhes do Evento';
-            subtitulo.innerHTML = `<span class="sev-badge sev-${sev.toLowerCase()}" style="margin-right:8px;"><i class="fas ${sevIcon}"></i> ${sevLabel}</span>${evento.tipo || '-'} · ${evento.acao || '-'}`;
+            subtitulo.innerHTML = `<span class="sev-badge sev-${sev.toLowerCase()}" style="margin-right:8px;"><i class="fas ${sevIcon}"></i> ${sevLabel}</span>${evento.tipo || '-'} - ${evento.acao || '-'}`;
 
             const data = evento.data ? new Date(evento.data) : null;
             const dataFormatada = data ? data.toLocaleString('pt-BR') : '-';
@@ -1315,6 +1285,28 @@
                 diffHTML += '</div>';
             }
 
+            // Detalhes adicionais para OPERACAO
+            let operacaoDetalhesHTML = '';
+            if (evento.tipo === 'OPERACAO') {
+                const d = detalhes;
+                operacaoDetalhesHTML = `
+                    <div class="modal-section">
+                        <div class="modal-section-title"><i class="fas fa-bullseye"></i> Dados da Operacao</div>
+                        <div class="contexto-grid">
+                            ${d.data_prevista ? `<div class="contexto-item"><span class="ctx-label">Data Prevista</span><span class="ctx-valor">${d.data_prevista.split('-').reverse().join('/')}</span></div>` : ''}
+                            ${d.horario ? `<div class="contexto-item"><span class="ctx-label">Horario</span><span class="ctx-valor">${d.horario}</span></div>` : ''}
+                            ${d.setor ? `<div class="contexto-item"><span class="ctx-label">Setor</span><span class="ctx-valor">${d.setor}</span></div>` : ''}
+                            ${d.natureza_operacao ? `<div class="contexto-item"><span class="ctx-label">Natureza</span><span class="ctx-valor">${d.natureza_operacao}</span></div>` : ''}
+                            ${d.objetivo_pratico ? `<div class="contexto-item"><span class="ctx-label">Objetivo</span><span class="ctx-valor">${d.objetivo_pratico}</span></div>` : ''}
+                            ${d.status ? `<div class="contexto-item"><span class="ctx-label">Status</span><span class="ctx-valor">${d.status}</span></div>` : ''}
+                            ${d.viaturas_quantidade ? `<div class="contexto-item"><span class="ctx-label">Viaturas</span><span class="ctx-valor">${d.viaturas_quantidade} (${d.viaturas_padronizadas || 0} padr. / ${d.viaturas_descaracterizadas || 0} descar.)</span></div>` : ''}
+                            ${d.viaturas_placas && d.viaturas_placas !== '-' ? `<div class="contexto-item"><span class="ctx-label">Placas</span><span class="ctx-valor">${d.viaturas_placas}</span></div>` : ''}
+                            ${d.quilometragem ? `<div class="contexto-item"><span class="ctx-label">Quilometragem</span><span class="ctx-valor">${d.quilometragem} km</span></div>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
             body.innerHTML = `
                 <div class="modal-section">
                     <div class="modal-section-title"><i class="fas fa-stream"></i> Timeline do Evento</div>
@@ -1322,12 +1314,12 @@
                         <div class="timeline-item evento-antes">
                             <div class="tl-data">ANTES</div>
                             <div class="tl-titulo">Estado anterior do registro</div>
-                            <div class="tl-desc">${detalhes.justificativa || 'Registro existente antes da ação'}</div>
+                            <div class="tl-desc">${detalhes.justificativa || 'Registro existente antes da acao'}</div>
                         </div>
                         <div class="timeline-item">
                             <div class="tl-data">${dataFormatada} (${dataRelativa})</div>
-                            <div class="tl-titulo">${evento.descricao || 'Ação executada'}</div>
-                            <div class="tl-desc">Por <strong>${evento.usuario_nome || 'Desconhecido'}</strong>${u?.matricula ? ' · ' + u.matricula : ''}</div>
+                            <div class="tl-titulo">${evento.descricao || 'Acao executada'}</div>
+                            <div class="tl-desc">Por <strong>${evento.usuario_nome || 'Desconhecido'}</strong>${u?.matricula ? ' - ' + u.matricula : ''}</div>
                         </div>
                         <div class="timeline-item evento-depois">
                             <div class="tl-data">DEPOIS</div>
@@ -1362,10 +1354,13 @@
                         <div class="entidade-tipo">${evento.tipo || '-'}</div>
                         <div class="entidade-nome">${evento.entidade_nome}</div>
                         ${evento.entidade_id ? `<div class="entidade-id">ID: ${evento.entidade_id}</div>` : ''}
-                        ${evento.entidade_extra ? `<div class="entidade-id">Matrícula: ${evento.entidade_extra}</div>` : ''}
+                        ${evento.tipo !== 'OPERACAO' && evento.entidade_extra ? `<div class="entidade-id">Matricula: ${evento.entidade_extra}</div>` : ''}
+                        ${evento.tipo === 'OPERACAO' && evento.entidade_extra ? `<div class="entidade-id">Setor: ${evento.entidade_extra}</div>` : ''}
                     </div>
                 </div>
                 ` : ''}
+
+                ${operacaoDetalhesHTML}
 
                 ${diffHTML ? `
                 <div class="modal-section">
@@ -1375,7 +1370,7 @@
                 ` : ''}
 
                 <div class="modal-section">
-                    <div class="modal-section-title"><i class="fas fa-microchip"></i> Contexto Técnico</div>
+                    <div class="modal-section-title"><i class="fas fa-microchip"></i> Contexto Tecnico</div>
                     <div class="contexto-grid">
                         <div class="contexto-item">
                             <span class="ctx-label">ID do Evento</span>
@@ -1386,7 +1381,7 @@
                             <span class="ctx-valor">${dataFormatada}</span>
                         </div>
                         <div class="contexto-item">
-                            <span class="ctx-label">Ação</span>
+                            <span class="ctx-label">Acao</span>
                             <span class="ctx-valor">${evento.acao || '-'}</span>
                         </div>
                         <div class="contexto-item">
@@ -1414,6 +1409,13 @@
                     <div class="diff-depois" style="border-left-color: #ffc107; color: #ffc107; background: rgba(255,193,7,0.05);">
                         ${detalhes.justificativa}
                     </div>
+                </div>
+                ` : ''}
+
+                ${detalhes.observacoes ? `
+                <div class="modal-section">
+                    <div class="modal-section-title"><i class="fas fa-comment"></i> Observacoes</div>
+                    <div class="diff-depois">${detalhes.observacoes}</div>
                 </div>
                 ` : ''}
 
@@ -1452,21 +1454,20 @@
             if (!eventoSelecionado) return;
             const id = String(eventoSelecionado.entidade_id || eventoSelecionado.id || '');
             navigator.clipboard.writeText(id).then(() => {
-                showToast('success', 'Copiado!', `ID <strong>${id}</strong> copiado para a área de transferência.`, 3000);
+                showToast('success', 'Copiado!', `ID <strong>${id}</strong> copiado.`, 3000);
             }).catch(() => {
-                showToast('error', 'Erro', 'Não foi possível copiar.');
+                showToast('error', 'Erro', 'Nao foi possivel copiar.');
             });
         }
 
         function exportarEventoAtual() {
             if (!eventoSelecionado) return;
-            const evento = eventoSelecionado;
-            const conteudo = JSON.stringify(evento.raw, null, 2);
+            const conteudo = JSON.stringify(eventoSelecionado.raw, null, 2);
             const blob = new Blob([conteudo], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `evento_${evento.id}.json`;
+            a.download = `evento_${eventoSelecionado.id}.json`;
             a.click();
             URL.revokeObjectURL(url);
             showToast('success', 'Exportado!', 'Evento exportado como JSON.', 3000);
@@ -1484,11 +1485,10 @@
 
         function exportarCSV() {
             if (eventosAtuais.length === 0) {
-                showToast('warning', 'Sem dados', 'Não há eventos para exportar.');
+                showToast('warning', 'Sem dados', 'Nao ha eventos para exportar.');
                 return;
             }
-
-            const cabecalho = ['Data/Hora', 'Usuário', 'Tipo', 'Ação', 'Severidade', 'Descrição'];
+            const cabecalho = ['Data/Hora', 'Usuario', 'Tipo', 'Acao', 'Severidade', 'Descricao'];
             const linhas = eventosAtuais.map(e => [
                 e.data ? new Date(e.data).toLocaleString('pt-BR') : '-',
                 e.usuario_nome || '-',
@@ -1497,11 +1497,7 @@
                 classificarSeveridade(e.acao),
                 (e.descricao || '-').replace(/;/g, ',')
             ]);
-
-            const csv = [cabecalho, ...linhas]
-                .map(l => l.map(c => `"${c}"`).join(';'))
-                .join('\n');
-
+            const csv = [cabecalho, ...linhas].map(l => l.map(c => `"${c}"`).join(';')).join('\n');
             const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
@@ -1509,16 +1505,16 @@
             link.download = `auditoria_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
             URL.revokeObjectURL(url);
-
             showToast('success', 'CSV exportado!', `${eventosAtuais.length} evento(s) exportado(s).`);
         }
 
         function traduzirTipo(tipo) {
             const tipos = {
                 'SUSPEITO': 'Suspeito',
-                'USUARIO': 'Usuário',
-                'MIDIA': 'Mídia',
-                'MANDADO': 'Mandado'
+                'USUARIO': 'Usuario',
+                'MIDIA': 'Midia',
+                'MANDADO': 'Mandado',
+                'OPERACAO': 'Operacao'
             };
             return tipos[tipo] || tipo || '-';
         }
@@ -1561,33 +1557,24 @@
                     return;
                 }
             } catch (error) { console.warn('⚠️', error); }
-
             try {
-                if (window.supabaseClient?.auth) {
-                    await window.supabaseClient.auth.signOut();
-                }
+                if (window.supabaseClient?.auth) await window.supabaseClient.auth.signOut();
             } catch (error) { console.error('❌', error); }
-
             try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
             window.location.href = '02-login.html';
         }
 
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
-            try {
-                window.open('', '_self', '');
-                window.close();
-            } catch (e) { console.warn('⚠️', e); }
-            setTimeout(function() {
-                if (!window.closed) window.location.href = '01-apresentacao.html';
-            }, 300);
+            try { window.open('', '_self', ''); window.close(); } catch (e) {}
+            setTimeout(function() { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
         }
 
         function toggleSidebar() {
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Auditoria carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Auditoria carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
