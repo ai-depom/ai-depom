@@ -2,8 +2,8 @@
      AI-DEPOM - MAPA DE OPERAÇÕES
      ============================================================
      Arquivo: 10-mapa-operacoes.html
-     Versão: 2.0.0
-     Data: 17/09/2026 - 03:00
+     Versão: 2.0.1
+     Data: 17/09/2026 - 05:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,18 +15,17 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.0.1 (17/09/2026 05:00):
+     - 🐛 CORRIGIDO: CartoDB agora exige API Key (marca dagua)
+     - 🗺️ Trocado para Esri World Dark Gray Canvas (gratis, sem key)
+     - ✅ Mantidas: 3 fontes (alvos, mandados, operacoes)
+
      ALTERAÇÕES v2.0.0 (17/09/2026 03:00):
-     - 🎯 PLOTA 3 FONTES: Alvos, Mandados e Operações
-     - 🎯 Ícones distintos por tipo (ciano / roxo / verde)
-     - 🎯 Filtros por tipo no topo
-     - 🎯 Legenda atualizada com 3 tipos
-     - 🎯 Popups personalizados por tipo
-     - 🎯 Estatísticas consolidadas (Total + Alvos + Mandados + Operações)
-     - 🎯 Mapa minimalista CartoDB Dark Matter
-     - ✅ Cluster adaptado para múltiplos tipos
+     - Plota 3 fontes: Alvos, Mandados e Operacoes
+     - Icones distintos por tipo
 
      ALTERAÇÕES v1.3.0 (17/09/2026 02:00):
-     - Mapa minimalista CartoDB Dark Matter
+     - Mapa minimalista
      ============================================================
 -->
 <!DOCTYPE html>
@@ -184,9 +183,6 @@
             border-radius: 14px;
             border: 1px solid var(--border-color);
             background: #0a0a0a;
-        }
-        #mapa .leaflet-tile-pane {
-            filter: brightness(0.9) contrast(1.1);
         }
         .leaflet-container {
             background: #0a0a0a !important;
@@ -406,7 +402,6 @@
             </div>
         </header>
 
-        <!-- CARDS DE FILTRO POR TIPO -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-layer-group"></i>Camadas do Mapa</div>
             <div class="filtros-tipo">
@@ -493,7 +488,7 @@
         const camadasAtivas = { alvo: true, mandado: true, operacao: true };
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Operacoes v2.0.0 iniciado');
+            console.log('AI-DEPOM - Mapa de Operacoes v2.0.1 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -519,31 +514,29 @@
         }
 
         // ============================================================
-        // MAPA MINIMALISTA
+        // 🗺️ [v2.0.1] MAPA - Esri World Dark Gray Canvas (gratis, sem API Key)
         // ============================================================
         function inicializarMapa() {
-            console.log('🗺️ Inicializando mapa...');
+            console.log('🗺️ Inicializando mapa (Esri Dark Gray)...');
 
             mapa = L.map('mapa', {
                 center: [-12.9714, -38.5014],
                 zoom: 12,
                 minZoom: 2,
-                maxZoom: 19
+                maxZoom: 16
             });
 
-            // CartoDB Dark Matter
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; OpenStreetMap &copy; CARTO',
-                subdomains: 'abcd',
-                maxZoom: 19
+            // [v2.0.1] Esri World Dark Gray Canvas - SEM API KEY
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+                attribution: '&copy; Esri &copy; OpenStreetMap contributors',
+                maxZoom: 16
             }).addTo(mapa);
 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-                subdomains: 'abcd',
-                maxZoom: 19
+            // [v2.0.1] Rotulos (nomes de cidades/ruas)
+            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
+                maxZoom: 16
             }).addTo(mapa);
 
-            // 3 clusters separados (permite ligar/desligar por tipo)
             const clusterOptions = {
                 showCoverageOnHover: false,
                 maxClusterRadius: 50,
@@ -562,9 +555,6 @@
             console.log('✅ Mapa inicializado');
         }
 
-        // ============================================================
-        // CARREGAR TODOS OS PONTOS
-        // ============================================================
         async function carregarTodosPontos() {
             console.log('📡 Carregando pontos de 3 fontes...');
             await Promise.all([
@@ -576,9 +566,6 @@
             renderizarEstatisticas();
         }
 
-        // ============================================================
-        // CARREGAR ALVOS (suspeitos)
-        // ============================================================
         async function carregarAlvos() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -605,9 +592,6 @@
             }
         }
 
-        // ============================================================
-        // CARREGAR MANDADOS
-        // ============================================================
         async function carregarMandados() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -641,9 +625,6 @@
             }
         }
 
-        // ============================================================
-        // CARREGAR OPERAÇÕES
-        // ============================================================
         async function carregarOperacoes() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -670,9 +651,6 @@
             }
         }
 
-        // ============================================================
-        // RENDERIZAR MARCADORES
-        // ============================================================
         function renderizarMapa() {
             clusterAlvos.clearLayers();
             clusterMandados.clearLayers();
@@ -680,7 +658,6 @@
 
             const bounds = [];
 
-            // ALVOS (ciano)
             if (camadasAtivas.alvo) {
                 todosAlvos.forEach(a => {
                     const icone = L.divIcon({
@@ -696,7 +673,6 @@
                 });
             }
 
-            // MANDADOS (roxo)
             if (camadasAtivas.mandado) {
                 todosMandados.forEach(m => {
                     const icone = L.divIcon({
@@ -712,7 +688,6 @@
                 });
             }
 
-            // OPERAÇÕES (verde)
             if (camadasAtivas.operacao) {
                 todasOperacoes.forEach(o => {
                     const icone = L.divIcon({
@@ -781,9 +756,6 @@
             `;
         }
 
-        // ============================================================
-        // TOGGLE DE CAMADAS
-        // ============================================================
         function toggleCamada(tipo) {
             camadasAtivas[tipo] = !camadasAtivas[tipo];
 
@@ -806,9 +778,6 @@
             console.log(`🔀 Camada ${tipo}: ${camadasAtivas[tipo] ? 'ATIVA' : 'INATIVA'}`);
         }
 
-        // ============================================================
-        // ESTATÍSTICAS
-        // ============================================================
         function renderizarEstatisticas() {
             const totalAlvos = todosAlvos.length;
             const totalMandados = todosMandados.length;
@@ -853,9 +822,6 @@
             return tipos[tipo] || tipo || '-';
         }
 
-        // ============================================================
-        // TOAST
-        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -873,9 +839,6 @@
             }, duracao);
         }
 
-        // ============================================================
-        // CONTROLES
-        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
@@ -916,7 +879,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina de Mapa v2.0.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Mapa v2.0.1 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
