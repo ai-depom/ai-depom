@@ -2,8 +2,8 @@
      AI-DEPOM - CADASTRO DE SUSPEITO
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.2.1
-     Data: 15/09/2026 - 09:00
+     Versão: 3.4.0
+     Data: 17/09/2026 - 03:30
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,12 +15,14 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
-     ALTERAÇÕES v3.2.1 (15/09/2026 09:00):
-     - 🐛 CORRIGIDO: HTML tinha dois </body></html> e script duplicado fora do documento
-     - 🔗 Menu: Mandados → 11-mandados.html
-     - 🔗 Menu: Auditoria → 12-auditoria.html
-     - 🎨 CSS: disabled/readonly com fundo preto + letras verdes
-     - 📜 Cabeçalho Regra de Ouro adicionado
+     ALTERAÇÕES v3.4.0 (17/09/2026 03:30):
+     - ✨ NOVO: Secao COORDENADAS GEOGRAFICAS (lat/lng)
+     - ✨ NOVO: Botao "BUSCAR PELO ENDERECO" (Nominatim)
+     - ✨ Coordenadas plotadas no mapa (10-mapa-operacoes.html)
+     - ✅ Mantidas: portador deficiencia, cicatrizes, tatuagens
+
+     ALTERAÇÕES v3.3.0 (16/09/2026 16:00):
+     - Portador de Deficiencia, Cicatrizes, Tatuagens com fotos
      ============================================================
 -->
 <!DOCTYPE html>
@@ -49,7 +51,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             width: 100%; height: 100%; min-height: 100vh;
-            margin: 0; padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
@@ -75,6 +76,7 @@
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar {
@@ -83,8 +85,6 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000;
         }
-
-        /* Sidebar com flexbox (footer sem overlap) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -116,11 +116,9 @@
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
         .sidebar-footer {
-            position: relative;
-            padding: 15px 20px 20px;
+            position: relative; padding: 15px 20px 20px;
             border-top: 1px solid var(--border-color);
-            background: rgba(0, 0, 0, 0.98);
-            margin-top: auto;
+            background: rgba(0, 0, 0, 0.98); margin-top: auto;
         }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar {
@@ -164,26 +162,12 @@
         }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
-
-        /* [NOVO v3.2.1] Regra: campos desabilitados/somente leitura = fundo preto + letras verdes */
-        .form-control:disabled,
-        .form-control[readonly],
-        .form-select:disabled,
-        .form-control.disabled,
-        .form-select.disabled {
-            background: #000000 !important;
-            color: var(--text-primary) !important;
-            border-color: var(--border-color) !important;
-            opacity: 1 !important;
-            cursor: not-allowed;
+        .form-control:disabled, .form-control[readonly], .form-select:disabled {
+            background: #000000 !important; color: var(--text-primary) !important;
+            border-color: var(--border-color) !important; opacity: 1 !important;
         }
-        .form-control:disabled::placeholder,
-        .form-control[readonly]::placeholder { color: rgba(0, 255, 136, 0.35) !important; }
-
         .form-check-input { accent-color: var(--text-primary); }
-        .form-check-input:disabled { background-color: #000; border-color: var(--border-color); }
         .form-check-label { color: rgba(0, 255, 136, 0.5); font-size: 13px; }
-        .form-check-input:disabled + .form-check-label { color: rgba(0, 255, 136, 0.35); }
         .btn-gold {
             background: var(--gradient-green); color: #000; font-weight: 700;
             padding: 10px 28px; border-radius: 10px; border: none;
@@ -197,7 +181,6 @@
             border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
         }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-        .btn-outline-gold:disabled { opacity: 0.5; cursor: not-allowed; }
         .section-title {
             color: var(--text-primary); font-size: 13px; letter-spacing: 1px;
             margin: 25px 0 15px; padding-bottom: 10px;
@@ -205,26 +188,75 @@
         }
         .section-title:first-child { margin-top: 0; }
         .section-title i { margin-right: 10px; opacity: 0.7; }
-        .suspeitos-table { width: 100%; border-collapse: collapse; }
-        .suspeitos-table th {
-            color: rgba(0, 255, 136, 0.4); font-size: 11px; text-transform: uppercase;
-            letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
-            text-align: left;
+        .tattoo-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 15px;
+            position: relative;
         }
-        .suspeitos-table td {
-            color: var(--text-secondary); font-size: 13px; padding: 12px;
-            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+        .tattoo-card:hover { border-color: rgba(0, 255, 136, 0.3); }
+        .tattoo-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding-bottom: 10px;
+            border-bottom: 1px solid rgba(0, 255, 136, 0.05);
         }
-        .suspeitos-table tr:hover td { background: rgba(0, 255, 136, 0.02); }
-        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
-        .status-investigado { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); }
-        .status-preso { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
-        .status-foragido { background: rgba(220, 53, 69, 0.15); color: #ff4444; border: 1px solid rgba(220, 53, 69, 0.3); }
-        .status-procurado { background: rgba(255, 87, 34, 0.1); color: #ff5722; border: 1px solid rgba(255, 87, 34, 0.2); }
-        .status-condicional { background: rgba(156, 39, 176, 0.1); color: #ba68c8; border: 1px solid rgba(156, 39, 176, 0.2); }
-        .status-liberado { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
-        .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
-        .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
+        .tattoo-header .tattoo-titulo {
+            color: var(--text-primary); font-size: 13px; font-weight: 700;
+            letter-spacing: 1px; display: flex; align-items: center; gap: 8px;
+        }
+        .tattoo-header .tattoo-titulo .num {
+            background: var(--gradient-green); color: #000;
+            width: 24px; height: 24px; border-radius: 50%;
+            display: inline-flex; align-items: center; justify-content: center;
+            font-size: 11px; font-weight: 700;
+        }
+        .tattoo-remover {
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+            color: #dc3545; width: 32px; height: 32px;
+            border-radius: 8px; cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .tattoo-remover:hover { background: #dc3545; color: #fff; }
+        .tattoo-preview-box {
+            width: 100%; min-height: 150px;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            overflow: hidden; margin-top: 10px;
+            transition: all 0.3s;
+        }
+        .tattoo-preview-box.tem-foto { border-style: solid; border-color: var(--text-primary); }
+        .tattoo-preview-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .tattoo-preview-box .placeholder {
+            text-align: center; color: rgba(0, 255, 136, 0.3); padding: 20px;
+        }
+        .tattoo-preview-box .placeholder i {
+            font-size: 40px; margin-bottom: 10px; display: block;
+        }
+        .tattoo-preview-box .placeholder small { font-size: 11px; }
+        .tattoo-botoes { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-tattoo {
+            flex: 1; padding: 8px 12px; border-radius: 8px;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .btn-tattoo.escolher { background: transparent; border: 1px solid var(--text-primary); color: var(--text-primary); }
+        .btn-tattoo.escolher:hover { background: rgba(0, 255, 136, 0.1); }
+        .btn-tattoo.remover { background: transparent; border: 1px solid #dc3545; color: #dc3545; }
+        .btn-tattoo.remover:hover { background: rgba(220, 53, 69, 0.1); }
+        .empty-tattoo {
+            text-align: center; padding: 30px 20px;
+            color: rgba(0, 255, 136, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px dashed var(--border-color);
+            border-radius: 12px; margin-bottom: 15px;
+        }
+        .empty-tattoo i { font-size: 32px; margin-bottom: 10px; display: block; }
         .info-lista {
             background: rgba(0, 255, 136, 0.03);
             border: 1px solid var(--border-color);
@@ -232,9 +264,7 @@
             padding: 10px 15px;
             font-size: 12px;
             color: rgba(0, 255, 136, 0.5);
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            display: flex; align-items: center; gap: 10px;
             margin-bottom: 15px;
         }
         .info-lista i { color: var(--text-primary); }
@@ -289,6 +319,7 @@
             <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
             <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
             <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
         </div>
@@ -313,10 +344,12 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
             <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -351,7 +384,6 @@
             <div class="card-title"><i class="fas fa-user-secret"></i>Dados do Suspeito</div>
 
             <form id="formSuspeito">
-                <!-- FOTO PRINCIPAL -->
                 <div class="section-title"><i class="fas fa-id-card"></i>FOTO PRINCIPAL DE IDENTIFICACAO</div>
                 <div class="row g-3">
                     <div class="col-md-3">
@@ -366,7 +398,7 @@
                             <input type="file" id="fotoPrincipalInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
                             <button type="button" class="btn-outline-gold" id="btnEscolherFotoPrincipal" style="padding: 8px 16px; font-size: 12px;"><i class="fas fa-camera"></i> ESCOLHER FOTO</button>
                             <button type="button" class="btn-outline-gold" id="btnRemoverFotoPrincipal" style="padding: 8px 16px; font-size: 12px; display: none; margin-top: 5px;"><i class="fas fa-trash"></i> REMOVER</button>
-                            <small style="display: block; color: rgba(0, 255, 136, 0.2); font-size: 11px; margin-top: 10px;">JPG, PNG ou WebP • Max 5MB</small>
+                            <small style="display: block; color: rgba(0, 255, 136, 0.2); font-size: 11px; margin-top: 10px;">JPG, PNG ou WebP - Max 5MB</small>
                         </div>
                     </div>
                     <div class="col-md-9">
@@ -375,13 +407,9 @@
                             <div class="col-md-4"><label class="form-label">Fonte</label><select class="form-select" id="fonteFotoPrincipal"><option value="DOCUMENTO">Documento Oficial</option><option value="FOTO_POLICIAL">Foto Policial</option><option value="CAMERA_SEGURANCA">Camera de Seguranca</option><option value="REDES_SOCIAIS">Redes Sociais</option><option value="OUTRO">Outro</option></select></div>
                             <div class="col-md-4"><label class="form-label">Observacoes</label><input type="text" class="form-control" id="observacoesFotoPrincipal" placeholder="Ex: Foto frontal"></div>
                         </div>
-                        <div class="mt-3" style="background:rgba(0,255,136,0.02); border:1px solid var(--border-color); border-radius:10px; padding:12px;">
-                            <small style="color:rgba(0,255,136,0.2);"><i class="fas fa-info-circle me-1"></i>A <strong>Foto Principal</strong> sera exibida como capa do suspeito em consultas e relatorios.</small>
-                        </div>
                     </div>
                 </div>
 
-                <!-- IDENTIFICACAO -->
                 <div class="section-title"><i class="fas fa-id-card"></i>IDENTIFICACAO</div>
                 <div class="row g-3">
                     <div class="col-md-6"><label class="form-label">Nome Completo *</label><input type="text" class="form-control" id="nomeCompleto" placeholder="Nome completo do suspeito" required></div>
@@ -392,7 +420,6 @@
                     <div class="col-md-4"><label class="form-label">Data de Nascimento</label><input type="date" class="form-control" id="dataNascimento"></div>
                 </div>
 
-                <!-- DADOS PESSOAIS -->
                 <div class="section-title"><i class="fas fa-user"></i>DADOS PESSOAIS</div>
                 <div class="row g-3">
                     <div class="col-md-3"><label class="form-label">Sexo</label><select class="form-select" id="sexo"><option value="">Selecione...</option><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select></div>
@@ -403,7 +430,6 @@
                     <div class="col-md-6"><label class="form-label">Nome da Mae</label><input type="text" class="form-control" id="nomeMae" placeholder="Nome completo da mae"></div>
                 </div>
 
-                <!-- FOTO SECUNDARIA -->
                 <div class="section-title"><i class="fas fa-camera"></i>FOTO SECUNDARIA</div>
                 <div class="row g-3">
                     <div class="col-md-4">
@@ -418,7 +444,6 @@
                             <input type="file" id="fotoSecundariaInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
                             <button type="button" class="btn-outline-gold" id="btnEscolherFotoSecundaria" style="padding: 8px 16px; font-size: 12px;"><i class="fas fa-upload"></i> ESCOLHER FOTO</button>
                             <button type="button" class="btn-outline-gold" id="btnRemoverFotoSecundaria" style="padding: 8px 16px; font-size: 12px; display: none; margin-top: 5px;"><i class="fas fa-trash"></i> REMOVER</button>
-                            <small style="display: block; color: rgba(0, 255, 136, 0.2); font-size: 11px; margin-top: 10px;">JPG, PNG ou WebP • Max 5MB</small>
                         </div>
                     </div>
                     <div class="col-md-8">
@@ -430,7 +455,6 @@
                     </div>
                 </div>
 
-                <!-- ENDERECO -->
                 <div class="section-title"><i class="fas fa-map-marker-alt"></i>ENDERECO</div>
                 <div class="row g-3">
                     <div class="col-md-2"><label class="form-label">CEP</label><input type="text" class="form-control" id="cep" placeholder="00000-000" maxlength="9"></div>
@@ -443,7 +467,30 @@
                     <div class="col-md-2"><label class="form-label">Pais</label><input type="text" class="form-control" id="pais" placeholder="Brasil" value="Brasil"></div>
                 </div>
 
-                <!-- CARACTERISTICAS FISICAS -->
+                <!-- [v3.4.0] COORDENADAS GEOGRAFICAS -->
+                <div class="section-title"><i class="fas fa-globe-americas"></i>COORDENADAS GEOGRAFICAS</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Latitude</label>
+                        <input type="number" step="0.00000001" class="form-control" id="latitude" placeholder="-12.9714">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Longitude</label>
+                        <input type="number" step="0.00000001" class="form-control" id="longitude" placeholder="-38.5014">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="button" class="btn-outline-gold w-100" onclick="geocodificarEnderecoSuspeito(event)">
+                            <i class="fas fa-search-location me-2"></i>BUSCAR PELO ENDERECO
+                        </button>
+                    </div>
+                    <div class="col-md-12">
+                        <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            As coordenadas sao usadas para plotar o suspeito no <strong>Mapa de Operacoes</strong>.
+                        </small>
+                    </div>
+                </div>
+
                 <div class="section-title"><i class="fas fa-fingerprint"></i>CARACTERISTICAS FISICAS</div>
                 <div class="row g-3">
                     <div class="col-md-2"><label class="form-label">Altura (m)</label><input type="number" step="0.01" class="form-control" id="altura" placeholder="1.75"></div>
@@ -452,12 +499,46 @@
                     <div class="col-md-3"><label class="form-label">Cor do Cabelo</label><input type="text" class="form-control" id="corCabelo" placeholder="Preto"></div>
                     <div class="col-md-3"><label class="form-label">Cor da Pele</label><input type="text" class="form-control" id="corPele" placeholder="Parda"></div>
                 </div>
-                <div class="row g-3 mt-3">
-                    <div class="col-md-6"><label class="form-label">Sinais Particulares</label><textarea class="form-control" id="sinaisParticulares" rows="2" placeholder="Cicatrizes, marcas..."></textarea></div>
-                    <div class="col-md-6"><label class="form-label">Descricao de Tatuagens</label><textarea class="form-control" id="tattooDescricao" rows="2" placeholder="Localizacao e descricao"></textarea></div>
+
+                <div class="section-title"><i class="fas fa-notes-medical"></i>CARACTERISTICAS ESPECIFICAS</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Portador de Deficiencia?</label>
+                        <div class="d-flex gap-4 align-items-center" style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="portadorDeficiencia">
+                                <label class="form-check-label" for="portadorDeficiencia">
+                                    <i class="fas fa-wheelchair"></i> Sim, portador
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8" id="deficienciaDetalhes" style="display:none;">
+                        <label class="form-label">Qual Deficiencia?</label>
+                        <input type="text" class="form-control" id="descricaoDeficiencia" placeholder="Ex: Cadeirante, Visual, Auditiva...">
+                    </div>
+                </div>
+                <div class="row g-3 mt-2">
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="fas fa-band-aid me-1"></i> Cicatrizes</label>
+                        <textarea class="form-control" id="cicatrizes" rows="4" placeholder="Descreva cicatrizes..." style="min-height: 100px;"></textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label"><i class="fas fa-search me-1"></i> Sinais Particulares</label>
+                        <textarea class="form-control" id="sinaisParticulares" rows="4" placeholder="Descreva sinais..." style="min-height: 100px;"></textarea>
+                    </div>
                 </div>
 
-                <!-- INFORMACOES CRIMINAIS -->
+                <div class="section-title"><i class="fas fa-palette"></i>TATUAGENS</div>
+                <div class="info-lista">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Adicione quantas tatuagens o suspeito possuir.</span>
+                </div>
+                <div id="tatuagensContainer"></div>
+                <button type="button" class="btn-outline-gold w-100" onclick="adicionarTatuagem()" style="padding: 12px;">
+                    <i class="fas fa-plus-circle me-2"></i>ADICIONAR TATUAGEM
+                </button>
+
                 <div class="section-title"><i class="fas fa-exclamation-triangle"></i>INFORMACOES CRIMINAIS</div>
                 <div class="row g-3">
                     <div class="col-md-3"><label class="form-label">Status Atual *</label><select class="form-select" id="statusAtual" required><option value="">Selecione...</option><option value="INVESTIGADO">Investigado</option><option value="PRESO">Preso</option><option value="FORAGIDO">Foragido</option><option value="PROCURADO">Procurado</option><option value="CONDICIONAL">Condicional</option><option value="LIBERADO">Liberado</option></select></div>
@@ -483,7 +564,6 @@
             </form>
         </div>
 
-        <!-- Lista de suspeitos -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Suspeitos Cadastrados</div>
@@ -504,18 +584,23 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
-        // ============================================================
-        // CONSTANTES
-        // ============================================================
         const LIMITE_LISTA = 10;
+        const LOCALIZACOES_TATUAGEM = [
+            'Rosto', 'Pescoco', 'Ombro direito', 'Ombro esquerdo',
+            'Braco direito', 'Braco esquerdo', 'Antebraco direito', 'Antebraco esquerdo',
+            'Mao direita', 'Mao esquerda', 'Peito', 'Costas', 'Abdomen',
+            'Lombar', 'Nadega direita', 'Nadega esquerda',
+            'Coxa direita', 'Coxa esquerda', 'Panturrilha direita', 'Panturrilha esquerda',
+            'Pe direito', 'Pe esquerdo', 'Tornozelo direito', 'Tornozelo esquerdo',
+            'Outro'
+        ];
+
         let arquivoFotoPrincipal = null;
         let arquivoFotoSecundaria = null;
+        let tatuagens = [];
 
-        // ============================================================
-        // INICIALIZAÇÃO
-        // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Cadastro de Suspeito v3.2.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Cadastro de Suspeito v3.4.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -530,10 +615,18 @@
             try {
                 configurarUploadFoto('fotoPrincipal', (f) => { arquivoFotoPrincipal = f; });
                 configurarUploadFoto('fotoSecundaria', (f) => { arquivoFotoSecundaria = f; });
-                console.log('✅ Uploads de foto configurados');
             } catch (err) {
                 console.error('❌ Erro ao configurar uploads:', err);
             }
+
+            document.getElementById('portadorDeficiencia').addEventListener('change', function() {
+                document.getElementById('deficienciaDetalhes').style.display = this.checked ? 'block' : 'none';
+                if (!this.checked) {
+                    document.getElementById('descricaoDeficiencia').value = '';
+                }
+            });
+
+            renderizarTatuagens();
         });
 
         function atualizarDadosUsuario(usuario) {
@@ -547,116 +640,184 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
-        // ============================================================
-        // CARREGAR SUSPEITOS (limite 10 + contador "Exibindo X de Y")
-        // ============================================================
+        // [v3.4.0] GEOCODIFICACAO
+        async function geocodificarEnderecoSuspeito(event) {
+            const btn = event ? event.target : null;
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
+            }
+            try {
+                const endereco = [
+                    document.getElementById('logradouro').value.trim(),
+                    document.getElementById('numero').value.trim(),
+                    document.getElementById('bairro').value.trim(),
+                    document.getElementById('cidade').value.trim(),
+                    document.getElementById('uf').value.trim(),
+                    document.getElementById('cep').value.trim(),
+                    'Brasil'
+                ].filter(Boolean).join(', ');
+
+                if (endereco.length < 5) throw new Error('Preencha o endereco primeiro.');
+
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`;
+                const resp = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
+                const resultado = await resp.json();
+
+                if (!resultado || resultado.length === 0) throw new Error('Endereco nao encontrado.');
+
+                document.getElementById('latitude').value = parseFloat(resultado[0].lat).toFixed(8);
+                document.getElementById('longitude').value = parseFloat(resultado[0].lon).toFixed(8);
+                showToast('success', 'Endereco encontrado!', 'Coordenadas preenchidas automaticamente.');
+            } catch (e) {
+                showToast('error', 'Erro ao buscar', e.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-search-location me-2"></i>BUSCAR PELO ENDERECO';
+                }
+            }
+        }
+
+        function adicionarTatuagem() {
+            tatuagens.push({ localizacao: '', descricao: '', arquivo: null, fotoUrl: null, previewUrl: null });
+            renderizarTatuagens();
+        }
+
+        function removerTatuagem(index) {
+            if (!confirm('Remover esta tatuagem?')) return;
+            tatuagens.splice(index, 1);
+            renderizarTatuagens();
+        }
+
+        function renderizarTatuagens() {
+            const container = document.getElementById('tatuagensContainer');
+            if (tatuagens.length === 0) {
+                container.innerHTML = `<div class="empty-tattoo"><i class="fas fa-palette"></i><div>Nenhuma tatuagem cadastrada</div><small style="opacity: 0.6;">Clique em "ADICIONAR TATUAGEM" abaixo</small></div>`;
+                return;
+            }
+            let html = '';
+            tatuagens.forEach((t, i) => {
+                const previewHTML = t.previewUrl
+                    ? `<img src="${t.previewUrl}" alt="Tatuagem ${i+1}">`
+                    : `<div class="placeholder"><i class="fas fa-image"></i><small>Sem foto</small></div>`;
+                html += `
+                    <div class="tattoo-card">
+                        <div class="tattoo-header">
+                            <div class="tattoo-titulo"><span class="num">${i+1}</span>TATUAGEM #${i+1}</div>
+                            <button type="button" class="tattoo-remover" onclick="removerTatuagem(${i})"><i class="fas fa-trash"></i></button>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Localizacao no Corpo *</label>
+                                <select class="form-select" onchange="atualizarTatuagem(${i}, 'localizacao', this.value)">
+                                    <option value="">Selecione...</option>
+                                    ${LOCALIZACOES_TATUAGEM.map(loc => `<option value="${loc}" ${t.localizacao === loc ? 'selected' : ''}>${loc}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label">Descricao</label>
+                                <input type="text" class="form-control" placeholder="Descreva a tatuagem" value="${t.descricao || ''}" oninput="atualizarTatuagem(${i}, 'descricao', this.value)">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Foto da Tatuagem</label>
+                                <input type="file" id="tattooInput${i}" accept="image/jpeg,image/png,image/webp" style="display: none;" onchange="selecionarFotoTatuagem(${i}, this)">
+                                <div class="tattoo-preview-box ${t.previewUrl ? 'tem-foto' : ''}" id="tattooPreview${i}">
+                                    ${previewHTML}
+                                </div>
+                                <div class="tattoo-botoes">
+                                    <button type="button" class="btn-tattoo escolher" onclick="document.getElementById('tattooInput${i}').click()">
+                                        <i class="fas fa-camera"></i> ESCOLHER FOTO
+                                    </button>
+                                    ${t.previewUrl ? `<button type="button" class="btn-tattoo remover" onclick="removerFotoTatuagem(${i})"><i class="fas fa-trash"></i> REMOVER FOTO</button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        function atualizarTatuagem(index, campo, valor) {
+            if (tatuagens[index]) tatuagens[index][campo] = valor;
+        }
+
+        function selecionarFotoTatuagem(index, input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                showToast('error', 'Formato invalido', 'Use JPG, PNG ou WebP.');
+                input.value = '';
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('error', 'Arquivo muito grande', 'Maximo 5MB.');
+                input.value = '';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                tatuagens[index].arquivo = file;
+                tatuagens[index].previewUrl = e.target.result;
+                renderizarTatuagens();
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removerFotoTatuagem(index) {
+            if (!tatuagens[index]) return;
+            tatuagens[index].arquivo = null;
+            tatuagens[index].previewUrl = null;
+            tatuagens[index].fotoUrl = null;
+            renderizarTatuagens();
+        }
+
         async function carregarSuspeitos() {
             const container = document.getElementById('listaSuspeitos');
             const infoContainer = document.getElementById('infoLista');
             if (!container) return;
-
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando suspeitos...</div>';
             infoContainer.innerHTML = '';
-
             try {
-                const { count: totalGeral, error: countError } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('deletado', false);
-
-                if (countError) {
-                    console.error('❌ Erro ao contar suspeitos:', countError);
-                }
-
+                const { count: totalGeral } = await window.supabaseClient
+                    .from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false);
                 const { data, error } = await window.supabaseClient
                     .from('suspeito')
-                    .select('id_suspeito, nome_completo, apelido, cpf, status_atual, nivel_periculosidade')
+                    .select('id_suspeito, nome_completo, apelido, cpf, status_atual, nivel_periculosidade, latitude, longitude')
                     .eq('deletado', false)
                     .order('id_suspeito', { ascending: false })
                     .limit(LIMITE_LISTA);
-
                 if (error || !data || data.length === 0) {
                     container.innerHTML = '<div class="empty-state"><i class="fas fa-user-secret"></i>Nenhum suspeito cadastrado</div>';
                     return;
                 }
-
                 if (totalGeral !== null && totalGeral !== undefined) {
-                    const exibindo = data.length;
-                    const total = totalGeral;
-
-                    if (total > LIMITE_LISTA) {
-                        infoContainer.innerHTML = `
-                            <div class="info-lista">
-                                <i class="fas fa-info-circle"></i>
-                                <span>Exibindo os <strong>${exibindo}</strong> últimos cadastros de um total de <strong>${total}</strong> suspeitos.</span>
-                            </div>
-                        `;
-                    } else {
-                        infoContainer.innerHTML = `
-                            <div class="info-lista">
-                                <i class="fas fa-check-circle"></i>
-                                <span>Exibindo <strong>${exibindo}</strong> de <strong>${total}</strong> suspeitos cadastrados.</span>
-                            </div>
-                        `;
-                    }
+                    infoContainer.innerHTML = totalGeral > LIMITE_LISTA
+                        ? `<div class="info-lista"><i class="fas fa-info-circle"></i><span>Exibindo os <strong>${data.length}</strong> ultimos de <strong>${totalGeral}</strong> suspeitos.</span></div>`
+                        : `<div class="info-lista"><i class="fas fa-check-circle"></i><span>Exibindo <strong>${data.length}</strong> de <strong>${totalGeral}</strong> suspeitos.</span></div>`;
                 }
-
-                let html = '<div style="overflow-x:auto;"><table class="suspeitos-table"><thead><tr>';
-                html += '<th>ID</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Status</th><th>Periculosidade</th>';
+                let html = '<div style="overflow-x:auto;"><table class="table-custom" style="width:100%;border-collapse:collapse;"><thead><tr>';
+                html += '<th>ID</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Status</th><th>GPS</th>';
                 html += '</tr></thead><tbody>';
-
                 data.forEach(s => {
-                    const statusClass = {
-                        'INVESTIGADO': 'status-investigado', 'PRESO': 'status-preso',
-                        'FORAGIDO': 'status-foragido', 'PROCURADO': 'status-procurado',
-                        'CONDICIONAL': 'status-condicional', 'LIBERADO': 'status-liberado'
-                    }[s.status_atual] || 'status-investigado';
-
                     html += '<tr>';
                     html += '<td><strong style="color:var(--text-primary);">#' + s.id_suspeito + '</strong></td>';
                     html += '<td>' + (s.nome_completo || '-') + '</td>';
                     html += '<td>' + (s.apelido || '-') + '</td>';
                     html += '<td>' + (s.cpf || '-') + '</td>';
-                    html += '<td><span class="status-badge ' + statusClass + '">' + (s.status_atual || '-') + '</span></td>';
-                    html += '<td>' + (s.nivel_periculosidade || '-') + '</td>';
+                    html += '<td>' + (s.status_atual || '-') + '</td>';
+                    html += '<td>' + (s.latitude && s.longitude ? '<i class="fas fa-map-marker-alt" style="color:#00ff88;"></i>' : '<i class="fas fa-times" style="color:#dc3545;"></i>') + '</td>';
                     html += '</tr>';
                 });
-
                 html += '</tbody></table></div>';
                 container.innerHTML = html;
-
-                console.log(`✅ Lista carregada: ${data.length} de ${totalGeral} suspeitos`);
-
             } catch (error) {
-                console.error('❌ Erro ao carregar suspeitos:', error);
+                console.error('❌ Erro:', error);
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar suspeitos</div>';
             }
         }
 
-        // ============================================================
-        // TOAST
-        // ============================================================
-        function showToast(tipo, titulo, mensagem, duracao) {
-            duracao = duracao || 5000;
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = 'toast-ai ' + tipo;
-            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
-                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
-                '<div class="toast-message">' + mensagem + '</div></div>' +
-                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, duracao);
-        }
-
-        // ============================================================
-        // CONFIGURAR UPLOAD DE FOTO
-        // ============================================================
         function configurarUploadFoto(prefixo, setArquivo) {
             const input = document.getElementById(prefixo + 'Input');
             const preview = document.getElementById(prefixo + 'Preview');
@@ -664,24 +825,16 @@
             const img = document.getElementById(prefixo + 'Img');
             const btnEscolher = document.getElementById('btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
             const btnRemover = document.getElementById('btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
-
-            if (!input || !preview || !placeholder || !img || !btnEscolher || !btnRemover) {
-                console.warn('⚠️ Elementos nao encontrados para:', prefixo);
-                return;
-            }
-
+            if (!input || !btnEscolher) return;
             btnEscolher.addEventListener('click', () => input.click());
-
             input.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (!file) return;
                 if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                    showToast('error', 'Formato invalido', 'Use JPG, PNG ou WebP.');
-                    return;
+                    showToast('error', 'Formato invalido', 'Use JPG, PNG ou WebP.'); return;
                 }
                 if (file.size > 5 * 1024 * 1024) {
-                    showToast('error', 'Arquivo muito grande', 'Maximo 5MB.');
-                    return;
+                    showToast('error', 'Arquivo muito grande', 'Maximo 5MB.'); return;
                 }
                 setArquivo(file);
                 const reader = new FileReader();
@@ -695,9 +848,7 @@
                     btnEscolher.innerHTML = '<i class="fas fa-sync-alt"></i> TROCAR';
                 };
                 reader.readAsDataURL(file);
-                console.log('📸 Foto selecionada:', prefixo, '-', file.name);
             });
-
             btnRemover.addEventListener('click', function() {
                 setArquivo(null);
                 input.value = '';
@@ -711,32 +862,21 @@
             });
         }
 
-        // ============================================================
-        // RESET COMPLETO DO FORMULÁRIO
-        // ============================================================
         function resetFormularioCompleto() {
             const form = document.getElementById('formSuspeito');
             if (form) form.reset();
 
             ['fotoPrincipal', 'fotoSecundaria'].forEach(prefixo => {
-                const input       = document.getElementById(prefixo + 'Input');
-                const img         = document.getElementById(prefixo + 'Img');
+                const input = document.getElementById(prefixo + 'Input');
+                const img = document.getElementById(prefixo + 'Img');
                 const placeholder = document.getElementById(prefixo + 'Placeholder');
-                const preview     = document.getElementById(prefixo + 'Preview');
-                const btnEscolher = document.getElementById(
-                    'btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1)
-                );
-                const btnRemover  = document.getElementById(
-                    'btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1)
-                );
-
+                const preview = document.getElementById(prefixo + 'Preview');
+                const btnEscolher = document.getElementById('btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
+                const btnRemover = document.getElementById('btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
                 if (input) input.value = '';
                 if (img) { img.src = ''; img.style.display = 'none'; }
                 if (placeholder) placeholder.style.display = 'block';
-                if (preview) {
-                    preview.style.borderStyle = 'dashed';
-                    preview.style.borderColor = 'var(--border-color)';
-                }
+                if (preview) { preview.style.borderStyle = 'dashed'; preview.style.borderColor = 'var(--border-color)'; }
                 if (btnRemover) btnRemover.style.display = 'none';
                 if (btnEscolher) {
                     const icone = prefixo === 'fotoPrincipal' ? 'fa-camera' : 'fa-upload';
@@ -744,44 +884,39 @@
                 }
             });
 
-            console.log('🧹 Formulário e previews de foto resetados');
+            document.getElementById('portadorDeficiencia').checked = false;
+            document.getElementById('deficienciaDetalhes').style.display = 'none';
+            document.getElementById('descricaoDeficiencia').value = '';
+            document.getElementById('cicatrizes').value = '';
+
+            // [v3.4.0] Reset coordenadas
+            const latEl = document.getElementById('latitude');
+            const lngEl = document.getElementById('longitude');
+            if (latEl) latEl.value = '';
+            if (lngEl) lngEl.value = '';
+
+            tatuagens = [];
+            renderizarTatuagens();
+
+            arquivoFotoPrincipal = null;
+            arquivoFotoSecundaria = null;
         }
 
-        // ============================================================
-        // UPLOAD DE FOTO
-        // ============================================================
         async function uploadFoto(usuario, arquivo, prefixo, idSuspeito = null) {
             if (!arquivo) return null;
             try {
                 const extensao = arquivo.name.split('.').pop().toLowerCase();
                 const base = idSuspeito ? `suspeito_${idSuspeito}` : `temp_${Date.now()}`;
                 const nomeArquivo = `${base}_${prefixo}_${Date.now()}.${extensao}`;
-
-                console.log('📤 Fazendo upload:', nomeArquivo);
-
                 const { error: uploadError } = await window.supabaseClient.storage
                     .from('fotos-suspeitos')
-                    .upload(nomeArquivo, arquivo, {
-                        cacheControl: '3600',
-                        upsert: false,
-                        contentType: arquivo.type
-                    });
-
+                    .upload(nomeArquivo, arquivo, { cacheControl: '3600', upsert: false, contentType: arquivo.type });
                 if (uploadError) throw uploadError;
-                console.log('✅ Upload concluído:', nomeArquivo);
-
                 const buffer = await arquivo.arrayBuffer();
                 const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
                 const hashArray = Array.from(new Uint8Array(hashBuffer));
                 const hashSha256 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-                return {
-                    caminho: nomeArquivo,
-                    hash: hashSha256,
-                    formato: arquivo.type,
-                    tamanho: arquivo.size,
-                    nomeOriginal: arquivo.name
-                };
+                return { caminho: nomeArquivo, hash: hashSha256, formato: arquivo.type, tamanho: arquivo.size, nomeOriginal: arquivo.name };
             } catch (error) {
                 console.error('❌ Erro no upload:', error);
                 showToast('error', 'Erro no upload', error.message);
@@ -789,54 +924,32 @@
             }
         }
 
-        // ============================================================
-        // REGISTRAR MÍDIA
-        // ============================================================
-        async function registrarMidia(infoUpload, idSuspeito, idUsuario, tipoMidia = 'FOTO') {
+        async function registrarMidia(infoUpload, idSuspeito, idUsuario, tipoMidia = 'FOTO', nomeOriginal = null) {
             if (!infoUpload) return null;
-
             const { data, error } = await window.supabaseClient
                 .from('arquivo_midia')
                 .insert({
-                    id_entidade:       idSuspeito,
-                    tipo_entidade:     'SUSPEITO',
-                    nome_original:     infoUpload.nomeOriginal,
-                    nome_seguro:       infoUpload.caminho,
-                    tipo_midia:        tipoMidia,
-                    formato:           infoUpload.formato,
-                    tamanho_bytes:     infoUpload.tamanho,
-                    hash_sha256:       infoUpload.hash,
-                    caminho_fisico:    infoUpload.caminho,
-                    nivel_seguranca:   'RESTRITO',
-                    status:            'ATIVO',
-                    id_usuario_upload: idUsuario,
-                    deletado:          false
-                })
-                .select()
-                .single();
-
-            if (error) {
-                console.error('❌ Erro ao registrar em arquivo_midia:', error);
-                throw error;
-            }
-            console.log('✅ arquivo_midia registrado:', data);
+                    id_entidade: idSuspeito, tipo_entidade: 'SUSPEITO',
+                    nome_original: nomeOriginal || infoUpload.nomeOriginal,
+                    nome_seguro: infoUpload.caminho, tipo_midia: tipoMidia,
+                    formato: infoUpload.formato, tamanho_bytes: infoUpload.tamanho,
+                    hash_sha256: infoUpload.hash, caminho_fisico: infoUpload.caminho,
+                    nivel_seguranca: 'RESTRITO', status: 'ATIVO',
+                    id_usuario_upload: idUsuario, deletado: false
+                }).select().single();
+            if (error) { console.error('❌ Erro:', error); throw error; }
             return data;
         }
 
-        // ============================================================
-        // SUBMIT DO FORMULÁRIO
-        // ============================================================
         document.getElementById('formSuspeito').addEventListener('submit', async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnCadastrar');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
-
             const restaurarBotao = () => {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO';
             };
-
             try {
                 const usuario = AIDEPOM.getUsuario();
                 if (!usuario) { showToast('error', 'Sessao expirada', 'Faca login novamente.'); restaurarBotao(); return; }
@@ -862,13 +975,19 @@
                     cidade: document.getElementById('cidade').value.trim() || null,
                     uf: document.getElementById('uf').value.trim().toUpperCase() || null,
                     pais: document.getElementById('pais').value.trim() || 'Brasil',
+                    // [v3.4.0] COORDENADAS
+                    latitude: parseFloat(document.getElementById('latitude').value) || null,
+                    longitude: parseFloat(document.getElementById('longitude').value) || null,
                     altura: parseFloat(document.getElementById('altura').value) || null,
                     peso: parseFloat(document.getElementById('peso').value) || null,
                     cor_olhos: document.getElementById('corOlhos').value.trim() || null,
                     cor_cabelo: document.getElementById('corCabelo').value.trim() || null,
                     cor_pele: document.getElementById('corPele').value.trim() || null,
+                    portador_deficiencia: document.getElementById('portadorDeficiencia').checked,
+                    descricao_deficiencia: document.getElementById('descricaoDeficiencia').value.trim() || null,
+                    cicatrizes: document.getElementById('cicatrizes').value.trim() || null,
                     sinais_particulares: document.getElementById('sinaisParticulares').value.trim() || null,
-                    tattoo_descricao: document.getElementById('tattooDescricao').value.trim() || null,
+                    tatuagens: [],
                     status_atual: document.getElementById('statusAtual').value,
                     nivel_periculosidade: document.getElementById('nivelPericulosidade').value || null,
                     organizacao_criminal: document.getElementById('organizacaoCriminal').value.trim() || null,
@@ -885,50 +1004,53 @@
 
                 showToast('info', 'Processando...', 'Cadastrando suspeito...');
                 const { data: inserted, error: insertError } = await window.supabaseClient
-                    .from('suspeito')
-                    .insert(dados)
-                    .select()
-                    .maybeSingle();
-
-                if (insertError) {
-                    showToast('error', 'Erro ao cadastrar', insertError.message);
-                    restaurarBotao();
-                    return;
-                }
+                    .from('suspeito').insert(dados).select().maybeSingle();
+                if (insertError) { showToast('error', 'Erro ao cadastrar', insertError.message); restaurarBotao(); return; }
 
                 const idSuspeito = inserted.id_suspeito;
-                console.log('✅ Suspeito cadastrado ID:', idSuspeito);
 
                 if (arquivoFotoPrincipal) {
-                    showToast('info', 'Enviando foto principal...', 'Aguarde.');
                     const info = await uploadFoto(usuario, arquivoFotoPrincipal, 'principal', idSuspeito);
                     if (info) {
                         await registrarMidia(info, idSuspeito, usuario.id, 'FOTO');
-                        await window.supabaseClient
-                            .from('suspeito')
-                            .update({ foto_hash: info.hash })
-                            .eq('id_suspeito', idSuspeito);
+                        await window.supabaseClient.from('suspeito').update({ foto_hash: info.hash }).eq('id_suspeito', idSuspeito);
                     }
                 }
 
                 if (arquivoFotoSecundaria) {
-                    showToast('info', 'Enviando foto secundaria...', 'Aguarde.');
                     const info = await uploadFoto(usuario, arquivoFotoSecundaria, 'secundaria', idSuspeito);
                     if (info) {
                         await registrarMidia(info, idSuspeito, usuario.id, 'FOTO');
-                        await window.supabaseClient
-                            .from('suspeito')
-                            .update({ foto_hash_secundaria: info.hash })
-                            .eq('id_suspeito', idSuspeito);
+                        await window.supabaseClient.from('suspeito').update({ foto_hash_secundaria: info.hash }).eq('id_suspeito', idSuspeito);
                     }
                 }
 
-                showToast('success', 'Suspeito cadastrado!', '<strong>' + dados.nome_completo + '</strong> foi cadastrado com ID #' + idSuspeito + '.', 8000);
+                if (tatuagens.length > 0) {
+                    const tatuagensSalvas = [];
+                    for (let i = 0; i < tatuagens.length; i++) {
+                        const t = tatuagens[i];
+                        let fotoInfo = null;
+                        if (t.arquivo) {
+                            fotoInfo = await uploadFoto(usuario, t.arquivo, `tattoo_${i+1}`, idSuspeito);
+                            if (fotoInfo) {
+                                await registrarMidia(fotoInfo, idSuspeito, usuario.id, 'TATUAGEM', `Tatuagem ${i+1} - ${t.localizacao}`);
+                            }
+                        }
+                        tatuagensSalvas.push({
+                            localizacao: t.localizacao || null,
+                            descricao: t.descricao || null,
+                            foto_caminho: fotoInfo?.caminho || null,
+                            foto_hash: fotoInfo?.hash || null,
+                            foto_formato: fotoInfo?.formato || null
+                        });
+                    }
+                    await window.supabaseClient.from('suspeito').update({ tatuagens: tatuagensSalvas }).eq('id_suspeito', idSuspeito);
+                }
 
-                arquivoFotoPrincipal = null;
-                arquivoFotoSecundaria = null;
+                showToast('success', 'Suspeito cadastrado!',
+                    '<strong>' + dados.nome_completo + '</strong> foi cadastrado com ID #' + idSuspeito + '.', 8000);
+
                 resetFormularioCompleto();
-
                 carregarSuspeitos();
             } catch (error) {
                 console.error('❌ Erro inesperado:', error);
@@ -938,9 +1060,24 @@
             }
         });
 
-        // ============================================================
-        // FULLSCREEN
-        // ============================================================
+        function showToast(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
+                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
+                '<div class="toast-message">' + mensagem + '</div></div>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
+        }
+
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
@@ -951,9 +1088,10 @@
         }
         document.addEventListener('keydown', function(e) { if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); } });
 
-        // ============================================================
-        // LOGOUT ROBUSTO
-        // ============================================================
+        function minimizeWindow() {
+            try { window.blur(); } catch (e) {}
+        }
+
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
             try {
@@ -961,49 +1099,24 @@
                     await AIDEPOM.logout();
                     return;
                 }
-            } catch (error) {
-                console.warn('⚠️ AIDEPOM.logout() falhou, fazendo logout direto:', error);
-            }
-
+            } catch (error) { console.warn('⚠️', error); }
             try {
-                if (window.supabaseClient && window.supabaseClient.auth) {
-                    await window.supabaseClient.auth.signOut();
-                }
-            } catch (error) {
-                console.error('❌ Erro no signOut:', error);
-            }
-
-            try {
-                localStorage.clear();
-                sessionStorage.clear();
-            } catch (e) { /* ignore */ }
-
+                if (window.supabaseClient?.auth) await window.supabaseClient.auth.signOut();
+            } catch (error) { console.error('❌', error); }
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
             window.location.href = '02-login.html';
         }
 
-        // ============================================================
-        // CLOSE WINDOW ROBUSTO
-        // ============================================================
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
-
-            try {
-                window.open('', '_self', '');
-                window.close();
-            } catch (e) {
-                console.warn('⚠️ window.close() bloqueado pelo navegador');
-            }
-
-            setTimeout(function() {
-                if (!window.closed) {
-                    window.location.href = '01-apresentacao.html';
-                }
-            }, 300);
+            try { window.open('', '_self', ''); window.close(); } catch (e) {}
+            setTimeout(function() { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
         }
 
-        function toggleSidebar() { const s = document.getElementById('sidebar'); if (s) s.classList.toggle('open'); }
-
-        console.log('✅ Página carregada em ' + new Date().toLocaleString('pt-BR'));
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
     </script>
+    <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
