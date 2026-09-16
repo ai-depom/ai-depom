@@ -2,10 +2,12 @@
      AI-DEPOM - TELA DE APRESENTAÇÃO
      ============================================================
      Arquivo: 01-apresentacao.html
-     Versão: 1.0.2
-     Data: 14/09/2026 - 12:00
+     Versão: 1.0.3
+     Data: 16/09/2026 - 15:30
      ============================================================
      ALTERAÇÕES RECENTES:
+     - [16/09/2026 15:30] 🔧 Contadores via view pública
+       v_contadores_publicos (contorna RLS anônimo)
      - [14/09/2026 12:00] ✨ Redirecionamento condicional se logado
      - [14/09/2026 12:00] ✨ Verifica sessão do Supabase no load
      - [12/09/2026 11:45] Adicionado ano 2026 na seção de créditos
@@ -46,7 +48,6 @@
         }
         body { display: flex; flex-direction: column; }
 
-        /* [v1.0.2] Overlay de loading durante verificação de sessão */
         #sessionCheck {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -151,7 +152,6 @@
 </head>
 <body>
 
-    <!-- [v1.0.2] Overlay de loading durante verificação de sessão -->
     <div id="sessionCheck">
         <div class="spinner"></div>
         <p>VERIFICANDO SESSÃO...</p>
@@ -234,14 +234,12 @@
         // ============================================
         (async function() {
             try {
-                // Aguarda o Supabase client estar pronto
                 if (!window.supabaseClient) {
                     console.warn('⚠️ Supabase não configurado, mostrando tela estática');
                     document.getElementById('sessionCheck').style.display = 'none';
                     return;
                 }
 
-                // [v1.0.2] Verifica se há sessão ativa
                 const { data: { session }, error } = await window.supabaseClient.auth.getSession();
 
                 if (session) {
@@ -250,7 +248,6 @@
                     return;
                 }
 
-                // Sem sessão → mostra a tela normalmente
                 console.log('ℹ️ Sem sessão ativa, mostrando tela de apresentação');
                 document.getElementById('sessionCheck').style.display = 'none';
 
@@ -344,12 +341,15 @@
         });
 
         // ============================================
-        // CONTADORES DINÂMICOS
+        // [v1.0.3] CONTADORES DINÂMICOS (via view pública)
+        // A view v_contadores_publicos é acessível por anon
+        // (a RLS das tabelas originais bloqueia leitura anônima)
         // ============================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Apresentacao v1.0.2: carregando contadores...');
+            console.log('AI-DEPOM - Apresentacao v1.0.3: carregando contadores...');
 
             const animarContador = (elemento, valorFinal, isDecimal) => {
+                if (!elemento) return;
                 let atual = 0;
                 const incremento = valorFinal / 100;
                 const atualizar = () => {
@@ -366,49 +366,48 @@
             };
 
             try {
-                if (!window.supabaseClient) return;
-
-                const { count: totalSuspeitos, error: errSuspeitos } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('deletado', false);
-
-                if (!errSuspeitos) {
-                    animarContador(document.getElementById('statSuspeitos'), totalSuspeitos || 0, false);
+                if (!window.supabaseClient) {
+                    console.warn('⚠️ supabaseClient indisponível');
+                    return;
                 }
 
-                const { count: totalInvestigacoes, error: errInvestigacoes } = await window.supabaseClient
-                    .from('investigacao')
-                    .select('*', { count: 'exact', head: true });
+                const { data, error } = await window.supabaseClient
+                    .from('v_contadores_publicos')
+                    .select('*')
+                    .maybeSingle();
 
-                if (!errInvestigacoes) {
-                    animarContador(document.getElementById('statInvestigacoes'), totalInvestigacoes || 0, false);
+                if (error) {
+                    console.error('❌ Erro ao ler v_contadores_publicos:', error.message, error.details, error.hint);
+                    return;
                 }
 
-                const { count: totalMandados, error: errMandados } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('status', 'CUMPRIDO')
-                    .eq('deletado', false);
-
-                if (!errMandados) {
-                    animarContador(document.getElementById('statMandados'), totalMandados || 0, false);
+                if (!data) {
+                    console.warn('⚠️ View retornou vazia');
+                    return;
                 }
 
-                const { data: arquivos, error: errArquivos } = await window.supabaseClient
-                    .from('arquivo_midia')
-                    .select('tamanho_bytes')
-                    .eq('deletado', false);
+                const totalSuspeitos = Number(data.total_suspeitos) || 0;
+                const totalInvestig  = Number(data.total_investigacoes) || 0;
+                const totalMandados  = Number(data.total_mandados_cumpridos) || 0;
+                const totalBytes     = Number(data.total_bytes) || 0;
+                const totalTB        = totalBytes / (1024 ** 4);
 
-                if (!errArquivos && arquivos) {
-                    const totalBytes = arquivos.reduce((acc, a) => acc + (a.tamanho_bytes || 0), 0);
-                    const totalTB = totalBytes / (1024 ** 4);
-                    animarContador(document.getElementById('statDados'), totalTB, true);
-                }
+                console.log('📊 Contadores:', {
+                    totalSuspeitos,
+                    totalInvestig,
+                    totalMandados,
+                    totalBytes,
+                    totalTB: totalTB.toFixed(4)
+                });
+
+                animarContador(document.getElementById('statSuspeitos'),     totalSuspeitos, false);
+                animarContador(document.getElementById('statInvestigacoes'), totalInvestig,  false);
+                animarContador(document.getElementById('statMandados'),      totalMandados,  false);
+                animarContador(document.getElementById('statDados'),         totalTB,        true);
 
                 console.log('✅ Contadores atualizados com dados reais do banco');
-            } catch (error) {
-                console.error('❌ Erro ao carregar contadores:', error);
+            } catch (err) {
+                console.error('❌ Exceção ao carregar contadores:', err);
             }
         });
     </script>
