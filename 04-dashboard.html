@@ -2,15 +2,35 @@
      AI-DEPOM - DASHBOARD
      ============================================================
      Arquivo: 04-dashboard.html
-     Versão: 1.0.2
-     Data: 15/09/2026 - 18:30
+     Versão: 1.1.0
+     Data: 16/09/2026 - 22:00
      Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES RECENTES:
-     - [15/09/2026 18:30] ✨ Menu atualizado (Mandados + Auditoria)
-     - [15/09/2026 18:30] ✨ Sidebar com flexbox
-     - [15/09/2026 18:30] ✨ fazerLogout() robusto
-     - [15/09/2026 18:30] ✨ closeWindow() robusto
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v1.1.0 (16/09/2026 22:00):
+     - 🔗 Menu: adicionado item "Operacoes" → 14-operacoes.html
+     - 🔗 Menu: adicionado item "Atividade" → 13-atividade-usuario.html
+     - ✨ NOVO: menu card "Operacoes" no grid de modulos
+     - ✨ NOVO: menu card "Atividade" no grid de modulos
+     - ➕ Botão MINIMIZAR no controls-bar
+     - ➕ minimizeWindow() implementado
+     - ➕ inactivity-lock.js já estava carregado
+     - 📜 Cabeçalho Regra de Ouro COMPLETO
+     - ✅ Mantidas: sidebar flexbox, fazerLogout, closeWindow
+
+     ALTERAÇÕES v1.0.2 (15/09/2026 18:30):
+     - Menu atualizado (Mandados + Auditoria)
+     - Sidebar com flexbox
+     - fazerLogout() robusto
+     - closeWindow() robusto
      ============================================================
 -->
 <!DOCTYPE html>
@@ -65,6 +85,7 @@
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar {
@@ -151,7 +172,9 @@
             background: rgba(0, 255, 136, 0.05);
             color: var(--text-primary);
         }
+        .stat-card .icon.laranja { background: rgba(255, 87, 34, 0.08); color: #ff5722; }
         .stat-card .number { font-size: 32px; font-weight: 700; color: var(--text-primary); }
+        .stat-card .number.laranja { color: #ff5722; }
         .stat-card .label { font-size: 12px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
         .menu-grid {
             display: grid;
@@ -169,8 +192,9 @@
             text-decoration: none;
             color: var(--text-primary);
         }
-        .menu-card:hover { border-color: var(--text-primary); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 255, 136, 0.1); }
+        .menu-card:hover { border-color: var(--text-primary); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 255, 136, 0.1); color: var(--text-primary); }
         .menu-card i { font-size: 40px; margin-bottom: 15px; display: block; color: var(--text-primary); }
+        .menu-card i.laranja { color: #ff5722; }
         .menu-card .title { font-weight: 600; font-size: 15px; }
         .menu-card .description { font-size: 12px; color: rgba(0, 255, 136, 0.3); margin-top: 5px; }
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
@@ -220,6 +244,7 @@
             <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
             <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
             <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
         </div>
@@ -244,10 +269,12 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
             <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -294,6 +321,11 @@
                 <div class="label">Mandados Ativos</div>
             </div>
             <div class="stat-card">
+                <div class="icon laranja"><i class="fas fa-bullseye"></i></div>
+                <div class="number laranja" id="totalOperacoes">0</div>
+                <div class="label">Operacoes</div>
+            </div>
+            <div class="stat-card">
                 <div class="icon"><i class="fas fa-user-check"></i></div>
                 <div class="number" id="totalUsuarios">0</div>
                 <div class="label">Usuarios Ativos</div>
@@ -329,10 +361,20 @@
                 <div class="title">Mandados</div>
                 <div class="description">Gerenciar mandados de prisao</div>
             </a>
+            <a href="14-operacoes.html" class="menu-card">
+                <i class="fas fa-bullseye laranja"></i>
+                <div class="title">Operacoes</div>
+                <div class="description">Planejar operacoes policiais</div>
+            </a>
             <a href="12-auditoria.html" class="menu-card">
                 <i class="fas fa-clipboard-list"></i>
                 <div class="title">Auditoria</div>
                 <div class="description">Historico de operacoes</div>
+            </a>
+            <a href="13-atividade-usuario.html" class="menu-card">
+                <i class="fas fa-user-clock"></i>
+                <div class="title">Atividade</div>
+                <div class="description">Estatisticas por usuario</div>
             </a>
             <a href="10-mapa-operacoes.html" class="menu-card">
                 <i class="fas fa-map-marked-alt"></i>
@@ -353,7 +395,7 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Dashboard v1.0.2 iniciado');
+            console.log('AI-DEPOM - Dashboard v1.1.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -397,6 +439,18 @@
                     .eq('deletado', false);
                 document.getElementById('totalMandados').textContent = mandados || 0;
 
+                // [v1.1.0] Total de operações
+                try {
+                    const { count: operacoes } = await window.supabaseClient
+                        .from('operacao')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('deletado', false);
+                    document.getElementById('totalOperacoes').textContent = operacoes || 0;
+                } catch (e) {
+                    console.warn('⚠️ Tabela operacao ainda não existe:', e);
+                    document.getElementById('totalOperacoes').textContent = '0';
+                }
+
                 const { count: usuarios } = await window.supabaseClient
                     .from('usuarios')
                     .select('*', { count: 'exact', head: true })
@@ -437,6 +491,14 @@
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
         });
+
+        // [v1.1.0] Minimizar
+        function minimizeWindow() {
+            try {
+                window.blur();
+                console.log('🪟 Janela desfocada (minimizar real não suportado pelo navegador)');
+            } catch (e) { console.warn('Minimizar não suportado:', e); }
+        }
 
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
