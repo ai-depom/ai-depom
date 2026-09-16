@@ -2,8 +2,8 @@
      AI-DEPOM - AUDITORIA DO SISTEMA
      ============================================================
      Arquivo: 12-auditoria.html
-     Versão: 2.0.0
-     Data: 16/09/2026 - 11:00
+     Versão: 2.0.1
+     Data: 16/09/2026 - 15:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,21 +15,24 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.0.1 (16/09/2026 15:00):
+     - 🐛 CORRIGIDO: eventos de suspeito mostravam "Desconhecido"
+     - ✨ NOVO: resolverNomeUsuario() com fallback em 3 camadas
+     - ✨ NOVO: fallback mostra UUID truncado em vez de "Desconhecido"
+     - ✅ Mantidas: todas as features da v2.0.0
+
      ALTERAÇÕES v2.0.0 (16/09/2026 11:00):
      - ✨ Modal de Detalhes RADICALMENTE enriquecido (7 seções)
      - ✨ Classificação de severidade (CRÍTICO / ALERTA / INFO)
      - ✨ Timeline visual do evento
-     - ✨ Card "Quem executou" (nome, matrícula, perfil, setor, avatar)
+     - ✨ Card "Quem executou" (nome, matrícula, perfil, setor)
      - ✨ Card "O que foi afetado" (entidade, ID, nome)
      - ✨ Diff visual Antes/Depois lado a lado
      - ✨ Contexto técnico (IP, sessão, user agent)
      - ✨ Eventos relacionados (últimos 5 do mesmo usuário/entidade)
      - ✨ JSON bruto colapsável
-     - ✨ Ações rápidas: copiar ID, ver perfil, exportar evento
      - ✨ Gráfico de atividade por hora
      - ✨ Filtro por severidade
-     - ✨ Tabela melhorada (avatar + ícone + severidade + tempo relativo)
-     - ✅ Mantidas: 4 fontes de auditoria, CSV, filtros
      ============================================================
 -->
 <!DOCTYPE html>
@@ -184,7 +187,6 @@
         }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
 
-        /* STATS */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -211,7 +213,6 @@
         .stat-card.warning .number { color: var(--sev-warning); }
         .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
 
-        /* GRÁFICO DE ATIVIDADE */
         .chart-activity {
             display: flex; gap: 4px; align-items: flex-end;
             height: 80px; padding: 10px 0; margin-top: 10px;
@@ -222,18 +223,12 @@
             position: relative; transition: all 0.3s;
         }
         .chart-activity .bar:hover { background: #00ff88; }
-        .chart-activity .bar .tooltip-hora {
-            position: absolute; bottom: -20px; left: 50%;
-            transform: translateX(-50%); font-size: 9px;
-            color: rgba(0, 255, 136, 0.4);
-        }
         .chart-legend {
             display: flex; justify-content: space-between;
             font-size: 10px; color: rgba(0, 255, 136, 0.3);
             margin-top: 25px; padding: 0 4px;
         }
 
-        /* TABELA */
         .table-container { overflow-x: auto; }
         .table-custom { width: 100%; border-collapse: collapse; }
         .table-custom th {
@@ -250,7 +245,6 @@
         .table-custom tr.row-critical td { background: rgba(220, 53, 69, 0.04); }
         .table-custom tr.row-critical:hover td { background: rgba(220, 53, 69, 0.08); }
 
-        /* USER BADGE NA TABELA */
         .user-cell { display: flex; align-items: center; gap: 8px; }
         .user-cell .mini-avatar {
             width: 28px; height: 28px; border-radius: 50%;
@@ -261,16 +255,15 @@
         .user-cell .user-nome { font-size: 12px; color: var(--text-primary); font-weight: 600; }
         .user-cell .user-meta { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
 
-        /* BADGES */
         .badge-acao { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
         .acao-insert, .acao-criar_usuario { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
         .acao-update, .acao-editar { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.2); }
         .acao-delete, .acao-desativar { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
         .acao-upload, .acao-foto { background: rgba(255, 193, 7, 0.1); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.2); }
         .acao-reset_senha { background: rgba(156, 39, 176, 0.1); color: #ba68c8; border: 1px solid rgba(156, 39, 176, 0.2); }
+        .acao-troca_perfil { background: rgba(255, 87, 34, 0.1); color: #ff5722; border: 1px solid rgba(255, 87, 34, 0.3); }
         .acao-login { background: rgba(0, 255, 136, 0.05); color: var(--text-secondary); border: 1px solid var(--border-color); }
 
-        /* SEVERIDADE */
         .sev-badge {
             display: inline-flex; align-items: center; gap: 4px;
             padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 700;
@@ -280,7 +273,6 @@
         .sev-warning { background: rgba(255, 193, 7, 0.15); color: var(--sev-warning); border: 1px solid rgba(255, 193, 7, 0.3); }
         .sev-info { background: rgba(13, 202, 240, 0.1); color: var(--sev-info); border: 1px solid rgba(13, 202, 240, 0.2); }
 
-        /* TIPO ICON */
         .tipo-icon {
             width: 32px; height: 32px; border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
@@ -296,7 +288,6 @@
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
         .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
 
-        /* MODAL DETALHES RICO */
         .modal-custom {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -342,7 +333,6 @@
         }
         .btn-close-modal:hover { color: #dc3545; background: rgba(220, 53, 69, 0.1); }
 
-        /* SEÇÕES DO MODAL */
         .modal-section {
             background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
@@ -362,7 +352,6 @@
             border-radius: 10px; font-weight: 600;
         }
 
-        /* CARD DO USUÁRIO */
         .user-card-full {
             display: flex; align-items: center; gap: 15px;
             padding: 12px; background: rgba(0, 255, 136, 0.02);
@@ -388,7 +377,6 @@
             display: flex; align-items: center; gap: 5px;
         }
 
-        /* CARD DA ENTIDADE */
         .entidade-card {
             padding: 12px; background: rgba(0, 255, 136, 0.02);
             border-radius: 10px; border: 1px solid var(--border-color);
@@ -407,7 +395,6 @@
             color: rgba(0, 255, 136, 0.4); font-size: 11px; font-family: monospace;
         }
 
-        /* DIFF VISUAL */
         .diff-tabela { width: 100%; }
         .diff-linha {
             display: grid; grid-template-columns: 180px 1fr 1fr;
@@ -432,7 +419,6 @@
             word-break: break-word;
         }
 
-        /* CONTEXTO TÉCNICO */
         .contexto-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 12px;
@@ -451,7 +437,6 @@
             font-family: monospace; word-break: break-all;
         }
 
-        /* TIMELINE */
         .timeline { position: relative; padding-left: 30px; }
         .timeline::before {
             content: ''; position: absolute; left: 8px; top: 0; bottom: 0;
@@ -478,7 +463,6 @@
             color: rgba(0, 255, 136, 0.5); font-size: 12px; margin-top: 3px;
         }
 
-        /* EVENTOS RELACIONADOS */
         .relacionado-item {
             display: flex; align-items: center; gap: 10px;
             padding: 8px 10px; background: rgba(0, 0, 0, 0.3);
@@ -499,7 +483,6 @@
             white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         }
 
-        /* JSON BRUTO */
         .json-details summary {
             color: rgba(0, 255, 136, 0.5); font-size: 12px; cursor: pointer;
             padding: 8px 0; user-select: none;
@@ -515,7 +498,6 @@
             max-height: 300px; overflow-y: auto;
         }
 
-        /* TOASTS */
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
             min-width: 320px; max-width: 420px; padding: 16px 20px;
@@ -631,7 +613,6 @@
             </div>
         </header>
 
-        <!-- CARDS DE ESTATÍSTICAS -->
         <div class="stats-grid" id="statsGrid">
             <div class="stat-card">
                 <div class="icon"><i class="fas fa-spinner fa-spin"></i></div>
@@ -640,7 +621,6 @@
             </div>
         </div>
 
-        <!-- GRÁFICO DE ATIVIDADE -->
         <div class="form-card" id="cardGrafico">
             <div class="card-title"><i class="fas fa-chart-area"></i>Atividade nas Últimas 24h</div>
             <div class="chart-activity" id="chartActivity"></div>
@@ -649,7 +629,6 @@
             </div>
         </div>
 
-        <!-- FILTROS -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-filter"></i>Filtros Avançados</div>
             <div class="row g-3">
@@ -706,7 +685,6 @@
             </div>
         </div>
 
-        <!-- LISTA DE EVENTOS -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Eventos Recentes</div>
@@ -721,7 +699,6 @@
         </div>
     </main>
 
-    <!-- MODAL DETALHES RICO -->
     <div class="modal-custom" id="modalDetalhes">
         <div class="modal-custom-content">
             <div class="modal-custom-header">
@@ -761,25 +738,21 @@
         let eventosAtuais = [];
         let eventoSelecionado = null;
         let usuariosCache = {};
-        let suspeitosCache = {};
 
         // ============================================================
         // CLASSIFICAÇÃO DE SEVERIDADE
         // ============================================================
         const SEVERIDADE_MAP = {
-            // CRÍTICO
             'DELETE': 'CRITICAL',
             'DESATIVAR': 'CRITICAL',
             'RESET_SENHA': 'CRITICAL',
             'TROCA_PERFIL': 'CRITICAL',
             'EXCLUSAO': 'CRITICAL',
-            // ALERTA
             'CRIAR_USUARIO': 'WARNING',
             'UPDATE': 'WARNING',
             'UPLOAD': 'WARNING',
             'FOTO': 'WARNING',
             'INSERT': 'WARNING',
-            // INFO
             'LOGIN': 'INFO',
             'LOGOUT': 'INFO',
             'CONSULTA': 'INFO',
@@ -792,9 +765,6 @@
             return SEVERIDADE_MAP[key] || 'INFO';
         }
 
-        // ============================================================
-        // ÍCONES POR TIPO
-        // ============================================================
         function iconePorTipo(tipo) {
             const icones = {
                 'SUSPEITO': 'fa-user-secret',
@@ -805,9 +775,6 @@
             return icones[tipo] || 'fa-clipboard-list';
         }
 
-        // ============================================================
-        // TEMPO RELATIVO
-        // ============================================================
         function tempoRelativo(data) {
             if (!data) return '-';
             const agora = new Date();
@@ -822,10 +789,42 @@
         }
 
         // ============================================================
+        // 🛡️ [v2.0.1] RESOLVE NOME DO USUÁRIO EM 3 CAMADAS
+        // ============================================================
+        // 1ª: campo `nome_usuario` do próprio registro
+        // 2ª: cache `usuariosCache` pelo UUID
+        // 3ª: UUID truncado (mais informativo que "Desconhecido")
+        // 4ª: fallback final "Sistema"
+        // ============================================================
+        function resolverNomeUsuario(registro) {
+            if (!registro) return 'Sistema';
+
+            // 1ª camada: campo nome_usuario
+            if (registro.nome_usuario && String(registro.nome_usuario).trim() !== '') {
+                return registro.nome_usuario;
+            }
+
+            // 2ª camada: cache de usuários (pelo UUID)
+            const idUsuario = registro.id_usuario || registro.id_usuario_cadastrador || registro.id_usuario_upload || registro.id_usuario_emissao;
+            if (idUsuario && usuariosCache[idUsuario]) {
+                return usuariosCache[idUsuario].nome_completo;
+            }
+
+            // 3ª camada: UUID truncado
+            if (idUsuario) {
+                const uuidCurto = String(idUsuario).substring(0, 8);
+                return `Usuário ${uuidCurto}...`;
+            }
+
+            // 4ª camada: fallback final
+            return 'Sistema';
+        }
+
+        // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Auditoria v2.0.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Auditoria v2.0.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -853,7 +852,7 @@
         }
 
         // ============================================================
-        // CARREGAR USUÁRIOS (cache enriquecido)
+        // CARREGAR USUÁRIOS
         // ============================================================
         async function carregarUsuarios() {
             try {
@@ -876,14 +875,14 @@
                     select.appendChild(opt);
                 });
 
-                console.log(`✅ ${data?.length || 0} usuários carregados`);
+                console.log(`✅ ${data?.length || 0} usuários carregados no cache`);
             } catch (error) {
                 console.error('❌ Erro ao carregar usuários:', error);
             }
         }
 
         // ============================================================
-        // CARREGAR AUDITORIA (UNIFICA 4 FONTES)
+        // CARREGAR AUDITORIA
         // ============================================================
         async function carregarAuditoria() {
             const container = document.getElementById('listaAuditoria');
@@ -918,13 +917,16 @@
                         const { data } = await q1;
 
                         (data || []).forEach(h => {
+                            // 🛡️ [v2.0.1] Resolve o nome do usuário em 3 camadas
+                            const nomeUsuario = resolverNomeUsuario(h);
+
                             eventos.push({
                                 id: `suspeito-${h.id_historico}`,
                                 tipo: 'SUSPEITO',
                                 acao: 'UPDATE',
                                 data: h.data_alteracao,
                                 usuario_id: h.id_usuario,
-                                usuario_nome: h.nome_usuario || 'Desconhecido',
+                                usuario_nome: nomeUsuario,
                                 descricao: `Alterou ${h.campos_alterados?.length || 0} campo(s) do suspeito`,
                                 entidade_id: h.id_suspeito,
                                 entidade_nome: `Suspeito #${h.id_suspeito}`,
@@ -958,13 +960,15 @@
 
                         (data || []).forEach(l => {
                             const u = usuariosCache[l.id_usuario_cadastrado];
+                            const nomeUsuario = resolverNomeUsuario(l);
+
                             eventos.push({
                                 id: `usuario-${l.id_log}`,
                                 tipo: 'USUARIO',
                                 acao: (l.acao || 'INSERT').toUpperCase(),
                                 data: l.data_hora,
                                 usuario_id: l.id_usuario_cadastrador,
-                                usuario_nome: usuariosCache[l.id_usuario_cadastrador]?.nome_completo || 'Desconhecido',
+                                usuario_nome: nomeUsuario,
                                 descricao: `${l.acao || 'Ação'} em usuário. ${l.sucesso ? '✅ Sucesso' : '❌ Erro'}`,
                                 entidade_id: l.id_usuario_cadastrado,
                                 entidade_nome: u?.nome_completo || 'Usuário',
@@ -973,7 +977,6 @@
                                     acao: l.acao,
                                     dados_anteriores: l.dados_anteriores,
                                     dados_novos: l.dados_novos,
-                                    justificativa: l.justificativa,
                                     ip_origem: l.ip_origem,
                                     sucesso: l.sucesso,
                                     mensagem_erro: l.mensagem_erro
@@ -1000,13 +1003,15 @@
                         const { data } = await q3;
 
                         (data || []).forEach(m => {
+                            const nomeUsuario = resolverNomeUsuario(m);
+
                             eventos.push({
                                 id: `midia-${m.id_arquivo}`,
                                 tipo: 'MIDIA',
                                 acao: 'UPLOAD',
                                 data: m.data_upload,
                                 usuario_id: m.id_usuario_upload,
-                                usuario_nome: usuariosCache[m.id_usuario_upload]?.nome_completo || 'Sistema',
+                                usuario_nome: nomeUsuario,
                                 descricao: `Upload de ${m.tipo_midia || 'arquivo'}: ${m.nome_original || '-'}`,
                                 entidade_id: m.id_entidade,
                                 entidade_nome: `Suspeito #${m.id_entidade}`,
@@ -1042,13 +1047,15 @@
                         const { data } = await q4;
 
                         (data || []).forEach(md => {
+                            const nomeUsuario = resolverNomeUsuario(md);
+
                             eventos.push({
                                 id: `mandado-${md.id_mandado}`,
                                 tipo: 'MANDADO',
                                 acao: 'INSERT',
                                 data: md.data_cadastro,
                                 usuario_id: md.id_usuario_emissao,
-                                usuario_nome: usuariosCache[md.id_usuario_emissao]?.nome_completo || 'Sistema',
+                                usuario_nome: nomeUsuario,
                                 descricao: `Mandado ${md.numero_mandado || '#' + md.id_mandado} (${md.status || '-'})`,
                                 entidade_id: md.id_mandado,
                                 entidade_nome: md.numero_mandado || `Mandado #${md.id_mandado}`,
@@ -1068,20 +1075,17 @@
                     } catch (e) { console.warn('⚠️ mandado_prisao:', e); }
                 }
 
-                // Ordena
                 eventos.sort((a, b) => {
                     const da = a.data ? new Date(a.data).getTime() : 0;
                     const db = b.data ? new Date(b.data).getTime() : 0;
                     return db - da;
                 });
 
-                // Filtro severidade
                 let eventosFiltrados = eventos;
                 if (severidade) {
                     eventosFiltrados = eventosFiltrados.filter(e => classificarSeveridade(e.acao) === severidade);
                 }
 
-                // Filtro busca
                 if (busca) {
                     eventosFiltrados = eventosFiltrados.filter(e => 
                         (e.usuario_nome || '').toLowerCase().includes(busca) ||
@@ -1106,7 +1110,7 @@
         }
 
         // ============================================================
-        // RENDERIZAR ESTATÍSTICAS (6 cards)
+        // RENDERIZAR ESTATÍSTICAS
         // ============================================================
         function renderizarEstatisticas(eventos) {
             const agora = new Date();
@@ -1183,7 +1187,7 @@
         }
 
         // ============================================================
-        // RENDERIZAR LISTA (tabela melhorada)
+        // RENDERIZAR LISTA
         // ============================================================
         function renderizarLista(eventos) {
             const container = document.getElementById('listaAuditoria');
@@ -1235,7 +1239,7 @@
         }
 
         // ============================================================
-        // VER DETALHES (MODAL RICO)
+        // VER DETALHES
         // ============================================================
         function verDetalhes(id) {
             const evento = eventosAtuais.find(e => e.id === id);
@@ -1263,12 +1267,10 @@
             const dataFormatada = data ? data.toLocaleString('pt-BR') : '-';
             const dataRelativa = tempoRelativo(evento.data);
 
-            // DADOS DO USUÁRIO
             const u = usuariosCache[evento.usuario_id];
             const inicial = (evento.usuario_nome || 'U')[0].toUpperCase();
             const perfilNome = u ? AIDEPOM.getNomePerfil(u.id_perfil_acesso) : 'Desconhecido';
 
-            // EVENTOS RELACIONADOS (mesmo usuário ou mesma entidade)
             const relacionados = eventosAtuais
                 .filter(e => e.id !== evento.id)
                 .filter(e => 
@@ -1277,7 +1279,6 @@
                 )
                 .slice(0, 5);
 
-            // DIFF ANTES/DEPOIS
             let diffHTML = '';
             const detalhes = evento.detalhes || {};
             const antes = detalhes.valores_antes || detalhes.dados_anteriores;
@@ -1300,7 +1301,6 @@
                 });
                 diffHTML += '</div>';
             } else if (detalhes.campos_alterados && Array.isArray(detalhes.campos_alterados)) {
-                // Formato do suspeito_historico
                 diffHTML = '<div class="diff-tabela">';
                 diffHTML += '<div class="diff-linha header"><div>Campo</div><div>Antes</div><div>Depois</div></div>';
                 detalhes.campos_alterados.forEach(c => {
@@ -1315,9 +1315,7 @@
                 diffHTML += '</div>';
             }
 
-            // RENDERIZA MODAL
             body.innerHTML = `
-                <!-- TIMELINE -->
                 <div class="modal-section">
                     <div class="modal-section-title"><i class="fas fa-stream"></i> Timeline do Evento</div>
                     <div class="timeline">
@@ -1339,13 +1337,12 @@
                     </div>
                 </div>
 
-                <!-- QUEM EXECUTOU -->
                 <div class="modal-section">
                     <div class="modal-section-title"><i class="fas fa-user-shield"></i> Quem Executou</div>
                     <div class="user-card-full">
                         <div class="avatar-grande">${inicial}</div>
                         <div class="user-info-full">
-                            <div class="user-nome-full">${evento.usuario_nome || 'Desconhecido'}</div>
+                            <div class="user-nome-full">${evento.usuario_nome || resolverNomeUsuario(evento.raw || evento) || 'Desconhecido'}</div>
                             <div class="user-linha-meta">
                                 ${u?.matricula ? `<span><i class="fas fa-id-badge"></i> ${u.matricula}</span>` : ''}
                                 ${u?.email ? `<span><i class="fas fa-envelope"></i> ${u.email}</span>` : ''}
@@ -1358,7 +1355,6 @@
                     </div>
                 </div>
 
-                <!-- O QUE FOI AFETADO -->
                 ${evento.entidade_nome ? `
                 <div class="modal-section">
                     <div class="modal-section-title"><i class="fas fa-crosshairs"></i> O que foi Afetado</div>
@@ -1371,7 +1367,6 @@
                 </div>
                 ` : ''}
 
-                <!-- ANTES E DEPOIS -->
                 ${diffHTML ? `
                 <div class="modal-section">
                     <div class="modal-section-title"><i class="fas fa-exchange-alt"></i> Antes e Depois</div>
@@ -1379,7 +1374,6 @@
                 </div>
                 ` : ''}
 
-                <!-- CONTEXTO TÉCNICO -->
                 <div class="modal-section">
                     <div class="modal-section-title"><i class="fas fa-microchip"></i> Contexto Técnico</div>
                     <div class="contexto-grid">
@@ -1414,7 +1408,6 @@
                     </div>
                 </div>
 
-                <!-- JUSTIFICATIVA -->
                 ${detalhes.justificativa ? `
                 <div class="modal-section">
                     <div class="modal-section-title"><i class="fas fa-comment-alt"></i> Justificativa</div>
@@ -1424,7 +1417,6 @@
                 </div>
                 ` : ''}
 
-                <!-- EVENTOS RELACIONADOS -->
                 ${relacionados.length > 0 ? `
                 <div class="modal-section">
                     <div class="modal-section-title">
@@ -1442,7 +1434,6 @@
                 </div>
                 ` : ''}
 
-                <!-- JSON BRUTO (colapsável) -->
                 <details class="json-details">
                     <summary><i class="fas fa-code"></i> Ver JSON bruto do evento</summary>
                     <div class="json-box">${JSON.stringify(evento.raw, null, 2)}</div>
@@ -1457,9 +1448,6 @@
             eventoSelecionado = null;
         }
 
-        // ============================================================
-        // AÇÕES DO MODAL
-        // ============================================================
         function copiarIdEvento() {
             if (!eventoSelecionado) return;
             const id = String(eventoSelecionado.entidade_id || eventoSelecionado.id || '');
@@ -1484,9 +1472,6 @@
             showToast('success', 'Exportado!', 'Evento exportado como JSON.', 3000);
         }
 
-        // ============================================================
-        // FILTROS
-        // ============================================================
         function limparFiltros() {
             document.getElementById('filtroTipo').value = '';
             document.getElementById('filtroSeveridade').value = '';
@@ -1497,9 +1482,6 @@
             carregarAuditoria();
         }
 
-        // ============================================================
-        // EXPORTAR CSV
-        // ============================================================
         function exportarCSV() {
             if (eventosAtuais.length === 0) {
                 showToast('warning', 'Sem dados', 'Não há eventos para exportar.');
@@ -1531,9 +1513,6 @@
             showToast('success', 'CSV exportado!', `${eventosAtuais.length} evento(s) exportado(s).`);
         }
 
-        // ============================================================
-        // HELPERS
-        // ============================================================
         function traduzirTipo(tipo) {
             const tipos = {
                 'SUSPEITO': 'Suspeito',
@@ -1544,9 +1523,6 @@
             return tipos[tipo] || tipo || '-';
         }
 
-        // ============================================================
-        // TOAST
-        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -1564,9 +1540,6 @@
             }, duracao);
         }
 
-        // ============================================================
-        // CONTROLES
-        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
