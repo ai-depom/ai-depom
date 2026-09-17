@@ -2,8 +2,8 @@
      AI-DEPOM - DASHBOARD
      ============================================================
      Arquivo: 04-dashboard.html
-     Versão: 1.1.0
-     Data: 16/09/2026 - 22:00
+     Versão: 1.2.0
+     Data: 17/09/2026 - 14:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -14,6 +14,13 @@
      5. Todo botão DEVE ter handler real
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v1.2.0 (17/09/2026 14:00):
+     - ✨ NOVO: menu card "Mapa de Mandados" → 15-mapa-mandados.html
+     - 🔗 Sidebar: adicionado item "Mapa de Mandados"
+     - 🐛 Corrigida descrição do card "Mapa de Operacoes"
+       (antes dizia "mandados", agora "operacoes")
+     - ✅ Mantidas todas as features da v1.1.0
 
      ALTERAÇÕES v1.1.0 (16/09/2026 22:00):
      - 🔗 Menu: adicionado item "Consulta" → 07-consulta.html
@@ -26,12 +33,6 @@
      - ➕ minimizeWindow() implementado
      - 📜 Cabeçalho Regra de Ouro COMPLETO
      - ✅ Mantidas: sidebar flexbox, fazerLogout, closeWindow, inactivity-lock
-
-     ALTERAÇÕES v1.0.2 (15/09/2026 18:30):
-     - Menu atualizado (Mandados + Auditoria)
-     - Sidebar com flexbox
-     - fazerLogout() robusto
-     - closeWindow() robusto
      ============================================================
 -->
 <!DOCTYPE html>
@@ -196,6 +197,7 @@
         .menu-card:hover { border-color: var(--text-primary); transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0, 255, 136, 0.1); color: var(--text-primary); }
         .menu-card i { font-size: 40px; margin-bottom: 15px; display: block; color: var(--text-primary); }
         .menu-card i.laranja { color: #ff5722; }
+        .menu-card i.roxo { color: #ba68c8; }
         .menu-card .title { font-weight: 600; font-size: 15px; }
         .menu-card .description { font-size: 12px; color: rgba(0, 255, 136, 0.3); margin-top: 5px; }
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
@@ -270,6 +272,7 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
             <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
@@ -380,6 +383,11 @@
             <a href="10-mapa-operacoes.html" class="menu-card">
                 <i class="fas fa-map-marked-alt"></i>
                 <div class="title">Mapa de Operacoes</div>
+                <div class="description">Visualizar operacoes no mapa</div>
+            </a>
+            <a href="15-mapa-mandados.html" class="menu-card">
+                <i class="fas fa-gavel roxo"></i>
+                <div class="title">Mapa de Mandados</div>
                 <div class="description">Visualizar mandados no mapa</div>
             </a>
             <a href="09-configuracoes.html" class="menu-card">
@@ -396,7 +404,7 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Dashboard v1.1.0 iniciado');
+            console.log('AI-DEPOM - Dashboard v1.2.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
