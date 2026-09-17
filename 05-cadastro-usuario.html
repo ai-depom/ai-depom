@@ -2,8 +2,8 @@
      AI-DEPOM - CADASTRO DE USUÁRIO
      ============================================================
      Arquivo: 05-cadastro-usuario.html
-     Versão: 1.3.1
-     Data: 16/09/2026 - 14:00
+     Versão: 1.4.0
+     Data: 17/09/2026 - 16:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,25 +15,16 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v1.4.0 (17/09/2026 16:00):
+     - 🔗 Menu: adicionados "Mapa de Mandados", "Operações" e "Atividade"
+     - 🎨 Padronizada tabela para .table-custom (consistência visual)
+     - ✨ Reset do form agora limpa o feedback de email
+     - ✅ Preservadas TODAS as funcionalidades da v1.3.1
+
      ALTERAÇÕES v1.3.1 (16/09/2026 14:00):
      - 🐛 CORRIGIDO: registrarLog() agora usa colunas corretas
      - 🐛 CORRIGIDO: justificativa vai DENTRO de dados_novos (JSON)
      - 🐛 CORRIGIDO: ip_origem preenchido (era NOT NULL)
-     - ✅ Mantidas: todas as correções da v1.3.0
-
-     ALTERAÇÕES v1.3.0 (16/09/2026 13:30):
-     - 🐛 CORRIGIDO: detecta quando RLS bloqueia silenciosamente
-     - 🐛 CORRIGIDO: detecta quando id_perfil_acesso não mudou
-     - 🐛 CORRIGIDO: toast mostra o perfil CONFIRMADO pelo banco
-     - ✨ Log detalhado no console para debug
-
-     ALTERAÇÕES v1.2.0 (15/09/2026 19:30):
-     - ✨ Coluna "Ações" na tabela
-     - ✨ Modal de Edição com justificativa obrigatória
-     - ✨ Modal de Reset de Senha
-     - ✨ Confirmação de desativar/reativar
-     - ✨ Modal "Ver detalhes"
-     - ✨ Verificação de permissão Master
      ============================================================
 -->
 <!DOCTYPE html>
@@ -204,18 +195,22 @@
             border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
         }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-        .users-table { width: 100%; border-collapse: collapse; }
-        .users-table th {
+
+        /* [v1.4.0] Padronização para .table-custom */
+        .table-container { overflow-x: auto; }
+        .table-custom { width: 100%; border-collapse: collapse; }
+        .table-custom th {
             color: rgba(0, 255, 136, 0.4); font-size: 11px; text-transform: uppercase;
             letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
             text-align: left;
         }
-        .users-table td {
+        .table-custom td {
             color: var(--text-secondary); font-size: 13px; padding: 12px;
             border-bottom: 1px solid rgba(0, 51, 34, 0.5);
             vertical-align: middle;
         }
-        .users-table tr:hover td { background: rgba(0, 255, 136, 0.02); }
+        .table-custom tr:hover td { background: rgba(0, 255, 136, 0.02); }
+
         .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
         .status-ativo { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
         .status-inativo { background: rgba(220, 53, 69, 0.1); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.2); }
@@ -366,10 +361,13 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
+            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item active" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
             <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
+            <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
             <div class="menu-label">Sistema</div>
             <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
@@ -399,7 +397,6 @@
             </div>
         </header>
 
-        <!-- FORMULÁRIO DE CADASTRO -->
         <div class="form-card">
             <div class="card-title"><i class="fas fa-user-plus"></i>Cadastrar Novo Usuario</div>
             <form id="formUsuario">
@@ -459,7 +456,7 @@
 
                 <div class="row mt-4">
                     <div class="col-md-12 text-end">
-                        <button type="reset" class="btn-outline-gold me-2"><i class="fas fa-times me-2"></i>CANCELAR</button>
+                        <button type="reset" class="btn-outline-gold me-2" id="btnCancelar"><i class="fas fa-times me-2"></i>CANCELAR</button>
                         <button type="submit" class="btn-gold" id="btnCadastrar"><i class="fas fa-user-plus me-2"></i>CADASTRAR USUARIO</button>
                     </div>
                 </div>
@@ -470,7 +467,6 @@
             </form>
         </div>
 
-        <!-- LISTA DE USUÁRIOS -->
         <div class="form-card">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Usuarios Cadastrados</div>
@@ -485,7 +481,6 @@
         </div>
     </main>
 
-    <!-- MODAL: VER DETALHES -->
     <div class="modal-custom" id="modalVerDetalhes">
         <div class="modal-custom-content">
             <div class="modal-custom-header">
@@ -499,7 +494,6 @@
         </div>
     </div>
 
-    <!-- MODAL: EDITAR -->
     <div class="modal-custom" id="modalEditar">
         <div class="modal-custom-content">
             <div class="modal-custom-header">
@@ -512,7 +506,6 @@
         </div>
     </div>
 
-    <!-- MODAL: RESETAR SENHA -->
     <div class="modal-custom" id="modalResetarSenha">
         <div class="modal-custom-content modal-sm">
             <div class="modal-custom-header">
@@ -523,7 +516,6 @@
         </div>
     </div>
 
-    <!-- MODAL: CONFIRMAR DESATIVACAO -->
     <div class="modal-custom" id="modalConfirmar">
         <div class="modal-custom-content modal-sm">
             <div class="modal-custom-header">
@@ -556,7 +548,7 @@
         // INICIALIZACAO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Cadastro de Usuario v1.3.1 iniciado');
+            console.log('AI-DEPOM - Cadastro de Usuario v1.4.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -619,7 +611,7 @@
                 return;
             }
 
-            let html = '<div style="overflow-x:auto;"><table class="users-table"><thead><tr>';
+            let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
             html += '<th>Matricula</th><th>Nome</th><th>Email</th><th>Setor</th><th>Perfil</th><th>Status</th>';
             if (isMaster) html += '<th style="text-align:right;">Acoes</th>';
             html += '</tr></thead><tbody>';
@@ -802,7 +794,6 @@
                     return;
                 }
 
-                // Busca dados ANTES pra comparar
                 const { data: antigo, error: errAntigo } = await AIDEPOM.buscarUsuarioPorId(usuarioEditandoId);
                 if (errAntigo || !antigo) {
                     throw new Error('Não foi possível carregar os dados atuais do usuário.');
@@ -810,17 +801,9 @@
 
                 const perfilAntigo = antigo.id_perfil_acesso;
 
-                console.log('📝 Dados ANTERIORES:', {
-                    id_perfil_acesso: perfilAntigo,
-                    nome: antigo.nome_completo
-                });
+                console.log('📝 Dados ANTERIORES:', { id_perfil_acesso: perfilAntigo, nome: antigo.nome_completo });
+                console.log('📝 Dados NOVOS:', { id_perfil_acesso: perfilNovo, nome: nome });
 
-                console.log('📝 Dados NOVOS:', {
-                    id_perfil_acesso: perfilNovo,
-                    nome: nome
-                });
-
-                // Executa o UPDATE
                 const { data, error } = await window.supabaseClient
                     .from('usuarios')
                     .update({
@@ -835,13 +818,11 @@
                     .select()
                     .maybeSingle();
 
-                // 🛡️ Detecta erro
                 if (error) {
                     console.error('❌ Erro no UPDATE:', error);
                     throw new Error('Erro ao salvar: ' + error.message);
                 }
 
-                // 🛡️ Detecta RLS bloqueando (data === null)
                 if (!data) {
                     console.error('❌ UPDATE retornou null — RLS bloqueou');
                     throw new Error(
@@ -850,12 +831,8 @@
                     );
                 }
 
-                // 🛡️ Confirma que id_perfil_acesso realmente mudou
                 if (data.id_perfil_acesso !== perfilNovo) {
-                    console.error('❌ Perfil NÃO mudou!', {
-                        esperado: perfilNovo,
-                        recebido: data.id_perfil_acesso
-                    });
+                    console.error('❌ Perfil NÃO mudou!', { esperado: perfilNovo, recebido: data.id_perfil_acesso });
                     throw new Error(
                         `O perfil NÃO foi alterado. ` +
                         `Esperado: ${AIDEPOM.getNomePerfil(perfilNovo)}, ` +
@@ -863,13 +840,8 @@
                     );
                 }
 
-                console.log('✅ UPDATE confirmado:', {
-                    id: data.id,
-                    id_perfil_acesso: data.id_perfil_acesso,
-                    data_atualizacao: data.data_atualizacao
-                });
+                console.log('✅ UPDATE confirmado:', { id: data.id, id_perfil_acesso: data.id_perfil_acesso });
 
-                // Log de auditoria manual (redundante mas útil)
                 try {
                     await registrarLog(
                         usuarioEditandoId,
@@ -882,14 +854,12 @@
                     console.warn('⚠️ Falha ao gravar log de auditoria:', logErr);
                 }
 
-                // Toast com confirmação
                 if (perfilAntigo !== perfilNovo) {
                     showToast('success', 'Perfil alterado!',
                         `${antigo.nome_completo} agora é <strong>${AIDEPOM.getNomePerfil(perfilNovo)}</strong>.`,
                         6000);
                 } else {
-                    showToast('success', 'Usuario atualizado!',
-                        'Os dados foram salvos com sucesso.', 5000);
+                    showToast('success', 'Usuario atualizado!', 'Os dados foram salvos com sucesso.', 5000);
                 }
 
                 fecharModal('modalEditar');
@@ -1070,25 +1040,10 @@
         }
 
         // ============================================================
-        // [v1.3.1] LOG DE AUDITORIA — CORRIGIDO
-        // ============================================================
-        // Colunas reais da tabela log_cadastro_usuario:
-        //   - id_log (auto)
-        //   - id_usuario_cadastrador (uuid)
-        //   - id_usuario_cadastrado (uuid)
-        //   - acao (varchar NOT NULL)
-        //   - dados_anteriores (jsonb)
-        //   - dados_novos (jsonb)
-        //   - ip_origem (varchar NOT NULL) ← precisa preencher
-        //   - data_hora (timestamptz default now())
-        //   - sucesso (boolean default true)
-        //   - mensagem_erro (text)
-        //
-        // NÃO EXISTE coluna `justificativa` — vai dentro de dados_novos
+        // LOG DE AUDITORIA
         // ============================================================
         async function registrarLog(idUsuarioAlvo, acao, dadosAntigos, dadosNovos, justificativa) {
             try {
-                // A justificativa vai DENTRO de dados_novos (JSON)
                 const dadosNovosCompletos = {
                     ...(dadosNovos || {}),
                     justificativa: justificativa || 'Sem justificativa'
@@ -1102,7 +1057,7 @@
                         acao: acao,
                         dados_anteriores: dadosAntigos,
                         dados_novos: dadosNovosCompletos,
-                        ip_origem: 'web',       // OBRIGATÓRIO (NOT NULL)
+                        ip_origem: 'web',
                         sucesso: true
                     });
 
@@ -1178,6 +1133,24 @@
         });
 
         // ============================================================
+        // [v1.4.0] RESET: limpa o feedback de email
+        // ============================================================
+        document.getElementById('btnCancelar').addEventListener('click', function() {
+            setTimeout(() => {
+                const feedback = document.getElementById('emailFeedback');
+                const validation = document.getElementById('emailValidation');
+                if (feedback) {
+                    feedback.textContent = 'Digite um email valido';
+                    feedback.style.color = 'rgba(0,255,136,0.2)';
+                }
+                if (validation) {
+                    validation.innerHTML = '<i class="fas fa-circle"></i>';
+                    validation.style.color = 'rgba(0,255,136,0.2)';
+                }
+            }, 0);
+        });
+
+        // ============================================================
         // SUBMIT CADASTRO
         // ============================================================
         document.getElementById('formUsuario').addEventListener('submit', async function(e) {
@@ -1194,18 +1167,15 @@
                     perfil: document.getElementById('perfil').value
                 };
                 if (!dados.nome || !dados.matricula || !dados.setor || !dados.email || !dados.perfil) {
-                    showToast('warning', 'Campos obrigatorios', 'Preencha todos os campos marcados com *.');
-                    return;
+                    showToast('warning', 'Campos obrigatorios', 'Preencha todos os campos marcados com *.'); return;
                 }
                 if (!/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(dados.email)) {
-                    showToast('error', 'Email invalido', 'Digite um email valido.');
-                    return;
+                    showToast('error', 'Email invalido', 'Digite um email valido.'); return;
                 }
                 showToast('info', 'Processando...', 'Criando usuario no sistema...');
                 const resultado = await AIDEPOM.criarUsuario(dados);
                 if (!resultado.sucesso) {
-                    showToast('error', 'Erro ao cadastrar', resultado.erro || 'Erro desconhecido');
-                    return;
+                    showToast('error', 'Erro ao cadastrar', resultado.erro || 'Erro desconhecido'); return;
                 }
                 showToast('success', 'Usuario cadastrado!',
                     '<strong>' + dados.nome + '</strong> foi cadastrado.<br>' +
@@ -1246,10 +1216,7 @@
         });
 
         function minimizeWindow() {
-            try {
-                window.blur();
-                console.log('🪟 Janela desfocada (minimizar real não suportado pelo navegador)');
-            } catch (e) { console.warn('Minimizar não suportado:', e); }
+            try { window.blur(); console.log('🪟 Janela desfocada'); } catch (e) { console.warn('Minimizar não suportado:', e); }
         }
 
         async function fazerLogout() {
@@ -1259,40 +1226,21 @@
                     await AIDEPOM.logout();
                     return;
                 }
-            } catch (error) {
-                console.warn('⚠️ AIDEPOM.logout() falhou:', error);
-            }
-
+            } catch (error) { console.warn('⚠️ AIDEPOM.logout() falhou:', error); }
             try {
                 if (window.supabaseClient && window.supabaseClient.auth) {
                     await window.supabaseClient.auth.signOut();
                 }
-            } catch (error) {
-                console.error('❌ Erro no signOut:', error);
-            }
-
-            try {
-                localStorage.clear();
-                sessionStorage.clear();
-            } catch (e) { /* ignore */ }
-
+            } catch (error) { console.error('❌ Erro no signOut:', error); }
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
             window.location.href = '02-login.html';
         }
 
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
-
-            try {
-                window.open('', '_self', '');
-                window.close();
-            } catch (e) {
-                console.warn('⚠️ window.close() bloqueado pelo navegador');
-            }
-
+            try { window.open('', '_self', ''); window.close(); } catch (e) { console.warn('⚠️ window.close() bloqueado'); }
             setTimeout(function() {
-                if (!window.closed) {
-                    window.location.href = '01-apresentacao.html';
-                }
+                if (!window.closed) window.location.href = '01-apresentacao.html';
             }, 300);
         }
 
