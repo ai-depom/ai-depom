@@ -2,7 +2,7 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.9.0
+     Versão: 2.9.1
      Data: 17/09/2026 - 23:30
      Autor: AI-DEPOM Team
      ============================================================
@@ -14,6 +14,11 @@
      5. Todo botão DEVE ter handler real
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v2.9.1 (17/09/2026 23:30):
+     - ✨ Contadores (Presos/Procurados/Foragidos) agora carregam ao abrir a página
+       - carregarEstatisticas() chamada no DOMContentLoaded
+       - Não depende mais de clicar em BUSCAR para exibir
 
      ALTERAÇÕES v2.9.0 (17/09/2026 23:30):
      - ✨ NOVO: Ícone ⚖️ (gavel) na coluna "Mandados" da tabela
@@ -886,6 +891,7 @@
                 document.getElementById('totalPresos').querySelector('.count').textContent = totalPresos || 0;
                 document.getElementById('totalProcurados').querySelector('.count').textContent = totalProcurados || 0;
                 document.getElementById('totalForagidos').querySelector('.count').textContent = totalForagidos || 0;
+                console.log('📊 Estatísticas:', { presos: totalPresos, procurados: totalProcurados, foragidos: totalForagidos });
             } catch (error) { console.error('Erro ao carregar estatísticas:', error); }
         }
 
@@ -1890,8 +1896,9 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.9.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.9.1 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
+            carregarEstatisticas();   // 👈 v2.9.1 — carrega contadores ao abrir a página
         });
 
         document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
