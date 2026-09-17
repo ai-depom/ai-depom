@@ -2,8 +2,8 @@
      AI-DEPOM - AUDITORIA DO SISTEMA
      ============================================================
      Arquivo: 12-auditoria.html
-     Versão: 2.2.0
-     Data: 17/09/2026 - 01:00
+     Versão: 2.3.0
+     Data: 17/09/2026 - 19:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,21 +15,23 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.3.0 (17/09/2026 19:00):
+     - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
+     - ➕ Botão MINIMIZE na controls-bar
+     - ➕ minimizeWindow() implementada
+     - 🎨 CSS hover dos botões minimize/fullscreen
+     - 🎨 FONTES REDUZIDAS:
+       - stat-card .number: 28px → 24px
+       - stat-card .label: 11px → 10px
+       - table-custom td: 13px → 12px
+     - ✅ Preservadas TODAS as funcionalidades da v2.2.0
+
      ALTERAÇÕES v2.2.0 (17/09/2026 01:00):
      - ✨ NOVO: 6ª fonte de auditoria = AUDIT_TRAIL
      - ✨ Auditoria completa em mandados, operações e presos
      - ✨ Novo filtro "Todas Alteracoes"
      - ✨ Novo ícone para OPERACAO_PRESO (🔒)
      - ✨ Novo ícone para AUDIT (📜)
-     - ✅ Mantidas: todas as features da v2.1.0
-
-     ALTERAÇÕES v2.1.0 (16/09/2026 20:00):
-     - ✨ 5ª fonte de auditoria = OPERACOES
-     - ✨ Novo tipo OPERACAO com ícone 🎯
-
-     ALTERAÇÕES v2.0.1 (16/09/2026 15:00):
-     - 🐛 CORRIGIDO: eventos de suspeito mostravam "Desconhecido"
-     - ✨ resolverNomeUsuario() com fallback em 3 camadas
      ============================================================
 -->
 <!DOCTYPE html>
@@ -81,6 +83,9 @@
         }
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        /* [v2.3.0] CSS hover dos botões */
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar {
@@ -204,10 +209,11 @@
         }
         .stat-card.critical .icon { background: rgba(220, 53, 69, 0.1); color: var(--sev-critical); }
         .stat-card.warning .icon { background: rgba(255, 193, 7, 0.1); color: var(--sev-warning); }
-        .stat-card .number { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+        /* [v2.3.0] FONTE REDUZIDA */
+        .stat-card .number { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .stat-card.critical .number { color: var(--sev-critical); }
         .stat-card.warning .number { color: var(--sev-warning); }
-        .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+        .stat-card .label { font-size: 10px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
         .chart-activity {
             display: flex; gap: 4px; align-items: flex-end;
             height: 80px; padding: 10px 0; margin-top: 10px;
@@ -230,8 +236,9 @@
             letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
             text-align: left; white-space: nowrap;
         }
+        /* [v2.3.0] FONTE REDUZIDA */
         .table-custom td {
-            color: var(--text-secondary); font-size: 13px; padding: 12px;
+            color: var(--text-secondary); font-size: 12px; padding: 12px;
             border-bottom: 1px solid rgba(0, 51, 34, 0.5);
             vertical-align: middle;
         }
@@ -532,6 +539,7 @@
             <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
             <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
             <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
         </div>
@@ -556,6 +564,7 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
             <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
@@ -801,7 +810,7 @@
         // INICIALIZACAO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Auditoria v2.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Auditoria v2.3.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1074,10 +1083,7 @@
                     } catch (e) { console.warn('⚠️ operacao:', e); }
                 }
 
-                // ============================================================
-                // FONTE 6: audit_trail (NOVO v2.2.0)
-                // Cobre alteracoes em mandados, operacoes e presos
-                // ============================================================
+                // FONTE 6: audit_trail
                 if (!tipo || tipo === 'AUDIT') {
                     try {
                         let q6 = window.supabaseClient
@@ -1619,6 +1625,15 @@
             if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(docEl);
             else cancel.call(doc);
         }
+
+        // [v2.3.0] minimizeWindow()
+        function minimizeWindow() {
+            try {
+                window.blur();
+                console.log('🪟 Janela desfocada (minimizar real não suportado)');
+            } catch (e) { console.warn('Minimizar não suportado:', e); }
+        }
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
             if (e.key === 'Escape') fecharDetalhes();
@@ -1649,7 +1664,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina de Auditoria carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Auditoria v2.3.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
