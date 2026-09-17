@@ -1,9 +1,9 @@
  <!-- ============================================================
-     AI-DEPOM - CADASTRO DE SUSPEITO
+     AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
-     Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.5.0
-     Data: 17/09/2026 - 15:00
+     Arquivo: 07-consulta.html
+     Versão: 2.9.2
+     Data: 17/09/2026 - 23:45
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,20 +15,36 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
-     ALTERAÇÕES v3.5.0 (17/09/2026 15:00):
-     - ✨ NOVO: botão "Ver Detalhes" (👁️) na lista de suspeitos
-     - ✨ NOVO: modal completo de detalhes do suspeito
-       (identificação, dados pessoais, endereço, GPS,
-        características físicas, tatuagens, informações criminais)
-     - ✨ NOVO: CSS .table-custom (mesmo padrão das outras telas)
-     - ✨ NOVO: CSS .modal-custom, .detalhe-campo
-     - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
-     - ✅ Preservados: cadastro, upload, tatuagens, geocode, controles
+     ALTERAÇÕES v2.9.2 (17/09/2026 23:45):
+     - ✨ Ficha do Suspeito: campo "FOTO DO SUSPEITO" com rótulo visível
+     - ✨ Clique na foto → abre em tela cheia (lightbox)
+     - ✨ Fallback melhorado: "Sem foto cadastrada"
+     - ✨ Funções abrirLightbox() e fecharLightbox() + ESC fecha
+     - ✅ Preservadas TODAS as funcionalidades da v2.9.1
 
-     ALTERAÇÕES v3.4.0 (17/09/2026 03:30):
-     - ✨ NOVO: Secao COORDENADAS GEOGRAFICAS (lat/lng)
-     - ✨ NOVO: Botao "BUSCAR PELO ENDERECO" (Nominatim)
-     - ✨ Coordenadas plotadas no mapa (10-mapa-operacoes.html)
+     ALTERAÇÕES v2.9.1 (17/09/2026 23:30):
+     - ✨ Contadores (Presos/Procurados/Foragidos) agora carregam ao abrir a página
+       - carregarEstatisticas() chamada no DOMContentLoaded
+       - Não depende mais de clicar em BUSCAR para exibir
+
+     ALTERAÇÕES v2.9.0 (17/09/2026 23:30):
+     - ✨ NOVO: Ícone ⚖️ (gavel) na coluna "Mandados" da tabela
+       - Cor reflete o status BNMP do mandado (verde=válido, etc)
+       - Clicável → abre modal com lista de mandados vinculados
+       - Não aparece quando o suspeito não tem mandado
+     - ✨ NOVO: Seção "Mandados Vinculados" na Ficha do Suspeito
+       - Badge com contador no topo
+       - Lista compacta: número + status + BNMP
+     - ✨ Nova função abrirMandadosDoSuspeito() e modal dedicado
+     - 🔍 Query otimizada: busca IDs de suspeitos com mandado em 1 única chamada
+     - ✅ Preservadas TODAS as funcionalidades da v2.8.0
+
+     ALTERAÇÕES v2.8.0 (17/09/2026 17:00):
+     - 🔗 Menu: "Mapa de Mandados" + "Operações"
+     - ➕ Botão FULLSCREEN + atalho F11
+
+     ALTERAÇÕES v2.7.4 (16/09/2026 18:00):
+     - 🐛 CORRIGIDO: perfil Admin não conseguia editar suspeito
      ============================================================
 -->
 <!DOCTYPE html>
@@ -36,9 +52,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="mobile-web-app-capable" content="yes">
-    <title>AI-DEPOM - Cadastro de Suspeito</title>
+    <title>AI-DEPOM - Consulta</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -54,24 +68,34 @@
             --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
             --control-size: 36px;
         }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         html, body {
-            width: 100%; height: 100%; min-height: 100vh;
+            height: 100%;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow-x: hidden;
         }
+
         .controls-bar {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-            background: rgba(0, 0, 0, 0.95); backdrop-filter: blur(15px);
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 1000;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--border-color);
-            padding: 6px 15px; display: flex; justify-content: space-between;
-            align-items: center; height: 48px; width: 100vw;
+            padding: 6px 15px;
+            display: flex; justify-content: space-between; align-items: center;
+            height: 48px;
         }
         .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
         .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+
         .control-btn {
             width: var(--control-size); height: var(--control-size);
             border-radius: 8px; border: none; background: transparent;
@@ -81,34 +105,32 @@
         }
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
-        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
-        .user-info .avatar {
-            width: 28px; height: 28px; border-radius: 50%;
-            background: var(--gradient-green);
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 12px; color: #000;
-        }
+        .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #000; }
+
+        /* SIDEBAR com flexbox (footer não sobrepõe o menu) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
-            background: rgba(0, 0, 0, 0.98); backdrop-filter: blur(20px);
+            background: rgba(0, 0, 0, 0.98);
+            backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999; padding: 20px 0 0 0;
-            transition: transform 0.3s ease; overflow-y: auto;
-            display: flex; flex-direction: column;
+            z-index: 999;
+            padding: 20px 0 0 0;
+            transition: transform 0.3s ease;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
         }
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
-        .sidebar-brand .logo {
-            width: 50px; height: 50px; margin: 0 auto 10px;
-            background: var(--gradient-green); border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .sidebar-brand .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: var(--gradient-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
+
         .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
@@ -121,278 +143,374 @@
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
+
         .sidebar-footer {
-            position: relative; padding: 15px 20px 20px;
+            position: relative;
+            padding: 15px 20px 20px;
             border-top: 1px solid var(--border-color);
-            background: rgba(0, 0, 0, 0.98); margin-top: auto;
+            background: rgba(0, 0, 0, 0.98);
+            margin-top: auto;
         }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
-        .sidebar-footer .user-info-sidebar .avatar {
-            width: 36px; height: 36px; border-radius: 50%;
-            background: var(--gradient-green);
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 14px; color: #000;
-        }
+        .sidebar-footer .user-info-sidebar .avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #000; }
         .sidebar-footer .user-info-sidebar .name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
         .sidebar-footer .user-info-sidebar .role { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
-        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; width: calc(100vw - 260px); }
+
+        .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; }
+
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
-            flex-wrap: wrap; gap: 15px; background: var(--bg-secondary);
-            border-radius: 16px; padding: 15px 25px;
-            margin-bottom: 25px; border: 1px solid var(--border-color);
+            flex-wrap: wrap; gap: 15px;
+            background: var(--bg-secondary); border-radius: 16px;
+            padding: 15px 25px; margin-bottom: 25px;
+            border: 1px solid var(--border-color);
         }
         .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
         .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
         .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
         .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
-        .form-card {
-            background: var(--bg-secondary); border-radius: 14px;
-            padding: 25px; border: 1px solid var(--border-color); margin-bottom: 25px;
-        }
-        .form-card .card-title {
-            color: var(--text-primary); font-size: 14px; font-weight: 700;
-            letter-spacing: 1px; text-transform: uppercase;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 12px; margin-bottom: 20px;
-        }
+        .top-bar .top-actions .badge i { margin-right: 6px; }
+
+        .form-card { background: var(--bg-secondary); border-radius: 14px; padding: 25px; border: 1px solid var(--border-color); }
+        .form-card .card-title { color: var(--text-primary); font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px; }
+        .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
+
         .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
         .form-control, .form-select {
             background: rgba(0, 0, 0, 0.5); border: 1px solid var(--border-color);
             color: var(--text-primary); padding: 10px 14px;
             border-radius: 10px; transition: all 0.3s; font-size: 14px;
         }
-        .form-control:focus, .form-select:focus {
-            background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary);
-            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
-        }
+        .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
-        .form-control:disabled, .form-control[readonly], .form-select:disabled {
-            background: #000000 !important; color: var(--text-primary) !important;
-            border-color: var(--border-color) !important; opacity: 1 !important;
-        }
-        .form-check-input { accent-color: var(--text-primary); }
-        .form-check-label { color: rgba(0, 255, 136, 0.5); font-size: 13px; }
-        .btn-gold {
-            background: var(--gradient-green); color: #000; font-weight: 700;
-            padding: 10px 28px; border-radius: 10px; border: none;
-            transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px;
-        }
-        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
-        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-        .btn-outline-gold {
-            background: transparent; color: var(--text-primary);
-            border: 1px solid var(--text-primary); padding: 10px 28px;
-            border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px;
-        }
-        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-        .section-title {
-            color: var(--text-primary); font-size: 13px; letter-spacing: 1px;
-            margin: 25px 0 15px; padding-bottom: 10px;
-            border-bottom: 1px solid var(--border-color);
-        }
-        .section-title:first-child { margin-top: 0; }
-        .section-title i { margin-right: 10px; opacity: 0.7; }
 
-        /* ============================================
-           [v3.5.0] TABELA PADRONIZADA (mesmo estilo das outras telas)
-           ============================================ */
+        .form-control:disabled,
+        .form-control[readonly],
+        .form-select:disabled,
+        .form-control.disabled,
+        .form-select.disabled {
+            background: #000000 !important;
+            color: var(--text-primary) !important;
+            border-color: var(--border-color) !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+        .form-control:disabled::placeholder,
+        .form-control[readonly]::placeholder { color: rgba(0, 255, 136, 0.35) !important; }
+        .form-check-input:disabled { background-color: #000; border-color: var(--border-color); }
+        .form-check-input:disabled + .form-check-label { color: rgba(0, 255, 136, 0.35); }
+
+        .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
+        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
+        .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+        .btn-outline-gold:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 12px; border-radius: 8px; transition: all 0.3s; }
+        .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
+
         .table-container { overflow-x: auto; }
         .table-custom { width: 100%; border-collapse: collapse; }
-        .table-custom th {
-            color: rgba(0, 255, 136, 0.4); font-size: 11px; text-transform: uppercase;
-            letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
-            text-align: left;
-        }
-        .table-custom td {
-            color: var(--text-secondary); font-size: 13px; padding: 12px;
-            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
-            vertical-align: middle;
-        }
-        .table-custom tr:hover td { background: rgba(0, 255, 136, 0.02); }
-        .btn-icon {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            color: rgba(0, 255, 136, 0.3);
-            padding: 6px 10px; border-radius: 8px;
-            transition: all 0.3s; font-size: 12px; cursor: pointer;
-        }
-        .btn-icon:hover {
-            background: rgba(0, 255, 136, 0.05);
-            border-color: var(--text-primary);
+        .table-custom th { color: rgba(0, 255, 136, 0.3); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 12px 14px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        .table-custom td { padding: 12px 14px; border-bottom: 1px solid rgba(0, 255, 136, 0.02); font-size: 14px; vertical-align: middle; }
+        .table-custom tr:hover td { background: rgba(0, 255, 136, 0.01); }
+
+        .status-badge { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+        .status-badge.preso { background: #dc3545; color: #fff; }
+        .status-badge.procurado { background: #ffc107; color: #000; }
+        .status-badge.foragido { background: #dc3545; color: #fff; animation: pulse 1.5s infinite; }
+        .status-badge.investigado { background: #17a2b8; color: #fff; }
+        .status-badge.condicional { background: #28a745; color: #fff; }
+        .status-badge.liberado { background: #6c757d; color: #fff; }
+
+        .perigo-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
+        .perigo-badge.baixo { background: #28a745; color: #fff; }
+        .perigo-badge.medio { background: #ffc107; color: #000; }
+        .perigo-badge.alto { background: #fd7e14; color: #fff; }
+        .perigo-badge.extremo { background: #dc3545; color: #fff; }
+
+        .foto-suspeito { width: 50px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); display: block; }
+        .foto-placeholder { width: 50px; height: 60px; background: rgba(0, 255, 136, 0.05); border-radius: 6px; border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; color: rgba(0, 255, 136, 0.2); font-size: 16px; }
+
+        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+
+        /* ============================================================
+           [v2.9.0] ÍCONE DE MANDADO NA TABELA
+           ============================================================ */
+        .badge-mandado {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid rgba(0, 0, 0, 0.4);
+            background: rgba(0, 255, 136, 0.1);
             color: var(--text-primary);
+            text-decoration: none;
+        }
+        .badge-mandado:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 15px currentColor;
+            filter: drop-shadow(0 0 6px currentColor);
+        }
+        .badge-mandado.mandado-valido       { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
+        .badge-mandado.mandado-ativo        { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
+        .badge-mandado.mandado-novo         { background: rgba(220, 53, 69, 0.15); color: #dc3545; border-color: rgba(220, 53, 69, 0.4); }
+        .badge-mandado.mandado-cumprido     { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; border-color: rgba(13, 202, 240, 0.4); }
+        .badge-mandado.mandado-cancelado    { background: rgba(255, 193, 7, 0.15); color: #ffc107; border-color: rgba(255, 193, 7, 0.4); }
+        .badge-mandado.mandado-suspenso     { background: rgba(186, 104, 200, 0.15); color: #ba68c8; border-color: rgba(186, 104, 200, 0.4); }
+        .badge-mandado.mandado-vencido      { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border-color: rgba(108, 117, 125, 0.4); }
+        .badge-mandado.mandado-extinto      { background: rgba(108, 117, 125, 0.15); color: #6c757d; border-color: rgba(108, 117, 125, 0.4); }
+        .badge-mandado.mandado-nao-encontrado { background: rgba(255, 87, 34, 0.15); color: #ff5722; border-color: rgba(255, 87, 34, 0.4); }
+
+        .badge-mandado-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #000;
+            color: var(--text-primary);
+            font-size: 9px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--text-primary);
+            padding: 0 4px;
+        }
+        .badge-mandado-wrapper {
+            position: relative;
+            display: inline-block;
         }
 
-        /* ============================================
-           [v3.5.0] MODAL PADRONIZADO
-           ============================================ */
-        .modal-custom {
+        /* ============================================================
+           [v2.9.0] MODAL DE MANDADOS VINCULADOS
+           ============================================================ */
+        .mandado-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .mandado-item:hover {
+            background: rgba(0, 255, 136, 0.03);
+            transform: translateX(4px);
+        }
+        .mandado-item.borda-valido     { border-left-color: #00ff88; }
+        .mandado-item.borda-ativo      { border-left-color: #00ff88; }
+        .mandado-item.borda-novo       { border-left-color: #dc3545; }
+        .mandado-item.borda-cumprido   { border-left-color: #0dcaf0; }
+        .mandado-item.borda-cancelado  { border-left-color: #ffc107; }
+        .mandado-item.borda-suspenso   { border-left-color: #ba68c8; }
+        .mandado-item.borda-vencido    { border-left-color: #adb5bd; }
+        .mandado-item.borda-extinto    { border-left-color: #6c757d; }
+        .mandado-item.borda-nao-encontrado { border-left-color: #ff5722; }
+
+        .mandado-item .mandado-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .mandado-item .mandado-info { flex: 1; min-width: 0; }
+        .mandado-item .mandado-numero {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mandado-item .mandado-meta {
+            color: rgba(0, 255, 136, 0.5);
+            font-size: 11px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .mandado-item .mandado-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-bnmp-mini {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-bnmp-mini.bnmp-validado    { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
+        .badge-bnmp-mini.bnmp-cancelado   { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .badge-bnmp-mini.bnmp-suspenso    { background: rgba(186, 104, 200, 0.15); color: #ba68c8; }
+        .badge-bnmp-mini.bnmp-cumprido    { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; }
+        .badge-bnmp-mini.bnmp-extinto     { background: rgba(108, 117, 125, 0.15); color: #6c757d; }
+        .badge-bnmp-mini.bnmp-nao-validado { background: rgba(0, 255, 136, 0.05); color: rgba(0, 255, 136, 0.4); }
+
+        /* ============================================================
+           MODAIS (mantidos da v2.8.0)
+           ============================================================ */
+        .modal-ficha, .modal-edicao, .modal-historico, .modal-fotos, .modal-mandados {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(8px);
+            backdrop-filter: blur(5px);
             z-index: 9999; justify-content: center; align-items: center; padding: 20px;
         }
-        .modal-custom.open { display: flex; }
-        .modal-custom-content {
+        .modal-ficha.open, .modal-edicao.open, .modal-historico.open, .modal-fotos.open, .modal-mandados.open { display: flex; }
+
+        .modal-content {
             background: var(--bg-secondary);
             border: 1px solid var(--border-color);
-            border-radius: 14px; width: 100%; max-width: 700px;
-            max-height: 92vh; overflow-y: auto;
+            border-radius: 14px; width: 100%; max-width: 800px;
+            max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
         }
-        .modal-custom-content.modal-lg { max-width: 1000px; }
-        .modal-custom-header {
+        .modal-content.modal-lg { max-width: 1000px; }
+
+        .modal-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 20px 25px; border-bottom: 1px solid var(--border-color);
-            position: sticky; top: 0; background: var(--bg-secondary); z-index: 2;
+            padding: 15px 25px; border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
         }
-        .modal-custom-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1.1rem; }
-        .modal-custom-body { padding: 25px; }
-        .modal-custom-footer {
-            display: flex; justify-content: flex-end; gap: 10px;
-            padding: 15px 25px; border-top: 1px solid var(--border-color);
-            position: sticky; bottom: 0; background: var(--bg-secondary);
-        }
-        .btn-close-modal {
-            background: none; border: none;
-            color: rgba(0, 255, 136, 0.3); cursor: pointer;
-            font-size: 18px; padding: 5px 10px; border-radius: 8px;
-        }
-        .btn-close-modal:hover { color: #dc3545; background: rgba(220, 53, 69, 0.1); }
+        .modal-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
+        .modal-body { padding: 25px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; background: var(--bg-secondary); }
 
-        .detalhe-campo { padding: 8px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
-        .detalhe-campo .label {
-            color: rgba(0, 255, 136, 0.3); font-size: 10px;
-            text-transform: uppercase; letter-spacing: 1px;
-            display: block; margin-bottom: 3px;
-        }
-        .detalhe-campo .valor {
-            color: var(--text-primary); font-size: 13px;
-            white-space: pre-wrap; word-break: break-word;
-        }
-        .badge-status-detalhe {
-            display: inline-block; padding: 3px 10px; border-radius: 12px;
-            font-size: 10px; font-weight: 600;
-            background: rgba(0, 255, 136, 0.1); color: var(--text-primary);
-            border: 1px solid var(--border-color);
-        }
+        .ficha-foto { width: 200px; height: 250px; object-fit: cover; border-radius: 10px; border: 2px solid var(--border-color); display: block; margin: 0 auto; }
+        .ficha-foto-placeholder { width: 200px; height: 250px; background: rgba(0, 255, 136, 0.05); border-radius: 10px; border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(0, 255, 136, 0.2); margin: 0 auto; }
+        .ficha-foto-placeholder i { font-size: 50px; margin-bottom: 10px; }
 
-        /* ============================================
-           COMPONENTES ORIGINAIS (preservados)
-           ============================================ */
-        .tattoo-card {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 18px;
-            margin-bottom: 15px;
+        .ficha-campo { padding: 8px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
+        .ficha-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 3px; }
+        .ficha-campo .valor { color: var(--text-primary); font-size: 13px; }
+
+        .aviso-justificativa { background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; }
+
+        .historico-item { background: rgba(0, 0, 0, 0.3); border-left: 3px solid var(--text-primary); border-radius: 8px; padding: 15px; margin-bottom: 12px; }
+        .historico-item .versao { display: inline-block; background: var(--text-primary); color: #000; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-right: 8px; }
+        .historico-item .meta { color: rgba(0, 255, 136, 0.4); font-size: 11px; margin-bottom: 10px; }
+        .historico-item .justificativa { background: rgba(255, 193, 7, 0.05); padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #ffc107; margin-bottom: 10px; }
+        .historico-item .diff-item { background: rgba(0, 0, 0, 0.4); padding: 8px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
+        .diff-antes { color: #ff6b6b; text-decoration: line-through; }
+        .diff-depois { color: var(--text-primary); font-weight: 600; }
+
+        .galeria-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
+        .foto-card { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; transition: all 0.3s; }
+        .foto-card:hover { border-color: var(--text-primary); }
+        .foto-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+        .foto-card .info { padding: 10px; }
+        .foto-card .data { font-size: 10px; color: rgba(0, 255, 136, 0.4); }
+        .foto-card .principal { background: var(--text-primary); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; }
+
+        /* ============================================================
+           [v2.9.2] CAMPO FOTO DO SUSPEITO + LIGHTBOX
+           ============================================================ */
+        .ficha-foto-wrapper {
             position: relative;
-        }
-        .tattoo-card:hover { border-color: rgba(0, 255, 136, 0.3); }
-        .tattoo-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 15px; padding-bottom: 10px;
-            border-bottom: 1px solid rgba(0, 255, 136, 0.05);
-        }
-        .tattoo-header .tattoo-titulo {
-            color: var(--text-primary); font-size: 13px; font-weight: 700;
-            letter-spacing: 1px; display: flex; align-items: center; gap: 8px;
-        }
-        .tattoo-header .tattoo-titulo .num {
-            background: var(--gradient-green); color: #000;
-            width: 24px; height: 24px; border-radius: 50%;
-            display: inline-flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 700;
-        }
-        .tattoo-remover {
-            background: rgba(220, 53, 69, 0.1);
-            border: 1px solid rgba(220, 53, 69, 0.3);
-            color: #dc3545; width: 32px; height: 32px;
-            border-radius: 8px; cursor: pointer; transition: all 0.3s;
-            display: flex; align-items: center; justify-content: center;
-        }
-        .tattoo-remover:hover { background: #dc3545; color: #fff; }
-        .tattoo-preview-box {
-            width: 100%; min-height: 150px;
-            border: 2px dashed var(--border-color);
+            display: inline-block;
+            cursor: zoom-in;
             border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(0, 0, 0, 0.3);
-            overflow: hidden; margin-top: 10px;
+            overflow: hidden;
             transition: all 0.3s;
         }
-        .tattoo-preview-box.tem-foto { border-style: solid; border-color: var(--text-primary); }
-        .tattoo-preview-box img { width: 100%; height: 100%; object-fit: cover; display: block; }
-        .tattoo-preview-box .placeholder {
-            text-align: center; color: rgba(0, 255, 136, 0.3); padding: 20px;
+        .ficha-foto-wrapper:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.25);
         }
-        .tattoo-preview-box .placeholder i {
-            font-size: 40px; margin-bottom: 10px; display: block;
+        .ficha-foto-wrapper::after {
+            content: '\f00e'; /* fa-search-plus */
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            bottom: 8px; right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: var(--text-primary);
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
         }
-        .tattoo-preview-box .placeholder small { font-size: 11px; }
-        .tattoo-botoes { display: flex; gap: 8px; margin-top: 10px; }
-        .btn-tattoo {
-            flex: 1; padding: 8px 12px; border-radius: 8px;
-            font-size: 12px; font-weight: 600; cursor: pointer;
-            transition: all 0.3s;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        .btn-tattoo.escolher { background: transparent; border: 1px solid var(--text-primary); color: var(--text-primary); }
-        .btn-tattoo.escolher:hover { background: rgba(0, 255, 136, 0.1); }
-        .btn-tattoo.remover { background: transparent; border: 1px solid #dc3545; color: #dc3545; }
-        .btn-tattoo.remover:hover { background: rgba(220, 53, 69, 0.1); }
-        .empty-tattoo {
-            text-align: center; padding: 30px 20px;
+        .ficha-foto-wrapper:hover::after { opacity: 1; }
+
+        .foto-label {
             color: rgba(0, 255, 136, 0.3);
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px dashed var(--border-color);
-            border-radius: 12px; margin-bottom: 15px;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 6px;
+            text-align: center;
         }
-        .empty-tattoo i { font-size: 32px; margin-bottom: 10px; display: block; }
-        .info-lista {
-            background: rgba(0, 255, 136, 0.03);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 10px 15px;
-            font-size: 12px;
-            color: rgba(0, 255, 136, 0.5);
-            display: flex; align-items: center; gap: 10px;
-            margin-bottom: 15px;
+
+        .foto-lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
         }
-        .info-lista i { color: var(--text-primary); }
-        .info-lista strong { color: var(--text-primary); }
-        .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
-        .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
-        .toast-container { position: fixed; top: 65px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; }
-        .toast-ai {
-            min-width: 320px; max-width: 420px; padding: 16px 20px;
-            border-radius: 12px; background: var(--bg-secondary);
-            border: 1px solid var(--border-color); color: var(--text-primary);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
-            display: flex; align-items: flex-start; gap: 12px;
-            animation: slideIn 0.3s ease; backdrop-filter: blur(20px);
+        .foto-lightbox.open { display: flex; }
+        .foto-lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+            border-radius: 12px;
+            border: 2px solid var(--text-primary);
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.3);
         }
-        .toast-ai.success { border-left: 4px solid var(--text-primary); }
-        .toast-ai.error { border-left: 4px solid #dc3545; }
-        .toast-ai.warning { border-left: 4px solid #ffc107; }
-        .toast-ai.info { border-left: 4px solid #0dcaf0; }
-        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
-        .toast-ai.success .toast-icon { color: var(--text-primary); }
-        .toast-ai.error .toast-icon { color: #dc3545; }
-        .toast-ai.warning .toast-icon { color: #ffc107; }
-        .toast-ai.info .toast-icon { color: #0dcaf0; }
-        .toast-ai .toast-content { flex: 1; }
-        .toast-ai .toast-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
-        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
-        .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; font-size: 14px; }
-        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
-        .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+        .foto-lightbox .fechar {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: transparent;
+            border: 1px solid var(--text-primary);
+            color: var(--text-primary);
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .foto-lightbox .fechar:hover {
+            background: rgba(0, 255, 136, 0.1);
+            transform: rotate(90deg);
+        }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
-            .main-content { margin-left: 0; width: 100vw; }
+            .main-content { margin-left: 0; }
             .sidebar-toggle { display: flex !important; }
             .user-info .name { display: none; }
         }
@@ -401,22 +519,32 @@
             .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
             .form-card { padding: 18px; }
             .btn-gold, .btn-outline-gold { width: 100%; }
-            .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
+            .ficha-foto, .ficha-foto-placeholder { width: 140px; height: 175px; }
+            .modal-body { padding: 15px; }
         }
+        @media (max-width: 480px) {
+            .main-content { padding: 60px 10px 10px; }
+            .top-actions { width: 100%; }
+            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; }
+            .foto-suspeito, .foto-placeholder { width: 40px; height: 48px; }
+        }
+
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
         ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
     </style>
 </head>
 <body>
+
     <header class="controls-bar">
         <div class="controls-left">
-            <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
-            <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
+            <button class="control-btn" onclick="window.history.back()" title="Voltar"><i class="fas fa-arrow-left"></i></button>
+            <button class="control-btn" onclick="window.history.forward()" title="Avançar"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
             <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
             <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
-            <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar"><i class="fas fa-times"></i></button>
         </div>
         <div class="controls-center">
             <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
@@ -433,30 +561,27 @@
             <small>SISTEMA POLICIAL INTELIGENTE</small>
         </div>
         <nav class="sidebar-menu">
-            <div class="menu-label">Navegacao</div>
+            <div class="menu-label">Navegação</div>
             <a class="menu-item" onclick="window.location.href='04-dashboard.html'"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a class="menu-item active" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
-            <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
-            <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
-            <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
+            <a class="menu-item active" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
+            <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatórios</a>
+            <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operações</a>
             <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
-            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
-            <div class="menu-label">Administracao</div>
-            <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
+            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operações</a>
+            <div class="menu-label">Administração</div>
+            <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuários <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
             <a class="menu-item" onclick="window.location.href='12-auditoria.html'"><i class="fas fa-clipboard-list"></i> Auditoria</a>
             <a class="menu-item" onclick="window.location.href='13-atividade-usuario.html'"><i class="fas fa-user-clock"></i> Atividade</a>
             <div class="menu-label">Sistema</div>
-            <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configuracoes</a>
+            <a class="menu-item" onclick="window.location.href='09-configuracoes.html'"><i class="fas fa-cog"></i> Configurações</a>
             <a class="menu-item" onclick="fazerLogout()"><i class="fas fa-sign-out-alt"></i> Sair</a>
         </nav>
         <div class="sidebar-footer">
             <div class="user-info-sidebar">
                 <div class="avatar" id="sidebarAvatar">AM</div>
-                <div>
-                    <div class="name" id="sidebarUserName">Carregando...</div>
-                    <div class="role" id="sidebarUserRole">Carregando...</div>
-                </div>
+                <div><div class="name" id="sidebarUserName">Carregando...</div><div class="role" id="sidebarUserRole">Carregando...</div></div>
             </div>
         </div>
     </aside>
@@ -466,935 +591,1441 @@
             <div class="d-flex align-items-center gap-3">
                 <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                 <div class="page-title">
-                    <h4><i class="fas fa-user-secret me-2"></i>Cadastro de Suspeito</h4>
-                    <small><i class="fas fa-lock me-1"></i> Dados protegidos por criptografia</small>
+                    <h4><i class="fas fa-search me-2"></i>Consulta de Suspeitos</h4>
+                    <small id="totalRegistrosInfo">Aguardando busca...</small>
                 </div>
             </div>
             <div class="top-actions">
-                <span class="badge"><i class="fas fa-database" style="color:#00ff88;"></i> Supabase</span>
-                <span class="badge"><i class="fas fa-shield-alt" style="color:#00ff88;"></i> LGPD Compliance</span>
+                <span class="badge" id="totalPresos"><i class="fas fa-user-check" style="color:#28a745;"></i> Presos: <span class="count">0</span></span>
+                <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate" style="color:#ffc107;"></i> Procurados: <span class="count">0</span></span>
+                <span class="badge" id="totalForagidos"><i class="fas fa-user-slash" style="color:#dc3545;"></i> Foragidos: <span class="count">0</span></span>
             </div>
         </header>
 
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-user-secret"></i>Dados do Suspeito</div>
+            <div class="card-title"><i class="fas fa-search"></i>Busca Avançada</div>
 
-            <form id="formSuspeito">
-                <div class="section-title"><i class="fas fa-id-card"></i>FOTO PRINCIPAL DE IDENTIFICACAO</div>
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <div style="text-align: center;">
-                            <div id="fotoPrincipalPreview" style="width: 200px; height: 250px; border: 2px dashed var(--border-color); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; background: rgba(0, 0, 0, 0.3); overflow: hidden; transition: all 0.3s;">
-                                <div id="fotoPrincipalPlaceholder" style="text-align: center; color: rgba(0, 255, 136, 0.3);">
-                                    <i class="fas fa-user-circle" style="font-size: 50px; margin-bottom: 10px; display: block;"></i>
-                                    <span style="font-size: 12px;">Foto Principal</span>
-                                </div>
-                                <img id="fotoPrincipalImg" src="" alt="Foto Principal" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-                            </div>
-                            <input type="file" id="fotoPrincipalInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
-                            <button type="button" class="btn-outline-gold" id="btnEscolherFotoPrincipal" style="padding: 8px 16px; font-size: 12px;"><i class="fas fa-camera"></i> ESCOLHER FOTO</button>
-                            <button type="button" class="btn-outline-gold" id="btnRemoverFotoPrincipal" style="padding: 8px 16px; font-size: 12px; display: none; margin-top: 5px;"><i class="fas fa-trash"></i> REMOVER</button>
-                            <small style="display: block; color: rgba(0, 255, 136, 0.2); font-size: 11px; margin-top: 10px;">JPG, PNG ou WebP - Max 5MB</small>
-                        </div>
-                    </div>
-                    <div class="col-md-9">
-                        <div class="row g-3">
-                            <div class="col-md-4"><label class="form-label">Data da Foto</label><input type="date" class="form-control" id="dataFotoPrincipal"></div>
-                            <div class="col-md-4"><label class="form-label">Fonte</label><select class="form-select" id="fonteFotoPrincipal"><option value="DOCUMENTO">Documento Oficial</option><option value="FOTO_POLICIAL">Foto Policial</option><option value="CAMERA_SEGURANCA">Camera de Seguranca</option><option value="REDES_SOCIAIS">Redes Sociais</option><option value="OUTRO">Outro</option></select></div>
-                            <div class="col-md-4"><label class="form-label">Observacoes</label><input type="text" class="form-control" id="observacoesFotoPrincipal" placeholder="Ex: Foto frontal"></div>
-                        </div>
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); color:rgba(0,255,136,0.2);"><i class="fas fa-search"></i></span>
+                        <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG...">
                     </div>
                 </div>
-
-                <div class="section-title"><i class="fas fa-id-card"></i>IDENTIFICACAO</div>
-                <div class="row g-3">
-                    <div class="col-md-6"><label class="form-label">Nome Completo *</label><input type="text" class="form-control" id="nomeCompleto" placeholder="Nome completo do suspeito" required></div>
-                    <div class="col-md-3"><label class="form-label">Apelido</label><input type="text" class="form-control" id="apelido" placeholder="Apelido / vulgo"></div>
-                    <div class="col-md-3"><label class="form-label">CPF</label><input type="text" class="form-control" id="cpf" placeholder="000.000.000-00" maxlength="14"></div>
-                    <div class="col-md-4"><label class="form-label">RG</label><input type="text" class="form-control" id="rg" placeholder="Numero do RG"></div>
-                    <div class="col-md-4"><label class="form-label">Orgao Expedidor</label><input type="text" class="form-control" id="orgaoExpedidor" placeholder="Ex: SSP/BA"></div>
-                    <div class="col-md-4"><label class="form-label">Data de Nascimento</label><input type="date" class="form-control" id="dataNascimento"></div>
+                <div class="col-md-4">
+                    <button class="btn-gold w-100" onclick="realizarBusca()"><i class="fas fa-arrow-right me-2"></i>BUSCAR</button>
                 </div>
-
-                <div class="section-title"><i class="fas fa-user"></i>DADOS PESSOAIS</div>
-                <div class="row g-3">
-                    <div class="col-md-3"><label class="form-label">Sexo</label><select class="form-select" id="sexo"><option value="">Selecione...</option><option value="M">Masculino</option><option value="F">Feminino</option><option value="O">Outro</option></select></div>
-                    <div class="col-md-3"><label class="form-label">Raca/Cor</label><input type="text" class="form-control" id="raca" placeholder="Ex: Parda"></div>
-                    <div class="col-md-3"><label class="form-label">Naturalidade</label><input type="text" class="form-control" id="naturalidade" placeholder="Cidade/UF"></div>
-                    <div class="col-md-3"><label class="form-label">Nacionalidade</label><input type="text" class="form-control" id="nacionalidade" placeholder="Ex: Brasileira" value="Brasileira"></div>
-                    <div class="col-md-6"><label class="form-label">Nome do Pai</label><input type="text" class="form-control" id="nomePai" placeholder="Nome completo do pai"></div>
-                    <div class="col-md-6"><label class="form-label">Nome da Mae</label><input type="text" class="form-control" id="nomeMae" placeholder="Nome completo da mae"></div>
-                </div>
-
-                <div class="section-title"><i class="fas fa-camera"></i>FOTO SECUNDARIA</div>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div style="text-align: center;">
-                            <div id="fotoSecundariaPreview" style="width: 200px; height: 250px; border: 2px dashed var(--border-color); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px; background: rgba(0, 0, 0, 0.3); overflow: hidden; transition: all 0.3s;">
-                                <div id="fotoSecundariaPlaceholder" style="text-align: center; color: rgba(0, 255, 136, 0.3);">
-                                    <i class="fas fa-camera" style="font-size: 40px; margin-bottom: 10px; display: block;"></i>
-                                    <span style="font-size: 12px;">Nenhuma foto</span>
-                                </div>
-                                <img id="fotoSecundariaImg" src="" alt="Foto Secundaria" style="display: none; width: 100%; height: 100%; object-fit: cover;">
-                            </div>
-                            <input type="file" id="fotoSecundariaInput" accept="image/jpeg,image/png,image/webp" style="display: none;">
-                            <button type="button" class="btn-outline-gold" id="btnEscolherFotoSecundaria" style="padding: 8px 16px; font-size: 12px;"><i class="fas fa-upload"></i> ESCOLHER FOTO</button>
-                            <button type="button" class="btn-outline-gold" id="btnRemoverFotoSecundaria" style="padding: 8px 16px; font-size: 12px; display: none; margin-top: 5px;"><i class="fas fa-trash"></i> REMOVER</button>
-                        </div>
-                    </div>
-                    <div class="col-md-8">
-                        <div class="row g-3">
-                            <div class="col-md-6"><label class="form-label">Data da Foto</label><input type="date" class="form-control" id="dataFotoSecundaria"></div>
-                            <div class="col-md-6"><label class="form-label">Fonte</label><select class="form-select" id="fonteFotoSecundaria"><option value="DOCUMENTO">Documento Oficial</option><option value="FOTO_POLICIAL">Foto Policial</option><option value="CAMERA_SEGURANCA">Camera de Seguranca</option><option value="REDES_SOCIAIS">Redes Sociais</option><option value="OUTRO">Outro</option></select></div>
-                            <div class="col-md-12"><label class="form-label">Observacoes sobre a Foto</label><textarea class="form-control" id="observacoesFotoSecundaria" rows="3" placeholder="Ex: Foto de perfil..."></textarea></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="section-title"><i class="fas fa-map-marker-alt"></i>ENDERECO</div>
-                <div class="row g-3">
-                    <div class="col-md-2"><label class="form-label">CEP</label><input type="text" class="form-control" id="cep" placeholder="00000-000" maxlength="9"></div>
-                    <div class="col-md-6"><label class="form-label">Logradouro</label><input type="text" class="form-control" id="logradouro" placeholder="Rua, Avenida..."></div>
-                    <div class="col-md-2"><label class="form-label">Numero</label><input type="text" class="form-control" id="numero" placeholder="N"></div>
-                    <div class="col-md-2"><label class="form-label">Complemento</label><input type="text" class="form-control" id="complemento" placeholder="Apto"></div>
-                    <div class="col-md-4"><label class="form-label">Bairro</label><input type="text" class="form-control" id="bairro" placeholder="Bairro"></div>
-                    <div class="col-md-4"><label class="form-label">Cidade</label><input type="text" class="form-control" id="cidade" placeholder="Cidade"></div>
-                    <div class="col-md-2"><label class="form-label">UF</label><input type="text" class="form-control" id="uf" placeholder="BA" maxlength="2"></div>
-                    <div class="col-md-2"><label class="form-label">Pais</label><input type="text" class="form-control" id="pais" placeholder="Brasil" value="Brasil"></div>
-                </div>
-
-                <div class="section-title"><i class="fas fa-globe-americas"></i>COORDENADAS GEOGRAFICAS</div>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Latitude</label>
-                        <input type="number" step="0.00000001" class="form-control" id="latitude" placeholder="-12.9714">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label">Longitude</label>
-                        <input type="number" step="0.00000001" class="form-control" id="longitude" placeholder="-38.5014">
-                    </div>
-                    <div class="col-md-4 d-flex align-items-end">
-                        <button type="button" class="btn-outline-gold w-100" onclick="geocodificarEnderecoSuspeito(event)">
-                            <i class="fas fa-search-location me-2"></i>BUSCAR PELO ENDERECO
-                        </button>
-                    </div>
-                    <div class="col-md-12">
-                        <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
-                            <i class="fas fa-info-circle me-1"></i>
-                            As coordenadas sao usadas para plotar o suspeito no <strong>Mapa de Operacoes</strong>.
-                        </small>
-                    </div>
-                </div>
-
-                <div class="section-title"><i class="fas fa-fingerprint"></i>CARACTERISTICAS FISICAS</div>
-                <div class="row g-3">
-                    <div class="col-md-2"><label class="form-label">Altura (m)</label><input type="number" step="0.01" class="form-control" id="altura" placeholder="1.75"></div>
-                    <div class="col-md-2"><label class="form-label">Peso (kg)</label><input type="number" step="0.1" class="form-control" id="peso" placeholder="80.5"></div>
-                    <div class="col-md-2"><label class="form-label">Cor dos Olhos</label><input type="text" class="form-control" id="corOlhos" placeholder="Castanho"></div>
-                    <div class="col-md-3"><label class="form-label">Cor do Cabelo</label><input type="text" class="form-control" id="corCabelo" placeholder="Preto"></div>
-                    <div class="col-md-3"><label class="form-label">Cor da Pele</label><input type="text" class="form-control" id="corPele" placeholder="Parda"></div>
-                </div>
-
-                <div class="section-title"><i class="fas fa-notes-medical"></i>CARACTERISTICAS ESPECIFICAS</div>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label">Portador de Deficiencia?</label>
-                        <div class="d-flex gap-4 align-items-center" style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="portadorDeficiencia">
-                                <label class="form-check-label" for="portadorDeficiencia">
-                                    <i class="fas fa-wheelchair"></i> Sim, portador
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-8" id="deficienciaDetalhes" style="display:none;">
-                        <label class="form-label">Qual Deficiencia?</label>
-                        <input type="text" class="form-control" id="descricaoDeficiencia" placeholder="Ex: Cadeirante, Visual, Auditiva...">
-                    </div>
-                </div>
-                <div class="row g-3 mt-2">
-                    <div class="col-md-6">
-                        <label class="form-label"><i class="fas fa-band-aid me-1"></i> Cicatrizes</label>
-                        <textarea class="form-control" id="cicatrizes" rows="4" placeholder="Descreva cicatrizes..." style="min-height: 100px;"></textarea>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label"><i class="fas fa-search me-1"></i> Sinais Particulares</label>
-                        <textarea class="form-control" id="sinaisParticulares" rows="4" placeholder="Descreva sinais..." style="min-height: 100px;"></textarea>
-                    </div>
-                </div>
-
-                <div class="section-title"><i class="fas fa-palette"></i>TATUAGENS</div>
-                <div class="info-lista">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Adicione quantas tatuagens o suspeito possuir.</span>
-                </div>
-                <div id="tatuagensContainer"></div>
-                <button type="button" class="btn-outline-gold w-100" onclick="adicionarTatuagem()" style="padding: 12px;">
-                    <i class="fas fa-plus-circle me-2"></i>ADICIONAR TATUAGEM
-                </button>
-
-                <div class="section-title"><i class="fas fa-exclamation-triangle"></i>INFORMACOES CRIMINAIS</div>
-                <div class="row g-3">
-                    <div class="col-md-3"><label class="form-label">Status Atual *</label><select class="form-select" id="statusAtual" required><option value="">Selecione...</option><option value="INVESTIGADO">Investigado</option><option value="PRESO">Preso</option><option value="FORAGIDO">Foragido</option><option value="PROCURADO">Procurado</option><option value="CONDICIONAL">Condicional</option><option value="LIBERADO">Liberado</option></select></div>
-                    <div class="col-md-3"><label class="form-label">Nivel de Periculosidade</label><select class="form-select" id="nivelPericulosidade"><option value="">Selecione...</option><option value="BAIXO">Baixo</option><option value="MEDIO">Medio</option><option value="ALTO">Alto</option><option value="EXTREMO">Extremo</option></select></div>
-                    <div class="col-md-3"><label class="form-label">Organizacao Criminal</label><input type="text" class="form-control" id="organizacaoCriminal" placeholder="Nome da faccao"></div>
-                    <div class="col-md-3">
-                        <label class="form-label">Opcoes</label>
-                        <div class="d-flex flex-column gap-2" style="padding-top: 5px;">
-                            <div class="form-check"><input class="form-check-input" type="checkbox" id="envolvimentoDrogas"><label class="form-check-label" for="envolvimentoDrogas">Envolvimento com Drogas</label></div>
-                            <div class="form-check"><input class="form-check-input" type="checkbox" id="posseArma"><label class="form-check-label" for="posseArma">Posse de Arma</label></div>
-                        </div>
-                    </div>
-                    <div class="col-md-12"><label class="form-label">Modus Operandi</label><textarea class="form-control" id="modusOperandi" rows="2" placeholder="Como o suspeito costuma agir"></textarea></div>
-                    <div class="col-md-12"><label class="form-label">Observacoes</label><textarea class="form-control" id="observacoes" rows="3" placeholder="Observacoes adicionais"></textarea></div>
-                </div>
-
-                <div class="row mt-4">
-                    <div class="col-md-12 text-end">
-                        <button type="reset" class="btn-outline-gold me-2" onclick="setTimeout(resetFormularioCompleto, 0)"><i class="fas fa-times me-2"></i>CANCELAR</button>
-                        <button type="submit" class="btn-gold" id="btnCadastrar"><i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <div class="form-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <div class="card-title mb-0" style="border:none; padding:0;"><i class="fas fa-list"></i>Suspeitos Cadastrados</div>
-                <button class="btn-outline-gold" onclick="carregarSuspeitos()" style="padding:6px 16px; font-size:12px;"><i class="fas fa-sync-alt me-2"></i>ATUALIZAR</button>
             </div>
-            <div id="infoLista"></div>
-            <div id="listaSuspeitos">
-                <div class="empty-state">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    Carregando suspeitos...
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" id="filtroStatus">
+                        <option value="">Todos</option>
+                        <option value="PRESO">Preso</option>
+                        <option value="PROCURADO">Procurado</option>
+                        <option value="FORAGIDO">Foragido</option>
+                        <option value="INVESTIGADO">Investigado</option>
+                        <option value="CONDICIONAL">Condicional</option>
+                        <option value="LIBERADO">Liberado</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Periculosidade</label>
+                    <select class="form-select" id="filtroPericulosidade">
+                        <option value="">Todos</option>
+                        <option value="BAIXO">Baixo</option>
+                        <option value="MEDIO">Médio</option>
+                        <option value="ALTO">Alto</option>
+                        <option value="EXTREMO">Extremo</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Data Início</label>
+                    <input type="date" class="form-control" id="filtroDataInicio">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Data Fim</label>
+                    <input type="date" class="form-control" id="filtroDataFim">
+                </div>
+            </div>
+
+            <div id="resultadosContainer">
+                <div class="table-container">
+                    <table class="table-custom" id="tabelaResultados">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">Foto</th>
+                                <th>Nome</th>
+                                <th>CPF</th>
+                                <th>Status</th>
+                                <th>Periculosidade</th>
+                                <th>Cidade</th>
+                                <th style="text-align:center;">Mandado</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultadosConsulta">
+                            <tr>
+                                <td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                                    <i class="fas fa-search" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
+                                    <div style="font-size: 14px; margin-bottom: 6px;">Faça uma busca para ver os resultados</div>
+                                    <small style="font-size: 11px; color: rgba(0, 255, 136, 0.2);">
+                                        Digite um nome/CPF/RG <strong>ou</strong> selecione um filtro e clique em <strong>BUSCAR</strong>
+                                    </small>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-4">
+                    <small id="infoPagina" style="color: rgba(0, 255, 136, 0.3);"></small>
+                    <div id="paginacaoControles">
+                        <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior" style="display:none;"><i class="fas fa-chevron-left"></i></button>
+                        <span id="numerosPaginas"></span>
+                        <button class="btn-icon ms-1" onclick="proximaPagina()" id="btnProximo" style="display:none;"><i class="fas fa-chevron-right"></i></button>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- ============================================
-         [v3.5.0] MODAL DE DETALHES DO SUSPEITO
-         ============================================ -->
-    <div class="modal-custom" id="modalDetalhesSuspeito">
-        <div class="modal-custom-content modal-lg">
-            <div class="modal-custom-header">
-                <h5><i class="fas fa-user-secret me-2"></i>Detalhes do Suspeito</h5>
-                <button class="btn-close-modal" onclick="fecharDetalhesSuspeito()"><i class="fas fa-times"></i></button>
+    <!-- MODAL FICHA -->
+    <div class="modal-ficha" id="modalFicha">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5><i class="fas fa-user-secret me-2"></i>Ficha do Suspeito</h5>
+                <button class="btn-icon" onclick="fecharFicha()"><i class="fas fa-times"></i></button>
             </div>
-            <div class="modal-custom-body" id="modalDetalhesSuspeitoBody"></div>
-            <div class="modal-custom-footer">
-                <button class="btn-outline-gold" onclick="fecharDetalhesSuspeito()"><i class="fas fa-times me-2"></i>FECHAR</button>
+            <div class="modal-body" id="modalFichaBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline-gold" onclick="fecharFicha()"><i class="fas fa-times me-2"></i>FECHAR</button>
+                <button class="btn-gold" onclick="imprimirFichaAtual()"><i class="fas fa-print me-2"></i>IMPRIMIR</button>
             </div>
         </div>
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- MODAL EDIÇÃO -->
+    <div class="modal-edicao" id="modalEdicao">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5><i class="fas fa-pencil-alt me-2"></i>Editar Suspeito</h5>
+                <button class="btn-icon" onclick="fecharEdicao()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalEdicaoBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados...</div>
+            </div>
+        </div>
+    </div>
 
+    <!-- MODAL HISTÓRICO -->
+    <div class="modal-historico" id="modalHistorico">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5><i class="fas fa-history me-2"></i>Histórico de Alterações</h5>
+                <button class="btn-icon" onclick="fecharHistorico()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalHistoricoBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL FOTOS -->
+    <div class="modal-fotos" id="modalFotos">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5><i class="fas fa-images me-2"></i>Galeria de Fotos</h5>
+                <button class="btn-icon" onclick="fecharFotos()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalFotosBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         [v2.9.0] MODAL DE MANDADOS VINCULADOS
+         ============================================================ -->
+    <div class="modal-mandados" id="modalMandados">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5><i class="fas fa-gavel me-2"></i>Mandados Vinculados</h5>
+                <button class="btn-icon" onclick="fecharMandados()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalMandadosBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando mandados...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline-gold" onclick="fecharMandados()"><i class="fas fa-times me-2"></i>FECHAR</button>
+                <button class="btn-gold" onclick="abrirTelaMandados()"><i class="fas fa-external-link-alt me-2"></i>IR PARA MANDADOS</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         [v2.9.2] LIGHTBOX DE FOTO DO SUSPEITO
+         ============================================================ -->
+    <div class="foto-lightbox" id="fotoLightbox" onclick="fecharLightbox(event)">
+        <button class="fechar" onclick="fecharLightbox(event)"><i class="fas fa-times"></i></button>
+        <img id="fotoLightboxImg" src="" alt="Foto do suspeito" />
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
-        const LIMITE_LISTA = 10;
-        const LOCALIZACOES_TATUAGEM = [
-            'Rosto', 'Pescoco', 'Ombro direito', 'Ombro esquerdo',
-            'Braco direito', 'Braco esquerdo', 'Antebraco direito', 'Antebraco esquerdo',
-            'Mao direita', 'Mao esquerda', 'Peito', 'Costas', 'Abdomen',
-            'Lombar', 'Nadega direita', 'Nadega esquerda',
-            'Coxa direita', 'Coxa esquerda', 'Panturrilha direita', 'Panturrilha esquerda',
-            'Pe direito', 'Pe esquerdo', 'Tornozelo direito', 'Tornozelo esquerdo',
-            'Outro'
-        ];
+        // ============================================================
+        // Supabase client (com fallback)
+        // ============================================================
+        const BUCKET_FOTOS = 'fotos-suspeitos';
+        const URL_EXPIRACAO_S = 3600;
 
-        let arquivoFotoPrincipal = null;
-        let arquivoFotoSecundaria = null;
-        let tatuagens = [];
-
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Cadastro de Suspeito v3.5.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
-
-            const usuario = AIDEPOM.getUsuario();
-            if (!usuario) {
-                showToast('error', 'Sessao expirada', 'Faca login novamente.');
-                setTimeout(() => window.location.href = '02-login.html', 1500);
-                return;
+        const sb = (function() {
+            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) {
+                console.log('✅ [07-consulta] Usando window.supabaseClient');
+                return window.supabaseClient;
             }
-
-            atualizarDadosUsuario(usuario);
-            carregarSuspeitos();
-
-            try {
-                configurarUploadFoto('fotoPrincipal', (f) => { arquivoFotoPrincipal = f; });
-                configurarUploadFoto('fotoSecundaria', (f) => { arquivoFotoSecundaria = f; });
-            } catch (err) {
-                console.error('❌ Erro ao configurar uploads:', err);
+            if (typeof window.supabase !== 'undefined' && window.supabase?.from) {
+                console.log('✅ [07-consulta] Usando window.supabase');
+                return window.supabase;
             }
+            console.warn('⚠️ [07-consulta] Criando cliente Supabase próprio');
+            return window.supabase.createClient(
+                'https://szkgaqouivsvlyujfvmz.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc'
+            );
+        })();
 
-            document.getElementById('portadorDeficiencia').addEventListener('change', function() {
-                document.getElementById('deficienciaDetalhes').style.display = this.checked ? 'block' : 'none';
-                if (!this.checked) {
-                    document.getElementById('descricaoDeficiencia').value = '';
-                }
-            });
-
-            renderizarTatuagens();
-        });
-
-        function atualizarDadosUsuario(usuario) {
-            const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
-            const nome = usuario.nome_completo || 'Usuario';
-            const perfil = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
-            document.getElementById('topAvatar').textContent = inicial;
-            document.getElementById('topUserName').textContent = nome;
-            document.getElementById('sidebarAvatar').textContent = inicial;
-            document.getElementById('sidebarUserName').textContent = nome;
-            document.getElementById('sidebarUserRole').textContent = perfil;
-        }
-
-        // [v3.4.0] GEOCODIFICACAO
-        async function geocodificarEnderecoSuspeito(event) {
-            const btn = event ? event.target : null;
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
-            }
-            try {
-                const endereco = [
-                    document.getElementById('logradouro').value.trim(),
-                    document.getElementById('numero').value.trim(),
-                    document.getElementById('bairro').value.trim(),
-                    document.getElementById('cidade').value.trim(),
-                    document.getElementById('uf').value.trim(),
-                    document.getElementById('cep').value.trim(),
-                    'Brasil'
-                ].filter(Boolean).join(', ');
-
-                if (endereco.length < 5) throw new Error('Preencha o endereco primeiro.');
-
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`;
-                const resp = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
-                const resultado = await resp.json();
-
-                if (!resultado || resultado.length === 0) throw new Error('Endereco nao encontrado.');
-
-                document.getElementById('latitude').value = parseFloat(resultado[0].lat).toFixed(8);
-                document.getElementById('longitude').value = parseFloat(resultado[0].lon).toFixed(8);
-                showToast('success', 'Endereco encontrado!', 'Coordenadas preenchidas automaticamente.');
-            } catch (e) {
-                showToast('error', 'Erro ao buscar', e.message);
-            } finally {
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-search-location me-2"></i>BUSCAR PELO ENDERECO';
-                }
-            }
-        }
-
-        function adicionarTatuagem() {
-            tatuagens.push({ localizacao: '', descricao: '', arquivo: null, fotoUrl: null, previewUrl: null });
-            renderizarTatuagens();
-        }
-
-        function removerTatuagem(index) {
-            if (!confirm('Remover esta tatuagem?')) return;
-            tatuagens.splice(index, 1);
-            renderizarTatuagens();
-        }
-
-        function renderizarTatuagens() {
-            const container = document.getElementById('tatuagensContainer');
-            if (tatuagens.length === 0) {
-                container.innerHTML = `<div class="empty-tattoo"><i class="fas fa-palette"></i><div>Nenhuma tatuagem cadastrada</div><small style="opacity: 0.6;">Clique em "ADICIONAR TATUAGEM" abaixo</small></div>`;
-                return;
-            }
-            let html = '';
-            tatuagens.forEach((t, i) => {
-                const previewHTML = t.previewUrl
-                    ? `<img src="${t.previewUrl}" alt="Tatuagem ${i+1}">`
-                    : `<div class="placeholder"><i class="fas fa-image"></i><small>Sem foto</small></div>`;
-                html += `
-                    <div class="tattoo-card">
-                        <div class="tattoo-header">
-                            <div class="tattoo-titulo"><span class="num">${i+1}</span>TATUAGEM #${i+1}</div>
-                            <button type="button" class="tattoo-remover" onclick="removerTatuagem(${i})"><i class="fas fa-trash"></i></button>
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-md-5">
-                                <label class="form-label">Localizacao no Corpo *</label>
-                                <select class="form-select" onchange="atualizarTatuagem(${i}, 'localizacao', this.value)">
-                                    <option value="">Selecione...</option>
-                                    ${LOCALIZACOES_TATUAGEM.map(loc => `<option value="${loc}" ${t.localizacao === loc ? 'selected' : ''}>${loc}</option>`).join('')}
-                                </select>
-                            </div>
-                            <div class="col-md-7">
-                                <label class="form-label">Descricao</label>
-                                <input type="text" class="form-control" placeholder="Descreva a tatuagem" value="${t.descricao || ''}" oninput="atualizarTatuagem(${i}, 'descricao', this.value)">
-                            </div>
-                            <div class="col-md-12">
-                                <label class="form-label">Foto da Tatuagem</label>
-                                <input type="file" id="tattooInput${i}" accept="image/jpeg,image/png,image/webp" style="display: none;" onchange="selecionarFotoTatuagem(${i}, this)">
-                                <div class="tattoo-preview-box ${t.previewUrl ? 'tem-foto' : ''}" id="tattooPreview${i}">
-                                    ${previewHTML}
-                                </div>
-                                <div class="tattoo-botoes">
-                                    <button type="button" class="btn-tattoo escolher" onclick="document.getElementById('tattooInput${i}').click()">
-                                        <i class="fas fa-camera"></i> ESCOLHER FOTO
-                                    </button>
-                                    ${t.previewUrl ? `<button type="button" class="btn-tattoo remover" onclick="removerFotoTatuagem(${i})"><i class="fas fa-trash"></i> REMOVER FOTO</button>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-            container.innerHTML = html;
-        }
-
-        function atualizarTatuagem(index, campo, valor) {
-            if (tatuagens[index]) tatuagens[index][campo] = valor;
-        }
-
-        function selecionarFotoTatuagem(index, input) {
-            const file = input.files[0];
-            if (!file) return;
-            if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                showToast('error', 'Formato invalido', 'Use JPG, PNG ou WebP.');
-                input.value = '';
-                return;
-            }
-            if (file.size > 5 * 1024 * 1024) {
-                showToast('error', 'Arquivo muito grande', 'Maximo 5MB.');
-                input.value = '';
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                tatuagens[index].arquivo = file;
-                tatuagens[index].previewUrl = e.target.result;
-                renderizarTatuagens();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        function removerFotoTatuagem(index) {
-            if (!tatuagens[index]) return;
-            tatuagens[index].arquivo = null;
-            tatuagens[index].previewUrl = null;
-            tatuagens[index].fotoUrl = null;
-            renderizarTatuagens();
-        }
-
-        // ============================================
-        // [v3.5.0] CARREGAR SUSPEITOS (com botão Ver)
-        // ============================================
-        async function carregarSuspeitos() {
-            const container = document.getElementById('listaSuspeitos');
-            const infoContainer = document.getElementById('infoLista');
-            if (!container) return;
-            container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando suspeitos...</div>';
-            infoContainer.innerHTML = '';
-            try {
-                const { count: totalGeral } = await window.supabaseClient
-                    .from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false);
-                const { data, error } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('id_suspeito, nome_completo, apelido, cpf, status_atual, nivel_periculosidade, latitude, longitude')
-                    .eq('deletado', false)
-                    .order('id_suspeito', { ascending: false })
-                    .limit(LIMITE_LISTA);
-                if (error || !data || data.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><i class="fas fa-user-secret"></i>Nenhum suspeito cadastrado</div>';
-                    return;
-                }
-                if (totalGeral !== null && totalGeral !== undefined) {
-                    infoContainer.innerHTML = totalGeral > LIMITE_LISTA
-                        ? `<div class="info-lista"><i class="fas fa-info-circle"></i><span>Exibindo os <strong>${data.length}</strong> ultimos de <strong>${totalGeral}</strong> suspeitos.</span></div>`
-                        : `<div class="info-lista"><i class="fas fa-check-circle"></i><span>Exibindo <strong>${data.length}</strong> de <strong>${totalGeral}</strong> suspeitos.</span></div>`;
-                }
-                let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
-                html += '<th>ID</th><th>Nome</th><th>Apelido</th><th>CPF</th><th>Status</th><th>GPS</th><th>Ações</th>';
-                html += '</tr></thead><tbody>';
-                data.forEach(s => {
-                    html += '<tr>';
-                    html += '<td><strong style="color:var(--text-primary);">#' + s.id_suspeito + '</strong></td>';
-                    html += '<td>' + (s.nome_completo || '-') + '</td>';
-                    html += '<td>' + (s.apelido || '-') + '</td>';
-                    html += '<td>' + (s.cpf || '-') + '</td>';
-                    html += '<td>' + (s.status_atual || '-') + '</td>';
-                    html += '<td>' + (s.latitude && s.longitude ? '<i class="fas fa-map-marker-alt" style="color:#00ff88;"></i>' : '<i class="fas fa-times" style="color:#dc3545;"></i>') + '</td>';
-                    html += '<td><button class="btn-icon" onclick="verDetalhesSuspeito(' + s.id_suspeito + ')" title="Ver detalhes"><i class="fas fa-eye"></i></button></td>';
-                    html += '</tr>';
-                });
-                html += '</tbody></table></div>';
-                container.innerHTML = html;
-            } catch (error) {
-                console.error('❌ Erro:', error);
-                container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar suspeitos</div>';
-            }
-        }
-
-        // ============================================
-        // [v3.5.0] MODAL DE DETALHES
-        // ============================================
-        async function verDetalhesSuspeito(id) {
-            const modal = document.getElementById('modalDetalhesSuspeito');
-            const body = document.getElementById('modalDetalhesSuspeitoBody');
-            modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
-
-            try {
-                const { data: s, error } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('*')
-                    .eq('id_suspeito', id)
-                    .maybeSingle();
-
-                if (error) throw error;
-                if (!s) throw new Error('Suspeito nao encontrado');
-
-                const enderecoLinha = [s.logradouro, s.numero, s.complemento, s.bairro, s.cidade, s.uf, s.cep].filter(Boolean).join(', ');
-                const tatuagensLista = Array.isArray(s.tatuagens) ? s.tatuagens : [];
-
-                body.innerHTML = `
-                    <div class="row g-3">
-                        <div class="col-md-12">
-                            <div class="detalhe-campo"><span class="label">ID</span><span class="valor"><strong>#${s.id_suspeito}</strong></span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor">${s.nome_completo || '-'}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Orgao Expedidor</span><span class="valor">${s.orgao_expedidor || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Data de Nascimento</span><span class="valor">${s.data_nascimento ? s.data_nascimento.split('-').reverse().join('/') : '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Sexo</span><span class="valor">${s.sexo || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Raca/Cor</span><span class="valor">${s.raca || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Naturalidade</span><span class="valor">${s.naturalidade || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Nacionalidade</span><span class="valor">${s.nacionalidade || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Nome do Pai</span><span class="valor">${s.nome_pai || '-'}</span></div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="detalhe-campo"><span class="label">Nome da Mae</span><span class="valor">${s.nome_mae || '-'}</span></div>
-                        </div>
-
-                        <div class="col-md-12">
-                            <h6 style="color:#00ff88;font-weight:700;margin:20px 0 10px;border-bottom:1px solid var(--border-color);padding-bottom:8px;">
-                                <i class="fas fa-map-marker-alt"></i> ENDERECO
-                            </h6>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="detalhe-campo"><span class="label">Endereco Completo</span><span class="valor">${enderecoLinha || '-'}</span></div>
-                        </div>
-                        ${s.latitude && s.longitude ? `
-                        <div class="col-md-12">
-                            <div class="detalhe-campo"><span class="label">Coordenadas (GPS)</span><span class="valor"><i class="fas fa-map-marker-alt" style="color:#00ff88;"></i> ${s.latitude}, ${s.longitude}</span></div>
-                        </div>
-                        ` : ''}
-
-                        <div class="col-md-12">
-                            <h6 style="color:#00ff88;font-weight:700;margin:20px 0 10px;border-bottom:1px solid var(--border-color);padding-bottom:8px;">
-                                <i class="fas fa-fingerprint"></i> CARACTERISTICAS FISICAS
-                            </h6>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Altura</span><span class="valor">${s.altura ? s.altura + ' m' : '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Peso</span><span class="valor">${s.peso ? s.peso + ' kg' : '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Cor dos Olhos</span><span class="valor">${s.cor_olhos || '-'}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Cor do Cabelo</span><span class="valor">${s.cor_cabelo || '-'}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Cor da Pele</span><span class="valor">${s.cor_pele || '-'}</span></div>
-                        </div>
-
-                        ${s.portador_deficiencia || s.descricao_deficiencia || s.cicatrizes || s.sinais_particulares ? `
-                        <div class="col-md-12">
-                            <h6 style="color:#00ff88;font-weight:700;margin:20px 0 10px;border-bottom:1px solid var(--border-color);padding-bottom:8px;">
-                                <i class="fas fa-notes-medical"></i> CARACTERISTICAS ESPECIFICAS
-                            </h6>
-                        </div>
-                        ${s.portador_deficiencia ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Portador de Deficiencia</span><span class="valor"><i class="fas fa-wheelchair"></i> Sim — ${s.descricao_deficiencia || 'nao especificado'}</span></div></div>` : ''}
-                        ${s.cicatrizes ? `<div class="col-md-6"><div class="detalhe-campo"><span class="label">Cicatrizes</span><span class="valor">${s.cicatrizes}</span></div></div>` : ''}
-                        ${s.sinais_particulares ? `<div class="col-md-6"><div class="detalhe-campo"><span class="label">Sinais Particulares</span><span class="valor">${s.sinais_particulares}</span></div></div>` : ''}
-                        ` : ''}
-
-                        ${tatuagensLista.length > 0 ? `
-                        <div class="col-md-12">
-                            <h6 style="color:#00ff88;font-weight:700;margin:20px 0 10px;border-bottom:1px solid var(--border-color);padding-bottom:8px;">
-                                <i class="fas fa-palette"></i> TATUAGENS (${tatuagensLista.length})
-                            </h6>
-                            ${tatuagensLista.map((t, i) => `
-                                <div style="background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:10px;padding:12px;margin-bottom:8px;">
-                                    <div style="color:#00ff88;font-weight:700;font-size:12px;margin-bottom:4px;">TATUAGEM #${i+1}</div>
-                                    <div style="font-size:12px;color:rgba(0,255,136,0.6);">
-                                        <strong style="color:rgba(0,255,136,0.4);">Localizacao:</strong> ${t.localizacao || '-'} 
-                                        ${t.descricao ? ' — <strong style="color:rgba(0,255,136,0.4);">Descricao:</strong> ' + t.descricao : ''}
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                        ` : ''}
-
-                        <div class="col-md-12">
-                            <h6 style="color:#00ff88;font-weight:700;margin:20px 0 10px;border-bottom:1px solid var(--border-color);padding-bottom:8px;">
-                                <i class="fas fa-exclamation-triangle"></i> INFORMACOES CRIMINAIS
-                            </h6>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Status Atual</span><span class="valor"><span class="badge-status-detalhe">${s.status_atual || '-'}</span></span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Nivel de Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="detalhe-campo"><span class="label">Organizacao Criminal</span><span class="valor">${s.organizacao_criminal || '-'}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Envolvimento com Drogas</span><span class="valor">${s.envolvimento_drogas ? '✔ Sim' : '— Nao'}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Posse de Arma</span><span class="valor">${s.posse_arma ? '✔ Sim' : '— Nao'}</span></div>
-                        </div>
-                        ${s.modus_operandi ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Modus Operandi</span><span class="valor">${s.modus_operandi}</span></div></div>` : ''}
-                        ${s.observacoes ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Observacoes</span><span class="valor">${s.observacoes}</span></div></div>` : ''}
-                    </div>
-                `;
-            } catch (error) {
-                console.error('❌ Erro:', error);
-                body.innerHTML = `<div class="text-center py-4" style="color:#dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
-            }
-        }
-
-        function fecharDetalhesSuspeito() {
-            document.getElementById('modalDetalhesSuspeito').classList.remove('open');
-        }
-
-        // Fecha modal com ESC
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') fecharDetalhesSuspeito();
-        });
-
-        function configurarUploadFoto(prefixo, setArquivo) {
-            const input = document.getElementById(prefixo + 'Input');
-            const preview = document.getElementById(prefixo + 'Preview');
-            const placeholder = document.getElementById(prefixo + 'Placeholder');
-            const img = document.getElementById(prefixo + 'Img');
-            const btnEscolher = document.getElementById('btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
-            const btnRemover = document.getElementById('btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
-            if (!input || !btnEscolher) return;
-            btnEscolher.addEventListener('click', () => input.click());
-            input.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                    showToast('error', 'Formato invalido', 'Use JPG, PNG ou WebP.'); return;
-                }
-                if (file.size > 5 * 1024 * 1024) {
-                    showToast('error', 'Arquivo muito grande', 'Maximo 5MB.'); return;
-                }
-                setArquivo(file);
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    img.src = event.target.result;
-                    img.style.display = 'block';
-                    placeholder.style.display = 'none';
-                    preview.style.borderStyle = 'solid';
-                    preview.style.borderColor = 'var(--text-primary)';
-                    btnRemover.style.display = 'inline-block';
-                    btnEscolher.innerHTML = '<i class="fas fa-sync-alt"></i> TROCAR';
-                };
-                reader.readAsDataURL(file);
-            });
-            btnRemover.addEventListener('click', function() {
-                setArquivo(null);
-                input.value = '';
-                img.src = '';
-                img.style.display = 'none';
-                placeholder.style.display = 'block';
-                preview.style.borderStyle = 'dashed';
-                preview.style.borderColor = 'var(--border-color)';
-                btnRemover.style.display = 'none';
-                btnEscolher.innerHTML = '<i class="fas fa-camera"></i> ESCOLHER FOTO';
-            });
-        }
-
-        function resetFormularioCompleto() {
-            const form = document.getElementById('formSuspeito');
-            if (form) form.reset();
-
-            ['fotoPrincipal', 'fotoSecundaria'].forEach(prefixo => {
-                const input = document.getElementById(prefixo + 'Input');
-                const img = document.getElementById(prefixo + 'Img');
-                const placeholder = document.getElementById(prefixo + 'Placeholder');
-                const preview = document.getElementById(prefixo + 'Preview');
-                const btnEscolher = document.getElementById('btnEscolher' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
-                const btnRemover = document.getElementById('btnRemover' + prefixo.charAt(0).toUpperCase() + prefixo.slice(1));
-                if (input) input.value = '';
-                if (img) { img.src = ''; img.style.display = 'none'; }
-                if (placeholder) placeholder.style.display = 'block';
-                if (preview) { preview.style.borderStyle = 'dashed'; preview.style.borderColor = 'var(--border-color)'; }
-                if (btnRemover) btnRemover.style.display = 'none';
-                if (btnEscolher) {
-                    const icone = prefixo === 'fotoPrincipal' ? 'fa-camera' : 'fa-upload';
-                    btnEscolher.innerHTML = `<i class="fas ${icone}"></i> ESCOLHER FOTO`;
-                }
-            });
-
-            document.getElementById('portadorDeficiencia').checked = false;
-            document.getElementById('deficienciaDetalhes').style.display = 'none';
-            document.getElementById('descricaoDeficiencia').value = '';
-            document.getElementById('cicatrizes').value = '';
-
-            const latEl = document.getElementById('latitude');
-            const lngEl = document.getElementById('longitude');
-            if (latEl) latEl.value = '';
-            if (lngEl) lngEl.value = '';
-
-            tatuagens = [];
-            renderizarTatuagens();
-
-            arquivoFotoPrincipal = null;
-            arquivoFotoSecundaria = null;
-        }
-
-        async function uploadFoto(usuario, arquivo, prefixo, idSuspeito = null) {
-            if (!arquivo) return null;
-            try {
-                const extensao = arquivo.name.split('.').pop().toLowerCase();
-                const base = idSuspeito ? `suspeito_${idSuspeito}` : `temp_${Date.now()}`;
-                const nomeArquivo = `${base}_${prefixo}_${Date.now()}.${extensao}`;
-                const { error: uploadError } = await window.supabaseClient.storage
-                    .from('fotos-suspeitos')
-                    .upload(nomeArquivo, arquivo, { cacheControl: '3600', upsert: false, contentType: arquivo.type });
-                if (uploadError) throw uploadError;
-                const buffer = await arquivo.arrayBuffer();
-                const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-                const hashArray = Array.from(new Uint8Array(hashBuffer));
-                const hashSha256 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                return { caminho: nomeArquivo, hash: hashSha256, formato: arquivo.type, tamanho: arquivo.size, nomeOriginal: arquivo.name };
-            } catch (error) {
-                console.error('❌ Erro no upload:', error);
-                showToast('error', 'Erro no upload', error.message);
-                return null;
-            }
-        }
-
-        async function registrarMidia(infoUpload, idSuspeito, idUsuario, tipoMidia = 'FOTO', nomeOriginal = null) {
-            if (!infoUpload) return null;
-            const { data, error } = await window.supabaseClient
-                .from('arquivo_midia')
-                .insert({
-                    id_entidade: idSuspeito, tipo_entidade: 'SUSPEITO',
-                    nome_original: nomeOriginal || infoUpload.nomeOriginal,
-                    nome_seguro: infoUpload.caminho, tipo_midia: tipoMidia,
-                    formato: infoUpload.formato, tamanho_bytes: infoUpload.tamanho,
-                    hash_sha256: infoUpload.hash, caminho_fisico: infoUpload.caminho,
-                    nivel_seguranca: 'RESTRITO', status: 'ATIVO',
-                    id_usuario_upload: idUsuario, deletado: false
-                }).select().single();
-            if (error) { console.error('❌ Erro:', error); throw error; }
-            return data;
-        }
-
-        document.getElementById('formSuspeito').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('btnCadastrar');
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>CADASTRANDO...';
-            const restaurarBotao = () => {
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-user-secret me-2"></i>CADASTRAR SUSPEITO';
-            };
-            try {
-                const usuario = AIDEPOM.getUsuario();
-                if (!usuario) { showToast('error', 'Sessao expirada', 'Faca login novamente.'); restaurarBotao(); return; }
-
-                const dados = {
-                    nome_completo: document.getElementById('nomeCompleto').value.trim(),
-                    apelido: document.getElementById('apelido').value.trim() || null,
-                    cpf: document.getElementById('cpf').value.trim() || null,
-                    rg: document.getElementById('rg').value.trim() || null,
-                    orgao_expedidor: document.getElementById('orgaoExpedidor').value.trim() || null,
-                    data_nascimento: document.getElementById('dataNascimento').value || null,
-                    sexo: document.getElementById('sexo').value || null,
-                    raca: document.getElementById('raca').value.trim() || null,
-                    naturalidade: document.getElementById('naturalidade').value.trim() || null,
-                    nacionalidade: document.getElementById('nacionalidade').value.trim() || 'Brasileira',
-                    nome_pai: document.getElementById('nomePai').value.trim() || null,
-                    nome_mae: document.getElementById('nomeMae').value.trim() || null,
-                    cep: document.getElementById('cep').value.trim() || null,
-                    logradouro: document.getElementById('logradouro').value.trim() || null,
-                    numero: document.getElementById('numero').value.trim() || null,
-                    complemento: document.getElementById('complemento').value.trim() || null,
-                    bairro: document.getElementById('bairro').value.trim() || null,
-                    cidade: document.getElementById('cidade').value.trim() || null,
-                    uf: document.getElementById('uf').value.trim().toUpperCase() || null,
-                    pais: document.getElementById('pais').value.trim() || 'Brasil',
-                    latitude: parseFloat(document.getElementById('latitude').value) || null,
-                    longitude: parseFloat(document.getElementById('longitude').value) || null,
-                    altura: parseFloat(document.getElementById('altura').value) || null,
-                    peso: parseFloat(document.getElementById('peso').value) || null,
-                    cor_olhos: document.getElementById('corOlhos').value.trim() || null,
-                    cor_cabelo: document.getElementById('corCabelo').value.trim() || null,
-                    cor_pele: document.getElementById('corPele').value.trim() || null,
-                    portador_deficiencia: document.getElementById('portadorDeficiencia').checked,
-                    descricao_deficiencia: document.getElementById('descricaoDeficiencia').value.trim() || null,
-                    cicatrizes: document.getElementById('cicatrizes').value.trim() || null,
-                    sinais_particulares: document.getElementById('sinaisParticulares').value.trim() || null,
-                    tatuagens: [],
-                    status_atual: document.getElementById('statusAtual').value,
-                    nivel_periculosidade: document.getElementById('nivelPericulosidade').value || null,
-                    organizacao_criminal: document.getElementById('organizacaoCriminal').value.trim() || null,
-                    envolvimento_drogas: document.getElementById('envolvimentoDrogas').checked,
-                    posse_arma: document.getElementById('posseArma').checked,
-                    modus_operandi: document.getElementById('modusOperandi').value.trim() || null,
-                    observacoes: document.getElementById('observacoes').value.trim() || null,
-                    id_usuario_cadastro: usuario.id,
-                    deletado: false
-                };
-
-                if (!dados.nome_completo) { showToast('warning', 'Campo obrigatorio', 'Preencha o Nome Completo.'); restaurarBotao(); return; }
-                if (!dados.status_atual) { showToast('warning', 'Campo obrigatorio', 'Selecione o Status Atual.'); restaurarBotao(); return; }
-
-                showToast('info', 'Processando...', 'Cadastrando suspeito...');
-                const { data: inserted, error: insertError } = await window.supabaseClient
-                    .from('suspeito').insert(dados).select().maybeSingle();
-                if (insertError) { showToast('error', 'Erro ao cadastrar', insertError.message); restaurarBotao(); return; }
-
-                const idSuspeito = inserted.id_suspeito;
-
-                if (arquivoFotoPrincipal) {
-                    const info = await uploadFoto(usuario, arquivoFotoPrincipal, 'principal', idSuspeito);
-                    if (info) {
-                        await registrarMidia(info, idSuspeito, usuario.id, 'FOTO');
-                        await window.supabaseClient.from('suspeito').update({ foto_hash: info.hash }).eq('id_suspeito', idSuspeito);
-                    }
-                }
-
-                if (arquivoFotoSecundaria) {
-                    const info = await uploadFoto(usuario, arquivoFotoSecundaria, 'secundaria', idSuspeito);
-                    if (info) {
-                        await registrarMidia(info, idSuspeito, usuario.id, 'FOTO');
-                        await window.supabaseClient.from('suspeito').update({ foto_hash_secundaria: info.hash }).eq('id_suspeito', idSuspeito);
-                    }
-                }
-
-                if (tatuagens.length > 0) {
-                    const tatuagensSalvas = [];
-                    for (let i = 0; i < tatuagens.length; i++) {
-                        const t = tatuagens[i];
-                        let fotoInfo = null;
-                        if (t.arquivo) {
-                            fotoInfo = await uploadFoto(usuario, t.arquivo, `tattoo_${i+1}`, idSuspeito);
-                            if (fotoInfo) {
-                                await registrarMidia(fotoInfo, idSuspeito, usuario.id, 'TATUAGEM', `Tatuagem ${i+1} - ${t.localizacao}`);
-                            }
-                        }
-                        tatuagensSalvas.push({
-                            localizacao: t.localizacao || null,
-                            descricao: t.descricao || null,
-                            foto_caminho: fotoInfo?.caminho || null,
-                            foto_hash: fotoInfo?.hash || null,
-                            foto_formato: fotoInfo?.formato || null
-                        });
-                    }
-                    await window.supabaseClient.from('suspeito').update({ tatuagens: tatuagensSalvas }).eq('id_suspeito', idSuspeito);
-                }
-
-                showToast('success', 'Suspeito cadastrado!',
-                    '<strong>' + dados.nome_completo + '</strong> foi cadastrado com ID #' + idSuspeito + '.', 8000);
-
-                resetFormularioCompleto();
-                carregarSuspeitos();
-            } catch (error) {
-                console.error('❌ Erro inesperado:', error);
-                showToast('error', 'Erro inesperado', error.message);
-            } finally {
-                restaurarBotao();
-            }
-        });
-
-        function showToast(tipo, titulo, mensagem, duracao) {
-            duracao = duracao || 5000;
-            const container = document.getElementById('toastContainer');
-            if (!container) return;
-            const toast = document.createElement('div');
-            toast.className = 'toast-ai ' + tipo;
-            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
-            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
-                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
-                '<div class="toast-message">' + mensagem + '</div></div>' +
-                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, duracao);
-        }
-
+        // ============================================================
+        // FULLSCREEN
+        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
-            const req = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-            const cancel = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
-            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(docEl);
-            else cancel.call(doc);
-        }
-        document.addEventListener('keydown', function(e) { if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); } });
 
-        function minimizeWindow() {
-            try { window.blur(); } catch (e) {}
+            const requestFullScreen = docEl.requestFullscreen
+                || docEl.mozRequestFullScreen
+                || docEl.webkitRequestFullScreen
+                || docEl.msRequestFullscreen;
+
+            const cancelFullScreen = doc.exitFullscreen
+                || doc.mozCancelFullScreen
+                || doc.webkitExitFullscreen
+                || doc.msExitFullscreen;
+
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
+            }
         }
 
+        document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('MSFullscreenChange', atualizarIconeFullscreen);
+
+        function atualizarIconeFullscreen() {
+            const btn = document.querySelector('.fullscreen-btn i');
+            if (!btn) return;
+
+            const isFullscreen = document.fullscreenElement
+                || document.webkitFullscreenElement
+                || document.mozFullScreenElement
+                || document.msFullscreenElement;
+
+            btn.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+        }
+
+        // ============================================================
+        // LOGOUT ROBUSTO
+        // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
+
             try {
                 if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
                     await AIDEPOM.logout();
                     return;
                 }
-            } catch (error) { console.warn('⚠️', error); }
+            } catch (error) {
+                console.warn('⚠️ AIDEPOM.logout() falhou:', error);
+            }
+
             try {
-                if (window.supabaseClient?.auth) await window.supabaseClient.auth.signOut();
-            } catch (error) { console.error('❌', error); }
-            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+                if (sb && sb.auth && sb.auth.signOut) {
+                    await sb.auth.signOut();
+                }
+            } catch (error) {
+                console.error('❌ Erro ao fazer signOut:', error);
+            }
+
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) { /* ignore */ }
+
             window.location.href = '02-login.html';
+        }
+
+        // ============================================================
+        // CONTROLES DE JANELA
+        // ============================================================
+        function minimizeWindow() {
+            try {
+                window.blur();
+                console.log('🪟 Janela desfocada (minimizar real não suportado)');
+            } catch (e) { console.warn('Minimizar não suportado:', e); }
         }
 
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
-            try { window.open('', '_self', ''); window.close(); } catch (e) {}
-            setTimeout(function() { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
+
+            try {
+                window.open('', '_self', '');
+                window.close();
+            } catch (e) {
+                console.warn('⚠️ window.close() bloqueado pelo navegador');
+            }
+
+            setTimeout(function() {
+                if (!window.closed) {
+                    window.location.href = '01-apresentacao.html';
+                }
+            }, 300);
         }
 
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('open');
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+        // ============================================================
+        // ESTADO
+        // ============================================================
+        let paginaAtual = 1;
+        const itensPorPagina = 5;
+        let totalRegistros = 0;
+        let dadosAtuais = [];
+        let idSuspeitoAtual = null;
+        let usuarioAtual = null;
+        let perfilUsuarioAtual = null;
+        let camposEditaveisCache = null;
+
+        // [v2.9.0] Set de IDs de suspeitos que têm mandado vinculado
+        let suspeitosComMandado = new Set();
+
+        // [v2.9.0] Cache de mandados por suspeito (id → array de mandados)
+        let mandadosCachePorSuspeito = {};
+
+        // ============================================================
+        // CARREGAR USUÁRIO
+        // ============================================================
+        async function carregarUsuario() {
+            try {
+                const { data: { user } } = await sb.auth.getUser();
+                if (user) {
+                    const { data: usuario } = await sb.from('usuarios').select('id, nome_completo, setor, id_perfil_acesso').eq('id', user.id).single();
+                    if (usuario) {
+                        usuarioAtual = usuario;
+                        perfilUsuarioAtual = usuario.id_perfil_acesso;
+                        const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+                        document.getElementById('topAvatar').textContent = inicial;
+                        document.getElementById('topUserName').textContent = usuario.nome_completo || 'Admin';
+                        document.getElementById('sidebarAvatar').textContent = inicial;
+                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin';
+                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador';
+                        console.log('👤 Usuário logado:', usuario.nome_completo, '| Perfil:', perfilUsuarioAtual);
+                    }
+                }
+            } catch (error) { console.error('Erro ao carregar usuário:', error); }
         }
+
+        // ============================================================
+        // CARREGAR CAMPOS EDITÁVEIS (cache)
+        // ============================================================
+        async function carregarCamposEditaveis() {
+            if (camposEditaveisCache) return camposEditaveisCache;
+            const { data, error } = await sb.from('suspeito_campos_editaveis')
+                .select('nome_campo, descricao, perfis_permitidos, ordem')
+                .eq('ativo', true)
+                .order('ordem');
+            if (error) {
+                console.error('❌ Erro ao carregar campos editáveis:', error);
+                return [];
+            }
+            camposEditaveisCache = data || [];
+            console.log('📋 Campos editáveis:', camposEditaveisCache.length);
+            return camposEditaveisCache;
+        }
+
+        function parsePerfisPermitidos(raw) {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw.map(p => Number(p)).filter(n => !isNaN(n));
+            if (typeof raw === 'string') {
+                try {
+                    const parsed = JSON.parse(raw);
+                    if (Array.isArray(parsed)) return parsed.map(p => Number(p)).filter(n => !isNaN(n));
+                } catch (e) { /* não era JSON */ }
+                if (raw.includes(',')) return raw.split(',').map(p => Number(p.trim())).filter(n => !isNaN(n));
+                const n = Number(raw);
+                return isNaN(n) ? [] : [n];
+            }
+            return [];
+        }
+
+        // ============================================================
+        // ESTATÍSTICAS
+        // ============================================================
+        async function carregarEstatisticas() {
+            try {
+                const { count: totalPresos } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PRESO');
+                const { count: totalProcurados } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PROCURADO');
+                const { count: totalForagidos } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'FORAGIDO');
+                document.getElementById('totalPresos').querySelector('.count').textContent = totalPresos || 0;
+                document.getElementById('totalProcurados').querySelector('.count').textContent = totalProcurados || 0;
+                document.getElementById('totalForagidos').querySelector('.count').textContent = totalForagidos || 0;
+                console.log('📊 Estatísticas:', { presos: totalPresos, procurados: totalProcurados, foragidos: totalForagidos });
+            } catch (error) { console.error('Erro ao carregar estatísticas:', error); }
+        }
+
+        // ============================================================
+        // [v2.9.2] LIGHTBOX DE FOTO
+        // ============================================================
+        function abrirLightbox(url) {
+            if (!url) return;
+            const lb = document.getElementById('fotoLightbox');
+            const img = document.getElementById('fotoLightboxImg');
+            img.src = url;
+            lb.classList.add('open');
+        }
+
+        function fecharLightbox(e) {
+            if (e) e.stopPropagation();
+            const lb = document.getElementById('fotoLightbox');
+            if (lb) lb.classList.remove('open');
+            const img = document.getElementById('fotoLightboxImg');
+            if (img) img.src = '';
+        }
+
+        // ============================================================
+        // [v2.9.0] BUSCAR SUSPEITOS QUE TÊM MANDADO
+        // ============================================================
+        async function carregarSuspeitosComMandado(idsSuspeitos) {
+            if (!idsSuspeitos || idsSuspeitos.length === 0) {
+                suspeitosComMandado = new Set();
+                mandadosCachePorSuspeito = {};
+                return;
+            }
+
+            try {
+                const { data, error } = await sb
+                    .from('mandado_prisao')
+                    .select('id_mandado, id_suspeito, numero_mandado, status, tipo_mandado, prioridade, validacao_bnmp_status, data_emissao, data_cadastro')
+                    .eq('deletado', false)
+                    .in('id_suspeito', idsSuspeitos)
+                    .order('id_mandado', { ascending: false });
+
+                if (error) throw error;
+
+                suspeitosComMandado = new Set();
+                mandadosCachePorSuspeito = {};
+
+                (data || []).forEach(m => {
+                    suspeitosComMandado.add(m.id_suspeito);
+                    if (!mandadosCachePorSuspeito[m.id_suspeito]) {
+                        mandadosCachePorSuspeito[m.id_suspeito] = [];
+                    }
+                    mandadosCachePorSuspeito[m.id_suspeito].push(m);
+                });
+
+                console.log(`⚖️ ${suspeitosComMandado.size} suspeito(s) com mandado vinculado | Total de mandados: ${data?.length || 0}`);
+            } catch (error) {
+                console.error('❌ Erro ao buscar mandados vinculados:', error);
+                suspeitosComMandado = new Set();
+                mandadosCachePorSuspeito = {};
+            }
+        }
+
+        // ============================================================
+        // [v2.9.0] ÍCONE DE MANDADO
+        // ============================================================
+        function gerarBadgeMandado(idSuspeito) {
+            if (!suspeitosComMandado.has(idSuspeito)) {
+                return '';
+            }
+
+            const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
+            const qtd = mandados.length;
+
+            const prioridadeStatus = {
+                'VALIDO': 1, 'ATIVO': 2, 'NOVO': 3, 'CANCELADO': 4,
+                'SUSPENSO': 5, 'CUMPRIDO': 6, 'VENCIDO': 7, 'EXTINTO': 8, 'NAO_ENCONTRADO': 9
+            };
+
+            let statusPrincipal = 'ativo';
+            let mandadoPrincipal = mandados[0];
+
+            let melhorPrioridade = 999;
+            mandados.forEach(m => {
+                const bnmp = m.validacao_bnmp_status;
+                if (bnmp && prioridadeStatus[bnmp] && prioridadeStatus[bnmp] < melhorPrioridade) {
+                    melhorPrioridade = prioridadeStatus[bnmp];
+                    statusPrincipal = bnmp.toLowerCase().replace(/_/g, '-');
+                    mandadoPrincipal = m;
+                }
+            });
+
+            if (melhorPrioridade === 999) {
+                const st = (mandadoPrincipal.status || 'ATIVO').toLowerCase();
+                statusPrincipal = st;
+            }
+
+            const classe = `badge-mandado-${statusPrincipal}`;
+            const contadorHTML = qtd > 1 ? `<span class="badge-mandado-count">${qtd}</span>` : '';
+
+            return `
+                <div class="badge-mandado-wrapper">
+                    <a class="badge-mandado ${classe}"
+                       onclick="event.stopPropagation(); abrirMandadosDoSuspeito(${idSuspeito})"
+                       title="${qtd} mandado(s) vinculado(s) — clique para ver">
+                        <i class="fas fa-gavel"></i>
+                    </a>
+                    ${contadorHTML}
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // [v2.9.0] MODAL DE MANDADOS VINCULADOS
+        // ============================================================
+        function abrirMandadosDoSuspeito(idSuspeito) {
+            const modal = document.getElementById('modalMandados');
+            const body = document.getElementById('modalMandadosBody');
+            modal.classList.add('open');
+
+            const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
+
+            if (mandados.length === 0) {
+                body.innerHTML = `
+                    <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
+                        <i class="fas fa-gavel" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
+                        <div>Nenhum mandado vinculado a este suspeito</div>
+                    </div>`;
+                return;
+            }
+
+            const suspeitoInfo = dadosAtuais.find(d => d.id_suspeito === idSuspeito);
+            const nomeSuspeito = suspeitoInfo?.nome_completo || `Suspeito #${idSuspeito}`;
+
+            const ICONES_BNMP = {
+                'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
+                'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
+                'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
+                'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
+                'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
+                'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
+            };
+
+            let html = `
+                <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:10px;padding:12px 15px;margin-bottom:20px;">
+                    <div style="color:var(--text-primary);font-weight:700;font-size:14px;">
+                        <i class="fas fa-user-secret me-2"></i>${nomeSuspeito}
+                    </div>
+                    <div style="color:rgba(0,255,136,0.4);font-size:11px;margin-top:4px;">
+                        ${mandados.length} mandado(s) vinculado(s)
+                    </div>
+                </div>
+            `;
+
+            mandados.forEach((m, idx) => {
+                const bnmpStatus = m.validacao_bnmp_status;
+                const bnmpCfg = bnmpStatus ? ICONES_BNMP[bnmpStatus] : null;
+                const statusMandado = (m.status || 'ATIVO').toLowerCase();
+                const corBorda = bnmpCfg
+                    ? 'borda-' + bnmpStatus.toLowerCase().replace(/_/g, '-')
+                    : 'borda-' + statusMandado;
+
+                const dataFormatada = m.data_emissao
+                    ? m.data_emissao.split('-').reverse().join('/')
+                    : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
+
+                let bnmpBadgeHTML = '';
+                if (bnmpCfg) {
+                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-${bnmpStatus.toLowerCase().replace(/_/g, '-')}">
+                        <i class="fas ${bnmpCfg.icone}"></i> BNMP: ${bnmpCfg.label}
+                    </span>`;
+                } else {
+                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-nao-validado">
+                        <i class="fas fa-question-circle"></i> BNMP: Não validado
+                    </span>`;
+                }
+
+                html += `
+                    <div class="mandado-item ${corBorda}">
+                        <div class="mandado-icon" style="background:rgba(0,255,136,0.05);color:var(--text-primary);">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <div class="mandado-info">
+                            <div class="mandado-numero">#${idx + 1} — ${m.numero_mandado || '#' + m.id_mandado}</div>
+                            <div class="mandado-meta">
+                                <span><i class="fas fa-tag"></i> ${m.tipo_mandado || '-'}</span>
+                                <span><i class="fas fa-info-circle"></i> ${m.status || '-'}</span>
+                                <span><i class="fas fa-calendar"></i> ${dataFormatada}</span>
+                                ${m.prioridade ? `<span><i class="fas fa-exclamation"></i> ${m.prioridade}</span>` : ''}
+                            </div>
+                            <div style="margin-top:8px;">
+                                ${bnmpBadgeHTML}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            body.innerHTML = html;
+        }
+
+        function fecharMandados() {
+            document.getElementById('modalMandados').classList.remove('open');
+        }
+
+        function abrirTelaMandados() {
+            window.location.href = '11-mandados.html';
+        }
+
+        // ============================================================
+        // BUSCA PRINCIPAL
+        // ============================================================
+        async function realizarBusca() {
+            console.log('🔍 realizarBusca() chamada');
+            const termo = document.getElementById('buscaGlobal').value.trim();
+            const status = document.getElementById('filtroStatus').value;
+            const periculosidade = document.getElementById('filtroPericulosidade').value;
+            const dataInicio = document.getElementById('filtroDataInicio').value;
+            const dataFim = document.getElementById('filtroDataFim').value;
+
+            const temFiltro = termo.length > 0 || status || periculosidade || dataInicio || dataFim;
+
+            if (!temFiltro) {
+                document.getElementById('resultadosConsulta').innerHTML = `
+                    <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
+                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Nenhum filtro informado</strong></div>
+                        <small style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">
+                            Digite um nome, CPF, RG ou selecione pelo menos um filtro para buscar
+                        </small>
+                    </td></tr>`;
+                document.getElementById('infoPagina').textContent = '';
+                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando filtros...';
+                document.getElementById('numerosPaginas').innerHTML = '';
+                document.getElementById('btnAnterior').style.display = 'none';
+                document.getElementById('btnProximo').style.display = 'none';
+                document.getElementById('buscaGlobal').focus();
+                return;
+            }
+
+            if (termo.length > 0 && termo.length < 2) {
+                document.getElementById('resultadosConsulta').innerHTML = `
+                    <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
+                        <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                        Digite pelo menos <strong>2 caracteres</strong> para buscar por nome, CPF ou RG
+                    </td></tr>`;
+                document.getElementById('infoPagina').textContent = '';
+                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando mais caracteres...';
+                document.getElementById('buscaGlobal').focus();
+                return;
+            }
+
+            try {
+                paginaAtual = 1;
+
+                let query = sb
+                    .from('suspeito')
+                    .select(`id_suspeito, nome_completo, cpf, rg, cidade, status_atual, nivel_periculosidade, data_cadastro`, { count: 'exact' })
+                    .eq('deletado', false);
+
+                if (termo.length >= 2) {
+                    query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`);
+                }
+                if (status) { query = query.eq('status_atual', status); }
+                if (periculosidade) { query = query.eq('nivel_periculosidade', periculosidade); }
+                if (dataInicio) { query = query.gte('data_cadastro', dataInicio); }
+                if (dataFim) { query = query.lte('data_cadastro', dataFim); }
+
+                const { data: suspeitos, count, error } = await query
+                    .order('data_cadastro', { ascending: false })
+                    .range((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina - 1);
+
+                if (error) throw error;
+
+                console.log('📋 Suspeitos encontrados:', count);
+
+                if (!suspeitos || suspeitos.length === 0) {
+                    dadosAtuais = [];
+                    totalRegistros = 0;
+                    suspeitosComMandado = new Set();
+                    mandadosCachePorSuspeito = {};
+                    await carregarEstatisticas();
+                    renderizarResultados();
+                    return;
+                }
+
+                const idsDosSuspeitos = suspeitos.map(s => s.id_suspeito);
+                await carregarSuspeitosComMandado(idsDosSuspeitos);
+
+                const { data: midias, error: midiaError } = await sb
+                    .from('arquivo_midia')
+                    .select('id_entidade, caminho_fisico, nome_seguro, tipo_midia')
+                    .eq('tipo_entidade', 'SUSPEITO')
+                    .eq('tipo_midia', 'FOTO')
+                    .eq('deletado', false)
+                    .in('id_entidade', idsDosSuspeitos);
+
+                if (midiaError) console.warn('⚠️ Erro ao buscar mídias:', midiaError);
+
+                const midiasPorSuspeito = {};
+                (midias || []).forEach(m => {
+                    if (!midiasPorSuspeito[m.id_entidade]) midiasPorSuspeito[m.id_entidade] = [];
+                    midiasPorSuspeito[m.id_entidade].push(m);
+                });
+
+                const dadosComFoto = await Promise.all(suspeitos.map(async (s) => {
+                    const midiasDoSuspeito = midiasPorSuspeito[s.id_suspeito] || [];
+                    const midiaPrincipal = midiasDoSuspeito.find(m =>
+                        m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')
+                    ) || midiasDoSuspeito[0];
+
+                    let fotoUrl = null;
+                    if (midiaPrincipal && midiaPrincipal.caminho_fisico) {
+                        try {
+                            const { data: signed } = await sb.storage
+                                .from(BUCKET_FOTOS)
+                                .createSignedUrl(midiaPrincipal.caminho_fisico, URL_EXPIRACAO_S);
+                            fotoUrl = signed?.signedUrl || null;
+                        } catch (err) {
+                            console.warn('⚠️ Erro ao gerar signed URL:', err);
+                        }
+                    }
+                    return { ...s, fotoUrl };
+                }));
+
+                dadosAtuais = dadosComFoto;
+                totalRegistros = count || 0;
+                await carregarEstatisticas();
+                renderizarResultados();
+            } catch (error) {
+                console.error('❌ Erro na busca:', error);
+                document.getElementById('resultadosConsulta').innerHTML =
+                    `<tr><td colspan="8" class="text-center py-4" style="color: #dc3545;">
+                        <i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}
+                    </td></tr>`;
+            }
+        }
+
+        // ============================================================
+        // RENDERIZAÇÃO DA TABELA
+        // ============================================================
+        function renderizarResultados() {
+            const tbody = document.getElementById('resultadosConsulta');
+
+            if (dadosAtuais.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td></tr>`;
+                document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
+                document.getElementById('totalRegistrosInfo').textContent = 'Nenhum resultado';
+                document.getElementById('numerosPaginas').innerHTML = '';
+                document.getElementById('btnAnterior').style.display = 'none';
+                document.getElementById('btnProximo').style.display = 'none';
+                return;
+            }
+
+            let html = '';
+            dadosAtuais.forEach(d => {
+                const statusClass = d.status_atual ? d.status_atual.toLowerCase() : '';
+                const periculosidadeClass = d.nivel_periculosidade ? d.nivel_periculosidade.toLowerCase() : '';
+                const statusLabel = {
+                    'PRESO': '🔒 PRESO', 'PROCURADO': '🔍 PROCURADO', 'FORAGIDO': '🏃 FORAGIDO',
+                    'INVESTIGADO': '🔎 INVESTIGADO', 'CONDICIONAL': '⚖️ CONDICIONAL', 'LIBERADO': '✅ LIBERADO'
+                }[d.status_atual] || d.status_atual || 'DESCONHECIDO';
+
+                const fotoHTML = d.fotoUrl
+                    ? `<img src="${d.fotoUrl}" alt="${d.nome_completo || 'Suspeito'}" class="foto-suspeito"
+                            onerror="this.onerror=null; this.outerHTML='<div class=\\'foto-placeholder\\'><i class=\\'fas fa-user-secret\\'></i></div>';" />`
+                    : `<div class="foto-placeholder"><i class="fas fa-user-secret"></i></div>`;
+
+                const badgeMandado = gerarBadgeMandado(d.id_suspeito);
+
+                html += `<tr>
+                    <td>${fotoHTML}</td>
+                    <td><strong>${d.nome_completo || 'N/A'}</strong></td>
+                    <td>${d.cpf || 'N/A'}</td>
+                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                    <td><span class="perigo-badge ${periculosidadeClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
+                    <td>${d.cidade || 'N/A'}</td>
+                    <td style="text-align:center;">${badgeMandado}</td>
+                    <td>
+                        <button class="btn-icon" onclick="verDetalhes('${d.id_suspeito}')" title="Ver ficha"><i class="fas fa-eye"></i></button>
+                        <button class="btn-icon" onclick="editarSuspeito('${d.id_suspeito}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
+                        <button class="btn-icon" onclick="verHistorico('${d.id_suspeito}')" title="Histórico"><i class="fas fa-history"></i></button>
+                        <button class="btn-icon" onclick="verFotos('${d.id_suspeito}')" title="Fotos"><i class="fas fa-images"></i></button>
+                        <button class="btn-icon" onclick="imprimirFicha('${d.id_suspeito}')" title="Imprimir"><i class="fas fa-print"></i></button>
+                        ${d.status_atual === 'PROCURADO' || d.status_atual === 'FORAGIDO' ? `<button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta('${d.id_suspeito}')" title="Alerta"><i class="fas fa-bell"></i></button>` : ''}
+                    </td>
+                </tr>`;
+            });
+            tbody.innerHTML = html;
+
+            const inicio = (paginaAtual - 1) * itensPorPagina + 1;
+            const fim = Math.min(paginaAtual * itensPorPagina, totalRegistros);
+            document.getElementById('infoPagina').textContent = `Mostrando ${inicio}-${fim} de ${totalRegistros} registros`;
+            document.getElementById('totalRegistrosInfo').textContent = `${totalRegistros} registros encontrados`;
+            atualizarPaginacao();
+        }
+
+        // ============================================================
+        // PAGINAÇÃO
+        // ============================================================
+        function atualizarPaginacao() {
+            const totalPaginas = Math.ceil(totalRegistros / itensPorPagina);
+            const container = document.getElementById('numerosPaginas');
+            let html = '';
+            const maxBotoes = 5;
+            let inicio = Math.max(1, paginaAtual - Math.floor(maxBotoes / 2));
+            let fim = Math.min(totalPaginas, inicio + maxBotoes - 1);
+            if (fim - inicio + 1 < maxBotoes) { inicio = Math.max(1, fim - maxBotoes + 1); }
+            if (inicio > 1) { html += `<button class="btn-icon" onclick="irPagina(1)">1</button>`; if (inicio > 2) html += `<button class="btn-icon disabled">...</button>`; }
+            for (let i = inicio; i <= fim; i++) { html += `<button class="btn-icon ${i === paginaAtual ? 'active' : ''}" onclick="irPagina(${i})" style="${i === paginaAtual ? 'background:rgba(0,255,136,0.08);border-color:var(--text-primary);color:var(--text-primary);' : ''}">${i}</button>`; }
+            if (fim < totalPaginas) { if (fim < totalPaginas - 1) html += `<button class="btn-icon disabled">...</button>`; html += `<button class="btn-icon" onclick="irPagina(${totalPaginas})">${totalPaginas}</button>`; }
+            container.innerHTML = html;
+            document.getElementById('btnAnterior').style.display = paginaAtual > 1 ? 'inline-block' : 'none';
+            document.getElementById('btnProximo').style.display = paginaAtual < totalPaginas ? 'inline-block' : 'none';
+        }
+
+        function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; realizarBusca(); } }
+        function proximaPagina() { const totalPaginas = Math.ceil(totalRegistros / itensPorPagina); if (paginaAtual < totalPaginas) { paginaAtual++; realizarBusca(); } }
+        function irPagina(num) { paginaAtual = num; realizarBusca(); }
+
+        // ============================================================
+        // MODAL FICHA
+        // ============================================================
+        async function verDetalhes(id) {
+            console.log('👁️ verDetalhes() chamado para ID:', id);
+            idSuspeitoAtual = id;
+            const modal = document.getElementById('modalFicha');
+            const body = document.getElementById('modalFichaBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando ficha...</div>';
+
+            try {
+                const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
+                if (error) throw error;
+
+                const { data: midias } = await sb.from('arquivo_midia')
+                    .select('caminho_fisico, nome_seguro, tipo_midia')
+                    .eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', id).eq('deletado', false);
+
+                let fotoUrl = null;
+                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
+                const principal = fotos.find(m => m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')) || fotos[0];
+
+                if (principal && principal.caminho_fisico) {
+                    const { data: signed } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
+                    fotoUrl = signed?.signedUrl || null;
+                }
+
+                // [v2.9.2] Foto com wrapper clicável + fallback
+                const fotoHTML = fotoUrl
+                    ? `<div class="ficha-foto-wrapper" onclick="abrirLightbox('${fotoUrl}')" title="Clique para ampliar">
+                           <img src="${fotoUrl}" alt="${suspeito.nome_completo || 'Suspeito'}" class="ficha-foto" />
+                       </div>`
+                    : `<div class="ficha-foto-placeholder">
+                           <i class="fas fa-user-secret"></i>
+                           <span style="font-size:12px;">Sem foto cadastrada</span>
+                       </div>`;
+
+                const statusBadge = suspeito.status_atual
+                    ? `<span class="status-badge ${suspeito.status_atual.toLowerCase()}">${suspeito.status_atual}</span>` : 'N/A';
+                const perigoBadge = suspeito.nivel_periculosidade
+                    ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>` : 'N/A';
+
+                // [v2.9.0] Seção de Mandados Vinculados
+                const mandadosDoSuspeito = mandadosCachePorSuspeito[id] || [];
+                let mandadosHTML = '';
+                if (mandadosDoSuspeito.length > 0) {
+                    const ICONES_BNMP = {
+                        'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
+                        'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
+                        'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
+                        'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
+                        'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
+                        'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
+                    };
+
+                    let listaHTML = '';
+                    mandadosDoSuspeito.forEach(m => {
+                        const bnmpCfg = m.validacao_bnmp_status ? ICONES_BNMP[m.validacao_bnmp_status] : null;
+                        const dataF = m.data_emissao
+                            ? m.data_emissao.split('-').reverse().join('/')
+                            : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
+                        const bnmpBadge = bnmpCfg
+                            ? `<span class="badge-bnmp-mini bnmp-${m.validacao_bnmp_status.toLowerCase().replace(/_/g, '-')}"><i class="fas ${bnmpCfg.icone}"></i> ${bnmpCfg.label}</span>`
+                            : `<span class="badge-bnmp-mini bnmp-nao-validado"><i class="fas fa-question-circle"></i> Não validado</span>`;
+
+                        listaHTML += `
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;">
+                                <div style="flex:1;min-width:0;">
+                                    <div style="color:var(--text-primary);font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                        <i class="fas fa-gavel" style="margin-right:6px;"></i>${m.numero_mandado || '#' + m.id_mandado}
+                                    </div>
+                                    <div style="color:rgba(0,255,136,0.4);font-size:10px;margin-top:3px;">
+                                        ${m.status || '-'} · ${dataF}
+                                    </div>
+                                </div>
+                                <div>${bnmpBadge}</div>
+                            </div>
+                        `;
+                    });
+
+                    mandadosHTML = `
+                        <div class="col-md-12" style="margin-top:20px;">
+                            <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:12px;padding:15px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border-color);">
+                                    <span style="color:var(--text-primary);font-weight:700;font-size:13px;letter-spacing:1px;">
+                                        <i class="fas fa-gavel me-2"></i>MANDADOS VINCULADOS
+                                    </span>
+                                    <span style="background:var(--text-primary);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;">${mandadosDoSuspeito.length}</span>
+                                </div>
+                                ${listaHTML}
+                                <button class="btn-outline-gold w-100 mt-2" onclick="fecharFicha(); abrirMandadosDoSuspeito(${id})" style="padding:8px 16px; font-size:12px;">
+                                    <i class="fas fa-external-link-alt me-2"></i>VER DETALHES DOS MANDADOS
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-4 text-center">
+                            <span class="foto-label"><i class="fas fa-camera me-1"></i>Foto do Suspeito</span>
+                            ${fotoHTML}
+                            <div class="mt-3"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Status</div>${statusBadge}</div>
+                            <div class="mt-2"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Periculosidade</div>${perigoBadge}</div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="ficha-campo"><span class="label">ID</span><span class="valor">#${suspeito.id_suspeito}</span></div>
+                            <div class="ficha-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${suspeito.nome_completo || 'N/A'}</strong></span></div>
+                            <div class="ficha-campo"><span class="label">Apelido</span><span class="valor">${suspeito.apelido || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">RG</span><span class="valor">${suspeito.rg || '-'} ${suspeito.orgao_expedidor ? '(' + suspeito.orgao_expedidor + ')' : ''}</span></div>
+                            <div class="ficha-campo"><span class="label">Data de Nascimento</span><span class="valor">${suspeito.data_nascimento || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Sexo</span><span class="valor">${suspeito.sexo === 'M' ? 'Masculino' : suspeito.sexo === 'F' ? 'Feminino' : suspeito.sexo || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Endereço</span><span class="valor">${[suspeito.logradouro, suspeito.numero, suspeito.bairro, suspeito.cidade, suspeito.uf].filter(Boolean).join(', ') || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">Características Físicas</span><span class="valor">Altura: ${suspeito.altura || '-'}m · Peso: ${suspeito.peso || '-'}kg · Olhos: ${suspeito.cor_olhos || '-'} · Cabelo: ${suspeito.cor_cabelo || '-'}</span></div>
+                            ${suspeito.portador_deficiencia ? `<div class="ficha-campo"><span class="label">Portador de Deficiência</span><span class="valor">Sim ${suspeito.descricao_deficiencia ? '· ' + suspeito.descricao_deficiencia : ''}</span></div>` : ''}
+                            ${suspeito.cicatrizes ? `<div class="ficha-campo"><span class="label">Cicatrizes</span><span class="valor">${suspeito.cicatrizes}</span></div>` : ''}
+                            ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
+                            ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
+                        </div>
+                        ${mandadosHTML}
+                    </div>`;
+            } catch (error) {
+                console.error('❌ Erro ao carregar ficha:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharFicha() {
+            document.getElementById('modalFicha').classList.remove('open');
+            idSuspeitoAtual = null;
+        }
+
+        function imprimirFicha(id) {
+            verDetalhes(id);
+            setTimeout(() => window.print(), 800);
+        }
+
+        function imprimirFichaAtual() { window.print(); }
+
+        // ============================================================
+        // MODAL EDIÇÃO
+        // ============================================================
+        const MOTIVOS_ALTERACAO = [
+            'Correção de erro de digitação',
+            'Atualização de status judicial',
+            'Novo mandado recebido',
+            'Correção após conferência documental',
+            'Atualização cadastral',
+            'Outro (especificar abaixo)'
+        ];
+
+        async function editarSuspeito(id) {
+            console.log('✏️ editarSuspeito() chamado para ID:', id);
+            idSuspeitoAtual = id;
+            const modal = document.getElementById('modalEdicao');
+            const body = document.getElementById('modalEdicaoBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados...</div>';
+
+            try {
+                if (!usuarioAtual) {
+                    body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;">❌ Usuário não identificado. Faça login novamente.</div>';
+                    return;
+                }
+
+                const campos = await carregarCamposEditaveis();
+                const perfilAtualNum = Number(perfilUsuarioAtual);
+
+                const camposPermitidos = campos.filter(c => {
+                    const perfis = parsePerfisPermitidos(c.perfis_permitidos);
+                    return perfis.includes(perfilAtualNum);
+                });
+
+                console.log('🔐 DEBUG PERMISSÃO:', {
+                    perfilUsuarioAtual_raw: perfilUsuarioAtual,
+                    perfilUsuarioAtual_num: perfilAtualNum,
+                    totalCampos: campos.length,
+                    camposPermitidos: camposPermitidos.length
+                });
+
+                if (camposPermitidos.length === 0) {
+                    body.innerHTML = `<div class="text-center py-4" style="color: #ffc107;">
+                        <i class="fas fa-lock" style="font-size: 40px; display: block; margin-bottom: 15px;"></i>
+                        <div>Seu perfil (ID ${perfilAtualNum}) não tem permissão para editar suspeitos.</div>
+                        <small style="display:block; margin-top:10px; color:rgba(0,255,136,0.4);">
+                            Verifique a tabela <code>suspeito_campos_editaveis</code> no Supabase.
+                        </small>
+                    </div>`;
+                    return;
+                }
+
+                const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
+                if (error) throw error;
+
+                const setores = {
+                    'nome_completo': 'Identificação', 'apelido': 'Identificação', 'cpf': 'Identificação',
+                    'rg': 'Identificação', 'orgao_expedidor': 'Identificação', 'data_nascimento': 'Identificação',
+                    'sexo': 'Dados Pessoais', 'raca': 'Dados Pessoais', 'naturalidade': 'Dados Pessoais',
+                    'nacionalidade': 'Dados Pessoais', 'nome_pai': 'Dados Pessoais', 'nome_mae': 'Dados Pessoais',
+                    'cep': 'Endereço', 'logradouro': 'Endereço', 'numero': 'Endereço', 'complemento': 'Endereço',
+                    'bairro': 'Endereço', 'cidade': 'Endereço', 'uf': 'Endereço', 'pais': 'Endereço',
+                    'altura': 'Características Físicas', 'peso': 'Características Físicas',
+                    'cor_olhos': 'Características Físicas', 'cor_cabelo': 'Características Físicas',
+                    'cor_pele': 'Características Físicas', 'sinais_particulares': 'Características Físicas',
+                    'tattoo_descricao': 'Características Físicas',
+                    'status_atual': 'Informações Criminais', 'nivel_periculosidade': 'Informações Criminais',
+                    'organizacao_criminal': 'Informações Criminais', 'envolvimento_drogas': 'Informações Criminais',
+                    'posse_arma': 'Informações Criminais', 'modus_operandi': 'Informações Criminais',
+                    'observacoes': 'Observações'
+                };
+
+                const tipos = {
+                    'sexo': 'select-sexo', 'status_atual': 'select-status', 'nivel_periculosidade': 'select-perigo',
+                    'envolvimento_drogas': 'checkbox', 'posse_arma': 'checkbox',
+                    'data_nascimento': 'date', 'cep': 'text', 'uf': 'text', 'pais': 'text',
+                    'sinais_particulares': 'textarea', 'tattoo_descricao': 'textarea',
+                    'modus_operandi': 'textarea', 'observacoes': 'textarea',
+                    'altura': 'number', 'peso': 'number'
+                };
+
+                let camposHTML = '';
+                let setorAtual = '';
+
+                campos.forEach(campo => {
+                    const podeEditar = parsePerfisPermitidos(campo.perfis_permitidos).includes(perfilAtualNum);
+                    const valorAtual = suspeito[campo.nome_campo] ?? '';
+                    const setor = setores[campo.nome_campo] || 'Outros';
+
+                    if (setor !== setorAtual) {
+                        if (setorAtual) camposHTML += `</div>`;
+                        camposHTML += `<div class="mb-3"><div style="color: var(--text-primary); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 15px;">${setor}</div>`;
+                        setorAtual = setor;
+                    }
+
+                    const tipo = tipos[campo.nome_campo] || 'text';
+                    const idCampo = 'edit_' + campo.nome_campo;
+                    const disabled = podeEditar ? '' : 'disabled';
+
+                    let inputHTML = '';
+                    if (tipo === 'textarea') {
+                        inputHTML = `<textarea class="form-control" id="${idCampo}" ${disabled} rows="2">${valorAtual}</textarea>`;
+                    } else if (tipo === 'select-sexo') {
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
+                            <option value="">Selecione...</option>
+                            <option value="M" ${valorAtual === 'M' ? 'selected' : ''}>Masculino</option>
+                            <option value="F" ${valorAtual === 'F' ? 'selected' : ''}>Feminino</option>
+                            <option value="O" ${valorAtual === 'O' ? 'selected' : ''}>Outro</option>
+                        </select>`;
+                    } else if (tipo === 'select-status') {
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
+                            <option value="">Selecione...</option>
+                            ${['INVESTIGADO','PRESO','FORAGIDO','PROCURADO','CONDICIONAL','LIBERADO'].map(s => 
+                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
+                            ).join('')}
+                        </select>`;
+                    } else if (tipo === 'select-perigo') {
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
+                            <option value="">Selecione...</option>
+                            ${['BAIXO','MEDIO','ALTO','EXTREMO'].map(s => 
+                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
+                            ).join('')}
+                        </select>`;
+                    } else if (tipo === 'checkbox') {
+                        inputHTML = `<div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="${idCampo}" ${valorAtual ? 'checked' : ''} ${disabled}>
+                            <label class="form-check-label" for="${idCampo}">${campo.descricao}</label>
+                        </div>`;
+                    } else {
+                        inputHTML = `<input type="${tipo}" class="form-control" id="${idCampo}" value="${valorAtual}" ${disabled} step="${tipo === 'number' ? '0.01' : ''}">`;
+                    }
+
+                    if (tipo !== 'checkbox') {
+                        camposHTML += `<div class="col-md-4 mb-3">
+                            <label class="form-label">${campo.descricao} ${podeEditar ? '' : '🔒'}</label>
+                            ${inputHTML}
+                        </div>`;
+                    } else {
+                        camposHTML += `<div class="col-md-4 mb-3">${inputHTML}</div>`;
+                    }
+                });
+
+                if (camposHTML) camposHTML += `</div>`;
+
+                const motivosHTML = MOTIVOS_ALTERACAO.map(m => `<option value="${m}">${m}</option>`).join('');
+
+                body.innerHTML = `
+                    <div class="aviso-justificativa">
+                        <div style="color: #ffc107; font-size: 12px; font-weight: 600;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Campos bloqueados aparecem com 🔒 (sem permissão para seu perfil)
+                        </div>
+                    </div>
+                    <form id="formEdicao">
+                        <div class="row">${camposHTML}</div>
+                        <div class="mt-4 pt-3" style="border-top: 1px solid var(--border-color);">
+                            <div class="row">
+                                <div class="col-md-5 mb-3">
+                                    <label class="form-label">Motivo da alteração *</label>
+                                    <select class="form-select" id="edit_motivo" required>
+                                        <option value="">Selecione o motivo...</option>
+                                        ${motivosHTML}
+                                    </select>
+                                </div>
+                                <div class="col-md-7 mb-3">
+                                    <label class="form-label">Justificativa detalhada *</label>
+                                    <textarea class="form-control" id="edit_justificativa" rows="2" 
+                                        placeholder="Explique detalhadamente o motivo da alteração (mínimo 20 caracteres)" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn-outline-gold" onclick="fecharEdicao()">
+                                <i class="fas fa-times me-2"></i>CANCELAR
+                            </button>
+                            <button type="submit" class="btn-gold" id="btnSalvarEdicao">
+                                <i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES
+                            </button>
+                        </div>
+                    </form>
+                `;
+
+                document.getElementById('formEdicao').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    await salvarEdicao(suspeito);
+                });
+            } catch (error) {
+                console.error('❌ Erro ao abrir edição:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        async function salvarEdicao(suspeitoOriginal) {
+            const btn = document.getElementById('btnSalvarEdicao');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
+
+            try {
+                const motivo = document.getElementById('edit_motivo').value;
+                const justificativa = document.getElementById('edit_justificativa').value.trim();
+
+                if (!motivo) {
+                    alert('⚠️ Selecione o motivo da alteração');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                    return;
+                }
+
+                if (justificativa.length < 20) {
+                    alert('⚠️ A justificativa deve ter no mínimo 20 caracteres');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                    return;
+                }
+
+                const campos = await carregarCamposEditaveis();
+                const dadosNovos = {};
+
+                campos.forEach(campo => {
+                    const input = document.getElementById('edit_' + campo.nome_campo);
+                    if (!input || input.disabled) return;
+
+                    let valor;
+                    if (input.type === 'checkbox') {
+                        valor = input.checked;
+                    } else {
+                        valor = input.value.trim() || null;
+                    }
+
+                    const valorAntigo = suspeitoOriginal[campo.nome_campo];
+                    if (JSON.stringify(valor) !== JSON.stringify(valorAntigo)) {
+                        dadosNovos[campo.nome_campo] = valor;
+                    }
+                });
+
+                if (Object.keys(dadosNovos).length === 0) {
+                    alert('ℹ️ Nenhum campo foi alterado');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                    return;
+                }
+
+                console.log('📝 Campos alterados:', Object.keys(dadosNovos));
+
+                const justificativaCompleta = `[${motivo}] ${justificativa}`;
+                const { error: rpcError } = await sb.rpc('set_justificativa', {
+                    justificativa: justificativaCompleta,
+                    id_usuario: usuarioAtual.id
+                });
+
+                if (rpcError) console.warn('⚠️ RPC erro:', rpcError);
+
+                dadosNovos.data_atualizacao = new Date().toISOString();
+                dadosNovos.id_usuario_atualizacao = usuarioAtual.id;
+
+                const { error: updateError } = await sb
+                    .from('suspeito')
+                    .update(dadosNovos)
+                    .eq('id_suspeito', suspeitoOriginal.id_suspeito);
+
+                if (updateError) throw updateError;
+
+                console.log('✅ Edição salva com sucesso!');
+
+                const toast = document.createElement('div');
+                toast.style.cssText = 'position:fixed;top:70px;right:20px;background:#0a0a0a;border:1px solid #003322;border-left:4px solid #00ff88;border-radius:12px;padding:16px 20px;color:#00ff88;z-index:99999;min-width:300px;box-shadow:0 10px 40px rgba(0,0,0,0.8);';
+                toast.innerHTML = `
+                    <div style="font-weight:700;margin-bottom:5px;">
+                        <i class="fas fa-check-circle me-2"></i>Alterações salvas!
+                    </div>
+                    <div style="font-size:12px;color:rgba(0,255,136,0.6);">
+                        ${Object.keys(dadosNovos).length - 2} campo(s) alterado(s) · versão gravada no histórico
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 5000);
+
+                fecharEdicao();
+                await realizarBusca();
+
+            } catch (error) {
+                console.error('❌ Erro ao salvar:', error);
+                alert('❌ Erro ao salvar: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+            }
+        }
+
+        function fecharEdicao() {
+            document.getElementById('modalEdicao').classList.remove('open');
+            idSuspeitoAtual = null;
+        }
+
+        // ============================================================
+        // MODAL HISTÓRICO
+        // ============================================================
+        async function verHistorico(id) {
+            console.log('📜 verHistorico() chamado para ID:', id);
+            const modal = document.getElementById('modalHistorico');
+            const body = document.getElementById('modalHistoricoBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>';
+
+            try {
+                const { data: historico, error } = await sb.from('suspeito_historico')
+                    .select('*')
+                    .eq('id_suspeito', id)
+                    .order('versao', { ascending: false });
+
+                if (error) throw error;
+
+                if (!historico || historico.length === 0) {
+                    body.innerHTML = `
+                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
+                            <i class="fas fa-history" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
+                            <div>Nenhuma alteração registrada ainda</div>
+                            <small style="font-size: 11px;">Este suspeito nunca foi editado desde o cadastro</small>
+                        </div>`;
+                    return;
+                }
+
+                let html = '';
+                historico.forEach(h => {
+                    const data = new Date(h.data_alteracao).toLocaleString('pt-BR');
+                    const campos = h.campos_alterados || [];
+                    
+                    let diffHTML = '';
+                    campos.forEach(campo => {
+                        const antes = h.valores_antes?.[campo];
+                        const depois = h.valores_depois?.[campo];
+                        diffHTML += `
+                            <div class="diff-item">
+                                <strong style="color: rgba(0, 255, 136, 0.5);">${campo}:</strong><br>
+                                <span class="diff-antes">${antes ?? '(vazio)'}</span>
+                                <i class="fas fa-arrow-right mx-2" style="color: rgba(0, 255, 136, 0.3);"></i>
+                                <span class="diff-depois">${depois ?? '(vazio)'}</span>
+                            </div>`;
+                    });
+
+                    html += `
+                        <div class="historico-item">
+                            <div>
+                                <span class="versao">v${h.versao}</span>
+                                <strong style="color: var(--text-primary);">${campos.length} campo(s) alterado(s)</strong>
+                            </div>
+                            <div class="meta">
+                                <i class="fas fa-user me-1"></i> ${h.nome_usuario || 'Usuário'} ·
+                                <i class="fas fa-clock ms-2 me-1"></i> ${data}
+                            </div>
+                            ${h.justificativa ? `<div class="justificativa"><i class="fas fa-comment me-2"></i>${h.justificativa}</div>` : ''}
+                            ${diffHTML}
+                        </div>`;
+                });
+
+                body.innerHTML = html;
+            } catch (error) {
+                console.error('❌ Erro ao carregar histórico:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharHistorico() {
+            document.getElementById('modalHistorico').classList.remove('open');
+        }
+
+        // ============================================================
+        // MODAL FOTOS
+        // ============================================================
+        async function verFotos(id) {
+            console.log('📸 verFotos() chamado para ID:', id);
+            const modal = document.getElementById('modalFotos');
+            const body = document.getElementById('modalFotosBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>';
+
+            try {
+                const { data: midias, error } = await sb.from('arquivo_midia')
+                    .select('*')
+                    .eq('tipo_entidade', 'SUSPEITO')
+                    .eq('id_entidade', id)
+                    .eq('deletado', false)
+                    .order('data_upload', { ascending: false });
+
+                if (error) throw error;
+
+                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO' || m.tipo_midia === 'TATUAGEM');
+
+                if (fotos.length === 0) {
+                    body.innerHTML = `
+                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
+                            <i class="fas fa-images" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
+                            <div>Nenhuma foto cadastrada</div>
+                        </div>`;
+                    return;
+                }
+
+                let html = '<div class="galeria-fotos">';
+                
+                for (const foto of fotos) {
+                    let fotoUrl = null;
+                    if (foto.caminho_fisico) {
+                        const { data: signed } = await sb.storage
+                            .from(BUCKET_FOTOS)
+                            .createSignedUrl(foto.caminho_fisico, URL_EXPIRACAO_S);
+                        fotoUrl = signed?.signedUrl || null;
+                    }
+
+                    const dataUpload = foto.data_upload ? new Date(foto.data_upload).toLocaleDateString('pt-BR') : '-';
+                    const isPrincipal = foto.nome_seguro && foto.nome_seguro.toLowerCase().includes('principal');
+                    const isTattoo = foto.tipo_midia === 'TATUAGEM';
+
+                    html += `
+                        <div class="foto-card">
+                            ${fotoUrl 
+                                ? `<img src="${fotoUrl}" alt="Foto" />` 
+                                : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:rgba(0,255,136,0.2);"><i class="fas fa-image" style="font-size:40px;"></i></div>`
+                            }
+                            <div class="info">
+                                ${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : ''}
+                                ${isTattoo ? '<span class="principal" style="background:#ffc107;color:#000;">TATUAGEM</span>' : ''}
+                                <div class="data mt-2">
+                                    <i class="fas fa-calendar me-1"></i>${dataUpload}
+                                </div>
+                                ${foto.nome_original ? `<div class="data"><i class="fas fa-tag me-1"></i>${foto.nome_original.substring(0, 30)}</div>` : ''}
+                            </div>
+                        </div>`;
+                }
+
+                html += '</div>';
+                body.innerHTML = html;
+            } catch (error) {
+                console.error('❌ Erro ao carregar fotos:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function fecharFotos() {
+            document.getElementById('modalFotos').classList.remove('open');
+        }
+
+        // ============================================================
+        // ALERTAS
+        // ============================================================
+        function emitirAlerta(id) {
+            if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
+                alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
+            }
+        }
+
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('✅ AI-DEPOM - Consulta v2.9.2 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            carregarUsuario();
+            carregarEstatisticas();   // v2.9.1 — carrega contadores ao abrir a página
+        });
+
+        document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { realizarBusca(); }
+        });
+
+        // Fecha modais com ESC e atalho F11
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            if (e.key === 'Escape') {
+                fecharLightbox();     // v2.9.2 — fecha lightbox primeiro
+                fecharFicha();
+                fecharEdicao();
+                fecharHistorico();
+                fecharFotos();
+                fecharMandados();
+            }
+        });
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
