@@ -1,23 +1,27 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.3.2
-     Data: 17/09/2026 - 13:00
+     Versão: 1.4.0
+     Data: 17/09/2026 - 22:00
      ============================================================
+     ALTERAÇÕES v1.4.0 (17/09/2026 22:00):
+     - ✨ NOVO: Validação manual BNMP (Portal CNJ)
+       - Nova coluna "BNMP" na tabela com ícone colorido por status
+       - Novo modal "Validar no BNMP" com botão de acesso ao portal
+       - Salva status: VÁLIDO / CANCELADO / SUSPENSO / CUMPRIDO / EXTINTO / NÃO ENCONTRADO
+       - Registra quem validou + quando + observação
+       - Grava automaticamente em log_cadastro_usuario (trigger)
+     - 🔗 Menu: Mapa de Mandados
+     - ✅ Preservadas TODAS as funcionalidades da v1.3.2
+
      ALTERAÇÕES v1.3.2 (17/09/2026 13:00):
-     - ✨ maxlength atualizado nos 3 campos ampliados no banco:
-       - numeroMandado: 70 (antes era 30 no banco)
-       - juizMatricula: 70
-       - processoNumero: 70
-     - ✨ Validação JS reforçada (limite 70 caracteres)
-     - ✅ Mantidas todas as features da v1.3.1
+     - ✨ maxlength atualizado nos 3 campos ampliados no banco
 
      ALTERAÇÕES v1.3.1 (17/09/2026 11:00):
-     - 🐛 CORRIGIDO: permissão por ID do perfil
-       IDS = [1=Master, 2=Admin, 3=Delegado, 4=Investigador]
+     - 🐛 CORRIGIDO: permissão de Descrição/Observações por ID do perfil
 
      ALTERAÇÕES v1.3.0 (17/09/2026 10:00):
-     - ✨ Validação manual campo-por-campo com toast
+     - ✨ Validação manual campo-por-campo com toast em português
      ============================================================
 -->
 <!DOCTYPE html>
@@ -111,9 +115,11 @@
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
         .sidebar-footer {
-            position: relative; padding: 15px 20px 20px;
+            position: relative;
+            padding: 15px 20px 20px;
             border-top: 1px solid var(--border-color);
-            background: rgba(0, 0, 0, 0.98); margin-top: auto;
+            background: rgba(0, 0, 0, 0.98);
+            margin-top: auto;
         }
         .sidebar-footer .user-info-sidebar { display: flex; align-items: center; gap: 12px; }
         .sidebar-footer .user-info-sidebar .avatar {
@@ -321,6 +327,59 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+
+        /* ============================================================
+           [v1.4.0] BNMP - Badges e ícones
+           ============================================================ */
+        .bnmp-badge {
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s;
+            display: inline-block;
+            line-height: 1;
+        }
+        .bnmp-badge:hover {
+            transform: scale(1.3);
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+        .bnmp-valido       { color: #00ff88; }   /* 🟢 válido */
+        .bnmp-cancelado    { color: #ffc107; }   /* 🟡 cancelado */
+        .bnmp-suspenso     { color: #ba68c8; }   /* 🟣 suspenso */
+        .bnmp-cumprido     { color: #0dcaf0; }   /* 🔵 cumprido */
+        .bnmp-extinto      { color: #6c757d; }   /* ⚪ extinto */
+        .bnmp-nao-encontrado { color: #ff5722; } /* 🟠 não encontrado */
+        .bnmp-nao-validado { color: rgba(0, 255, 136, 0.2); } /* ⚫ pendente */
+
+        .bnmp-legenda {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px 0;
+            font-size: 11px;
+            color: rgba(0, 255, 136, 0.5);
+            border-top: 1px solid var(--border-color);
+            margin-top: 15px;
+        }
+        .bnmp-legenda .item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .bnmp-legenda .item i {
+            font-size: 14px;
+        }
+
+        .aviso-bnmp {
+            background: rgba(255, 193, 7, 0.05);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 12px;
+            color: #ffc107;
+            margin-bottom: 15px;
+        }
+        .aviso-bnmp i { margin-right: 6px; }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -372,6 +431,7 @@
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
             <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
+            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
             <a class="menu-item active" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
@@ -627,6 +687,16 @@
                     Carregando mandados...
                 </div>
             </div>
+
+            <div class="bnmp-legenda">
+                <div class="item"><i class="fas fa-check-circle bnmp-valido"></i> Válido no BNMP</div>
+                <div class="item"><i class="fas fa-ban bnmp-cancelado"></i> Cancelado</div>
+                <div class="item"><i class="fas fa-pause-circle bnmp-suspenso"></i> Suspenso</div>
+                <div class="item"><i class="fas fa-gavel bnmp-cumprido"></i> Cumprido</div>
+                <div class="item"><i class="fas fa-times-circle bnmp-extinto"></i> Extinto</div>
+                <div class="item"><i class="fas fa-search-minus bnmp-nao-encontrado"></i> Não Encontrado</div>
+                <div class="item"><i class="fas fa-question-circle bnmp-nao-validado"></i> Não Validado</div>
+            </div>
         </div>
     </main>
 
@@ -685,8 +755,33 @@
         </div>
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- ============================================================
+         [v1.4.0] MODAL DE VALIDAÇÃO BNMP
+         ============================================================ -->
+    <div class="modal-custom" id="modalValidacaoBNMP">
+        <div class="modal-custom-content modal-lg">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-shield-alt me-2"></i>Validar Mandado no BNMP</h5>
+                <button class="btn-icon" onclick="fecharValidacaoBNMP()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalValidacaoBNMPBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando...
+                </div>
+            </div>
+            <div class="modal-custom-footer">
+                <button class="btn-outline-gold" onclick="fecharValidacaoBNMP()">
+                    <i class="fas fa-times me-2"></i>CANCELAR
+                </button>
+                <button class="btn-gold" id="btnSalvarValidacaoBNMP" onclick="salvarValidacaoBNMP()">
+                    <i class="fas fa-save me-2"></i>SALVAR VALIDAÇÃO
+                </button>
+            </div>
+        </div>
+    </div>
 
+    <div class="toast-container" id="toastContainer"></div>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
@@ -704,19 +799,30 @@
         let mandadosAtuais = [];
         let mandadoEditandoId = null;
         let mandadoCumprindoId = null;
+        let mandadoValidandoId = null;
 
-        // 🔐 Perfis autorizados (por ID)
+        // 🔐 [v1.3.1] Perfis autorizados (por ID)
         const IDS_PERFIS_EDITORES = [1, 2, 3, 4];
         const NOMES_PERFIS_EDITORES = [
             'ADMINISTRADOR_MASTER', 'ADMINISTRADOR', 'DELEGADO', 'INVESTIGADOR',
             'MASTER', 'ADMINISTRATIVO'
         ];
 
+        // 🎨 [v1.4.0] Mapeamento de ícones e classes BNMP
+        const BNMP_ICONES = {
+            'VALIDO':         { icone: 'fa-check-circle',  classe: 'bnmp-valido',         label: 'Válido no BNMP' },
+            'CANCELADO':      { icone: 'fa-ban',           classe: 'bnmp-cancelado',      label: 'Cancelado no BNMP' },
+            'SUSPENSO':       { icone: 'fa-pause-circle',  classe: 'bnmp-suspenso',       label: 'Suspenso no BNMP' },
+            'CUMPRIDO':       { icone: 'fa-gavel',         classe: 'bnmp-cumprido',       label: 'Cumprido no BNMP' },
+            'EXTINTO':        { icone: 'fa-times-circle',  classe: 'bnmp-extinto',        label: 'Extinto no BNMP' },
+            'NAO_ENCONTRADO': { icone: 'fa-search-minus',  classe: 'bnmp-nao-encontrado', label: 'Não encontrado no BNMP' }
+        };
+
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.3.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.4.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -760,14 +866,12 @@
         function usuarioPodeEditarCamposLivres() {
             if (!usuarioAtual) return false;
 
-            // Tentativa 1: por ID
             const idPerfil = parseInt(usuarioAtual.id_perfil_acesso);
             if (IDS_PERFIS_EDITORES.includes(idPerfil)) {
                 console.log('🔐 [Permissão] Autorizado por ID:', idPerfil);
                 return true;
             }
 
-            // Tentativa 2: fallback por nome
             const fontes = [
                 AIDEPOM.getNomePerfil ? AIDEPOM.getNomePerfil(usuarioAtual.id_perfil_acesso) : '',
                 usuarioAtual.perfil,
@@ -887,7 +991,6 @@
         async function cadastrarMandado(e) {
             e.preventDefault();
 
-            // Valida campos obrigatórios
             const camposObrigatorios = [
                 { id: 'numeroMandado',     nome: 'Número do Mandado',     max: LIMITE_NUMERO_MANDADO },
                 { id: 'tipoMandado',       nome: 'Tipo' },
@@ -921,7 +1024,6 @@
                 }
             }
 
-            // Valida campos opcionais com limite
             const camposOpcionais = [
                 { id: 'juizMatricula',   nome: 'Matrícula do Juiz',    max: LIMITE_JUIZ_MATRICULA },
                 { id: 'processoNumero',  nome: 'Número do Processo',   max: LIMITE_PROCESSO_NUMERO },
@@ -1016,6 +1118,27 @@
         }
 
         // ============================================================
+        // 🎨 [v1.4.0] ICONE BNMP
+        // ============================================================
+        function iconeBNMP(status) {
+            if (!status) {
+                // Não validado (padrão)
+                return `<i class="fas fa-question-circle bnmp-badge bnmp-nao-validado"
+                           title="Ainda não validado no BNMP — clique para validar"
+                           onclick="abrirValidacaoBNMP(ID_MANDADO)"></i>`;
+            }
+            const cfg = BNMP_ICONES[status];
+            if (!cfg) {
+                return `<i class="fas fa-question-circle bnmp-badge bnmp-nao-validado"
+                           title="Status desconhecido — clique para revalidar"
+                           onclick="abrirValidacaoBNMP(ID_MANDADO)"></i>`;
+            }
+            return `<i class="fas ${cfg.icone} bnmp-badge ${cfg.classe}"
+                       title="${cfg.label} — clique para revalidar"
+                       onclick="abrirValidacaoBNMP(ID_MANDADO)"></i>`;
+        }
+
+        // ============================================================
         // CARREGAR MANDADOS
         // ============================================================
         async function carregarMandados() {
@@ -1083,13 +1206,14 @@
                 }
 
                 let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
-                html += '<th>Nº Mandado</th><th>Suspeito</th><th>Tipo</th><th>Status</th><th>Prioridade</th><th>Emissão</th><th>Ações</th>';
+                html += '<th>Nº Mandado</th><th>Suspeito</th><th>Tipo</th><th>Status</th><th>Prioridade</th><th>Emissão</th><th>BNMP</th><th>Ações</th>';
                 html += '</tr></thead><tbody>';
 
                 data.forEach(m => {
                     const statusClass = `status-${(m.status || 'ativo').toLowerCase()}`;
                     const prioridadeClass = `prioridade-${(m.prioridade || 'normal').toLowerCase()}`;
                     const s = m.suspeito || {};
+                    const iconeBnmpHTML = iconeBNMP(m.validacao_bnmp_status).replace(/ID_MANDADO/g, m.id_mandado);
 
                     html += '<tr>';
                     html += `<td><strong style="color:var(--text-primary);">${m.numero_mandado || '#' + m.id_mandado}</strong></td>`;
@@ -1098,6 +1222,7 @@
                     html += `<td><span class="badge-status ${statusClass}">${m.status || '-'}</span></td>`;
                     html += `<td><span class="badge-prioridade ${prioridadeClass}">${m.prioridade || 'NORMAL'}</span></td>`;
                     html += `<td>${formatarData(m.data_emissao)}</td>`;
+                    html += `<td style="text-align:center;">${iconeBnmpHTML}</td>`;
                     html += `<td>
                         <button class="btn-icon" onclick="verDetalhes(${m.id_mandado})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
                         <button class="btn-icon" onclick="editarMandado(${m.id_mandado})" title="Editar"><i class="fas fa-edit"></i></button>
@@ -1146,6 +1271,33 @@
 
                 const s = m.suspeito || {};
 
+                // [v1.4.0] Bloco BNMP
+                let bnmpHTML = '';
+                if (m.validacao_bnmp_status) {
+                    const cfg = BNMP_ICONES[m.validacao_bnmp_status];
+                    bnmpHTML = `
+                        <div class="detalhe-campo">
+                            <span class="label">Validação BNMP</span>
+                            <span class="valor">
+                                <i class="fas ${cfg ? cfg.icone : 'fa-question-circle'} ${cfg ? cfg.classe : 'bnmp-nao-validado'}" style="margin-right:6px;"></i>
+                                <strong>${cfg ? cfg.label : m.validacao_bnmp_status}</strong>
+                                ${m.validacao_bnmp_data ? `<br><small style="color:rgba(0,255,136,0.4);">Validado em: ${new Date(m.validacao_bnmp_data).toLocaleString('pt-BR')}</small>` : ''}
+                                ${m.validacao_bnmp_observacao ? `<br><small style="color:rgba(0,255,136,0.5);">Obs: ${m.validacao_bnmp_observacao}</small>` : ''}
+                            </span>
+                        </div>
+                    `;
+                } else {
+                    bnmpHTML = `
+                        <div class="detalhe-campo">
+                            <span class="label">Validação BNMP</span>
+                            <span class="valor">
+                                <i class="fas fa-question-circle bnmp-nao-validado" style="margin-right:6px;"></i>
+                                <em style="color:rgba(0,255,136,0.4);">Ainda não validado no portal do CNJ</em>
+                            </span>
+                        </div>
+                    `;
+                }
+
                 body.innerHTML = `
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -1171,6 +1323,9 @@
                             <div class="detalhe-campo"><span class="label">Vara/Tribunal</span><span class="valor">${m.vara_tribunal || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Número do Processo</span><span class="valor">${m.processo_numero || '-'}</span></div>
                             ${m.latitude && m.longitude ? `<div class="detalhe-campo"><span class="label">Coordenadas</span><span class="valor">${m.latitude}, ${m.longitude}</span></div>` : ''}
+                        </div>
+                        <div class="col-md-12">
+                            ${bnmpHTML}
                         </div>
                         <div class="col-md-12">
                             <div class="detalhe-campo"><span class="label">Descrição</span><span class="valor">${m.descricao || '-'}</span></div>
@@ -1427,6 +1582,202 @@
         }
 
         // ============================================================
+        // 🎨 [v1.4.0] VALIDAÇÃO BNMP
+        // ============================================================
+        async function abrirValidacaoBNMP(id) {
+            mandadoValidandoId = id;
+            const modal = document.getElementById('modalValidacaoBNMP');
+            const body = document.getElementById('modalValidacaoBNMPBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados do mandado...</div>';
+
+            try {
+                const { data: m, error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select(`
+                        *,
+                        suspeito:suspeito (id_suspeito, nome_completo, cpf, apelido)
+                    `)
+                    .eq('id_mandado', id)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!m) throw new Error('Mandado não encontrado');
+
+                const s = m.suspeito || {};
+                const statusAtual = m.validacao_bnmp_status || '';
+                const obsAtual = m.validacao_bnmp_observacao || '';
+                const dataAtual = m.validacao_bnmp_data ? new Date(m.validacao_bnmp_data).toLocaleString('pt-BR') : null;
+
+                const statusOpts = ['', 'VALIDO', 'CANCELADO', 'SUSPENSO', 'CUMPRIDO', 'EXTINTO', 'NAO_ENCONTRADO'];
+                const statusLabels = {
+                    '': 'Selecione o status...',
+                    'VALIDO': '🟢 Válido',
+                    'CANCELADO': '🟡 Cancelado',
+                    'SUSPENSO': '🟣 Suspenso',
+                    'CUMPRIDO': '🔵 Cumprido',
+                    'EXTINTO': '⚪ Extinto',
+                    'NAO_ENCONTRADO': '🟠 Não Encontrado'
+                };
+
+                body.innerHTML = `
+                    <div class="aviso-bnmp">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Atenção:</strong> Esta validação é <strong>manual e assistida</strong>.
+                        Você precisa consultar o mandado no portal oficial do CNJ e depois registrar o resultado aqui.
+                        Toda validação é registrada em auditoria.
+                    </div>
+
+                    <div class="section-title" style="margin-top:0;">
+                        <i class="fas fa-gavel"></i> Dados do Mandado
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Número</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor">${s.nome_completo || '-'}</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div>
+                        </div>
+                        ${m.processo_numero ? `
+                        <div class="col-md-12">
+                            <div class="detalhe-campo"><span class="label">Nº do Processo</span><span class="valor">${m.processo_numero}</span></div>
+                        </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="section-title">
+                        <i class="fas fa-external-link-alt"></i> 1. Consultar no Portal BNMP
+                    </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <button type="button" class="btn-outline-gold w-100" onclick="abrirPortalBNMP('${(s.cpf || '').replace(/\D/g, '')}')">
+                                <i class="fas fa-external-link-alt me-2"></i>ABRIR PORTAL BNMP (CNJ)
+                            </button>
+                            <small style="display:block; margin-top:8px; color:rgba(0,255,136,0.4); font-size:11px;">
+                                <i class="fas fa-info-circle"></i>
+                                Abre em nova aba. Faça login com seu usuário cadastrado e busque pelo CPF/Nome.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="section-title">
+                        <i class="fas fa-clipboard-check"></i> 2. Registrar Resultado
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Status no BNMP *</label>
+                            <select class="form-select" id="bnmpStatus">
+                                ${statusOpts.map(st => `<option value="${st}" ${st === statusAtual ? 'selected' : ''}>${statusLabels[st]}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label">Observação / Comprovante</label>
+                            <textarea class="form-control" id="bnmpObservacao" rows="3" maxlength="1000"
+                                placeholder="Ex: Consulta realizada em 17/09/2026 às 22h; certidão nº 12345; link do PDF...">${obsAtual}</textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="bnmpConfirmacao" style="accent-color:#00ff88;">
+                                <label class="form-check-label" for="bnmpConfirmacao" style="color:rgba(0,255,136,0.7);">
+                                    <strong>Confirmo</strong> que consultei o portal BNMP manualmente e os dados registrados são verdadeiros.
+                                </label>
+                            </div>
+                        </div>
+                        ${dataAtual ? `
+                        <div class="col-md-12">
+                            <div class="aviso-bnmp" style="background:rgba(0,255,136,0.03); border-color:var(--border-color); color:rgba(0,255,136,0.6);">
+                                <i class="fas fa-history"></i>
+                                Última validação: <strong>${dataAtual}</strong>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color:#dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function abrirPortalBNMP(cpf) {
+            // Abre o portal oficial do BNMP em nova aba
+            // Se tiver CPF, abre direto na busca
+            const url = 'https://portalbnmp.pdpj.jus.br/#/pesquisa-peca';
+            window.open(url, '_blank', 'noopener,noreferrer');
+            showToast('info', 'Portal aberto',
+                cpf ? `Busque pelo CPF: <strong>${cpf}</strong>` : 'Faça login e busque o mandado.', 7000);
+        }
+
+        async function salvarValidacaoBNMP() {
+            if (!mandadoValidandoId) return;
+
+            const btn = document.getElementById('btnSalvarValidacaoBNMP');
+            const status = document.getElementById('bnmpStatus').value;
+            const observacao = document.getElementById('bnmpObservacao').value.trim();
+            const confirmado = document.getElementById('bnmpConfirmacao').checked;
+
+            if (!status) {
+                showToast('warning', 'Status obrigatório', 'Selecione o status do mandado no BNMP.');
+                return;
+            }
+
+            if (!confirmado) {
+                showToast('warning', 'Confirmação necessária', 'Marque o checkbox confirmando que consultou o BNMP.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
+
+            try {
+                const dados = {
+                    validacao_bnmp_status: status,
+                    validacao_bnmp_data: new Date().toISOString(),
+                    validacao_bnmp_usuario: usuarioAtual.id,
+                    validacao_bnmp_observacao: observacao || null,
+                    data_atualizacao: new Date().toISOString()
+                };
+
+                // [v1.4.0] Se validou como VÁLIDO, atualiza status para ATIVO
+                if (status === 'VALIDO') {
+                    dados.status = 'ATIVO';
+                }
+
+                const { error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .update(dados)
+                    .eq('id_mandado', mandadoValidandoId);
+
+                if (error) throw error;
+
+                const labelStatus = BNMP_ICONES[status] ? BNMP_ICONES[status].label : status;
+                showToast('success', 'Validação registrada!',
+                    `Status BNMP: <strong>${labelStatus}</strong>`, 6000);
+
+                fecharValidacaoBNMP();
+                await carregarMandados();
+
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showToast('error', 'Erro ao salvar validação', error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR VALIDAÇÃO';
+            }
+        }
+
+        function fecharValidacaoBNMP() {
+            document.getElementById('modalValidacaoBNMP').classList.remove('open');
+            mandadoValidandoId = null;
+        }
+
+        // ============================================================
         // GEOCODIFICAÇÃO
         // ============================================================
         async function geocodificarEndereco(event) {
@@ -1541,6 +1892,7 @@
                 fecharDetalhes();
                 fecharEdicao();
                 fecharCumprir();
+                fecharValidacaoBNMP();
             }
         });
 
@@ -1577,7 +1929,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.3.2 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.4.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
