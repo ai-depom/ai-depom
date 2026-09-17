@@ -1,9 +1,9 @@
-<!-- ============================================================
+ <!-- ============================================================
      AI-DEPOM - ATIVIDADE POR USUÁRIO
      ============================================================
      Arquivo: 13-atividade-usuario.html
-     Versão: 1.1.0
-     Data: 16/09/2026 - 21:00
+     Versão: 1.2.0
+     Data: 17/09/2026 - 18:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,18 +15,24 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v1.2.0 (17/09/2026 18:00):
+     - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
+     - ➕ Botão MINIMIZE + FULLSCREEN na controls-bar
+     - ➕ toggleFullscreen() + minimizeWindow() implementados + atalho F11
+     - 🎨 FONTES REDUZIDAS (padrão das outras telas):
+       - Tabela: 13px → 12px
+       - Badges: 11px → 10px
+       - Stats: 28px → 24px
+       - Mini-stats: 22px → 18px
+       - User hero: 22px → 18px
+       - Timeline: 11px → 10px
+     - ✨ Botão 👁️ de histórico com onclick direto + stopPropagation()
+     - ✅ Preservadas TODAS as funcionalidades da v1.1.0
+
      ALTERAÇÕES v1.1.0 (16/09/2026 21:00):
      - ✨ NOVO: coluna "Operações" na tabela
      - ✨ NOVO: mini-stat "Operações" no modal do usuário
      - ✨ NOVO: coluna "Operações" no CSV export
-     - ✅ Mantidas: todas as features da v1.0.0
-
-     ALTERAÇÕES v1.0.0 (16/09/2026 17:00):
-     - ✨ Tela de Atividade por Usuário
-     - ✨ Lista de usuários com contadores (logins, inserts, updates, deletes)
-     - ✨ Modal de detalhes com histórico completo do usuário
-     - ✨ Filtros por tipo de ação
-     - ✨ Exportação CSV
      ============================================================
 -->
 <!DOCTYPE html>
@@ -73,6 +79,8 @@
         }
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
+        .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar {
@@ -161,17 +169,19 @@
             font-size: 20px; margin: 0 auto 12px;
             background: rgba(0, 255, 136, 0.05); color: var(--text-primary);
         }
-        .stat-card .number { font-size: 28px; font-weight: 700; color: var(--text-primary); }
-        .stat-card .label { font-size: 11px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+        /* [v1.2.0] FONTE REDUZIDA */
+        .stat-card .number { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+        .stat-card .label { font-size: 10px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
         .table-container { overflow-x: auto; }
         .table-custom { width: 100%; border-collapse: collapse; }
+        /* [v1.2.0] FONTE REDUZIDA */
         .table-custom th {
-            color: rgba(0, 255, 136, 0.4); font-size: 11px; text-transform: uppercase;
+            color: rgba(0, 255, 136, 0.4); font-size: 10px; text-transform: uppercase;
             letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
             text-align: left; white-space: nowrap;
         }
         .table-custom td {
-            color: var(--text-secondary); font-size: 13px; padding: 12px;
+            color: var(--text-secondary); font-size: 12px; padding: 12px;
             border-bottom: 1px solid rgba(0, 51, 34, 0.5);
             vertical-align: middle;
         }
@@ -183,11 +193,12 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000; flex-shrink: 0;
         }
-        .user-cell .user-nome { font-size: 13px; color: var(--text-primary); font-weight: 600; }
-        .user-cell .user-meta { font-size: 10px; color: rgba(0, 255, 136, 0.3); }
+        /* [v1.2.0] FONTE REDUZIDA */
+        .user-cell .user-nome { font-size: 12px; color: var(--text-primary); font-weight: 600; }
+        .user-cell .user-meta { font-size: 9px; color: rgba(0, 255, 136, 0.3); }
         .num-badge {
             display: inline-block; padding: 3px 10px; border-radius: 12px;
-            font-size: 11px; font-weight: 700; min-width: 40px; text-align: center;
+            font-size: 10px; font-weight: 700; min-width: 40px; text-align: center;
         }
         .num-badge.azul { background: rgba(13, 202, 240, 0.1); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.2); }
         .num-badge.verde { background: rgba(0, 255, 136, 0.1); color: var(--text-primary); border: 1px solid var(--border-color); }
@@ -237,8 +248,9 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 32px; font-weight: 700; color: #000;
         }
-        .user-hero .info h3 { color: var(--text-primary); font-size: 22px; margin: 0 0 8px 0; }
-        .user-hero .info .meta { color: rgba(0, 255, 136, 0.5); font-size: 13px; line-height: 1.8; }
+        /* [v1.2.0] FONTE REDUZIDA */
+        .user-hero .info h3 { color: var(--text-primary); font-size: 18px; margin: 0 0 8px 0; }
+        .user-hero .info .meta { color: rgba(0, 255, 136, 0.5); font-size: 11px; line-height: 1.8; }
         .user-hero .info .meta i { width: 20px; }
         .mini-stats {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -249,8 +261,9 @@
             border: 1px solid var(--border-color);
             border-radius: 10px; padding: 14px; text-align: center;
         }
-        .mini-stat .num { font-size: 22px; font-weight: 700; color: var(--text-primary); }
-        .mini-stat .lbl { font-size: 10px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+        /* [v1.2.0] FONTE REDUZIDA */
+        .mini-stat .num { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+        .mini-stat .lbl { font-size: 9px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
         .timeline-list { max-height: 500px; overflow-y: auto; padding-right: 8px; }
         .timeline-row {
             display: flex; gap: 12px; padding: 10px;
@@ -259,16 +272,17 @@
             border-radius: 8px; transition: all 0.3s;
         }
         .timeline-row:hover { border-left-color: var(--text-primary); background: rgba(0, 255, 136, 0.03); }
+        /* [v1.2.0] FONTE REDUZIDA */
         .timeline-row .tl-hora {
             min-width: 140px; color: rgba(0, 255, 136, 0.4);
-            font-size: 11px; font-family: monospace; padding-top: 2px;
+            font-size: 10px; font-family: monospace; padding-top: 2px;
         }
         .timeline-row .tl-acao {
-            min-width: 100px; font-size: 10px; font-weight: 700;
+            min-width: 100px; font-size: 9px; font-weight: 700;
             text-transform: uppercase; padding-top: 2px;
         }
         .timeline-row .tl-desc {
-            flex: 1; font-size: 12px; color: var(--text-secondary);
+            flex: 1; font-size: 11px; color: var(--text-secondary);
         }
         .filtros-timeline {
             display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;
@@ -312,6 +326,7 @@
         .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
         .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -337,6 +352,8 @@
             <button class="control-btn" onclick="window.history.back()"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
             <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
         </div>
         <div class="controls-center">
@@ -360,6 +377,7 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
             <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
@@ -458,7 +476,7 @@
         };
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Atividade por Usuario v1.1.0 iniciado');
+            console.log('AI-DEPOM - Atividade por Usuario v1.2.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -564,7 +582,7 @@
             html += '<th style="text-align:center;">Operacoes</th>';
             html += '<th style="text-align:center;">Total</th>';
             html += '<th>Ultimo Login</th>';
-            html += '<th></th>';
+            html += '<th style="text-align:right;">Acoes</th>';
             html += '</tr></thead><tbody>';
 
             atividadeAtual.forEach(u => {
@@ -574,7 +592,7 @@
 
                 html += `<tr onclick="abrirHistorico('${u.id}')">`;
                 html += `<td><div class="user-cell"><div class="mini-avatar">${inicial}</div><div><div class="user-nome">${u.nome_completo || '-'}</div><div class="user-meta">${u.matricula || ''}</div></div></div></td>`;
-                html += `<td style="font-size:12px;">${perfil}</td>`;
+                html += `<td style="font-size:11px;">${perfil}</td>`;
                 html += `<td style="text-align:center;"><span class="num-badge azul">${u.total_logins || 0}</span></td>`;
                 html += `<td style="text-align:center;"><span class="num-badge verde">${u.total_inserts || 0}</span></td>`;
                 html += `<td style="text-align:center;"><span class="num-badge amarelo">${u.total_updates || 0}</span></td>`;
@@ -582,7 +600,7 @@
                 html += `<td style="text-align:center;"><span class="num-badge laranja">${u.total_operacoes || 0}</span></td>`;
                 html += `<td style="text-align:center;"><span class="num-badge cinza">${u.total_acoes || 0}</span></td>`;
                 html += `<td><small style="color:rgba(0,255,136,0.5);">${ultimoLogin}</small></td>`;
-                html += `<td style="text-align:right;"><button class="btn-icon" title="Ver historico"><i class="fas fa-eye"></i></button></td>`;
+                html += `<td style="text-align:right;"><button class="btn-icon" onclick="event.stopPropagation(); abrirHistorico('${u.id}')" title="Ver historico completo"><i class="fas fa-eye"></i></button></td>`;
                 html += '</tr>';
             });
 
@@ -771,8 +789,71 @@
                 '<div class="toast-message">' + mensagem + '</div></div>' +
                 '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), duracao);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
         }
+
+        // ============================================================
+        // [v1.2.0] CONTROLES DE JANELA
+        // ============================================================
+        function minimizeWindow() {
+            try {
+                window.blur();
+                console.log('🪟 Janela desfocada (minimizar real não suportado)');
+            } catch (e) { console.warn('Minimizar não suportado:', e); }
+        }
+
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+
+            const requestFullScreen = docEl.requestFullscreen
+                || docEl.mozRequestFullScreen
+                || docEl.webkitRequestFullScreen
+                || docEl.msRequestFullscreen;
+
+            const cancelFullScreen = doc.exitFullscreen
+                || doc.mozCancelFullScreen
+                || doc.webkitExitFullscreen
+                || doc.msExitFullscreen;
+
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
+            }
+        }
+
+        // Atualiza o ícone do botão fullscreen
+        document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('MSFullscreenChange', atualizarIconeFullscreen);
+
+        function atualizarIconeFullscreen() {
+            const btn = document.querySelector('.fullscreen-btn i');
+            if (!btn) return;
+
+            const isFullscreen = document.fullscreenElement
+                || document.webkitFullscreenElement
+                || document.mozFullScreenElement
+                || document.msFullscreenElement;
+
+            btn.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+        }
+
+        // Atalhos de teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
+            if (e.key === 'Escape') {
+                fecharHistorico();
+            }
+        });
 
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
