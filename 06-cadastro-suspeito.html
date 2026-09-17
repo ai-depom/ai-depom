@@ -1,50 +1,17 @@
  <!-- ============================================================
-     AI-DEPOM - CONSULTA DE SUSPEITOS
+     AI-DEPOM - CADASTRO DE SUSPEITOS
      ============================================================
-     Arquivo: 07-consulta.html
-     Versão: 2.9.2
-     Data: 17/09/2026 - 23:45
-     Autor: AI-DEPOM Team
+     Arquivo: 06-cadastro-suspeito.html
+     Versão: 3.0.0
+     Data: 18/09/2026 - 04:00
      ============================================================
-     REGRA DE OURO:
-     1. Zero placeholders quebrados
-     2. Zero TODOs esquecidos
-     3. Zero duplicações
-     4. Toda função referenciada DEVE existir
-     5. Todo botão DEVE ter handler real
-     6. Todo módulo DEVE estar conectado
-     7. Nenhuma linha deve ser removida sem substituição
-
-     ALTERAÇÕES v2.9.2 (17/09/2026 23:45):
-     - ✨ Ficha do Suspeito: campo "FOTO DO SUSPEITO" com rótulo visível
-     - ✨ Clique na foto → abre em tela cheia (lightbox)
-     - ✨ Fallback melhorado: "Sem foto cadastrada"
-     - ✨ Funções abrirLightbox() e fecharLightbox() + ESC fecha
-     - ✅ Preservadas TODAS as funcionalidades da v2.9.1
-
-     ALTERAÇÕES v2.9.1 (17/09/2026 23:30):
-     - ✨ Contadores (Presos/Procurados/Foragidos) agora carregam ao abrir a página
-       - carregarEstatisticas() chamada no DOMContentLoaded
-       - Não depende mais de clicar em BUSCAR para exibir
-
-     ALTERAÇÕES v2.9.0 (17/09/2026 23:30):
-     - ✨ NOVO: Ícone ⚖️ (gavel) na coluna "Mandados" da tabela
-       - Cor reflete o status BNMP do mandado (verde=válido, etc)
-       - Clicável → abre modal com lista de mandados vinculados
-       - Não aparece quando o suspeito não tem mandado
-     - ✨ NOVO: Seção "Mandados Vinculados" na Ficha do Suspeito
-       - Badge com contador no topo
-       - Lista compacta: número + status + BNMP
-     - ✨ Nova função abrirMandadosDoSuspeito() e modal dedicado
-     - 🔍 Query otimizada: busca IDs de suspeitos com mandado em 1 única chamada
-     - ✅ Preservadas TODAS as funcionalidades da v2.8.0
-
-     ALTERAÇÕES v2.8.0 (17/09/2026 17:00):
-     - 🔗 Menu: "Mapa de Mandados" + "Operações"
-     - ➕ Botão FULLSCREEN + atalho F11
-
-     ALTERAÇÕES v2.7.4 (16/09/2026 18:00):
-     - 🐛 CORRIGIDO: perfil Admin não conseguia editar suspeito
+     ALTERAÇÕES v3.0.0:
+     - ✨ Tela de cadastro reconstruída (o arquivo estava com o
+       conteúdo do 07-consulta.html por engano)
+     - ✨ Formulário completo de suspeito
+     - ✨ Upload de foto principal para o bucket fotos-suspeitos
+     - ✨ Criação automática do registro em arquivo_midia
+     - ✅ Mesmo layout/padrão visual das outras telas
      ============================================================
 -->
 <!DOCTYPE html>
@@ -52,7 +19,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI-DEPOM - Consulta</title>
+    <title>AI-DEPOM - Cadastro de Suspeito</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -68,23 +35,18 @@
             --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
             --control-size: 36px;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         html, body {
-            height: 100%;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            height: 100%; min-height: 100vh;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow-x: hidden;
         }
 
+        /* HEADER / CONTROLES */
         .controls-bar {
-            position: fixed; top: 0; left: 0; right: 0;
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--border-color);
@@ -95,7 +57,6 @@
         .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
         .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
-
         .control-btn {
             width: var(--control-size); height: var(--control-size);
             border-radius: 8px; border: none; background: transparent;
@@ -107,30 +68,26 @@
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
-
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #000; }
 
-        /* SIDEBAR com flexbox (footer não sobrepõe o menu) */
+        /* SIDEBAR */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999;
-            padding: 20px 0 0 0;
+            z-index: 999; padding: 20px 0 0 0;
             transition: transform 0.3s ease;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
         }
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .sidebar-brand .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: var(--gradient-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
-
         .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
@@ -143,9 +100,7 @@
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
-
         .sidebar-footer {
-            position: relative;
             padding: 15px 20px 20px;
             border-top: 1px solid var(--border-color);
             background: rgba(0, 0, 0, 0.98);
@@ -158,6 +113,7 @@
 
         .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; }
 
+        /* TOP BAR */
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 15px;
@@ -167,13 +123,15 @@
         }
         .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
         .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
-        .top-bar .top-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-        .top-bar .top-actions .badge { padding: 6px 14px; font-weight: 500; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.5); font-size: 11px; }
-        .top-bar .top-actions .badge i { margin-right: 6px; }
 
-        .form-card { background: var(--bg-secondary); border-radius: 14px; padding: 25px; border: 1px solid var(--border-color); }
+        /* FORM */
+        .form-card { background: var(--bg-secondary); border-radius: 14px; padding: 25px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .form-card .card-title { color: var(--text-primary); font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px; }
         .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
+
+        .section-title { color: var(--text-primary); font-size: 13px; letter-spacing: 1px; margin: 22px 0 15px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color); }
+        .section-title:first-child { margin-top: 0; }
+        .section-title i { margin-right: 10px; opacity: 0.7; }
 
         .form-label { color: rgba(0, 255, 136, 0.3); font-size: 12px; font-weight: 600; text-transform: uppercase; }
         .form-control, .form-select {
@@ -181,331 +139,77 @@
             color: var(--text-primary); padding: 10px 14px;
             border-radius: 10px; transition: all 0.3s; font-size: 14px;
         }
-        .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .form-control:focus, .form-select:focus {
+            background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary);
+            box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
+        }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
-
-        .form-control:disabled,
-        .form-control[readonly],
-        .form-select:disabled,
-        .form-control.disabled,
-        .form-select.disabled {
-            background: #000000 !important;
-            color: var(--text-primary) !important;
-            border-color: var(--border-color) !important;
-            opacity: 1 !important;
-            cursor: not-allowed;
-        }
-        .form-control:disabled::placeholder,
-        .form-control[readonly]::placeholder { color: rgba(0, 255, 136, 0.35) !important; }
-        .form-check-input:disabled { background-color: #000; border-color: var(--border-color); }
-        .form-check-input:disabled + .form-check-label { color: rgba(0, 255, 136, 0.35); }
+        .form-control:disabled, .form-select:disabled { background: #000 !important; color: var(--text-primary) !important; opacity: 1 !important; }
+        textarea.form-control { resize: vertical; min-height: 100px; line-height: 1.6; }
+        .form-check-input { background-color: #000; border-color: var(--border-color); }
+        .form-check-input:checked { background-color: var(--text-primary); border-color: var(--text-primary); }
+        .form-check-label { color: rgba(0, 255, 136, 0.6); font-size: 13px; }
 
         .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
-        .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
-        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
+        .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-        .btn-outline-gold:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 12px; border-radius: 8px; transition: all 0.3s; }
-        .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
 
-        .table-container { overflow-x: auto; }
-        .table-custom { width: 100%; border-collapse: collapse; }
-        .table-custom th { color: rgba(0, 255, 136, 0.3); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 12px 14px; border-bottom: 1px solid var(--border-color); text-align: left; }
-        .table-custom td { padding: 12px 14px; border-bottom: 1px solid rgba(0, 255, 136, 0.02); font-size: 14px; vertical-align: middle; }
-        .table-custom tr:hover td { background: rgba(0, 255, 136, 0.01); }
+        /* UPLOAD DE FOTO */
+        .foto-upload-area {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            background: rgba(0, 255, 136, 0.02);
+            transition: all 0.3s;
+            cursor: pointer;
+            min-height: 220px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .foto-upload-area:hover { border-color: var(--text-primary); background: rgba(0, 255, 136, 0.05); }
+        .foto-upload-area i.fa-camera { font-size: 40px; color: rgba(0, 255, 136, 0.3); margin-bottom: 10px; }
+        .foto-upload-area .hint { color: rgba(0, 255, 136, 0.4); font-size: 12px; }
+        .foto-preview {
+            max-width: 100%;
+            max-height: 260px;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            display: none;
+        }
+        .foto-upload-area.tem-foto { padding: 8px; }
+        .foto-upload-area.tem-foto i, .foto-upload-area.tem-foto .hint, .foto-upload-area.tem-foto .btn-remover-foto { display: none; }
+        .foto-upload-area.tem-foto .foto-preview { display: block; }
+        .btn-remover-foto { margin-top: 10px; background: rgba(220, 53, 69, 0.1); border: 1px solid #dc3545; color: #dc3545; padding: 5px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; }
 
-        .status-badge { display: inline-block; padding: 3px 14px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-        .status-badge.preso { background: #dc3545; color: #fff; }
-        .status-badge.procurado { background: #ffc107; color: #000; }
-        .status-badge.foragido { background: #dc3545; color: #fff; animation: pulse 1.5s infinite; }
-        .status-badge.investigado { background: #17a2b8; color: #fff; }
-        .status-badge.condicional { background: #28a745; color: #fff; }
-        .status-badge.liberado { background: #6c757d; color: #fff; }
-
-        .perigo-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 10px; font-weight: 600; }
-        .perigo-badge.baixo { background: #28a745; color: #fff; }
-        .perigo-badge.medio { background: #ffc107; color: #000; }
-        .perigo-badge.alto { background: #fd7e14; color: #fff; }
-        .perigo-badge.extremo { background: #dc3545; color: #fff; }
-
-        .foto-suspeito { width: 50px; height: 60px; object-fit: cover; border-radius: 6px; border: 1px solid var(--border-color); display: block; }
-        .foto-placeholder { width: 50px; height: 60px; background: rgba(0, 255, 136, 0.05); border-radius: 6px; border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; color: rgba(0, 255, 136, 0.2); font-size: 16px; }
+        /* TOAST */
+        .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
+        .toast-ai {
+            min-width: 320px; max-width: 420px; padding: 16px 20px;
+            border-radius: 12px; background: var(--bg-secondary);
+            border: 1px solid var(--border-color); color: var(--text-primary);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            display: flex; align-items: flex-start; gap: 12px;
+            animation: slideIn 0.3s ease;
+        }
+        .toast-ai.success { border-left: 4px solid var(--text-primary); }
+        .toast-ai.error { border-left: 4px solid #dc3545; }
+        .toast-ai.warning { border-left: 4px solid #ffc107; }
+        .toast-ai.info { border-left: 4px solid #0dcaf0; }
+        .toast-ai .toast-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+        .toast-ai.success .toast-icon { color: var(--text-primary); }
+        .toast-ai.error .toast-icon { color: #dc3545; }
+        .toast-ai.warning .toast-icon { color: #ffc107; }
+        .toast-ai.info .toast-icon { color: #0dcaf0; }
+        .toast-ai .toast-title { font-weight: 700; font-size: 13px; margin-bottom: 4px; }
+        .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
+        .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; font-size: 14px; margin-left: auto; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
 
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
-
-        /* ============================================================
-           [v2.9.0] ÍCONE DE MANDADO NA TABELA
-           ============================================================ */
-        .badge-mandado {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: 2px solid rgba(0, 0, 0, 0.4);
-            background: rgba(0, 255, 136, 0.1);
-            color: var(--text-primary);
-            text-decoration: none;
-        }
-        .badge-mandado:hover {
-            transform: scale(1.15);
-            box-shadow: 0 0 15px currentColor;
-            filter: drop-shadow(0 0 6px currentColor);
-        }
-        .badge-mandado.mandado-valido       { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
-        .badge-mandado.mandado-ativo        { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
-        .badge-mandado.mandado-novo         { background: rgba(220, 53, 69, 0.15); color: #dc3545; border-color: rgba(220, 53, 69, 0.4); }
-        .badge-mandado.mandado-cumprido     { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; border-color: rgba(13, 202, 240, 0.4); }
-        .badge-mandado.mandado-cancelado    { background: rgba(255, 193, 7, 0.15); color: #ffc107; border-color: rgba(255, 193, 7, 0.4); }
-        .badge-mandado.mandado-suspenso     { background: rgba(186, 104, 200, 0.15); color: #ba68c8; border-color: rgba(186, 104, 200, 0.4); }
-        .badge-mandado.mandado-vencido      { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border-color: rgba(108, 117, 125, 0.4); }
-        .badge-mandado.mandado-extinto      { background: rgba(108, 117, 125, 0.15); color: #6c757d; border-color: rgba(108, 117, 125, 0.4); }
-        .badge-mandado.mandado-nao-encontrado { background: rgba(255, 87, 34, 0.15); color: #ff5722; border-color: rgba(255, 87, 34, 0.4); }
-
-        .badge-mandado-count {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: #000;
-            color: var(--text-primary);
-            font-size: 9px;
-            font-weight: 700;
-            min-width: 16px;
-            height: 16px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--text-primary);
-            padding: 0 4px;
-        }
-        .badge-mandado-wrapper {
-            position: relative;
-            display: inline-block;
-        }
-
-        /* ============================================================
-           [v2.9.0] MODAL DE MANDADOS VINCULADOS
-           ============================================================ */
-        .mandado-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            border-left: 4px solid var(--border-color);
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: all 0.3s;
-        }
-        .mandado-item:hover {
-            background: rgba(0, 255, 136, 0.03);
-            transform: translateX(4px);
-        }
-        .mandado-item.borda-valido     { border-left-color: #00ff88; }
-        .mandado-item.borda-ativo      { border-left-color: #00ff88; }
-        .mandado-item.borda-novo       { border-left-color: #dc3545; }
-        .mandado-item.borda-cumprido   { border-left-color: #0dcaf0; }
-        .mandado-item.borda-cancelado  { border-left-color: #ffc107; }
-        .mandado-item.borda-suspenso   { border-left-color: #ba68c8; }
-        .mandado-item.borda-vencido    { border-left-color: #adb5bd; }
-        .mandado-item.borda-extinto    { border-left-color: #6c757d; }
-        .mandado-item.borda-nao-encontrado { border-left-color: #ff5722; }
-
-        .mandado-item .mandado-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
-        .mandado-item .mandado-info { flex: 1; min-width: 0; }
-        .mandado-item .mandado-numero {
-            color: var(--text-primary);
-            font-weight: 700;
-            font-size: 13px;
-            margin-bottom: 3px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .mandado-item .mandado-meta {
-            color: rgba(0, 255, 136, 0.5);
-            font-size: 11px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .mandado-item .mandado-meta span {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .badge-bnmp-mini {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .badge-bnmp-mini.bnmp-validado    { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
-        .badge-bnmp-mini.bnmp-cancelado   { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
-        .badge-bnmp-mini.bnmp-suspenso    { background: rgba(186, 104, 200, 0.15); color: #ba68c8; }
-        .badge-bnmp-mini.bnmp-cumprido    { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; }
-        .badge-bnmp-mini.bnmp-extinto     { background: rgba(108, 117, 125, 0.15); color: #6c757d; }
-        .badge-bnmp-mini.bnmp-nao-validado { background: rgba(0, 255, 136, 0.05); color: rgba(0, 255, 136, 0.4); }
-
-        /* ============================================================
-           MODAIS (mantidos da v2.8.0)
-           ============================================================ */
-        .modal-ficha, .modal-edicao, .modal-historico, .modal-fotos, .modal-mandados {
-            display: none; position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(5px);
-            z-index: 9999; justify-content: center; align-items: center; padding: 20px;
-        }
-        .modal-ficha.open, .modal-edicao.open, .modal-historico.open, .modal-fotos.open, .modal-mandados.open { display: flex; }
-
-        .modal-content {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 14px; width: 100%; max-width: 800px;
-            max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
-        }
-        .modal-content.modal-lg { max-width: 1000px; }
-
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 25px; border-bottom: 1px solid var(--border-color);
-            position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
-        }
-        .modal-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
-        .modal-body { padding: 25px; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; background: var(--bg-secondary); }
-
-        .ficha-foto { width: 200px; height: 250px; object-fit: cover; border-radius: 10px; border: 2px solid var(--border-color); display: block; margin: 0 auto; }
-        .ficha-foto-placeholder { width: 200px; height: 250px; background: rgba(0, 255, 136, 0.05); border-radius: 10px; border: 2px dashed var(--border-color); display: flex; flex-direction: column; align-items: center; justify-content: center; color: rgba(0, 255, 136, 0.2); margin: 0 auto; }
-        .ficha-foto-placeholder i { font-size: 50px; margin-bottom: 10px; }
-
-        .ficha-campo { padding: 8px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
-        .ficha-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 3px; }
-        .ficha-campo .valor { color: var(--text-primary); font-size: 13px; }
-
-        .aviso-justificativa { background: rgba(255, 193, 7, 0.05); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; }
-
-        .historico-item { background: rgba(0, 0, 0, 0.3); border-left: 3px solid var(--text-primary); border-radius: 8px; padding: 15px; margin-bottom: 12px; }
-        .historico-item .versao { display: inline-block; background: var(--text-primary); color: #000; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-right: 8px; }
-        .historico-item .meta { color: rgba(0, 255, 136, 0.4); font-size: 11px; margin-bottom: 10px; }
-        .historico-item .justificativa { background: rgba(255, 193, 7, 0.05); padding: 8px 12px; border-radius: 6px; font-size: 12px; color: #ffc107; margin-bottom: 10px; }
-        .historico-item .diff-item { background: rgba(0, 0, 0, 0.4); padding: 8px; border-radius: 6px; margin-bottom: 6px; font-size: 12px; }
-        .diff-antes { color: #ff6b6b; text-decoration: line-through; }
-        .diff-depois { color: var(--text-primary); font-weight: 600; }
-
-        .galeria-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .foto-card { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; transition: all 0.3s; }
-        .foto-card:hover { border-color: var(--text-primary); }
-        .foto-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
-        .foto-card .info { padding: 10px; }
-        .foto-card .data { font-size: 10px; color: rgba(0, 255, 136, 0.4); }
-        .foto-card .principal { background: var(--text-primary); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; }
-
-        /* ============================================================
-           [v2.9.2] CAMPO FOTO DO SUSPEITO + LIGHTBOX
-           ============================================================ */
-        .ficha-foto-wrapper {
-            position: relative;
-            display: inline-block;
-            cursor: zoom-in;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: all 0.3s;
-        }
-        .ficha-foto-wrapper:hover {
-            transform: scale(1.02);
-            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.25);
-        }
-        .ficha-foto-wrapper::after {
-            content: '\f00e'; /* fa-search-plus */
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            bottom: 8px; right: 8px;
-            background: rgba(0, 0, 0, 0.7);
-            color: var(--text-primary);
-            width: 30px; height: 30px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        .ficha-foto-wrapper:hover::after { opacity: 1; }
-
-        .foto-label {
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            display: block;
-            margin-bottom: 6px;
-            text-align: center;
-        }
-
-        .foto-lightbox {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            padding: 30px;
-        }
-        .foto-lightbox.open { display: flex; }
-        .foto-lightbox img {
-            max-width: 95%;
-            max-height: 95%;
-            border-radius: 12px;
-            border: 2px solid var(--text-primary);
-            box-shadow: 0 0 60px rgba(0, 255, 136, 0.3);
-        }
-        .foto-lightbox .fechar {
-            position: absolute;
-            top: 20px; right: 20px;
-            background: transparent;
-            border: 1px solid var(--text-primary);
-            color: var(--text-primary);
-            width: 44px; height: 44px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        .foto-lightbox .fechar:hover {
-            background: rgba(0, 255, 136, 0.1);
-            transform: rotate(90deg);
-        }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -519,17 +223,7 @@
             .top-bar { flex-direction: column; align-items: flex-start; padding: 12px 18px; }
             .form-card { padding: 18px; }
             .btn-gold, .btn-outline-gold { width: 100%; }
-            .ficha-foto, .ficha-foto-placeholder { width: 140px; height: 175px; }
-            .modal-body { padding: 15px; }
         }
-        @media (max-width: 480px) {
-            .main-content { padding: 60px 10px 10px; }
-            .top-actions { width: 100%; }
-            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; }
-            .foto-suspeito, .foto-placeholder { width: 40px; height: 48px; }
-        }
-
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
         ::-webkit-scrollbar-thumb { background: rgba(0, 255, 136, 0.3); border-radius: 4px; }
@@ -563,8 +257,8 @@
         <nav class="sidebar-menu">
             <div class="menu-label">Navegação</div>
             <a class="menu-item" onclick="window.location.href='04-dashboard.html'"><i class="fas fa-th-large"></i> Dashboard</a>
-            <a class="menu-item" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
-            <a class="menu-item active" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
+            <a class="menu-item active" onclick="window.location.href='06-cadastro-suspeito.html'"><i class="fas fa-user-plus"></i> Cadastro</a>
+            <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatórios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operações</a>
             <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
@@ -591,1440 +285,473 @@
             <div class="d-flex align-items-center gap-3">
                 <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
                 <div class="page-title">
-                    <h4><i class="fas fa-search me-2"></i>Consulta de Suspeitos</h4>
-                    <small id="totalRegistrosInfo">Aguardando busca...</small>
+                    <h4><i class="fas fa-user-plus me-2"></i>Cadastro de Suspeito</h4>
+                    <small>Preencha os dados e salve o registro</small>
                 </div>
             </div>
-            <div class="top-actions">
-                <span class="badge" id="totalPresos"><i class="fas fa-user-check" style="color:#28a745;"></i> Presos: <span class="count">0</span></span>
-                <span class="badge" id="totalProcurados"><i class="fas fa-user-graduate" style="color:#ffc107;"></i> Procurados: <span class="count">0</span></span>
-                <span class="badge" id="totalForagidos"><i class="fas fa-user-slash" style="color:#dc3545;"></i> Foragidos: <span class="count">0</span></span>
+            <div class="d-flex gap-2">
+                <a href="07-consulta.html" class="btn-outline-gold" style="text-decoration:none;">
+                    <i class="fas fa-search me-2"></i>IR PARA CONSULTA
+                </a>
             </div>
         </header>
 
-        <div class="form-card">
-            <div class="card-title"><i class="fas fa-search"></i>Busca Avançada</div>
+        <form id="formCadastro" novalidate>
+            <!-- IDENTIFICAÇÃO -->
+            <div class="form-card">
+                <div class="card-title"><i class="fas fa-id-card"></i>Identificação</div>
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-8">
-                    <div class="input-group">
-                        <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); color:rgba(0,255,136,0.2);"><i class="fas fa-search"></i></span>
-                        <input type="text" class="form-control" id="buscaGlobal" placeholder="Buscar por Nome, CPF, RG...">
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <label class="form-label">Nome Completo *</label>
+                        <input type="text" class="form-control" id="nome_completo" maxlength="200" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Apelido</label>
+                        <input type="text" class="form-control" id="apelido" maxlength="100">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">CPF *</label>
+                        <input type="text" class="form-control" id="cpf" maxlength="14" placeholder="000.000.000-00" required>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">RG</label>
+                        <input type="text" class="form-control" id="rg" maxlength="20">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Órgão Exp.</label>
+                        <input type="text" class="form-control" id="orgao_expedidor" maxlength="10" placeholder="SSP">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Data de Nascimento *</label>
+                        <input type="date" class="form-control" id="data_nascimento" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Sexo</label>
+                        <select class="form-select" id="sexo">
+                            <option value="">Selecione...</option>
+                            <option value="M">Masculino</option>
+                            <option value="F">Feminino</option>
+                            <option value="O">Outro</option>
+                        </select>
+                    </div>
+                    <div class="col-md-5">
+                        <label class="form-label">Nome da Mãe</label>
+                        <input type="text" class="form-control" id="nome_mae" maxlength="200">
                     </div>
                 </div>
-                <div class="col-md-4">
-                    <button class="btn-gold w-100" onclick="realizarBusca()"><i class="fas fa-arrow-right me-2"></i>BUSCAR</button>
-                </div>
-            </div>
 
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <label class="form-label">Status</label>
-                    <select class="form-select" id="filtroStatus">
-                        <option value="">Todos</option>
-                        <option value="PRESO">Preso</option>
-                        <option value="PROCURADO">Procurado</option>
-                        <option value="FORAGIDO">Foragido</option>
-                        <option value="INVESTIGADO">Investigado</option>
-                        <option value="CONDICIONAL">Condicional</option>
-                        <option value="LIBERADO">Liberado</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Periculosidade</label>
-                    <select class="form-select" id="filtroPericulosidade">
-                        <option value="">Todos</option>
-                        <option value="BAIXO">Baixo</option>
-                        <option value="MEDIO">Médio</option>
-                        <option value="ALTO">Alto</option>
-                        <option value="EXTREMO">Extremo</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Data Início</label>
-                    <input type="date" class="form-control" id="filtroDataInicio">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Data Fim</label>
-                    <input type="date" class="form-control" id="filtroDataFim">
-                </div>
-            </div>
-
-            <div id="resultadosContainer">
-                <div class="table-container">
-                    <table class="table-custom" id="tabelaResultados">
-                        <thead>
-                            <tr>
-                                <th style="width: 70px;">Foto</th>
-                                <th>Nome</th>
-                                <th>CPF</th>
-                                <th>Status</th>
-                                <th>Periculosidade</th>
-                                <th>Cidade</th>
-                                <th style="text-align:center;">Mandado</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultadosConsulta">
-                            <tr>
-                                <td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
-                                    <i class="fas fa-search" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
-                                    <div style="font-size: 14px; margin-bottom: 6px;">Faça uma busca para ver os resultados</div>
-                                    <small style="font-size: 11px; color: rgba(0, 255, 136, 0.2);">
-                                        Digite um nome/CPF/RG <strong>ou</strong> selecione um filtro e clique em <strong>BUSCAR</strong>
-                                    </small>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mt-4">
-                    <small id="infoPagina" style="color: rgba(0, 255, 136, 0.3);"></small>
-                    <div id="paginacaoControles">
-                        <button class="btn-icon me-1" onclick="paginaAnterior()" id="btnAnterior" style="display:none;"><i class="fas fa-chevron-left"></i></button>
-                        <span id="numerosPaginas"></span>
-                        <button class="btn-icon ms-1" onclick="proximaPagina()" id="btnProximo" style="display:none;"><i class="fas fa-chevron-right"></i></button>
+                <!-- FOTO -->
+                <div class="section-title"><i class="fas fa-camera"></i>Foto do Suspeito</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Foto Principal</label>
+                        <div class="foto-upload-area" id="fotoArea" onclick="document.getElementById('fotoInput').click()">
+                            <i class="fas fa-camera"></i>
+                            <div class="hint">Clique para escolher uma foto</div>
+                            <div class="hint" style="font-size:10px; margin-top:4px;">JPG, PNG ou WEBP · até 5MB</div>
+                            <img id="fotoPreview" class="foto-preview" alt="Pré-visualização">
+                            <button type="button" class="btn-remover-foto" onclick="event.stopPropagation(); removerFoto()">Remover foto</button>
+                        </div>
+                        <input type="file" id="fotoInput" accept="image/*" style="display:none;" onchange="onFotoSelecionada(event)">
                     </div>
                 </div>
             </div>
-        </div>
+
+            <!-- ENDEREÇO -->
+            <div class="form-card">
+                <div class="card-title"><i class="fas fa-map-marker-alt"></i>Endereço</div>
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">CEP</label>
+                        <input type="text" class="form-control" id="cep" maxlength="9" placeholder="00000-000" oninput="mascaraCep(this)" onblur="buscarCep()">
+                    </div>
+                    <div class="col-md-7">
+                        <label class="form-label">Logradouro</label>
+                        <input type="text" class="form-control" id="logradouro" maxlength="200">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Número</label>
+                        <input type="text" class="form-control" id="numero" maxlength="10">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Complemento</label>
+                        <input type="text" class="form-control" id="complemento" maxlength="100">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Bairro</label>
+                        <input type="text" class="form-control" id="bairro" maxlength="100">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Cidade</label>
+                        <input type="text" class="form-control" id="cidade" maxlength="100" value="Salvador">
+                    </div>
+                    <div class="col-md-1">
+                        <label class="form-label">UF</label>
+                        <input type="text" class="form-control" id="uf" maxlength="2" style="text-transform:uppercase;" value="BA">
+                    </div>
+                </div>
+            </div>
+
+            <!-- CARACTERÍSTICAS FÍSICAS -->
+            <div class="form-card">
+                <div class="card-title"><i class="fas fa-user"></i>Características Físicas</div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Altura (m)</label>
+                        <input type="number" step="0.01" class="form-control" id="altura" placeholder="1.75">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Peso (kg)</label>
+                        <input type="number" step="0.01" class="form-control" id="peso" placeholder="80">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Cor dos Olhos</label>
+                        <input type="text" class="form-control" id="cor_olhos" maxlength="50">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Cor do Cabelo</label>
+                        <input type="text" class="form-control" id="cor_cabelo" maxlength="50">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Sinais Particulares / Cicatrizes</label>
+                        <textarea class="form-control" id="sinais_particulares" rows="2" maxlength="500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- INFORMAÇÕES CRIMINAIS -->
+            <div class="form-card">
+                <div class="card-title"><i class="fas fa-balance-scale"></i>Informações Criminais</div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Status *</label>
+                        <select class="form-select" id="status_atual" required>
+                            <option value="">Selecione...</option>
+                            <option value="INVESTIGADO">Investigado</option>
+                            <option value="PRESO">Preso</option>
+                            <option value="PROCURADO">Procurado</option>
+                            <option value="FORAGIDO">Foragido</option>
+                            <option value="CONDICIONAL">Condicional</option>
+                            <option value="LIBERADO">Liberado</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Nível de Periculosidade</label>
+                        <select class="form-select" id="nivel_periculosidade">
+                            <option value="">Selecione...</option>
+                            <option value="BAIXO">Baixo</option>
+                            <option value="MEDIO">Médio</option>
+                            <option value="ALTO">Alto</option>
+                            <option value="EXTREMO">Extremo</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Organização Criminal</label>
+                        <input type="text" class="form-control" id="organizacao_criminal" maxlength="100">
+                    </div>
+                    <div class="col-md-12">
+                        <label class="form-label">Observações</label>
+                        <textarea class="form-control" id="observacoes" rows="3" maxlength="2000"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-card">
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn-outline-gold" onclick="resetFormulario()">
+                        <i class="fas fa-times me-2"></i>LIMPAR
+                    </button>
+                    <button type="submit" class="btn-gold" id="btnSalvar">
+                        <i class="fas fa-save me-2"></i>SALVAR SUSPEITO
+                    </button>
+                </div>
+            </div>
+        </form>
     </main>
 
-    <!-- MODAL FICHA -->
-    <div class="modal-ficha" id="modalFicha">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h5><i class="fas fa-user-secret me-2"></i>Ficha do Suspeito</h5>
-                <button class="btn-icon" onclick="fecharFicha()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body" id="modalFichaBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-outline-gold" onclick="fecharFicha()"><i class="fas fa-times me-2"></i>FECHAR</button>
-                <button class="btn-gold" onclick="imprimirFichaAtual()"><i class="fas fa-print me-2"></i>IMPRIMIR</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL EDIÇÃO -->
-    <div class="modal-edicao" id="modalEdicao">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h5><i class="fas fa-pencil-alt me-2"></i>Editar Suspeito</h5>
-                <button class="btn-icon" onclick="fecharEdicao()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body" id="modalEdicaoBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL HISTÓRICO -->
-    <div class="modal-historico" id="modalHistorico">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h5><i class="fas fa-history me-2"></i>Histórico de Alterações</h5>
-                <button class="btn-icon" onclick="fecharHistorico()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body" id="modalHistoricoBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL FOTOS -->
-    <div class="modal-fotos" id="modalFotos">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5><i class="fas fa-images me-2"></i>Galeria de Fotos</h5>
-                <button class="btn-icon" onclick="fecharFotos()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body" id="modalFotosBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================
-         [v2.9.0] MODAL DE MANDADOS VINCULADOS
-         ============================================================ -->
-    <div class="modal-mandados" id="modalMandados">
-        <div class="modal-content modal-lg">
-            <div class="modal-header">
-                <h5><i class="fas fa-gavel me-2"></i>Mandados Vinculados</h5>
-                <button class="btn-icon" onclick="fecharMandados()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="modal-body" id="modalMandadosBody">
-                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando mandados...</div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-outline-gold" onclick="fecharMandados()"><i class="fas fa-times me-2"></i>FECHAR</button>
-                <button class="btn-gold" onclick="abrirTelaMandados()"><i class="fas fa-external-link-alt me-2"></i>IR PARA MANDADOS</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ============================================================
-         [v2.9.2] LIGHTBOX DE FOTO DO SUSPEITO
-         ============================================================ -->
-    <div class="foto-lightbox" id="fotoLightbox" onclick="fecharLightbox(event)">
-        <button class="fechar" onclick="fecharLightbox(event)"><i class="fas fa-times"></i></button>
-        <img id="fotoLightboxImg" src="" alt="Foto do suspeito" />
-    </div>
-
     <div class="toast-container" id="toastContainer"></div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
         // ============================================================
-        // Supabase client (com fallback)
+        // SUPABASE (mesmo padrão das outras telas)
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
-        const URL_EXPIRACAO_S = 3600;
-
         const sb = (function() {
-            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) {
-                console.log('✅ [07-consulta] Usando window.supabaseClient');
-                return window.supabaseClient;
-            }
-            if (typeof window.supabase !== 'undefined' && window.supabase?.from) {
-                console.log('✅ [07-consulta] Usando window.supabase');
-                return window.supabase;
-            }
-            console.warn('⚠️ [07-consulta] Criando cliente Supabase próprio');
+            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) return window.supabaseClient;
+            if (typeof window.supabase !== 'undefined' && window.supabase?.from) return window.supabase;
             return window.supabase.createClient(
                 'https://szkgaqouivsvlyujfvmz.supabase.co',
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc'
             );
         })();
 
-        // ============================================================
-        // FULLSCREEN
-        // ============================================================
-        function toggleFullscreen() {
-            const doc = window.document;
-            const docEl = doc.documentElement;
-
-            const requestFullScreen = docEl.requestFullscreen
-                || docEl.mozRequestFullScreen
-                || docEl.webkitRequestFullScreen
-                || docEl.msRequestFullscreen;
-
-            const cancelFullScreen = doc.exitFullscreen
-                || doc.mozCancelFullScreen
-                || doc.webkitExitFullscreen
-                || doc.msExitFullscreen;
-
-            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-                requestFullScreen.call(docEl);
-            } else {
-                cancelFullScreen.call(doc);
-            }
-        }
-
-        document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
-        document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
-        document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
-        document.addEventListener('MSFullscreenChange', atualizarIconeFullscreen);
-
-        function atualizarIconeFullscreen() {
-            const btn = document.querySelector('.fullscreen-btn i');
-            if (!btn) return;
-
-            const isFullscreen = document.fullscreenElement
-                || document.webkitFullscreenElement
-                || document.mozFullScreenElement
-                || document.msFullscreenElement;
-
-            btn.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
-        }
-
-        // ============================================================
-        // LOGOUT ROBUSTO
-        // ============================================================
-        async function fazerLogout() {
-            if (!confirm('Deseja realmente sair do sistema?')) return;
-
-            try {
-                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
-                    await AIDEPOM.logout();
-                    return;
-                }
-            } catch (error) {
-                console.warn('⚠️ AIDEPOM.logout() falhou:', error);
-            }
-
-            try {
-                if (sb && sb.auth && sb.auth.signOut) {
-                    await sb.auth.signOut();
-                }
-            } catch (error) {
-                console.error('❌ Erro ao fazer signOut:', error);
-            }
-
-            try {
-                localStorage.clear();
-                sessionStorage.clear();
-            } catch (e) { /* ignore */ }
-
-            window.location.href = '02-login.html';
-        }
-
-        // ============================================================
-        // CONTROLES DE JANELA
-        // ============================================================
-        function minimizeWindow() {
-            try {
-                window.blur();
-                console.log('🪟 Janela desfocada (minimizar real não suportado)');
-            } catch (e) { console.warn('Minimizar não suportado:', e); }
-        }
-
-        function closeWindow() {
-            if (!confirm('Deseja realmente fechar o sistema?')) return;
-
-            try {
-                window.open('', '_self', '');
-                window.close();
-            } catch (e) {
-                console.warn('⚠️ window.close() bloqueado pelo navegador');
-            }
-
-            setTimeout(function() {
-                if (!window.closed) {
-                    window.location.href = '01-apresentacao.html';
-                }
-            }, 300);
-        }
-
-        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
-
-        // ============================================================
-        // ESTADO
-        // ============================================================
-        let paginaAtual = 1;
-        const itensPorPagina = 5;
-        let totalRegistros = 0;
-        let dadosAtuais = [];
-        let idSuspeitoAtual = null;
         let usuarioAtual = null;
-        let perfilUsuarioAtual = null;
-        let camposEditaveisCache = null;
-
-        // [v2.9.0] Set de IDs de suspeitos que têm mandado vinculado
-        let suspeitosComMandado = new Set();
-
-        // [v2.9.0] Cache de mandados por suspeito (id → array de mandados)
-        let mandadosCachePorSuspeito = {};
+        let fotoArquivo = null;
 
         // ============================================================
-        // CARREGAR USUÁRIO
+        // USUÁRIO
         // ============================================================
         async function carregarUsuario() {
             try {
                 const { data: { user } } = await sb.auth.getUser();
                 if (user) {
-                    const { data: usuario } = await sb.from('usuarios').select('id, nome_completo, setor, id_perfil_acesso').eq('id', user.id).single();
-                    if (usuario) {
-                        usuarioAtual = usuario;
-                        perfilUsuarioAtual = usuario.id_perfil_acesso;
-                        const inicial = (usuario.nome_completo || 'U')[0].toUpperCase();
+                    const { data: u } = await sb.from('usuarios').select('id, nome_completo, setor, id_perfil_acesso').eq('id', user.id).single();
+                    if (u) {
+                        usuarioAtual = u;
+                        const inicial = (u.nome_completo || 'U')[0].toUpperCase();
                         document.getElementById('topAvatar').textContent = inicial;
-                        document.getElementById('topUserName').textContent = usuario.nome_completo || 'Admin';
+                        document.getElementById('topUserName').textContent = u.nome_completo || 'Admin';
                         document.getElementById('sidebarAvatar').textContent = inicial;
-                        document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin';
-                        document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador';
-                        console.log('👤 Usuário logado:', usuario.nome_completo, '| Perfil:', perfilUsuarioAtual);
+                        document.getElementById('sidebarUserName').textContent = u.nome_completo || 'Admin';
+                        document.getElementById('sidebarUserRole').textContent = u.setor || 'Administrador';
                     }
                 }
-            } catch (error) { console.error('Erro ao carregar usuário:', error); }
+            } catch (e) { console.error('Erro ao carregar usuário:', e); }
         }
 
         // ============================================================
-        // CARREGAR CAMPOS EDITÁVEIS (cache)
+        // HELPERS
         // ============================================================
-        async function carregarCamposEditaveis() {
-            if (camposEditaveisCache) return camposEditaveisCache;
-            const { data, error } = await sb.from('suspeito_campos_editaveis')
-                .select('nome_campo, descricao, perfis_permitidos, ordem')
-                .eq('ativo', true)
-                .order('ordem');
-            if (error) {
-                console.error('❌ Erro ao carregar campos editáveis:', error);
-                return [];
-            }
-            camposEditaveisCache = data || [];
-            console.log('📋 Campos editáveis:', camposEditaveisCache.length);
-            return camposEditaveisCache;
+        function mascaraCep(input) {
+            let v = input.value.replace(/\D/g, '').slice(0, 8);
+            if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
+            input.value = v;
         }
 
-        function parsePerfisPermitidos(raw) {
-            if (!raw) return [];
-            if (Array.isArray(raw)) return raw.map(p => Number(p)).filter(n => !isNaN(n));
-            if (typeof raw === 'string') {
-                try {
-                    const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) return parsed.map(p => Number(p)).filter(n => !isNaN(n));
-                } catch (e) { /* não era JSON */ }
-                if (raw.includes(',')) return raw.split(',').map(p => Number(p.trim())).filter(n => !isNaN(n));
-                const n = Number(raw);
-                return isNaN(n) ? [] : [n];
-            }
-            return [];
-        }
-
-        // ============================================================
-        // ESTATÍSTICAS
-        // ============================================================
-        async function carregarEstatisticas() {
+        async function buscarCep() {
+            const cep = document.getElementById('cep').value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
             try {
-                const { count: totalPresos } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PRESO');
-                const { count: totalProcurados } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'PROCURADO');
-                const { count: totalForagidos } = await sb.from('suspeito').select('*', { count: 'exact', head: true }).eq('deletado', false).eq('status_atual', 'FORAGIDO');
-                document.getElementById('totalPresos').querySelector('.count').textContent = totalPresos || 0;
-                document.getElementById('totalProcurados').querySelector('.count').textContent = totalProcurados || 0;
-                document.getElementById('totalForagidos').querySelector('.count').textContent = totalForagidos || 0;
-                console.log('📊 Estatísticas:', { presos: totalPresos, procurados: totalProcurados, foragidos: totalForagidos });
-            } catch (error) { console.error('Erro ao carregar estatísticas:', error); }
+                const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await r.json();
+                if (data.erro) { showToast('warning', 'CEP não encontrado', 'Verifique o CEP digitado.'); return; }
+                document.getElementById('logradouro').value = data.logradouro || '';
+                document.getElementById('bairro').value = data.bairro || '';
+                document.getElementById('cidade').value = data.localidade || 'Salvador';
+                document.getElementById('uf').value = (data.uf || 'BA').toUpperCase();
+                showToast('success', 'CEP encontrado!', `${data.logradouro || '-'}, ${data.bairro || '-'}`, 4000);
+            } catch (e) { console.error('ViaCEP:', e); }
         }
 
-        // ============================================================
-        // [v2.9.2] LIGHTBOX DE FOTO
-        // ============================================================
-        function abrirLightbox(url) {
-            if (!url) return;
-            const lb = document.getElementById('fotoLightbox');
-            const img = document.getElementById('fotoLightboxImg');
+        function onFotoSelecionada(ev) {
+            const file = ev.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('error', 'Arquivo grande', 'A foto deve ter no máximo 5 MB.');
+                ev.target.value = '';
+                return;
+            }
+            fotoArquivo = file;
+            const url = URL.createObjectURL(file);
+            const img = document.getElementById('fotoPreview');
             img.src = url;
-            lb.classList.add('open');
+            document.getElementById('fotoArea').classList.add('tem-foto');
         }
 
-        function fecharLightbox(e) {
-            if (e) e.stopPropagation();
-            const lb = document.getElementById('fotoLightbox');
-            if (lb) lb.classList.remove('open');
-            const img = document.getElementById('fotoLightboxImg');
-            if (img) img.src = '';
-        }
-
-        // ============================================================
-        // [v2.9.0] BUSCAR SUSPEITOS QUE TÊM MANDADO
-        // ============================================================
-        async function carregarSuspeitosComMandado(idsSuspeitos) {
-            if (!idsSuspeitos || idsSuspeitos.length === 0) {
-                suspeitosComMandado = new Set();
-                mandadosCachePorSuspeito = {};
-                return;
-            }
-
-            try {
-                const { data, error } = await sb
-                    .from('mandado_prisao')
-                    .select('id_mandado, id_suspeito, numero_mandado, status, tipo_mandado, prioridade, validacao_bnmp_status, data_emissao, data_cadastro')
-                    .eq('deletado', false)
-                    .in('id_suspeito', idsSuspeitos)
-                    .order('id_mandado', { ascending: false });
-
-                if (error) throw error;
-
-                suspeitosComMandado = new Set();
-                mandadosCachePorSuspeito = {};
-
-                (data || []).forEach(m => {
-                    suspeitosComMandado.add(m.id_suspeito);
-                    if (!mandadosCachePorSuspeito[m.id_suspeito]) {
-                        mandadosCachePorSuspeito[m.id_suspeito] = [];
-                    }
-                    mandadosCachePorSuspeito[m.id_suspeito].push(m);
-                });
-
-                console.log(`⚖️ ${suspeitosComMandado.size} suspeito(s) com mandado vinculado | Total de mandados: ${data?.length || 0}`);
-            } catch (error) {
-                console.error('❌ Erro ao buscar mandados vinculados:', error);
-                suspeitosComMandado = new Set();
-                mandadosCachePorSuspeito = {};
-            }
+        function removerFoto() {
+            fotoArquivo = null;
+            document.getElementById('fotoInput').value = '';
+            document.getElementById('fotoPreview').src = '';
+            document.getElementById('fotoArea').classList.remove('tem-foto');
         }
 
         // ============================================================
-        // [v2.9.0] ÍCONE DE MANDADO
+        // SALVAR
         // ============================================================
-        function gerarBadgeMandado(idSuspeito) {
-            if (!suspeitosComMandado.has(idSuspeito)) {
-                return '';
-            }
+        document.getElementById('formCadastro').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-            const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
-            const qtd = mandados.length;
-
-            const prioridadeStatus = {
-                'VALIDO': 1, 'ATIVO': 2, 'NOVO': 3, 'CANCELADO': 4,
-                'SUSPENSO': 5, 'CUMPRIDO': 6, 'VENCIDO': 7, 'EXTINTO': 8, 'NAO_ENCONTRADO': 9
-            };
-
-            let statusPrincipal = 'ativo';
-            let mandadoPrincipal = mandados[0];
-
-            let melhorPrioridade = 999;
-            mandados.forEach(m => {
-                const bnmp = m.validacao_bnmp_status;
-                if (bnmp && prioridadeStatus[bnmp] && prioridadeStatus[bnmp] < melhorPrioridade) {
-                    melhorPrioridade = prioridadeStatus[bnmp];
-                    statusPrincipal = bnmp.toLowerCase().replace(/_/g, '-');
-                    mandadoPrincipal = m;
-                }
-            });
-
-            if (melhorPrioridade === 999) {
-                const st = (mandadoPrincipal.status || 'ATIVO').toLowerCase();
-                statusPrincipal = st;
-            }
-
-            const classe = `badge-mandado-${statusPrincipal}`;
-            const contadorHTML = qtd > 1 ? `<span class="badge-mandado-count">${qtd}</span>` : '';
-
-            return `
-                <div class="badge-mandado-wrapper">
-                    <a class="badge-mandado ${classe}"
-                       onclick="event.stopPropagation(); abrirMandadosDoSuspeito(${idSuspeito})"
-                       title="${qtd} mandado(s) vinculado(s) — clique para ver">
-                        <i class="fas fa-gavel"></i>
-                    </a>
-                    ${contadorHTML}
-                </div>
-            `;
-        }
-
-        // ============================================================
-        // [v2.9.0] MODAL DE MANDADOS VINCULADOS
-        // ============================================================
-        function abrirMandadosDoSuspeito(idSuspeito) {
-            const modal = document.getElementById('modalMandados');
-            const body = document.getElementById('modalMandadosBody');
-            modal.classList.add('open');
-
-            const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
-
-            if (mandados.length === 0) {
-                body.innerHTML = `
-                    <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
-                        <i class="fas fa-gavel" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
-                        <div>Nenhum mandado vinculado a este suspeito</div>
-                    </div>`;
-                return;
-            }
-
-            const suspeitoInfo = dadosAtuais.find(d => d.id_suspeito === idSuspeito);
-            const nomeSuspeito = suspeitoInfo?.nome_completo || `Suspeito #${idSuspeito}`;
-
-            const ICONES_BNMP = {
-                'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
-                'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
-                'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
-                'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
-                'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
-                'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
-            };
-
-            let html = `
-                <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:10px;padding:12px 15px;margin-bottom:20px;">
-                    <div style="color:var(--text-primary);font-weight:700;font-size:14px;">
-                        <i class="fas fa-user-secret me-2"></i>${nomeSuspeito}
-                    </div>
-                    <div style="color:rgba(0,255,136,0.4);font-size:11px;margin-top:4px;">
-                        ${mandados.length} mandado(s) vinculado(s)
-                    </div>
-                </div>
-            `;
-
-            mandados.forEach((m, idx) => {
-                const bnmpStatus = m.validacao_bnmp_status;
-                const bnmpCfg = bnmpStatus ? ICONES_BNMP[bnmpStatus] : null;
-                const statusMandado = (m.status || 'ATIVO').toLowerCase();
-                const corBorda = bnmpCfg
-                    ? 'borda-' + bnmpStatus.toLowerCase().replace(/_/g, '-')
-                    : 'borda-' + statusMandado;
-
-                const dataFormatada = m.data_emissao
-                    ? m.data_emissao.split('-').reverse().join('/')
-                    : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
-
-                let bnmpBadgeHTML = '';
-                if (bnmpCfg) {
-                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-${bnmpStatus.toLowerCase().replace(/_/g, '-')}">
-                        <i class="fas ${bnmpCfg.icone}"></i> BNMP: ${bnmpCfg.label}
-                    </span>`;
-                } else {
-                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-nao-validado">
-                        <i class="fas fa-question-circle"></i> BNMP: Não validado
-                    </span>`;
-                }
-
-                html += `
-                    <div class="mandado-item ${corBorda}">
-                        <div class="mandado-icon" style="background:rgba(0,255,136,0.05);color:var(--text-primary);">
-                            <i class="fas fa-gavel"></i>
-                        </div>
-                        <div class="mandado-info">
-                            <div class="mandado-numero">#${idx + 1} — ${m.numero_mandado || '#' + m.id_mandado}</div>
-                            <div class="mandado-meta">
-                                <span><i class="fas fa-tag"></i> ${m.tipo_mandado || '-'}</span>
-                                <span><i class="fas fa-info-circle"></i> ${m.status || '-'}</span>
-                                <span><i class="fas fa-calendar"></i> ${dataFormatada}</span>
-                                ${m.prioridade ? `<span><i class="fas fa-exclamation"></i> ${m.prioridade}</span>` : ''}
-                            </div>
-                            <div style="margin-top:8px;">
-                                ${bnmpBadgeHTML}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            body.innerHTML = html;
-        }
-
-        function fecharMandados() {
-            document.getElementById('modalMandados').classList.remove('open');
-        }
-
-        function abrirTelaMandados() {
-            window.location.href = '11-mandados.html';
-        }
-
-        // ============================================================
-        // BUSCA PRINCIPAL
-        // ============================================================
-        async function realizarBusca() {
-            console.log('🔍 realizarBusca() chamada');
-            const termo = document.getElementById('buscaGlobal').value.trim();
-            const status = document.getElementById('filtroStatus').value;
-            const periculosidade = document.getElementById('filtroPericulosidade').value;
-            const dataInicio = document.getElementById('filtroDataInicio').value;
-            const dataFim = document.getElementById('filtroDataFim').value;
-
-            const temFiltro = termo.length > 0 || status || periculosidade || dataInicio || dataFim;
-
-            if (!temFiltro) {
-                document.getElementById('resultadosConsulta').innerHTML = `
-                    <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
-                        <i class="fas fa-exclamation-triangle" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
-                        <div style="font-size: 14px; margin-bottom: 6px;"><strong>Nenhum filtro informado</strong></div>
-                        <small style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">
-                            Digite um nome, CPF, RG ou selecione pelo menos um filtro para buscar
-                        </small>
-                    </td></tr>`;
-                document.getElementById('infoPagina').textContent = '';
-                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando filtros...';
-                document.getElementById('numerosPaginas').innerHTML = '';
-                document.getElementById('btnAnterior').style.display = 'none';
-                document.getElementById('btnProximo').style.display = 'none';
-                document.getElementById('buscaGlobal').focus();
-                return;
-            }
-
-            if (termo.length > 0 && termo.length < 2) {
-                document.getElementById('resultadosConsulta').innerHTML = `
-                    <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
-                        <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
-                        Digite pelo menos <strong>2 caracteres</strong> para buscar por nome, CPF ou RG
-                    </td></tr>`;
-                document.getElementById('infoPagina').textContent = '';
-                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando mais caracteres...';
-                document.getElementById('buscaGlobal').focus();
-                return;
-            }
-
-            try {
-                paginaAtual = 1;
-
-                let query = sb
-                    .from('suspeito')
-                    .select(`id_suspeito, nome_completo, cpf, rg, cidade, status_atual, nivel_periculosidade, data_cadastro`, { count: 'exact' })
-                    .eq('deletado', false);
-
-                if (termo.length >= 2) {
-                    query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`);
-                }
-                if (status) { query = query.eq('status_atual', status); }
-                if (periculosidade) { query = query.eq('nivel_periculosidade', periculosidade); }
-                if (dataInicio) { query = query.gte('data_cadastro', dataInicio); }
-                if (dataFim) { query = query.lte('data_cadastro', dataFim); }
-
-                const { data: suspeitos, count, error } = await query
-                    .order('data_cadastro', { ascending: false })
-                    .range((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina - 1);
-
-                if (error) throw error;
-
-                console.log('📋 Suspeitos encontrados:', count);
-
-                if (!suspeitos || suspeitos.length === 0) {
-                    dadosAtuais = [];
-                    totalRegistros = 0;
-                    suspeitosComMandado = new Set();
-                    mandadosCachePorSuspeito = {};
-                    await carregarEstatisticas();
-                    renderizarResultados();
-                    return;
-                }
-
-                const idsDosSuspeitos = suspeitos.map(s => s.id_suspeito);
-                await carregarSuspeitosComMandado(idsDosSuspeitos);
-
-                const { data: midias, error: midiaError } = await sb
-                    .from('arquivo_midia')
-                    .select('id_entidade, caminho_fisico, nome_seguro, tipo_midia')
-                    .eq('tipo_entidade', 'SUSPEITO')
-                    .eq('tipo_midia', 'FOTO')
-                    .eq('deletado', false)
-                    .in('id_entidade', idsDosSuspeitos);
-
-                if (midiaError) console.warn('⚠️ Erro ao buscar mídias:', midiaError);
-
-                const midiasPorSuspeito = {};
-                (midias || []).forEach(m => {
-                    if (!midiasPorSuspeito[m.id_entidade]) midiasPorSuspeito[m.id_entidade] = [];
-                    midiasPorSuspeito[m.id_entidade].push(m);
-                });
-
-                const dadosComFoto = await Promise.all(suspeitos.map(async (s) => {
-                    const midiasDoSuspeito = midiasPorSuspeito[s.id_suspeito] || [];
-                    const midiaPrincipal = midiasDoSuspeito.find(m =>
-                        m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')
-                    ) || midiasDoSuspeito[0];
-
-                    let fotoUrl = null;
-                    if (midiaPrincipal && midiaPrincipal.caminho_fisico) {
-                        try {
-                            const { data: signed } = await sb.storage
-                                .from(BUCKET_FOTOS)
-                                .createSignedUrl(midiaPrincipal.caminho_fisico, URL_EXPIRACAO_S);
-                            fotoUrl = signed?.signedUrl || null;
-                        } catch (err) {
-                            console.warn('⚠️ Erro ao gerar signed URL:', err);
-                        }
-                    }
-                    return { ...s, fotoUrl };
-                }));
-
-                dadosAtuais = dadosComFoto;
-                totalRegistros = count || 0;
-                await carregarEstatisticas();
-                renderizarResultados();
-            } catch (error) {
-                console.error('❌ Erro na busca:', error);
-                document.getElementById('resultadosConsulta').innerHTML =
-                    `<tr><td colspan="8" class="text-center py-4" style="color: #dc3545;">
-                        <i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}
-                    </td></tr>`;
-            }
-        }
-
-        // ============================================================
-        // RENDERIZAÇÃO DA TABELA
-        // ============================================================
-        function renderizarResultados() {
-            const tbody = document.getElementById('resultadosConsulta');
-
-            if (dadosAtuais.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td></tr>`;
-                document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
-                document.getElementById('totalRegistrosInfo').textContent = 'Nenhum resultado';
-                document.getElementById('numerosPaginas').innerHTML = '';
-                document.getElementById('btnAnterior').style.display = 'none';
-                document.getElementById('btnProximo').style.display = 'none';
-                return;
-            }
-
-            let html = '';
-            dadosAtuais.forEach(d => {
-                const statusClass = d.status_atual ? d.status_atual.toLowerCase() : '';
-                const periculosidadeClass = d.nivel_periculosidade ? d.nivel_periculosidade.toLowerCase() : '';
-                const statusLabel = {
-                    'PRESO': '🔒 PRESO', 'PROCURADO': '🔍 PROCURADO', 'FORAGIDO': '🏃 FORAGIDO',
-                    'INVESTIGADO': '🔎 INVESTIGADO', 'CONDICIONAL': '⚖️ CONDICIONAL', 'LIBERADO': '✅ LIBERADO'
-                }[d.status_atual] || d.status_atual || 'DESCONHECIDO';
-
-                const fotoHTML = d.fotoUrl
-                    ? `<img src="${d.fotoUrl}" alt="${d.nome_completo || 'Suspeito'}" class="foto-suspeito"
-                            onerror="this.onerror=null; this.outerHTML='<div class=\\'foto-placeholder\\'><i class=\\'fas fa-user-secret\\'></i></div>';" />`
-                    : `<div class="foto-placeholder"><i class="fas fa-user-secret"></i></div>`;
-
-                const badgeMandado = gerarBadgeMandado(d.id_suspeito);
-
-                html += `<tr>
-                    <td>${fotoHTML}</td>
-                    <td><strong>${d.nome_completo || 'N/A'}</strong></td>
-                    <td>${d.cpf || 'N/A'}</td>
-                    <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
-                    <td><span class="perigo-badge ${periculosidadeClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
-                    <td>${d.cidade || 'N/A'}</td>
-                    <td style="text-align:center;">${badgeMandado}</td>
-                    <td>
-                        <button class="btn-icon" onclick="verDetalhes('${d.id_suspeito}')" title="Ver ficha"><i class="fas fa-eye"></i></button>
-                        <button class="btn-icon" onclick="editarSuspeito('${d.id_suspeito}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
-                        <button class="btn-icon" onclick="verHistorico('${d.id_suspeito}')" title="Histórico"><i class="fas fa-history"></i></button>
-                        <button class="btn-icon" onclick="verFotos('${d.id_suspeito}')" title="Fotos"><i class="fas fa-images"></i></button>
-                        <button class="btn-icon" onclick="imprimirFicha('${d.id_suspeito}')" title="Imprimir"><i class="fas fa-print"></i></button>
-                        ${d.status_atual === 'PROCURADO' || d.status_atual === 'FORAGIDO' ? `<button class="btn-icon" style="color:#dc3545;" onclick="emitirAlerta('${d.id_suspeito}')" title="Alerta"><i class="fas fa-bell"></i></button>` : ''}
-                    </td>
-                </tr>`;
-            });
-            tbody.innerHTML = html;
-
-            const inicio = (paginaAtual - 1) * itensPorPagina + 1;
-            const fim = Math.min(paginaAtual * itensPorPagina, totalRegistros);
-            document.getElementById('infoPagina').textContent = `Mostrando ${inicio}-${fim} de ${totalRegistros} registros`;
-            document.getElementById('totalRegistrosInfo').textContent = `${totalRegistros} registros encontrados`;
-            atualizarPaginacao();
-        }
-
-        // ============================================================
-        // PAGINAÇÃO
-        // ============================================================
-        function atualizarPaginacao() {
-            const totalPaginas = Math.ceil(totalRegistros / itensPorPagina);
-            const container = document.getElementById('numerosPaginas');
-            let html = '';
-            const maxBotoes = 5;
-            let inicio = Math.max(1, paginaAtual - Math.floor(maxBotoes / 2));
-            let fim = Math.min(totalPaginas, inicio + maxBotoes - 1);
-            if (fim - inicio + 1 < maxBotoes) { inicio = Math.max(1, fim - maxBotoes + 1); }
-            if (inicio > 1) { html += `<button class="btn-icon" onclick="irPagina(1)">1</button>`; if (inicio > 2) html += `<button class="btn-icon disabled">...</button>`; }
-            for (let i = inicio; i <= fim; i++) { html += `<button class="btn-icon ${i === paginaAtual ? 'active' : ''}" onclick="irPagina(${i})" style="${i === paginaAtual ? 'background:rgba(0,255,136,0.08);border-color:var(--text-primary);color:var(--text-primary);' : ''}">${i}</button>`; }
-            if (fim < totalPaginas) { if (fim < totalPaginas - 1) html += `<button class="btn-icon disabled">...</button>`; html += `<button class="btn-icon" onclick="irPagina(${totalPaginas})">${totalPaginas}</button>`; }
-            container.innerHTML = html;
-            document.getElementById('btnAnterior').style.display = paginaAtual > 1 ? 'inline-block' : 'none';
-            document.getElementById('btnProximo').style.display = paginaAtual < totalPaginas ? 'inline-block' : 'none';
-        }
-
-        function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; realizarBusca(); } }
-        function proximaPagina() { const totalPaginas = Math.ceil(totalRegistros / itensPorPagina); if (paginaAtual < totalPaginas) { paginaAtual++; realizarBusca(); } }
-        function irPagina(num) { paginaAtual = num; realizarBusca(); }
-
-        // ============================================================
-        // MODAL FICHA
-        // ============================================================
-        async function verDetalhes(id) {
-            console.log('👁️ verDetalhes() chamado para ID:', id);
-            idSuspeitoAtual = id;
-            const modal = document.getElementById('modalFicha');
-            const body = document.getElementById('modalFichaBody');
-            modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando ficha...</div>';
-
-            try {
-                const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
-                if (error) throw error;
-
-                const { data: midias } = await sb.from('arquivo_midia')
-                    .select('caminho_fisico, nome_seguro, tipo_midia')
-                    .eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', id).eq('deletado', false);
-
-                let fotoUrl = null;
-                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
-                const principal = fotos.find(m => m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')) || fotos[0];
-
-                if (principal && principal.caminho_fisico) {
-                    const { data: signed } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
-                    fotoUrl = signed?.signedUrl || null;
-                }
-
-                // [v2.9.2] Foto com wrapper clicável + fallback
-                const fotoHTML = fotoUrl
-                    ? `<div class="ficha-foto-wrapper" onclick="abrirLightbox('${fotoUrl}')" title="Clique para ampliar">
-                           <img src="${fotoUrl}" alt="${suspeito.nome_completo || 'Suspeito'}" class="ficha-foto" />
-                       </div>`
-                    : `<div class="ficha-foto-placeholder">
-                           <i class="fas fa-user-secret"></i>
-                           <span style="font-size:12px;">Sem foto cadastrada</span>
-                       </div>`;
-
-                const statusBadge = suspeito.status_atual
-                    ? `<span class="status-badge ${suspeito.status_atual.toLowerCase()}">${suspeito.status_atual}</span>` : 'N/A';
-                const perigoBadge = suspeito.nivel_periculosidade
-                    ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>` : 'N/A';
-
-                // [v2.9.0] Seção de Mandados Vinculados
-                const mandadosDoSuspeito = mandadosCachePorSuspeito[id] || [];
-                let mandadosHTML = '';
-                if (mandadosDoSuspeito.length > 0) {
-                    const ICONES_BNMP = {
-                        'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
-                        'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
-                        'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
-                        'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
-                        'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
-                        'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
-                    };
-
-                    let listaHTML = '';
-                    mandadosDoSuspeito.forEach(m => {
-                        const bnmpCfg = m.validacao_bnmp_status ? ICONES_BNMP[m.validacao_bnmp_status] : null;
-                        const dataF = m.data_emissao
-                            ? m.data_emissao.split('-').reverse().join('/')
-                            : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
-                        const bnmpBadge = bnmpCfg
-                            ? `<span class="badge-bnmp-mini bnmp-${m.validacao_bnmp_status.toLowerCase().replace(/_/g, '-')}"><i class="fas ${bnmpCfg.icone}"></i> ${bnmpCfg.label}</span>`
-                            : `<span class="badge-bnmp-mini bnmp-nao-validado"><i class="fas fa-question-circle"></i> Não validado</span>`;
-
-                        listaHTML += `
-                            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;">
-                                <div style="flex:1;min-width:0;">
-                                    <div style="color:var(--text-primary);font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                        <i class="fas fa-gavel" style="margin-right:6px;"></i>${m.numero_mandado || '#' + m.id_mandado}
-                                    </div>
-                                    <div style="color:rgba(0,255,136,0.4);font-size:10px;margin-top:3px;">
-                                        ${m.status || '-'} · ${dataF}
-                                    </div>
-                                </div>
-                                <div>${bnmpBadge}</div>
-                            </div>
-                        `;
-                    });
-
-                    mandadosHTML = `
-                        <div class="col-md-12" style="margin-top:20px;">
-                            <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:12px;padding:15px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border-color);">
-                                    <span style="color:var(--text-primary);font-weight:700;font-size:13px;letter-spacing:1px;">
-                                        <i class="fas fa-gavel me-2"></i>MANDADOS VINCULADOS
-                                    </span>
-                                    <span style="background:var(--text-primary);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;">${mandadosDoSuspeito.length}</span>
-                                </div>
-                                ${listaHTML}
-                                <button class="btn-outline-gold w-100 mt-2" onclick="fecharFicha(); abrirMandadosDoSuspeito(${id})" style="padding:8px 16px; font-size:12px;">
-                                    <i class="fas fa-external-link-alt me-2"></i>VER DETALHES DOS MANDADOS
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                body.innerHTML = `
-                    <div class="row g-3">
-                        <div class="col-md-4 text-center">
-                            <span class="foto-label"><i class="fas fa-camera me-1"></i>Foto do Suspeito</span>
-                            ${fotoHTML}
-                            <div class="mt-3"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Status</div>${statusBadge}</div>
-                            <div class="mt-2"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Periculosidade</div>${perigoBadge}</div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="ficha-campo"><span class="label">ID</span><span class="valor">#${suspeito.id_suspeito}</span></div>
-                            <div class="ficha-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${suspeito.nome_completo || 'N/A'}</strong></span></div>
-                            <div class="ficha-campo"><span class="label">Apelido</span><span class="valor">${suspeito.apelido || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">RG</span><span class="valor">${suspeito.rg || '-'} ${suspeito.orgao_expedidor ? '(' + suspeito.orgao_expedidor + ')' : ''}</span></div>
-                            <div class="ficha-campo"><span class="label">Data de Nascimento</span><span class="valor">${suspeito.data_nascimento || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Sexo</span><span class="valor">${suspeito.sexo === 'M' ? 'Masculino' : suspeito.sexo === 'F' ? 'Feminino' : suspeito.sexo || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Endereço</span><span class="valor">${[suspeito.logradouro, suspeito.numero, suspeito.bairro, suspeito.cidade, suspeito.uf].filter(Boolean).join(', ') || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">Características Físicas</span><span class="valor">Altura: ${suspeito.altura || '-'}m · Peso: ${suspeito.peso || '-'}kg · Olhos: ${suspeito.cor_olhos || '-'} · Cabelo: ${suspeito.cor_cabelo || '-'}</span></div>
-                            ${suspeito.portador_deficiencia ? `<div class="ficha-campo"><span class="label">Portador de Deficiência</span><span class="valor">Sim ${suspeito.descricao_deficiencia ? '· ' + suspeito.descricao_deficiencia : ''}</span></div>` : ''}
-                            ${suspeito.cicatrizes ? `<div class="ficha-campo"><span class="label">Cicatrizes</span><span class="valor">${suspeito.cicatrizes}</span></div>` : ''}
-                            ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
-                            ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
-                        </div>
-                        ${mandadosHTML}
-                    </div>`;
-            } catch (error) {
-                console.error('❌ Erro ao carregar ficha:', error);
-                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
-            }
-        }
-
-        function fecharFicha() {
-            document.getElementById('modalFicha').classList.remove('open');
-            idSuspeitoAtual = null;
-        }
-
-        function imprimirFicha(id) {
-            verDetalhes(id);
-            setTimeout(() => window.print(), 800);
-        }
-
-        function imprimirFichaAtual() { window.print(); }
-
-        // ============================================================
-        // MODAL EDIÇÃO
-        // ============================================================
-        const MOTIVOS_ALTERACAO = [
-            'Correção de erro de digitação',
-            'Atualização de status judicial',
-            'Novo mandado recebido',
-            'Correção após conferência documental',
-            'Atualização cadastral',
-            'Outro (especificar abaixo)'
-        ];
-
-        async function editarSuspeito(id) {
-            console.log('✏️ editarSuspeito() chamado para ID:', id);
-            idSuspeitoAtual = id;
-            const modal = document.getElementById('modalEdicao');
-            const body = document.getElementById('modalEdicaoBody');
-            modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados...</div>';
-
-            try {
-                if (!usuarioAtual) {
-                    body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;">❌ Usuário não identificado. Faça login novamente.</div>';
-                    return;
-                }
-
-                const campos = await carregarCamposEditaveis();
-                const perfilAtualNum = Number(perfilUsuarioAtual);
-
-                const camposPermitidos = campos.filter(c => {
-                    const perfis = parsePerfisPermitidos(c.perfis_permitidos);
-                    return perfis.includes(perfilAtualNum);
-                });
-
-                console.log('🔐 DEBUG PERMISSÃO:', {
-                    perfilUsuarioAtual_raw: perfilUsuarioAtual,
-                    perfilUsuarioAtual_num: perfilAtualNum,
-                    totalCampos: campos.length,
-                    camposPermitidos: camposPermitidos.length
-                });
-
-                if (camposPermitidos.length === 0) {
-                    body.innerHTML = `<div class="text-center py-4" style="color: #ffc107;">
-                        <i class="fas fa-lock" style="font-size: 40px; display: block; margin-bottom: 15px;"></i>
-                        <div>Seu perfil (ID ${perfilAtualNum}) não tem permissão para editar suspeitos.</div>
-                        <small style="display:block; margin-top:10px; color:rgba(0,255,136,0.4);">
-                            Verifique a tabela <code>suspeito_campos_editaveis</code> no Supabase.
-                        </small>
-                    </div>`;
-                    return;
-                }
-
-                const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
-                if (error) throw error;
-
-                const setores = {
-                    'nome_completo': 'Identificação', 'apelido': 'Identificação', 'cpf': 'Identificação',
-                    'rg': 'Identificação', 'orgao_expedidor': 'Identificação', 'data_nascimento': 'Identificação',
-                    'sexo': 'Dados Pessoais', 'raca': 'Dados Pessoais', 'naturalidade': 'Dados Pessoais',
-                    'nacionalidade': 'Dados Pessoais', 'nome_pai': 'Dados Pessoais', 'nome_mae': 'Dados Pessoais',
-                    'cep': 'Endereço', 'logradouro': 'Endereço', 'numero': 'Endereço', 'complemento': 'Endereço',
-                    'bairro': 'Endereço', 'cidade': 'Endereço', 'uf': 'Endereço', 'pais': 'Endereço',
-                    'altura': 'Características Físicas', 'peso': 'Características Físicas',
-                    'cor_olhos': 'Características Físicas', 'cor_cabelo': 'Características Físicas',
-                    'cor_pele': 'Características Físicas', 'sinais_particulares': 'Características Físicas',
-                    'tattoo_descricao': 'Características Físicas',
-                    'status_atual': 'Informações Criminais', 'nivel_periculosidade': 'Informações Criminais',
-                    'organizacao_criminal': 'Informações Criminais', 'envolvimento_drogas': 'Informações Criminais',
-                    'posse_arma': 'Informações Criminais', 'modus_operandi': 'Informações Criminais',
-                    'observacoes': 'Observações'
-                };
-
-                const tipos = {
-                    'sexo': 'select-sexo', 'status_atual': 'select-status', 'nivel_periculosidade': 'select-perigo',
-                    'envolvimento_drogas': 'checkbox', 'posse_arma': 'checkbox',
-                    'data_nascimento': 'date', 'cep': 'text', 'uf': 'text', 'pais': 'text',
-                    'sinais_particulares': 'textarea', 'tattoo_descricao': 'textarea',
-                    'modus_operandi': 'textarea', 'observacoes': 'textarea',
-                    'altura': 'number', 'peso': 'number'
-                };
-
-                let camposHTML = '';
-                let setorAtual = '';
-
-                campos.forEach(campo => {
-                    const podeEditar = parsePerfisPermitidos(campo.perfis_permitidos).includes(perfilAtualNum);
-                    const valorAtual = suspeito[campo.nome_campo] ?? '';
-                    const setor = setores[campo.nome_campo] || 'Outros';
-
-                    if (setor !== setorAtual) {
-                        if (setorAtual) camposHTML += `</div>`;
-                        camposHTML += `<div class="mb-3"><div style="color: var(--text-primary); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; padding: 10px 0; border-bottom: 1px solid var(--border-color); margin-bottom: 15px;">${setor}</div>`;
-                        setorAtual = setor;
-                    }
-
-                    const tipo = tipos[campo.nome_campo] || 'text';
-                    const idCampo = 'edit_' + campo.nome_campo;
-                    const disabled = podeEditar ? '' : 'disabled';
-
-                    let inputHTML = '';
-                    if (tipo === 'textarea') {
-                        inputHTML = `<textarea class="form-control" id="${idCampo}" ${disabled} rows="2">${valorAtual}</textarea>`;
-                    } else if (tipo === 'select-sexo') {
-                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
-                            <option value="">Selecione...</option>
-                            <option value="M" ${valorAtual === 'M' ? 'selected' : ''}>Masculino</option>
-                            <option value="F" ${valorAtual === 'F' ? 'selected' : ''}>Feminino</option>
-                            <option value="O" ${valorAtual === 'O' ? 'selected' : ''}>Outro</option>
-                        </select>`;
-                    } else if (tipo === 'select-status') {
-                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
-                            <option value="">Selecione...</option>
-                            ${['INVESTIGADO','PRESO','FORAGIDO','PROCURADO','CONDICIONAL','LIBERADO'].map(s => 
-                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
-                            ).join('')}
-                        </select>`;
-                    } else if (tipo === 'select-perigo') {
-                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
-                            <option value="">Selecione...</option>
-                            ${['BAIXO','MEDIO','ALTO','EXTREMO'].map(s => 
-                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
-                            ).join('')}
-                        </select>`;
-                    } else if (tipo === 'checkbox') {
-                        inputHTML = `<div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="${idCampo}" ${valorAtual ? 'checked' : ''} ${disabled}>
-                            <label class="form-check-label" for="${idCampo}">${campo.descricao}</label>
-                        </div>`;
-                    } else {
-                        inputHTML = `<input type="${tipo}" class="form-control" id="${idCampo}" value="${valorAtual}" ${disabled} step="${tipo === 'number' ? '0.01' : ''}">`;
-                    }
-
-                    if (tipo !== 'checkbox') {
-                        camposHTML += `<div class="col-md-4 mb-3">
-                            <label class="form-label">${campo.descricao} ${podeEditar ? '' : '🔒'}</label>
-                            ${inputHTML}
-                        </div>`;
-                    } else {
-                        camposHTML += `<div class="col-md-4 mb-3">${inputHTML}</div>`;
-                    }
-                });
-
-                if (camposHTML) camposHTML += `</div>`;
-
-                const motivosHTML = MOTIVOS_ALTERACAO.map(m => `<option value="${m}">${m}</option>`).join('');
-
-                body.innerHTML = `
-                    <div class="aviso-justificativa">
-                        <div style="color: #ffc107; font-size: 12px; font-weight: 600;">
-                            <i class="fas fa-exclamation-triangle me-2"></i>
-                            Campos bloqueados aparecem com 🔒 (sem permissão para seu perfil)
-                        </div>
-                    </div>
-                    <form id="formEdicao">
-                        <div class="row">${camposHTML}</div>
-                        <div class="mt-4 pt-3" style="border-top: 1px solid var(--border-color);">
-                            <div class="row">
-                                <div class="col-md-5 mb-3">
-                                    <label class="form-label">Motivo da alteração *</label>
-                                    <select class="form-select" id="edit_motivo" required>
-                                        <option value="">Selecione o motivo...</option>
-                                        ${motivosHTML}
-                                    </select>
-                                </div>
-                                <div class="col-md-7 mb-3">
-                                    <label class="form-label">Justificativa detalhada *</label>
-                                    <textarea class="form-control" id="edit_justificativa" rows="2" 
-                                        placeholder="Explique detalhadamente o motivo da alteração (mínimo 20 caracteres)" required></textarea>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                            <button type="button" class="btn-outline-gold" onclick="fecharEdicao()">
-                                <i class="fas fa-times me-2"></i>CANCELAR
-                            </button>
-                            <button type="submit" class="btn-gold" id="btnSalvarEdicao">
-                                <i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES
-                            </button>
-                        </div>
-                    </form>
-                `;
-
-                document.getElementById('formEdicao').addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    await salvarEdicao(suspeito);
-                });
-            } catch (error) {
-                console.error('❌ Erro ao abrir edição:', error);
-                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
-            }
-        }
-
-        async function salvarEdicao(suspeitoOriginal) {
-            const btn = document.getElementById('btnSalvarEdicao');
+            const btn = document.getElementById('btnSalvar');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
 
             try {
-                const motivo = document.getElementById('edit_motivo').value;
-                const justificativa = document.getElementById('edit_justificativa').value.trim();
+                // --- Validações mínimas ---
+                const nome = document.getElementById('nome_completo').value.trim();
+                const cpf = document.getElementById('cpf').value.trim();
+                const dataNasc = document.getElementById('data_nascimento').value;
+                const status = document.getElementById('status_atual').value;
 
-                if (!motivo) {
-                    alert('⚠️ Selecione o motivo da alteração');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
-                    return;
+                if (!nome) throw new Error('Informe o nome completo.');
+                if (!cpf) throw new Error('Informe o CPF.');
+                if (!dataNasc) throw new Error('Informe a data de nascimento.');
+                if (!status) throw new Error('Selecione o status atual.');
+
+                // --- Monta o objeto ---
+                const dados = {
+                    nome_completo: nome,
+                    apelido: document.getElementById('apelido').value.trim() || null,
+                    cpf: cpf,
+                    rg: document.getElementById('rg').value.trim() || null,
+                    orgao_expedidor: document.getElementById('orgao_expedidor').value.trim() || null,
+                    data_nascimento: dataNasc,
+                    sexo: document.getElementById('sexo').value || null,
+                    nome_mae: document.getElementById('nome_mae').value.trim() || null,
+
+                    cep: document.getElementById('cep').value.trim() || null,
+                    logradouro: document.getElementById('logradouro').value.trim() || null,
+                    numero: document.getElementById('numero').value.trim() || null,
+                    complemento: document.getElementById('complemento').value.trim() || null,
+                    bairro: document.getElementById('bairro').value.trim() || null,
+                    cidade: document.getElementById('cidade').value.trim() || null,
+                    uf: (document.getElementById('uf').value.trim() || '').toUpperCase() || null,
+
+                    altura: parseFloat(document.getElementById('altura').value) || null,
+                    peso: parseFloat(document.getElementById('peso').value) || null,
+                    cor_olhos: document.getElementById('cor_olhos').value.trim() || null,
+                    cor_cabelo: document.getElementById('cor_cabelo').value.trim() || null,
+                    sinais_particulares: document.getElementById('sinais_particulares').value.trim() || null,
+
+                    status_atual: status,
+                    nivel_periculosidade: document.getElementById('nivel_periculosidade').value || null,
+                    organizacao_criminal: document.getElementById('organizacao_criminal').value.trim() || null,
+                    observacoes: document.getElementById('observacoes').value.trim() || null,
+
+                    deletado: false,
+                    data_cadastro: new Date().toISOString()
+                };
+
+                if (usuarioAtual?.id) {
+                    dados.id_usuario_cadastro = usuarioAtual.id;
                 }
 
-                if (justificativa.length < 20) {
-                    alert('⚠️ A justificativa deve ter no mínimo 20 caracteres');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
-                    return;
-                }
-
-                const campos = await carregarCamposEditaveis();
-                const dadosNovos = {};
-
-                campos.forEach(campo => {
-                    const input = document.getElementById('edit_' + campo.nome_campo);
-                    if (!input || input.disabled) return;
-
-                    let valor;
-                    if (input.type === 'checkbox') {
-                        valor = input.checked;
-                    } else {
-                        valor = input.value.trim() || null;
-                    }
-
-                    const valorAntigo = suspeitoOriginal[campo.nome_campo];
-                    if (JSON.stringify(valor) !== JSON.stringify(valorAntigo)) {
-                        dadosNovos[campo.nome_campo] = valor;
-                    }
-                });
-
-                if (Object.keys(dadosNovos).length === 0) {
-                    alert('ℹ️ Nenhum campo foi alterado');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
-                    return;
-                }
-
-                console.log('📝 Campos alterados:', Object.keys(dadosNovos));
-
-                const justificativaCompleta = `[${motivo}] ${justificativa}`;
-                const { error: rpcError } = await sb.rpc('set_justificativa', {
-                    justificativa: justificativaCompleta,
-                    id_usuario: usuarioAtual.id
-                });
-
-                if (rpcError) console.warn('⚠️ RPC erro:', rpcError);
-
-                dadosNovos.data_atualizacao = new Date().toISOString();
-                dadosNovos.id_usuario_atualizacao = usuarioAtual.id;
-
-                const { error: updateError } = await sb
+                // --- INSERT ---
+                console.log('📝 Inserindo suspeito:', dados);
+                const { data: novo, error } = await sb
                     .from('suspeito')
-                    .update(dadosNovos)
-                    .eq('id_suspeito', suspeitoOriginal.id_suspeito);
-
-                if (updateError) throw updateError;
-
-                console.log('✅ Edição salva com sucesso!');
-
-                const toast = document.createElement('div');
-                toast.style.cssText = 'position:fixed;top:70px;right:20px;background:#0a0a0a;border:1px solid #003322;border-left:4px solid #00ff88;border-radius:12px;padding:16px 20px;color:#00ff88;z-index:99999;min-width:300px;box-shadow:0 10px 40px rgba(0,0,0,0.8);';
-                toast.innerHTML = `
-                    <div style="font-weight:700;margin-bottom:5px;">
-                        <i class="fas fa-check-circle me-2"></i>Alterações salvas!
-                    </div>
-                    <div style="font-size:12px;color:rgba(0,255,136,0.6);">
-                        ${Object.keys(dadosNovos).length - 2} campo(s) alterado(s) · versão gravada no histórico
-                    </div>
-                `;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 5000);
-
-                fecharEdicao();
-                await realizarBusca();
-
-            } catch (error) {
-                console.error('❌ Erro ao salvar:', error);
-                alert('❌ Erro ao salvar: ' + error.message);
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
-            }
-        }
-
-        function fecharEdicao() {
-            document.getElementById('modalEdicao').classList.remove('open');
-            idSuspeitoAtual = null;
-        }
-
-        // ============================================================
-        // MODAL HISTÓRICO
-        // ============================================================
-        async function verHistorico(id) {
-            console.log('📜 verHistorico() chamado para ID:', id);
-            const modal = document.getElementById('modalHistorico');
-            const body = document.getElementById('modalHistoricoBody');
-            modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>';
-
-            try {
-                const { data: historico, error } = await sb.from('suspeito_historico')
-                    .select('*')
-                    .eq('id_suspeito', id)
-                    .order('versao', { ascending: false });
+                    .insert(dados)
+                    .select('id_suspeito')
+                    .maybeSingle();
 
                 if (error) throw error;
+                if (!novo?.id_suspeito) throw new Error('Suspeito cadastrado, mas o ID não foi retornado.');
 
-                if (!historico || historico.length === 0) {
-                    body.innerHTML = `
-                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
-                            <i class="fas fa-history" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
-                            <div>Nenhuma alteração registrada ainda</div>
-                            <small style="font-size: 11px;">Este suspeito nunca foi editado desde o cadastro</small>
-                        </div>`;
-                    return;
-                }
+                console.log('✅ Suspeito cadastrado. ID:', novo.id_suspeito);
 
-                let html = '';
-                historico.forEach(h => {
-                    const data = new Date(h.data_alteracao).toLocaleString('pt-BR');
-                    const campos = h.campos_alterados || [];
-                    
-                    let diffHTML = '';
-                    campos.forEach(campo => {
-                        const antes = h.valores_antes?.[campo];
-                        const depois = h.valores_depois?.[campo];
-                        diffHTML += `
-                            <div class="diff-item">
-                                <strong style="color: rgba(0, 255, 136, 0.5);">${campo}:</strong><br>
-                                <span class="diff-antes">${antes ?? '(vazio)'}</span>
-                                <i class="fas fa-arrow-right mx-2" style="color: rgba(0, 255, 136, 0.3);"></i>
-                                <span class="diff-depois">${depois ?? '(vazio)'}</span>
-                            </div>`;
-                    });
+                // --- Upload da foto ---
+                if (fotoArquivo) {
+                    try {
+                        const ext = (fotoArquivo.name.split('.').pop() || 'jpg').toLowerCase();
+                        const nomeSeguro = `suspeito_${novo.id_suspeito}_principal_${Date.now()}.${ext}`;
 
-                    html += `
-                        <div class="historico-item">
-                            <div>
-                                <span class="versao">v${h.versao}</span>
-                                <strong style="color: var(--text-primary);">${campos.length} campo(s) alterado(s)</strong>
-                            </div>
-                            <div class="meta">
-                                <i class="fas fa-user me-1"></i> ${h.nome_usuario || 'Usuário'} ·
-                                <i class="fas fa-clock ms-2 me-1"></i> ${data}
-                            </div>
-                            ${h.justificativa ? `<div class="justificativa"><i class="fas fa-comment me-2"></i>${h.justificativa}</div>` : ''}
-                            ${diffHTML}
-                        </div>`;
-                });
-
-                body.innerHTML = html;
-            } catch (error) {
-                console.error('❌ Erro ao carregar histórico:', error);
-                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
-            }
-        }
-
-        function fecharHistorico() {
-            document.getElementById('modalHistorico').classList.remove('open');
-        }
-
-        // ============================================================
-        // MODAL FOTOS
-        // ============================================================
-        async function verFotos(id) {
-            console.log('📸 verFotos() chamado para ID:', id);
-            const modal = document.getElementById('modalFotos');
-            const body = document.getElementById('modalFotosBody');
-            modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>';
-
-            try {
-                const { data: midias, error } = await sb.from('arquivo_midia')
-                    .select('*')
-                    .eq('tipo_entidade', 'SUSPEITO')
-                    .eq('id_entidade', id)
-                    .eq('deletado', false)
-                    .order('data_upload', { ascending: false });
-
-                if (error) throw error;
-
-                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO' || m.tipo_midia === 'TATUAGEM');
-
-                if (fotos.length === 0) {
-                    body.innerHTML = `
-                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
-                            <i class="fas fa-images" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
-                            <div>Nenhuma foto cadastrada</div>
-                        </div>`;
-                    return;
-                }
-
-                let html = '<div class="galeria-fotos">';
-                
-                for (const foto of fotos) {
-                    let fotoUrl = null;
-                    if (foto.caminho_fisico) {
-                        const { data: signed } = await sb.storage
+                        const { error: upErr } = await sb.storage
                             .from(BUCKET_FOTOS)
-                            .createSignedUrl(foto.caminho_fisico, URL_EXPIRACAO_S);
-                        fotoUrl = signed?.signedUrl || null;
+                            .upload(nomeSeguro, fotoArquivo, { upsert: true, contentType: fotoArquivo.type });
+
+                        if (upErr) throw upErr;
+
+                        const { error: midiaErr } = await sb.from('arquivo_midia').insert({
+                            tipo_entidade: 'SUSPEITO',
+                            id_entidade: novo.id_suspeito,
+                            tipo_midia: 'FOTO',
+                            caminho_fisico: nomeSeguro,
+                            nome_seguro: nomeSeguro,
+                            nome_original: fotoArquivo.name,
+                            mime_type: fotoArquivo.type,
+                            tamanho_bytes: fotoArquivo.size,
+                            deletado: false,
+                            data_upload: new Date().toISOString()
+                        });
+
+                        if (midiaErr) throw midiaErr;
+                        console.log('📷 Foto vinculada:', nomeSeguro);
+                    } catch (eFoto) {
+                        console.warn('⚠️ Suspeito salvo, mas a foto falhou:', eFoto);
+                        showToast('warning', 'Suspeito salvo, foto falhou', eFoto.message || 'Erro ao subir a foto.', 8000);
                     }
-
-                    const dataUpload = foto.data_upload ? new Date(foto.data_upload).toLocaleDateString('pt-BR') : '-';
-                    const isPrincipal = foto.nome_seguro && foto.nome_seguro.toLowerCase().includes('principal');
-                    const isTattoo = foto.tipo_midia === 'TATUAGEM';
-
-                    html += `
-                        <div class="foto-card">
-                            ${fotoUrl 
-                                ? `<img src="${fotoUrl}" alt="Foto" />` 
-                                : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:rgba(0,255,136,0.2);"><i class="fas fa-image" style="font-size:40px;"></i></div>`
-                            }
-                            <div class="info">
-                                ${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : ''}
-                                ${isTattoo ? '<span class="principal" style="background:#ffc107;color:#000;">TATUAGEM</span>' : ''}
-                                <div class="data mt-2">
-                                    <i class="fas fa-calendar me-1"></i>${dataUpload}
-                                </div>
-                                ${foto.nome_original ? `<div class="data"><i class="fas fa-tag me-1"></i>${foto.nome_original.substring(0, 30)}</div>` : ''}
-                            </div>
-                        </div>`;
                 }
 
-                html += '</div>';
-                body.innerHTML = html;
-            } catch (error) {
-                console.error('❌ Erro ao carregar fotos:', error);
-                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
-            }
-        }
+                showToast('success', 'Suspeito cadastrado!', `<strong>${nome}</strong> foi salvo com sucesso.`, 6000);
 
-        function fecharFotos() {
-            document.getElementById('modalFotos').classList.remove('open');
+                // Limpa e oferece ir pra consulta
+                resetFormulario();
+                setTimeout(() => {
+                    if (confirm('Suspeito cadastrado! Deseja ir para a Consulta agora?')) {
+                        window.location.href = '07-consulta.html';
+                    }
+                }, 400);
+
+            } catch (err) {
+                console.error('❌ Erro ao cadastrar:', err);
+                showToast('error', 'Erro ao cadastrar', err.message || 'Erro desconhecido', 8000);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR SUSPEITO';
+            }
+        });
+
+        function resetFormulario() {
+            document.getElementById('formCadastro').reset();
+            document.getElementById('cidade').value = 'Salvador';
+            document.getElementById('uf').value = 'BA';
+            removerFoto();
         }
 
         // ============================================================
-        // ALERTAS
+        // TOAST
         // ============================================================
-        function emitirAlerta(id) {
-            if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
-                alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
-            }
+        function showToast(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
+            toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
+                '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
+                '<div class="toast-message">' + mensagem + '</div></div>' +
+                '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, duracao);
+        }
+
+        // ============================================================
+        // CONTROLES DE JANELA / SIDEBAR / LOGOUT
+        // ============================================================
+        function toggleFullscreen() {
+            const doc = window.document; const el = doc.documentElement;
+            const req = el.requestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullScreen || el.msRequestFullscreen;
+            const cancel = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(el);
+            else cancel.call(doc);
+        }
+        document.addEventListener('fullscreenchange', () => {
+            const btn = document.querySelector('.fullscreen-btn i');
+            if (!btn) return;
+            const isFs = document.fullscreenElement || document.webkitFullscreenElement;
+            btn.className = isFs ? 'fas fa-compress' : 'fas fa-expand';
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
+        });
+
+        function minimizeWindow() { try { window.blur(); } catch (e) {} }
+        function closeWindow() {
+            if (!confirm('Deseja realmente fechar o sistema?')) return;
+            try { window.open('', '_self', ''); window.close(); } catch (e) {}
+            setTimeout(() => { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
+        }
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+
+        async function fazerLogout() {
+            if (!confirm('Deseja realmente sair do sistema?')) return;
+            try { if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') { await AIDEPOM.logout(); return; } } catch (e) {}
+            try { if (sb?.auth) await sb.auth.signOut(); } catch (e) {}
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+            window.location.href = '02-login.html';
         }
 
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.9.2 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Cadastro v3.0.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
-            carregarEstatisticas();   // v2.9.1 — carrega contadores ao abrir a página
-        });
-
-        document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { realizarBusca(); }
-        });
-
-        // Fecha modais com ESC e atalho F11
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'F11') {
-                e.preventDefault();
-                toggleFullscreen();
-            }
-            if (e.key === 'Escape') {
-                fecharLightbox();     // v2.9.2 — fecha lightbox primeiro
-                fecharFicha();
-                fecharEdicao();
-                fecharHistorico();
-                fecharFotos();
-                fecharMandados();
-            }
         });
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
