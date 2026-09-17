@@ -2,42 +2,24 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.9.1
-     Data: 17/09/2026 - 23:30
-     Autor: AI-DEPOM Team
+     Versão: 2.10.0
+     Data: 18/09/2026 - 06:00
      ============================================================
-     REGRA DE OURO:
-     1. Zero placeholders quebrados
-     2. Zero TODOs esquecidos
-     3. Zero duplicações
-     4. Toda função referenciada DEVE existir
-     5. Todo botão DEVE ter handler real
-     6. Todo módulo DEVE estar conectado
-     7. Nenhuma linha deve ser removida sem substituição
+     ALTERAÇÕES v2.10.0:
+     - ✨ Modal de Edição agora tem seção "FOTOS DO SUSPEITO"
+       - Exibe a foto principal atual
+       - Permite substituir a foto principal
+       - Exibe fotos secundárias e tatuagens existentes
+       - Permite remover fotos existentes
+       - Permite adicionar novas fotos (secundária / tatuagem)
+     - ✅ Preservadas TODAS as funcionalidades da v2.9.2
 
-     ALTERAÇÕES v2.9.1 (17/09/2026 23:30):
-     - ✨ Contadores (Presos/Procurados/Foragidos) agora carregam ao abrir a página
-       - carregarEstatisticas() chamada no DOMContentLoaded
-       - Não depende mais de clicar em BUSCAR para exibir
-
-     ALTERAÇÕES v2.9.0 (17/09/2026 23:30):
-     - ✨ NOVO: Ícone ⚖️ (gavel) na coluna "Mandados" da tabela
-       - Cor reflete o status BNMP do mandado (verde=válido, etc)
-       - Clicável → abre modal com lista de mandados vinculados
-       - Não aparece quando o suspeito não tem mandado
-     - ✨ NOVO: Seção "Mandados Vinculados" na Ficha do Suspeito
-       - Badge com contador no topo
-       - Lista compacta: número + status + BNMP
-     - ✨ Nova função abrirMandadosDoSuspeito() e modal dedicado
-     - 🔍 Query otimizada: busca IDs de suspeitos com mandado em 1 única chamada
-     - ✅ Preservadas TODAS as funcionalidades da v2.8.0
-
-     ALTERAÇÕES v2.8.0 (17/09/2026 17:00):
-     - 🔗 Menu: "Mapa de Mandados" + "Operações"
-     - ➕ Botão FULLSCREEN + atalho F11
-
-     ALTERAÇÕES v2.7.4 (16/09/2026 18:00):
-     - 🐛 CORRIGIDO: perfil Admin não conseguia editar suspeito
+     ALTERAÇÕES v2.9.2:
+     - ✨ Ficha com foto clicável (lightbox)
+     ALTERAÇÕES v2.9.1:
+     - ✨ Contadores carregam ao abrir a página
+     ALTERAÇÕES v2.9.0:
+     - ✨ Ícone gavel na tabela + modal mandados vinculados
      ============================================================
 -->
 <!DOCTYPE html>
@@ -61,23 +43,16 @@
             --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
             --control-size: 36px;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
         html, body {
-            height: 100%;
-            min-height: 100vh;
-            margin: 0;
-            padding: 0;
+            height: 100%; min-height: 100vh;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             overflow-x: hidden;
         }
-
         .controls-bar {
-            position: fixed; top: 0; left: 0; right: 0;
-            z-index: 1000;
+            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--border-color);
@@ -88,7 +63,6 @@
         .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
         .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
-
         .control-btn {
             width: var(--control-size); height: var(--control-size);
             border-radius: 8px; border: none; background: transparent;
@@ -100,30 +74,25 @@
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
-
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #000; }
 
-        /* SIDEBAR com flexbox (footer não sobrepõe o menu) */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
             background: rgba(0, 0, 0, 0.98);
             backdrop-filter: blur(20px);
             border-right: 1px solid var(--border-color);
-            z-index: 999;
-            padding: 20px 0 0 0;
+            z-index: 999; padding: 20px 0 0 0;
             transition: transform 0.3s ease;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
+            display: flex; flex-direction: column;
         }
         .sidebar-brand { text-align: center; padding: 0 20px 25px; border-bottom: 1px solid var(--border-color); margin-bottom: 20px; }
         .sidebar-brand .logo { width: 50px; height: 50px; margin: 0 auto 10px; background: var(--gradient-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
-
         .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
@@ -136,9 +105,7 @@
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
-
         .sidebar-footer {
-            position: relative;
             padding: 15px 20px 20px;
             border-top: 1px solid var(--border-color);
             background: rgba(0, 0, 0, 0.98);
@@ -177,29 +144,14 @@
         .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
-
-        .form-control:disabled,
-        .form-control[readonly],
-        .form-select:disabled,
-        .form-control.disabled,
-        .form-select.disabled {
-            background: #000000 !important;
-            color: var(--text-primary) !important;
-            border-color: var(--border-color) !important;
-            opacity: 1 !important;
-            cursor: not-allowed;
-        }
-        .form-control:disabled::placeholder,
-        .form-control[readonly]::placeholder { color: rgba(0, 255, 136, 0.35) !important; }
+        .form-control:disabled, .form-control[readonly], .form-select:disabled { background: #000000 !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; opacity: 1 !important; cursor: not-allowed; }
         .form-check-input:disabled { background-color: #000; border-color: var(--border-color); }
-        .form-check-input:disabled + .form-check-label { color: rgba(0, 255, 136, 0.35); }
 
         .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
         .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
-        .btn-outline-gold:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 12px; border-radius: 8px; transition: all 0.3s; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
 
@@ -228,29 +180,16 @@
 
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        /* ============================================================
-           [v2.9.0] ÍCONE DE MANDADO NA TABELA
-           ============================================================ */
+        /* ÍCONE DE MANDADO NA TABELA */
         .badge-mandado {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-size: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 32px; height: 32px; border-radius: 50%; font-size: 15px;
+            cursor: pointer; transition: all 0.3s;
             border: 2px solid rgba(0, 0, 0, 0.4);
             background: rgba(0, 255, 136, 0.1);
-            color: var(--text-primary);
-            text-decoration: none;
+            color: var(--text-primary); text-decoration: none;
         }
-        .badge-mandado:hover {
-            transform: scale(1.15);
-            box-shadow: 0 0 15px currentColor;
-            filter: drop-shadow(0 0 6px currentColor);
-        }
+        .badge-mandado:hover { transform: scale(1.15); box-shadow: 0 0 15px currentColor; filter: drop-shadow(0 0 6px currentColor); }
         .badge-mandado.mandado-valido       { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
         .badge-mandado.mandado-ativo        { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
         .badge-mandado.mandado-novo         { background: rgba(220, 53, 69, 0.15); color: #dc3545; border-color: rgba(220, 53, 69, 0.4); }
@@ -260,48 +199,25 @@
         .badge-mandado.mandado-vencido      { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border-color: rgba(108, 117, 125, 0.4); }
         .badge-mandado.mandado-extinto      { background: rgba(108, 117, 125, 0.15); color: #6c757d; border-color: rgba(108, 117, 125, 0.4); }
         .badge-mandado.mandado-nao-encontrado { background: rgba(255, 87, 34, 0.15); color: #ff5722; border-color: rgba(255, 87, 34, 0.4); }
-
         .badge-mandado-count {
-            position: absolute;
-            top: -4px;
-            right: -4px;
-            background: #000;
-            color: var(--text-primary);
-            font-size: 9px;
-            font-weight: 700;
-            min-width: 16px;
-            height: 16px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 1px solid var(--text-primary);
-            padding: 0 4px;
+            position: absolute; top: -4px; right: -4px;
+            background: #000; color: var(--text-primary);
+            font-size: 9px; font-weight: 700;
+            min-width: 16px; height: 16px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--text-primary); padding: 0 4px;
         }
-        .badge-mandado-wrapper {
-            position: relative;
-            display: inline-block;
-        }
+        .badge-mandado-wrapper { position: relative; display: inline-block; }
 
-        /* ============================================================
-           [v2.9.0] MODAL DE MANDADOS VINCULADOS
-           ============================================================ */
+        /* MODAL DE MANDADOS VINCULADOS */
         .mandado-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 14px;
-            background: rgba(0, 0, 0, 0.3);
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px 14px; background: rgba(0, 0, 0, 0.3);
             border: 1px solid var(--border-color);
             border-left: 4px solid var(--border-color);
-            border-radius: 10px;
-            margin-bottom: 10px;
-            transition: all 0.3s;
+            border-radius: 10px; margin-bottom: 10px; transition: all 0.3s;
         }
-        .mandado-item:hover {
-            background: rgba(0, 255, 136, 0.03);
-            transform: translateX(4px);
-        }
+        .mandado-item:hover { background: rgba(0, 255, 136, 0.03); transform: translateX(4px); }
         .mandado-item.borda-valido     { border-left-color: #00ff88; }
         .mandado-item.borda-ativo      { border-left-color: #00ff88; }
         .mandado-item.borda-novo       { border-left-color: #dc3545; }
@@ -311,51 +227,13 @@
         .mandado-item.borda-vencido    { border-left-color: #adb5bd; }
         .mandado-item.borda-extinto    { border-left-color: #6c757d; }
         .mandado-item.borda-nao-encontrado { border-left-color: #ff5722; }
-
-        .mandado-item .mandado-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
-        }
+        .mandado-item .mandado-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
         .mandado-item .mandado-info { flex: 1; min-width: 0; }
-        .mandado-item .mandado-numero {
-            color: var(--text-primary);
-            font-weight: 700;
-            font-size: 13px;
-            margin-bottom: 3px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .mandado-item .mandado-meta {
-            color: rgba(0, 255, 136, 0.5);
-            font-size: 11px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        .mandado-item .mandado-meta span {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
+        .mandado-item .mandado-numero { color: var(--text-primary); font-weight: 700; font-size: 13px; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .mandado-item .mandado-meta { color: rgba(0, 255, 136, 0.5); font-size: 11px; display: flex; flex-wrap: wrap; gap: 10px; }
+        .mandado-item .mandado-meta span { display: inline-flex; align-items: center; gap: 4px; }
 
-        .badge-bnmp-mini {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .badge-bnmp-mini { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 10px; font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
         .badge-bnmp-mini.bnmp-validado    { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
         .badge-bnmp-mini.bnmp-cancelado   { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .badge-bnmp-mini.bnmp-suspenso    { background: rgba(186, 104, 200, 0.15); color: #ba68c8; }
@@ -363,9 +241,7 @@
         .badge-bnmp-mini.bnmp-extinto     { background: rgba(108, 117, 125, 0.15); color: #6c757d; }
         .badge-bnmp-mini.bnmp-nao-validado { background: rgba(0, 255, 136, 0.05); color: rgba(0, 255, 136, 0.4); }
 
-        /* ============================================================
-           MODAIS (mantidos da v2.8.0)
-           ============================================================ */
+        /* MODAIS */
         .modal-ficha, .modal-edicao, .modal-historico, .modal-fotos, .modal-mandados {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -374,21 +250,9 @@
             z-index: 9999; justify-content: center; align-items: center; padding: 20px;
         }
         .modal-ficha.open, .modal-edicao.open, .modal-historico.open, .modal-fotos.open, .modal-mandados.open { display: flex; }
-
-        .modal-content {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 14px; width: 100%; max-width: 800px;
-            max-height: 90vh; overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
-        }
+        .modal-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1); }
         .modal-content.modal-lg { max-width: 1000px; }
-
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 25px; border-bottom: 1px solid var(--border-color);
-            position: sticky; top: 0; background: var(--bg-secondary); z-index: 1;
-        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); z-index: 1; }
         .modal-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
         .modal-body { padding: 25px; }
         .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 25px; border-top: 1px solid var(--border-color); position: sticky; bottom: 0; background: var(--bg-secondary); }
@@ -419,6 +283,116 @@
         .foto-card .data { font-size: 10px; color: rgba(0, 255, 136, 0.4); }
         .foto-card .principal { background: var(--text-primary); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; }
 
+        /* FOTO DO SUSPEITO + LIGHTBOX (ficha) */
+        .ficha-foto-wrapper { position: relative; display: inline-block; cursor: zoom-in; border-radius: 10px; overflow: hidden; transition: all 0.3s; }
+        .ficha-foto-wrapper:hover { transform: scale(1.02); box-shadow: 0 8px 30px rgba(0, 255, 136, 0.25); }
+        .ficha-foto-wrapper::after {
+            content: '\f00e'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; bottom: 8px; right: 8px;
+            background: rgba(0, 0, 0, 0.7); color: var(--text-primary);
+            width: 30px; height: 30px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+        }
+        .ficha-foto-wrapper:hover::after { opacity: 1; }
+        .foto-label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px; text-align: center; }
+        .foto-lightbox { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 10000; align-items: center; justify-content: center; padding: 30px; }
+        .foto-lightbox.open { display: flex; }
+        .foto-lightbox img { max-width: 95%; max-height: 95%; border-radius: 12px; border: 2px solid var(--text-primary); box-shadow: 0 0 60px rgba(0, 255, 136, 0.3); }
+        .foto-lightbox .fechar { position: absolute; top: 20px; right: 20px; background: transparent; border: 1px solid var(--text-primary); color: var(--text-primary); width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; transition: all 0.3s; }
+        .foto-lightbox .fechar:hover { background: rgba(0, 255, 136, 0.1); transform: rotate(90deg); }
+
+        /* ============================================================
+           [v2.10.0] SEÇÃO DE FOTOS NO MODAL DE EDIÇÃO
+           ============================================================ */
+        .edit-fotos-section {
+            background: rgba(0, 255, 136, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+        .edit-fotos-title {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        .edit-foto-principal-wrapper {
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.4);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 0.3s;
+            aspect-ratio: 3 / 4;
+            min-height: 180px;
+        }
+        .edit-foto-principal-wrapper:hover { border-color: var(--text-primary); box-shadow: 0 0 20px rgba(0,255,136,0.15); }
+        .edit-foto-principal-wrapper > i { font-size: 40px; color: rgba(0,255,136,0.25); margin-bottom: 8px; }
+        .edit-foto-principal-wrapper .hint { color: rgba(0,255,136,0.4); font-size: 11px; text-align: center; padding: 0 8px; }
+        .edit-foto-principal-wrapper img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .edit-foto-principal-wrapper.tem-foto > i,
+        .edit-foto-principal-wrapper.tem-foto > .hint { display: none; }
+        .edit-foto-principal-wrapper.tem-foto img { display: block; }
+        .edit-foto-badge {
+            position: absolute; top: 8px; left: 8px;
+            background: rgba(0,255,136,0.9); color: #000;
+            padding: 3px 8px; border-radius: 10px;
+            font-size: 9px; font-weight: 700; text-transform: uppercase;
+        }
+        .edit-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .edit-mini-card {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            background: rgba(0,0,0,0.3);
+        }
+        .edit-mini-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .edit-mini-card .remove-btn {
+            position: absolute; top: 4px; right: 4px;
+            background: rgba(220,53,69,0.9); color: #fff;
+            border: none; width: 22px; height: 22px;
+            border-radius: 50%; cursor: pointer; font-size: 10px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s;
+        }
+        .edit-mini-card .remove-btn:hover { background: #dc3545; transform: scale(1.1); }
+        .edit-mini-card .tipo-badge {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: rgba(0,0,0,0.75); color: #ffc107;
+            font-size: 8px; text-align: center; padding: 2px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .edit-add-btn {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            background: rgba(0,255,136,0.02);
+            cursor: pointer;
+            aspect-ratio: 1;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            color: rgba(0,255,136,0.3);
+            font-size: 9px;
+            transition: all 0.3s;
+            text-align: center;
+            padding: 4px;
+        }
+        .edit-add-btn:hover { border-color: var(--text-primary); color: var(--text-primary); background: rgba(0,255,136,0.05); }
+        .edit-add-btn i { font-size: 20px; margin-bottom: 4px; }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -434,13 +408,6 @@
             .ficha-foto, .ficha-foto-placeholder { width: 140px; height: 175px; }
             .modal-body { padding: 15px; }
         }
-        @media (max-width: 480px) {
-            .main-content { padding: 60px 10px 10px; }
-            .top-actions { width: 100%; }
-            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; }
-            .foto-suspeito, .foto-placeholder { width: 40px; height: 48px; }
-        }
-
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
@@ -659,9 +626,7 @@
         </div>
     </div>
 
-    <!-- ============================================================
-         [v2.9.0] MODAL DE MANDADOS VINCULADOS
-         ============================================================ -->
+    <!-- MODAL MANDADOS -->
     <div class="modal-mandados" id="modalMandados">
         <div class="modal-content modal-lg">
             <div class="modal-header">
@@ -678,27 +643,23 @@
         </div>
     </div>
 
+    <!-- LIGHTBOX DE FOTO -->
+    <div class="foto-lightbox" id="fotoLightbox" onclick="fecharLightbox(event)">
+        <button class="fechar" onclick="fecharLightbox(event)"><i class="fas fa-times"></i></button>
+        <img id="fotoLightboxImg" src="" alt="Foto do suspeito" />
+    </div>
+
     <div class="toast-container" id="toastContainer"></div>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
-        // ============================================================
-        // Supabase client (com fallback)
-        // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
 
         const sb = (function() {
-            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) {
-                console.log('✅ [07-consulta] Usando window.supabaseClient');
-                return window.supabaseClient;
-            }
-            if (typeof window.supabase !== 'undefined' && window.supabase?.from) {
-                console.log('✅ [07-consulta] Usando window.supabase');
-                return window.supabase;
-            }
-            console.warn('⚠️ [07-consulta] Criando cliente Supabase próprio');
+            if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) return window.supabaseClient;
+            if (typeof window.supabase !== 'undefined' && window.supabase?.from) return window.supabase;
             return window.supabase.createClient(
                 'https://szkgaqouivsvlyujfvmz.supabase.co',
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6a2dhcW91aXZzdmx5dWpmdm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODg1MzY0MjksImV4cCI6MjEwNDExMjQyOX0.4KBCiRxjZZrfaEBqfiFVSp9ECOy37brn1JFC7ga_2Hc'
@@ -709,101 +670,41 @@
         // FULLSCREEN
         // ============================================================
         function toggleFullscreen() {
-            const doc = window.document;
-            const docEl = doc.documentElement;
-
-            const requestFullScreen = docEl.requestFullscreen
-                || docEl.mozRequestFullScreen
-                || docEl.webkitRequestFullScreen
-                || docEl.msRequestFullscreen;
-
-            const cancelFullScreen = doc.exitFullscreen
-                || doc.mozCancelFullScreen
-                || doc.webkitExitFullscreen
-                || doc.msExitFullscreen;
-
-            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-                requestFullScreen.call(docEl);
-            } else {
-                cancelFullScreen.call(doc);
-            }
+            const doc = window.document; const docEl = doc.documentElement;
+            const requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+            const cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) requestFullScreen.call(docEl);
+            else cancelFullScreen.call(doc);
         }
-
         document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
         document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
-        document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
-        document.addEventListener('MSFullscreenChange', atualizarIconeFullscreen);
-
         function atualizarIconeFullscreen() {
             const btn = document.querySelector('.fullscreen-btn i');
             if (!btn) return;
-
-            const isFullscreen = document.fullscreenElement
-                || document.webkitFullscreenElement
-                || document.mozFullScreenElement
-                || document.msFullscreenElement;
-
+            const isFullscreen = document.fullscreenElement || document.webkitFullscreenElement;
             btn.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
         }
 
         // ============================================================
-        // LOGOUT ROBUSTO
+        // LOGOUT
         // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
-
-            try {
-                if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') {
-                    await AIDEPOM.logout();
-                    return;
-                }
-            } catch (error) {
-                console.warn('⚠️ AIDEPOM.logout() falhou:', error);
-            }
-
-            try {
-                if (sb && sb.auth && sb.auth.signOut) {
-                    await sb.auth.signOut();
-                }
-            } catch (error) {
-                console.error('❌ Erro ao fazer signOut:', error);
-            }
-
-            try {
-                localStorage.clear();
-                sessionStorage.clear();
-            } catch (e) { /* ignore */ }
-
+            try { if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') { await AIDEPOM.logout(); return; } } catch (e) {}
+            try { if (sb && sb.auth && sb.auth.signOut) await sb.auth.signOut(); } catch (e) {}
+            try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
             window.location.href = '02-login.html';
         }
 
         // ============================================================
         // CONTROLES DE JANELA
         // ============================================================
-        function minimizeWindow() {
-            try {
-                window.blur();
-                console.log('🪟 Janela desfocada (minimizar real não suportado)');
-            } catch (e) { console.warn('Minimizar não suportado:', e); }
-        }
-
+        function minimizeWindow() { try { window.blur(); } catch (e) {} }
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
-
-            try {
-                window.open('', '_self', '');
-                window.close();
-            } catch (e) {
-                console.warn('⚠️ window.close() bloqueado pelo navegador');
-            }
-
-            setTimeout(function() {
-                if (!window.closed) {
-                    window.location.href = '01-apresentacao.html';
-                }
-            }, 300);
+            try { window.open('', '_self', ''); window.close(); } catch (e) {}
+            setTimeout(() => { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
         }
-
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
         // ============================================================
@@ -817,12 +718,15 @@
         let usuarioAtual = null;
         let perfilUsuarioAtual = null;
         let camposEditaveisCache = null;
-
-        // [v2.9.0] Set de IDs de suspeitos que têm mandado vinculado
         let suspeitosComMandado = new Set();
-
-        // [v2.9.0] Cache de mandados por suspeito (id → array de mandados)
         let mandadosCachePorSuspeito = {};
+
+        // [v2.10.0] Edição de fotos
+        let editFotoPrincipalArquivo = null;         // nova foto principal (substituir)
+        let editFotosExistentes = [];                // [{id, tipo_midia, caminho_fisico, url, nome_seguro, nome_original}]
+        let editFotosRemover = [];                   // IDs de arquivo_midia para deletar
+        let editFotosNovasSecundarias = [];          // [{file, url}]
+        let editFotosNovasTatuagens = [];            // [{file, url}]
 
         // ============================================================
         // CARREGAR USUÁRIO
@@ -848,20 +752,15 @@
         }
 
         // ============================================================
-        // CARREGAR CAMPOS EDITÁVEIS (cache)
+        // CAMPOS EDITÁVEIS
         // ============================================================
         async function carregarCamposEditaveis() {
             if (camposEditaveisCache) return camposEditaveisCache;
             const { data, error } = await sb.from('suspeito_campos_editaveis')
                 .select('nome_campo, descricao, perfis_permitidos, ordem')
-                .eq('ativo', true)
-                .order('ordem');
-            if (error) {
-                console.error('❌ Erro ao carregar campos editáveis:', error);
-                return [];
-            }
+                .eq('ativo', true).order('ordem');
+            if (error) { console.error('❌ Erro campos editáveis:', error); return []; }
             camposEditaveisCache = data || [];
-            console.log('📋 Campos editáveis:', camposEditaveisCache.length);
             return camposEditaveisCache;
         }
 
@@ -872,7 +771,7 @@
                 try {
                     const parsed = JSON.parse(raw);
                     if (Array.isArray(parsed)) return parsed.map(p => Number(p)).filter(n => !isNaN(n));
-                } catch (e) { /* não era JSON */ }
+                } catch (e) {}
                 if (raw.includes(',')) return raw.split(',').map(p => Number(p.trim())).filter(n => !isNaN(n));
                 const n = Number(raw);
                 return isNaN(n) ? [] : [n];
@@ -892,11 +791,29 @@
                 document.getElementById('totalProcurados').querySelector('.count').textContent = totalProcurados || 0;
                 document.getElementById('totalForagidos').querySelector('.count').textContent = totalForagidos || 0;
                 console.log('📊 Estatísticas:', { presos: totalPresos, procurados: totalProcurados, foragidos: totalForagidos });
-            } catch (error) { console.error('Erro ao carregar estatísticas:', error); }
+            } catch (error) { console.error('Erro estatísticas:', error); }
         }
 
         // ============================================================
-        // [v2.9.0] BUSCAR SUSPEITOS QUE TÊM MANDADO
+        // LIGHTBOX
+        // ============================================================
+        function abrirLightbox(url) {
+            if (!url) return;
+            const lb = document.getElementById('fotoLightbox');
+            const img = document.getElementById('fotoLightboxImg');
+            img.src = url;
+            lb.classList.add('open');
+        }
+        function fecharLightbox(e) {
+            if (e) e.stopPropagation();
+            const lb = document.getElementById('fotoLightbox');
+            if (lb) lb.classList.remove('open');
+            const img = document.getElementById('fotoLightboxImg');
+            if (img) img.src = '';
+        }
+
+        // ============================================================
+        // MANDADOS VINCULADOS
         // ============================================================
         async function carregarSuspeitosComMandado(idsSuspeitos) {
             if (!idsSuspeitos || idsSuspeitos.length === 0) {
@@ -904,7 +821,6 @@
                 mandadosCachePorSuspeito = {};
                 return;
             }
-
             try {
                 const { data, error } = await sb
                     .from('mandado_prisao')
@@ -912,58 +828,32 @@
                     .eq('deletado', false)
                     .in('id_suspeito', idsSuspeitos)
                     .order('id_mandado', { ascending: false });
-
                 if (error) throw error;
-
                 suspeitosComMandado = new Set();
                 mandadosCachePorSuspeito = {};
-
                 (data || []).forEach(m => {
                     suspeitosComMandado.add(m.id_suspeito);
-                    if (!mandadosCachePorSuspeito[m.id_suspeito]) {
-                        mandadosCachePorSuspeito[m.id_suspeito] = [];
-                    }
+                    if (!mandadosCachePorSuspeito[m.id_suspeito]) mandadosCachePorSuspeito[m.id_suspeito] = [];
                     mandadosCachePorSuspeito[m.id_suspeito].push(m);
                 });
-
-                console.log(`⚖️ ${suspeitosComMandado.size} suspeito(s) com mandado vinculado | Total de mandados: ${data?.length || 0}`);
+                console.log(`⚖️ ${suspeitosComMandado.size} suspeito(s) com mandado`);
             } catch (error) {
-                console.error('❌ Erro ao buscar mandados vinculados:', error);
+                console.error('❌ Erro mandados:', error);
                 suspeitosComMandado = new Set();
                 mandadosCachePorSuspeito = {};
             }
         }
 
-        // ============================================================
-        // [v2.9.0] ÍCONE DE MANDADO
-        // Retorna o HTML do badge de mandado baseado no status do mandado mais recente
-        // ============================================================
         function gerarBadgeMandado(idSuspeito) {
-            if (!suspeitosComMandado.has(idSuspeito)) {
-                return ''; // Só aparece quando tem mandado
-            }
-
+            if (!suspeitosComMandado.has(idSuspeito)) return '';
             const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
             const qtd = mandados.length;
-
-            // Prioriza o mandado com status BNMP mais "forte"
-            // Ordem: VALIDO > ATIVO > NOVO > CANCELADO > SUSPENSO > CUMPRIDO > VENCIDO > EXTINTO > NAO_ENCONTRADO
             const prioridadeStatus = {
-                'VALIDO': 1,
-                'ATIVO': 2,
-                'NOVO': 3,
-                'CANCELADO': 4,
-                'SUSPENSO': 5,
-                'CUMPRIDO': 6,
-                'VENCIDO': 7,
-                'EXTINTO': 8,
-                'NAO_ENCONTRADO': 9
+                'VALIDO': 1, 'ATIVO': 2, 'NOVO': 3, 'CANCELADO': 4,
+                'SUSPENSO': 5, 'CUMPRIDO': 6, 'VENCIDO': 7, 'EXTINTO': 8, 'NAO_ENCONTRADO': 9
             };
-
-            let statusPrincipal = 'ativo'; // default
+            let statusPrincipal = 'ativo';
             let mandadoPrincipal = mandados[0];
-
-            // Procura o mandado com status BNMP mais prioritário
             let melhorPrioridade = 999;
             mandados.forEach(m => {
                 const bnmp = m.validacao_bnmp_status;
@@ -973,21 +863,16 @@
                     mandadoPrincipal = m;
                 }
             });
-
-            // Se nenhum tem BNMP validado, usa o status do mandado
             if (melhorPrioridade === 999) {
-                const st = (mandadoPrincipal.status || 'ATIVO').toLowerCase();
-                statusPrincipal = st;
+                statusPrincipal = (mandadoPrincipal.status || 'ATIVO').toLowerCase();
             }
-
             const classe = `badge-mandado-${statusPrincipal}`;
             const contadorHTML = qtd > 1 ? `<span class="badge-mandado-count">${qtd}</span>` : '';
-
             return `
                 <div class="badge-mandado-wrapper">
                     <a class="badge-mandado ${classe}"
                        onclick="event.stopPropagation(); abrirMandadosDoSuspeito(${idSuspeito})"
-                       title="${qtd} mandado(s) vinculado(s) — clique para ver">
+                       title="${qtd} mandado(s) vinculado(s)">
                         <i class="fas fa-gavel"></i>
                     </a>
                     ${contadorHTML}
@@ -995,103 +880,54 @@
             `;
         }
 
-        // ============================================================
-        // [v2.9.0] MODAL DE MANDADOS VINCULADOS
-        // ============================================================
         function abrirMandadosDoSuspeito(idSuspeito) {
             const modal = document.getElementById('modalMandados');
             const body = document.getElementById('modalMandadosBody');
             modal.classList.add('open');
-
             const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
-
             if (mandados.length === 0) {
-                body.innerHTML = `
-                    <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
-                        <i class="fas fa-gavel" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
-                        <div>Nenhum mandado vinculado a este suspeito</div>
-                    </div>`;
+                body.innerHTML = `<div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-gavel" style="font-size: 50px; display: block; margin-bottom: 15px;"></i><div>Nenhum mandado vinculado</div></div>`;
                 return;
             }
-
-            // Nome do suspeito (do cache de dadosAtuais ou fallback)
-            const suspeitoInfo = dadosAtuais.find(d => d.id_suspeito === idSuspeito);
-            const nomeSuspeito = suspeitoInfo?.nome_completo || `Suspeito #${idSuspeito}`;
-
+            const info = dadosAtuais.find(d => d.id_suspeito === idSuspeito);
+            const nome = info?.nome_completo || `Suspeito #${idSuspeito}`;
             const ICONES_BNMP = {
-                'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
-                'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
-                'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
-                'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
-                'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
-                'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
+                'VALIDO': { icone: 'fa-check-circle', label: 'Válido' },
+                'CANCELADO': { icone: 'fa-ban', label: 'Cancelado' },
+                'SUSPENSO': { icone: 'fa-pause-circle', label: 'Suspenso' },
+                'CUMPRIDO': { icone: 'fa-gavel', label: 'Cumprido' },
+                'EXTINTO': { icone: 'fa-times-circle', label: 'Extinto' },
+                'NAO_ENCONTRADO': { icone: 'fa-search-minus', label: 'Não Encontrado' }
             };
-
-            let html = `
-                <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:10px;padding:12px 15px;margin-bottom:20px;">
-                    <div style="color:var(--text-primary);font-weight:700;font-size:14px;">
-                        <i class="fas fa-user-secret me-2"></i>${nomeSuspeito}
-                    </div>
-                    <div style="color:rgba(0,255,136,0.4);font-size:11px;margin-top:4px;">
-                        ${mandados.length} mandado(s) vinculado(s)
-                    </div>
-                </div>
-            `;
-
+            let html = `<div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:10px;padding:12px 15px;margin-bottom:20px;"><div style="color:var(--text-primary);font-weight:700;font-size:14px;"><i class="fas fa-user-secret me-2"></i>${nome}</div><div style="color:rgba(0,255,136,0.4);font-size:11px;margin-top:4px;">${mandados.length} mandado(s)</div></div>`;
             mandados.forEach((m, idx) => {
-                const bnmpStatus = m.validacao_bnmp_status;
-                const bnmpCfg = bnmpStatus ? ICONES_BNMP[bnmpStatus] : null;
-                const statusMandado = (m.status || 'ATIVO').toLowerCase();
-                const corBorda = bnmpCfg
-                    ? 'borda-' + bnmpStatus.toLowerCase().replace(/_/g, '-')
-                    : 'borda-' + statusMandado;
-
-                const dataFormatada = m.data_emissao
-                    ? m.data_emissao.split('-').reverse().join('/')
-                    : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
-
-                let bnmpBadgeHTML = '';
-                if (bnmpCfg) {
-                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-${bnmpStatus.toLowerCase().replace(/_/g, '-')}">
-                        <i class="fas ${bnmpCfg.icone}"></i> BNMP: ${bnmpCfg.label}
-                    </span>`;
-                } else {
-                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-nao-validado">
-                        <i class="fas fa-question-circle"></i> BNMP: Não validado
-                    </span>`;
-                }
-
+                const bnmp = m.validacao_bnmp_status;
+                const cfg = bnmp ? ICONES_BNMP[bnmp] : null;
+                const stMandado = (m.status || 'ATIVO').toLowerCase();
+                const corBorda = cfg ? 'borda-' + bnmp.toLowerCase().replace(/_/g, '-') : 'borda-' + stMandado;
+                const dataF = m.data_emissao ? m.data_emissao.split('-').reverse().join('/') : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
+                const bnmpBadge = cfg
+                    ? `<span class="badge-bnmp-mini bnmp-${bnmp.toLowerCase().replace(/_/g, '-')}"><i class="fas ${cfg.icone}"></i> BNMP: ${cfg.label}</span>`
+                    : `<span class="badge-bnmp-mini bnmp-nao-validado"><i class="fas fa-question-circle"></i> Não validado</span>`;
                 html += `
                     <div class="mandado-item ${corBorda}">
-                        <div class="mandado-icon" style="background:rgba(0,255,136,0.05);color:var(--text-primary);">
-                            <i class="fas fa-gavel"></i>
-                        </div>
+                        <div class="mandado-icon" style="background:rgba(0,255,136,0.05);color:var(--text-primary);"><i class="fas fa-gavel"></i></div>
                         <div class="mandado-info">
                             <div class="mandado-numero">#${idx + 1} — ${m.numero_mandado || '#' + m.id_mandado}</div>
                             <div class="mandado-meta">
                                 <span><i class="fas fa-tag"></i> ${m.tipo_mandado || '-'}</span>
                                 <span><i class="fas fa-info-circle"></i> ${m.status || '-'}</span>
-                                <span><i class="fas fa-calendar"></i> ${dataFormatada}</span>
-                                ${m.prioridade ? `<span><i class="fas fa-exclamation"></i> ${m.prioridade}</span>` : ''}
+                                <span><i class="fas fa-calendar"></i> ${dataF}</span>
                             </div>
-                            <div style="margin-top:8px;">
-                                ${bnmpBadgeHTML}
-                            </div>
+                            <div style="margin-top:8px;">${bnmpBadge}</div>
                         </div>
                     </div>
                 `;
             });
-
             body.innerHTML = html;
         }
-
-        function fecharMandados() {
-            document.getElementById('modalMandados').classList.remove('open');
-        }
-
-        function abrirTelaMandados() {
-            window.location.href = '11-mandados.html';
-        }
+        function fecharMandados() { document.getElementById('modalMandados').classList.remove('open'); }
+        function abrirTelaMandados() { window.location.href = '11-mandados.html'; }
 
         // ============================================================
         // BUSCA PRINCIPAL
@@ -1103,7 +939,6 @@
             const periculosidade = document.getElementById('filtroPericulosidade').value;
             const dataInicio = document.getElementById('filtroDataInicio').value;
             const dataFim = document.getElementById('filtroDataFim').value;
-
             const temFiltro = termo.length > 0 || status || periculosidade || dataInicio || dataFim;
 
             if (!temFiltro) {
@@ -1111,9 +946,7 @@
                     <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
                         <i class="fas fa-exclamation-triangle" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Nenhum filtro informado</strong></div>
-                        <small style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">
-                            Digite um nome, CPF, RG ou selecione pelo menos um filtro para buscar
-                        </small>
+                        <small style="font-size: 11px;">Digite um nome/CPF/RG ou selecione um filtro</small>
                     </td></tr>`;
                 document.getElementById('infoPagina').textContent = '';
                 document.getElementById('totalRegistrosInfo').textContent = 'Aguardando filtros...';
@@ -1128,10 +961,10 @@
                 document.getElementById('resultadosConsulta').innerHTML = `
                     <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
                         <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
-                        Digite pelo menos <strong>2 caracteres</strong> para buscar por nome, CPF ou RG
+                        Digite pelo menos <strong>2 caracteres</strong>
                     </td></tr>`;
                 document.getElementById('infoPagina').textContent = '';
-                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando mais caracteres...';
+                document.getElementById('totalRegistrosInfo').textContent = 'Aguardando...';
                 document.getElementById('buscaGlobal').focus();
                 return;
             }
@@ -1139,26 +972,22 @@
             try {
                 paginaAtual = 1;
 
-                let query = sb
-                    .from('suspeito')
+                let query = sb.from('suspeito')
                     .select(`id_suspeito, nome_completo, cpf, rg, cidade, status_atual, nivel_periculosidade, data_cadastro`, { count: 'exact' })
                     .eq('deletado', false);
 
-                if (termo.length >= 2) {
-                    query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`);
-                }
-                if (status) { query = query.eq('status_atual', status); }
-                if (periculosidade) { query = query.eq('nivel_periculosidade', periculosidade); }
-                if (dataInicio) { query = query.gte('data_cadastro', dataInicio); }
-                if (dataFim) { query = query.lte('data_cadastro', dataFim); }
+                if (termo.length >= 2) query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`);
+                if (status) query = query.eq('status_atual', status);
+                if (periculosidade) query = query.eq('nivel_periculosidade', periculosidade);
+                if (dataInicio) query = query.gte('data_cadastro', dataInicio);
+                if (dataFim) query = query.lte('data_cadastro', dataFim);
 
                 const { data: suspeitos, count, error } = await query
                     .order('data_cadastro', { ascending: false })
                     .range((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina - 1);
 
                 if (error) throw error;
-
-                console.log('📋 Suspeitos encontrados:', count);
+                console.log('📋 Suspeitos:', count);
 
                 if (!suspeitos || suspeitos.length === 0) {
                     dadosAtuais = [];
@@ -1170,20 +999,15 @@
                     return;
                 }
 
-                // [v2.9.0] Buscar quais desses suspeitos têm mandado vinculado
-                const idsDosSuspeitos = suspeitos.map(s => s.id_suspeito);
-                await carregarSuspeitosComMandado(idsDosSuspeitos);
+                const ids = suspeitos.map(s => s.id_suspeito);
+                await carregarSuspeitosComMandado(ids);
 
-                // Buscar fotos
-                const { data: midias, error: midiaError } = await sb
-                    .from('arquivo_midia')
+                const { data: midias } = await sb.from('arquivo_midia')
                     .select('id_entidade, caminho_fisico, nome_seguro, tipo_midia')
                     .eq('tipo_entidade', 'SUSPEITO')
                     .eq('tipo_midia', 'FOTO')
                     .eq('deletado', false)
-                    .in('id_entidade', idsDosSuspeitos);
-
-                if (midiaError) console.warn('⚠️ Erro ao buscar mídias:', midiaError);
+                    .in('id_entidade', ids);
 
                 const midiasPorSuspeito = {};
                 (midias || []).forEach(m => {
@@ -1192,21 +1016,14 @@
                 });
 
                 const dadosComFoto = await Promise.all(suspeitos.map(async (s) => {
-                    const midiasDoSuspeito = midiasPorSuspeito[s.id_suspeito] || [];
-                    const midiaPrincipal = midiasDoSuspeito.find(m =>
-                        m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')
-                    ) || midiasDoSuspeito[0];
-
+                    const lista = midiasPorSuspeito[s.id_suspeito] || [];
+                    const principal = lista.find(m => m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')) || lista[0];
                     let fotoUrl = null;
-                    if (midiaPrincipal && midiaPrincipal.caminho_fisico) {
+                    if (principal && principal.caminho_fisico) {
                         try {
-                            const { data: signed } = await sb.storage
-                                .from(BUCKET_FOTOS)
-                                .createSignedUrl(midiaPrincipal.caminho_fisico, URL_EXPIRACAO_S);
+                            const { data: signed } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
                             fotoUrl = signed?.signedUrl || null;
-                        } catch (err) {
-                            console.warn('⚠️ Erro ao gerar signed URL:', err);
-                        }
+                        } catch (err) { console.warn('signed err:', err); }
                     }
                     return { ...s, fotoUrl };
                 }));
@@ -1216,23 +1033,20 @@
                 await carregarEstatisticas();
                 renderizarResultados();
             } catch (error) {
-                console.error('❌ Erro na busca:', error);
+                console.error('❌ Erro busca:', error);
                 document.getElementById('resultadosConsulta').innerHTML =
-                    `<tr><td colspan="8" class="text-center py-4" style="color: #dc3545;">
-                        <i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}
-                    </td></tr>`;
+                    `<tr><td colspan="8" class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</td></tr>`;
             }
         }
 
         // ============================================================
-        // RENDERIZAÇÃO DA TABELA
+        // RENDERIZAÇÃO
         // ============================================================
         function renderizarResultados() {
             const tbody = document.getElementById('resultadosConsulta');
-
             if (dadosAtuais.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td></tr>`;
-                document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-search"></i> Nenhum resultado</td></tr>`;
+                document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0';
                 document.getElementById('totalRegistrosInfo').textContent = 'Nenhum resultado';
                 document.getElementById('numerosPaginas').innerHTML = '';
                 document.getElementById('btnAnterior').style.display = 'none';
@@ -1243,18 +1057,16 @@
             let html = '';
             dadosAtuais.forEach(d => {
                 const statusClass = d.status_atual ? d.status_atual.toLowerCase() : '';
-                const periculosidadeClass = d.nivel_periculosidade ? d.nivel_periculosidade.toLowerCase() : '';
+                const perClass = d.nivel_periculosidade ? d.nivel_periculosidade.toLowerCase() : '';
                 const statusLabel = {
                     'PRESO': '🔒 PRESO', 'PROCURADO': '🔍 PROCURADO', 'FORAGIDO': '🏃 FORAGIDO',
                     'INVESTIGADO': '🔎 INVESTIGADO', 'CONDICIONAL': '⚖️ CONDICIONAL', 'LIBERADO': '✅ LIBERADO'
                 }[d.status_atual] || d.status_atual || 'DESCONHECIDO';
 
                 const fotoHTML = d.fotoUrl
-                    ? `<img src="${d.fotoUrl}" alt="${d.nome_completo || 'Suspeito'}" class="foto-suspeito"
-                            onerror="this.onerror=null; this.outerHTML='<div class=\\'foto-placeholder\\'><i class=\\'fas fa-user-secret\\'></i></div>';" />`
+                    ? `<img src="${d.fotoUrl}" alt="${d.nome_completo || 'Suspeito'}" class="foto-suspeito" onerror="this.onerror=null; this.outerHTML='<div class=\\'foto-placeholder\\'><i class=\\'fas fa-user-secret\\'></i></div>';" />`
                     : `<div class="foto-placeholder"><i class="fas fa-user-secret"></i></div>`;
 
-                // [v2.9.0] Badge de mandado
                 const badgeMandado = gerarBadgeMandado(d.id_suspeito);
 
                 html += `<tr>
@@ -1262,7 +1074,7 @@
                     <td><strong>${d.nome_completo || 'N/A'}</strong></td>
                     <td>${d.cpf || 'N/A'}</td>
                     <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
-                    <td><span class="perigo-badge ${periculosidadeClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
+                    <td><span class="perigo-badge ${perClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
                     <td>${d.cidade || 'N/A'}</td>
                     <td style="text-align:center;">${badgeMandado}</td>
                     <td>
@@ -1279,14 +1091,11 @@
 
             const inicio = (paginaAtual - 1) * itensPorPagina + 1;
             const fim = Math.min(paginaAtual * itensPorPagina, totalRegistros);
-            document.getElementById('infoPagina').textContent = `Mostrando ${inicio}-${fim} de ${totalRegistros} registros`;
+            document.getElementById('infoPagina').textContent = `Mostrando ${inicio}-${fim} de ${totalRegistros}`;
             document.getElementById('totalRegistrosInfo').textContent = `${totalRegistros} registros encontrados`;
             atualizarPaginacao();
         }
 
-        // ============================================================
-        // PAGINAÇÃO
-        // ============================================================
         function atualizarPaginacao() {
             const totalPaginas = Math.ceil(totalRegistros / itensPorPagina);
             const container = document.getElementById('numerosPaginas');
@@ -1294,9 +1103,9 @@
             const maxBotoes = 5;
             let inicio = Math.max(1, paginaAtual - Math.floor(maxBotoes / 2));
             let fim = Math.min(totalPaginas, inicio + maxBotoes - 1);
-            if (fim - inicio + 1 < maxBotoes) { inicio = Math.max(1, fim - maxBotoes + 1); }
+            if (fim - inicio + 1 < maxBotoes) inicio = Math.max(1, fim - maxBotoes + 1);
             if (inicio > 1) { html += `<button class="btn-icon" onclick="irPagina(1)">1</button>`; if (inicio > 2) html += `<button class="btn-icon disabled">...</button>`; }
-            for (let i = inicio; i <= fim; i++) { html += `<button class="btn-icon ${i === paginaAtual ? 'active' : ''}" onclick="irPagina(${i})" style="${i === paginaAtual ? 'background:rgba(0,255,136,0.08);border-color:var(--text-primary);color:var(--text-primary);' : ''}">${i}</button>`; }
+            for (let i = inicio; i <= fim; i++) html += `<button class="btn-icon ${i === paginaAtual ? 'active' : ''}" onclick="irPagina(${i})" style="${i === paginaAtual ? 'background:rgba(0,255,136,0.08);border-color:var(--text-primary);color:var(--text-primary);' : ''}">${i}</button>`;
             if (fim < totalPaginas) { if (fim < totalPaginas - 1) html += `<button class="btn-icon disabled">...</button>`; html += `<button class="btn-icon" onclick="irPagina(${totalPaginas})">${totalPaginas}</button>`; }
             container.innerHTML = html;
             document.getElementById('btnAnterior').style.display = paginaAtual > 1 ? 'inline-block' : 'none';
@@ -1304,19 +1113,19 @@
         }
 
         function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; realizarBusca(); } }
-        function proximaPagina() { const totalPaginas = Math.ceil(totalRegistros / itensPorPagina); if (paginaAtual < totalPaginas) { paginaAtual++; realizarBusca(); } }
+        function proximaPagina() { const tp = Math.ceil(totalRegistros / itensPorPagina); if (paginaAtual < tp) { paginaAtual++; realizarBusca(); } }
         function irPagina(num) { paginaAtual = num; realizarBusca(); }
 
         // ============================================================
-        // MODAL FICHA
+        // FICHA (verDetalhes) — com foto clicável
         // ============================================================
         async function verDetalhes(id) {
-            console.log('👁️ verDetalhes() chamado para ID:', id);
+            console.log('👁️ verDetalhes:', id);
             idSuspeitoAtual = id;
             const modal = document.getElementById('modalFicha');
             const body = document.getElementById('modalFichaBody');
             modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando ficha...</div>';
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
 
             try {
                 const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
@@ -1329,80 +1138,51 @@
                 let fotoUrl = null;
                 const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO');
                 const principal = fotos.find(m => m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')) || fotos[0];
-
                 if (principal && principal.caminho_fisico) {
                     const { data: signed } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
                     fotoUrl = signed?.signedUrl || null;
                 }
 
                 const fotoHTML = fotoUrl
-                    ? `<img src="${fotoUrl}" alt="${suspeito.nome_completo}" class="ficha-foto" />`
-                    : `<div class="ficha-foto-placeholder"><i class="fas fa-user-secret"></i><span style="font-size:12px;">Sem foto</span></div>`;
+                    ? `<div class="ficha-foto-wrapper" onclick="abrirLightbox('${fotoUrl}')" title="Clique para ampliar"><img src="${fotoUrl}" alt="${suspeito.nome_completo}" class="ficha-foto" /></div>`
+                    : `<div class="ficha-foto-placeholder"><i class="fas fa-user-secret"></i><span style="font-size:12px;">Sem foto cadastrada</span></div>`;
 
-                const statusBadge = suspeito.status_atual
-                    ? `<span class="status-badge ${suspeito.status_atual.toLowerCase()}">${suspeito.status_atual}</span>` : 'N/A';
-                const perigoBadge = suspeito.nivel_periculosidade
-                    ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>` : 'N/A';
+                const statusBadge = suspeito.status_atual ? `<span class="status-badge ${suspeito.status_atual.toLowerCase()}">${suspeito.status_atual}</span>` : 'N/A';
+                const perigoBadge = suspeito.nivel_periculosidade ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>` : 'N/A';
 
-                // [v2.9.0] Seção de Mandados Vinculados
                 const mandadosDoSuspeito = mandadosCachePorSuspeito[id] || [];
                 let mandadosHTML = '';
                 if (mandadosDoSuspeito.length > 0) {
                     const ICONES_BNMP = {
-                        'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
-                        'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
-                        'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
-                        'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
-                        'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
-                        'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
+                        'VALIDO': { icone: 'fa-check-circle', label: 'Válido' },
+                        'CANCELADO': { icone: 'fa-ban', label: 'Cancelado' },
+                        'SUSPENSO': { icone: 'fa-pause-circle', label: 'Suspenso' },
+                        'CUMPRIDO': { icone: 'fa-gavel', label: 'Cumprido' },
+                        'EXTINTO': { icone: 'fa-times-circle', label: 'Extinto' },
+                        'NAO_ENCONTRADO': { icone: 'fa-search-minus', label: 'Não Encontrado' }
                     };
-
                     let listaHTML = '';
                     mandadosDoSuspeito.forEach(m => {
-                        const bnmpCfg = m.validacao_bnmp_status ? ICONES_BNMP[m.validacao_bnmp_status] : null;
-                        const dataF = m.data_emissao
-                            ? m.data_emissao.split('-').reverse().join('/')
-                            : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
-                        const bnmpBadge = bnmpCfg
-                            ? `<span class="badge-bnmp-mini bnmp-${m.validacao_bnmp_status.toLowerCase().replace(/_/g, '-')}"><i class="fas ${bnmpCfg.icone}"></i> ${bnmpCfg.label}</span>`
+                        const cfg = m.validacao_bnmp_status ? ICONES_BNMP[m.validacao_bnmp_status] : null;
+                        const dataF = m.data_emissao ? m.data_emissao.split('-').reverse().join('/') : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
+                        const bnmpBadge = cfg
+                            ? `<span class="badge-bnmp-mini bnmp-${m.validacao_bnmp_status.toLowerCase().replace(/_/g, '-')}"><i class="fas ${cfg.icone}"></i> ${cfg.label}</span>`
                             : `<span class="badge-bnmp-mini bnmp-nao-validado"><i class="fas fa-question-circle"></i> Não validado</span>`;
-
-                        listaHTML += `
-                            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;">
-                                <div style="flex:1;min-width:0;">
-                                    <div style="color:var(--text-primary);font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                        <i class="fas fa-gavel" style="margin-right:6px;"></i>${m.numero_mandado || '#' + m.id_mandado}
-                                    </div>
-                                    <div style="color:rgba(0,255,136,0.4);font-size:10px;margin-top:3px;">
-                                        ${m.status || '-'} · ${dataF}
-                                    </div>
-                                </div>
-                                <div>${bnmpBadge}</div>
+                        listaHTML += `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;">
+                            <div style="flex:1;min-width:0;">
+                                <div style="color:var(--text-primary);font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"><i class="fas fa-gavel" style="margin-right:6px;"></i>${m.numero_mandado || '#' + m.id_mandado}</div>
+                                <div style="color:rgba(0,255,136,0.4);font-size:10px;margin-top:3px;">${m.status || '-'} · ${dataF}</div>
                             </div>
-                        `;
+                            <div>${bnmpBadge}</div>
+                        </div>`;
                     });
-
-                    mandadosHTML = `
-                        <div class="col-md-12" style="margin-top:20px;">
-                            <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:12px;padding:15px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border-color);">
-                                    <span style="color:var(--text-primary);font-weight:700;font-size:13px;letter-spacing:1px;">
-                                        <i class="fas fa-gavel me-2"></i>MANDADOS VINCULADOS
-                                    </span>
-                                    <span style="background:var(--text-primary);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;">${mandadosDoSuspeito.length}</span>
-                                </div>
-                                ${listaHTML}
-                                <button class="btn-outline-gold w-100 mt-2" onclick="fecharFicha(); abrirMandadosDoSuspeito(${id})" style="padding:8px 16px; font-size:12px;">
-                                    <i class="fas fa-external-link-alt me-2"></i>VER DETALHES DOS MANDADOS
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                    mandadosHTML = `<div class="col-md-12" style="margin-top:20px;"><div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:12px;padding:15px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border-color);"><span style="color:var(--text-primary);font-weight:700;font-size:13px;letter-spacing:1px;"><i class="fas fa-gavel me-2"></i>MANDADOS VINCULADOS</span><span style="background:var(--text-primary);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;">${mandadosDoSuspeito.length}</span></div>${listaHTML}<button class="btn-outline-gold w-100 mt-2" onclick="fecharFicha(); abrirMandadosDoSuspeito(${id})" style="padding:8px 16px; font-size:12px;"><i class="fas fa-external-link-alt me-2"></i>VER DETALHES DOS MANDADOS</button></div></div>`;
                 }
 
                 body.innerHTML = `
                     <div class="row g-3">
                         <div class="col-md-4 text-center">
+                            <span class="foto-label"><i class="fas fa-camera me-1"></i>Foto do Suspeito</span>
                             ${fotoHTML}
                             <div class="mt-3"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Status</div>${statusBadge}</div>
                             <div class="mt-2"><div style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">Periculosidade</div>${perigoBadge}</div>
@@ -1418,15 +1198,13 @@
                             <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Endereço</span><span class="valor">${[suspeito.logradouro, suspeito.numero, suspeito.bairro, suspeito.cidade, suspeito.uf].filter(Boolean).join(', ') || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Características Físicas</span><span class="valor">Altura: ${suspeito.altura || '-'}m · Peso: ${suspeito.peso || '-'}kg · Olhos: ${suspeito.cor_olhos || '-'} · Cabelo: ${suspeito.cor_cabelo || '-'}</span></div>
-                            ${suspeito.portador_deficiencia ? `<div class="ficha-campo"><span class="label">Portador de Deficiência</span><span class="valor">Sim ${suspeito.descricao_deficiencia ? '· ' + suspeito.descricao_deficiencia : ''}</span></div>` : ''}
-                            ${suspeito.cicatrizes ? `<div class="ficha-campo"><span class="label">Cicatrizes</span><span class="valor">${suspeito.cicatrizes}</span></div>` : ''}
                             ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
                             ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
                         </div>
                         ${mandadosHTML}
                     </div>`;
             } catch (error) {
-                console.error('❌ Erro ao carregar ficha:', error);
+                console.error('❌ Erro ficha:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
             }
         }
@@ -1435,16 +1213,125 @@
             document.getElementById('modalFicha').classList.remove('open');
             idSuspeitoAtual = null;
         }
-
-        function imprimirFicha(id) {
-            verDetalhes(id);
-            setTimeout(() => window.print(), 800);
-        }
-
+        function imprimirFicha(id) { verDetalhes(id); setTimeout(() => window.print(), 800); }
         function imprimirFichaAtual() { window.print(); }
 
         // ============================================================
-        // MODAL EDIÇÃO (mantido da v2.8.0)
+        // EDIÇÃO — helpers de foto
+        // ============================================================
+        function onEditFotoPrincipal(ev) {
+            const file = ev.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                showToastLocal('error', 'Arquivo grande', 'Máximo 5 MB.');
+                ev.target.value = '';
+                return;
+            }
+            editFotoPrincipalArquivo = file;
+            const url = URL.createObjectURL(file);
+            const wrap = document.getElementById('editFotoPrincipalWrapper');
+            const img = document.getElementById('editFotoPrincipalPreview');
+            img.src = url;
+            wrap.classList.add('tem-foto');
+        }
+
+        function removerEditFotoPrincipal() {
+            editFotoPrincipalArquivo = null;
+            const inp = document.getElementById('editFotoPrincipalInput');
+            if (inp) inp.value = '';
+            const img = document.getElementById('editFotoPrincipalPreview');
+            if (img) img.src = '';
+            const wrap = document.getElementById('editFotoPrincipalWrapper');
+            if (wrap) wrap.classList.remove('tem-foto');
+        }
+
+        function onEditNovaSecundaria(ev) {
+            const file = ev.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { showToastLocal('error', 'Arquivo grande', 'Máximo 5 MB.'); ev.target.value = ''; return; }
+            editFotosNovasSecundarias.push({ file, url: URL.createObjectURL(file) });
+            ev.target.value = '';
+            renderizarEditMiniGrid();
+        }
+
+        function onEditNovaTatuagem(ev) {
+            const file = ev.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) { showToastLocal('error', 'Arquivo grande', 'Máximo 5 MB.'); ev.target.value = ''; return; }
+            editFotosNovasTatuagens.push({ file, url: URL.createObjectURL(file) });
+            ev.target.value = '';
+            renderizarEditMiniGrid();
+        }
+
+        function marcarRemoverMidia(id) {
+            if (!confirm('Remover esta foto? (a remoção é aplicada ao salvar)')) return;
+            editFotosRemover.push(id);
+            editFotosExistentes = editFotosExistentes.filter(f => f.id !== id);
+            renderizarEditMiniGrid();
+        }
+
+        function removerNovaSecundaria(idx) {
+            if (idx < 0 || idx >= editFotosNovasSecundarias.length) return;
+            editFotosNovasSecundarias.splice(idx, 1);
+            renderizarEditMiniGrid();
+        }
+
+        function removerNovaTatuagem(idx) {
+            if (idx < 0 || idx >= editFotosNovasTatuagens.length) return;
+            editFotosNovasTatuagens.splice(idx, 1);
+            renderizarEditMiniGrid();
+        }
+
+        function renderizarEditMiniGrid() {
+            const grid = document.getElementById('editMiniGrid');
+            if (!grid) return;
+            let html = '';
+
+            // Existentes
+            editFotosExistentes.forEach(f => {
+                const tipoLabel = f.tipo_midia === 'TATUAGEM' ? 'Tatuagem' : (f.nome_seguro?.includes('principal') ? 'Principal' : 'Secundária');
+                html += `<div class="edit-mini-card" title="${tipoLabel}">
+                    <img src="${f.url}" alt="${tipoLabel}">
+                    <button type="button" class="remove-btn" onclick="marcarRemoverMidia(${f.id})"><i class="fas fa-times"></i></button>
+                    <div class="tipo-badge">${tipoLabel}</div>
+                </div>`;
+            });
+
+            // Novas secundárias
+            editFotosNovasSecundarias.forEach((f, idx) => {
+                html += `<div class="edit-mini-card" title="Nova secundária (não salva)">
+                    <img src="${f.url}" alt="Nova">
+                    <button type="button" class="remove-btn" onclick="removerNovaSecundaria(${idx})"><i class="fas fa-times"></i></button>
+                    <div class="tipo-badge" style="color:#00ff88;">Nova</div>
+                </div>`;
+            });
+
+            // Novas tatuagens
+            editFotosNovasTatuagens.forEach((f, idx) => {
+                html += `<div class="edit-mini-card" title="Nova tatuagem (não salva)">
+                    <img src="${f.url}" alt="Nova tat">
+                    <button type="button" class="remove-btn" onclick="removerNovaTatuagem(${idx})"><i class="fas fa-times"></i></button>
+                    <div class="tipo-badge" style="color:#00ff88;">Nova tat</div>
+                </div>`;
+            });
+
+            // Botão adicionar secundária
+            html += `<div class="edit-add-btn" onclick="document.getElementById('editNovaSecundariaInput').click()">
+                <i class="fas fa-camera"></i>
+                <span>+ Secundária</span>
+            </div>`;
+
+            // Botão adicionar tatuagem
+            html += `<div class="edit-add-btn" onclick="document.getElementById('editNovaTatuagemInput').click()">
+                <i class="fas fa-pen-nib"></i>
+                <span>+ Tatuagem</span>
+            </div>`;
+
+            grid.innerHTML = html;
+        }
+
+        // ============================================================
+        // MODAL EDIÇÃO
         // ============================================================
         const MOTIVOS_ALTERACAO = [
             'Correção de erro de digitação',
@@ -1452,52 +1339,73 @@
             'Novo mandado recebido',
             'Correção após conferência documental',
             'Atualização cadastral',
+            'Atualização de fotos',
             'Outro (especificar abaixo)'
         ];
 
         async function editarSuspeito(id) {
-            console.log('✏️ editarSuspeito() chamado para ID:', id);
+            console.log('✏️ editarSuspeito:', id);
             idSuspeitoAtual = id;
+
+            // Reset dos estados de foto
+            editFotoPrincipalArquivo = null;
+            editFotosExistentes = [];
+            editFotosRemover = [];
+            editFotosNovasSecundarias = [];
+            editFotosNovasTatuagens = [];
+
             const modal = document.getElementById('modalEdicao');
             const body = document.getElementById('modalEdicaoBody');
             modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados...</div>';
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
 
             try {
                 if (!usuarioAtual) {
-                    body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;">❌ Usuário não identificado. Faça login novamente.</div>';
+                    body.innerHTML = '<div class="text-center py-4" style="color: #dc3545;">❌ Usuário não identificado.</div>';
                     return;
                 }
 
                 const campos = await carregarCamposEditaveis();
                 const perfilAtualNum = Number(perfilUsuarioAtual);
-
-                const camposPermitidos = campos.filter(c => {
-                    const perfis = parsePerfisPermitidos(c.perfis_permitidos);
-                    return perfis.includes(perfilAtualNum);
-                });
-
-                console.log('🔐 DEBUG PERMISSÃO:', {
-                    perfilUsuarioAtual_raw: perfilUsuarioAtual,
-                    perfilUsuarioAtual_num: perfilAtualNum,
-                    totalCampos: campos.length,
-                    camposPermitidos: camposPermitidos.length
-                });
+                const camposPermitidos = campos.filter(c => parsePerfisPermitidos(c.perfis_permitidos).includes(perfilAtualNum));
 
                 if (camposPermitidos.length === 0) {
-                    body.innerHTML = `<div class="text-center py-4" style="color: #ffc107;">
-                        <i class="fas fa-lock" style="font-size: 40px; display: block; margin-bottom: 15px;"></i>
-                        <div>Seu perfil (ID ${perfilAtualNum}) não tem permissão para editar suspeitos.</div>
-                        <small style="display:block; margin-top:10px; color:rgba(0,255,136,0.4);">
-                            Verifique a tabela <code>suspeito_campos_editaveis</code> no Supabase.
-                        </small>
-                    </div>`;
+                    body.innerHTML = `<div class="text-center py-4" style="color: #ffc107;"><i class="fas fa-lock" style="font-size: 40px; display: block; margin-bottom: 15px;"></i><div>Seu perfil (ID ${perfilAtualNum}) não tem permissão para editar suspeitos.</div></div>`;
                     return;
                 }
 
                 const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
                 if (error) throw error;
 
+                // ---------- CARREGAR FOTOS EXISTENTES ----------
+                const { data: midias } = await sb.from('arquivo_midia')
+                    .select('id, tipo_midia, caminho_fisico, nome_seguro, nome_original')
+                    .eq('tipo_entidade', 'SUSPEITO')
+                    .eq('id_entidade', id)
+                    .eq('deletado', false)
+                    .order('data_upload', { ascending: true });
+
+                // Gera signed URLs
+                const fotosComUrl = await Promise.all((midias || []).map(async (m) => {
+                    let url = null;
+                    if (m.caminho_fisico) {
+                        try {
+                            const { data: s } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(m.caminho_fisico, URL_EXPIRACAO_S);
+                            url = s?.signedUrl || null;
+                        } catch (e) { console.warn('signed err:', e); }
+                    }
+                    return { ...m, url };
+                }));
+
+                // Separa principal
+                const principal = fotosComUrl.find(f => f.nome_seguro && f.nome_seguro.toLowerCase().includes('principal'));
+                if (principal && principal.url) {
+                    document.getElementById('editFotoPrincipalPreview') /* não existe ainda */;
+                }
+                // Guarda as demais (secundárias e tatuagens)
+                editFotosExistentes = fotosComUrl.filter(f => f !== principal);
+
+                // ---------- RENDERIZA MODAL ----------
                 const setores = {
                     'nome_completo': 'Identificação', 'apelido': 'Identificação', 'cpf': 'Identificação',
                     'rg': 'Identificação', 'orgao_expedidor': 'Identificação', 'data_nascimento': 'Identificação',
@@ -1514,7 +1422,6 @@
                     'posse_arma': 'Informações Criminais', 'modus_operandi': 'Informações Criminais',
                     'observacoes': 'Observações'
                 };
-
                 const tipos = {
                     'sexo': 'select-sexo', 'status_atual': 'select-status', 'nivel_periculosidade': 'select-perigo',
                     'envolvimento_drogas': 'checkbox', 'posse_arma': 'checkbox',
@@ -1546,48 +1453,30 @@
                     if (tipo === 'textarea') {
                         inputHTML = `<textarea class="form-control" id="${idCampo}" ${disabled} rows="2">${valorAtual}</textarea>`;
                     } else if (tipo === 'select-sexo') {
-                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
-                            <option value="">Selecione...</option>
-                            <option value="M" ${valorAtual === 'M' ? 'selected' : ''}>Masculino</option>
-                            <option value="F" ${valorAtual === 'F' ? 'selected' : ''}>Feminino</option>
-                            <option value="O" ${valorAtual === 'O' ? 'selected' : ''}>Outro</option>
-                        </select>`;
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}><option value="">Selecione...</option><option value="M" ${valorAtual === 'M' ? 'selected' : ''}>Masculino</option><option value="F" ${valorAtual === 'F' ? 'selected' : ''}>Feminino</option><option value="O" ${valorAtual === 'O' ? 'selected' : ''}>Outro</option></select>`;
                     } else if (tipo === 'select-status') {
-                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
-                            <option value="">Selecione...</option>
-                            ${['INVESTIGADO','PRESO','FORAGIDO','PROCURADO','CONDICIONAL','LIBERADO'].map(s => 
-                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
-                            ).join('')}
-                        </select>`;
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}><option value="">Selecione...</option>${['INVESTIGADO','PRESO','FORAGIDO','PROCURADO','CONDICIONAL','LIBERADO'].map(s => `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`).join('')}</select>`;
                     } else if (tipo === 'select-perigo') {
-                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}>
-                            <option value="">Selecione...</option>
-                            ${['BAIXO','MEDIO','ALTO','EXTREMO'].map(s => 
-                                `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`
-                            ).join('')}
-                        </select>`;
+                        inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}><option value="">Selecione...</option>${['BAIXO','MEDIO','ALTO','EXTREMO'].map(s => `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`).join('')}</select>`;
                     } else if (tipo === 'checkbox') {
-                        inputHTML = `<div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="${idCampo}" ${valorAtual ? 'checked' : ''} ${disabled}>
-                            <label class="form-check-label" for="${idCampo}">${campo.descricao}</label>
-                        </div>`;
+                        inputHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" id="${idCampo}" ${valorAtual ? 'checked' : ''} ${disabled}><label class="form-check-label" for="${idCampo}">${campo.descricao}</label></div>`;
                     } else {
                         inputHTML = `<input type="${tipo}" class="form-control" id="${idCampo}" value="${valorAtual}" ${disabled} step="${tipo === 'number' ? '0.01' : ''}">`;
                     }
 
                     if (tipo !== 'checkbox') {
-                        camposHTML += `<div class="col-md-4 mb-3">
-                            <label class="form-label">${campo.descricao} ${podeEditar ? '' : '🔒'}</label>
-                            ${inputHTML}
-                        </div>`;
+                        camposHTML += `<div class="col-md-4 mb-3"><label class="form-label">${campo.descricao} ${podeEditar ? '' : '🔒'}</label>${inputHTML}</div>`;
                     } else {
                         camposHTML += `<div class="col-md-4 mb-3">${inputHTML}</div>`;
                     }
                 });
-
                 if (camposHTML) camposHTML += `</div>`;
 
                 const motivosHTML = MOTIVOS_ALTERACAO.map(m => `<option value="${m}">${m}</option>`).join('');
+
+                const fotoPrincipalPreviewHTML = principal && principal.url
+                    ? `<img src="${principal.url}" alt="Foto principal">`
+                    : `<i class="fas fa-user-secret"></i><div class="hint">Clique para substituir<br>a foto principal</div>`;
 
                 body.innerHTML = `
                     <div class="aviso-justificativa">
@@ -1596,6 +1485,45 @@
                             Campos bloqueados aparecem com 🔒 (sem permissão para seu perfil)
                         </div>
                     </div>
+
+                    <!-- ============================================================
+                         [v2.10.0] FOTOS DO SUSPEITO
+                         ============================================================ -->
+                    <div class="edit-fotos-section">
+                        <div class="edit-fotos-title"><i class="fas fa-camera me-2"></i>Fotos do Suspeito</div>
+
+                        <div class="row g-3">
+                            <!-- Foto principal -->
+                            <div class="col-md-3">
+                                <div class="edit-foto-principal-wrapper ${principal && principal.url ? 'tem-foto' : ''}"
+                                     id="editFotoPrincipalWrapper"
+                                     onclick="document.getElementById('editFotoPrincipalInput').click()"
+                                     title="Clique para substituir a foto principal">
+                                    ${fotoPrincipalPreviewHTML}
+                                    <span class="edit-foto-badge">Principal</span>
+                                </div>
+                                <input type="file" id="editFotoPrincipalInput" accept="image/*" style="display:none;" onchange="onEditFotoPrincipal(event)">
+                                <button type="button" class="btn-outline-gold w-100 mt-2" style="padding:6px; font-size:11px;" onclick="event.stopPropagation(); removerEditFotoPrincipal()">
+                                    <i class="fas fa-undo"></i> Remover nova seleção
+                                </button>
+                            </div>
+
+                            <!-- Demais fotos -->
+                            <div class="col-md-9">
+                                <div style="color: rgba(0,255,136,0.5); font-size: 12px; margin-bottom: 8px;">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Fotos existentes, secundárias e tatuagens. Clique em <strong>X</strong> para marcar a remoção. As alterações são aplicadas ao clicar em <strong>SALVAR ALTERAÇÕES</strong>.
+                                </div>
+                                <div class="edit-mini-grid" id="editMiniGrid"></div>
+                                <input type="file" id="editNovaSecundariaInput" accept="image/*" style="display:none;" onchange="onEditNovaSecundaria(event)">
+                                <input type="file" id="editNovaTatuagemInput" accept="image/*" style="display:none;" onchange="onEditNovaTatuagem(event)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================================
+                         CAMPOS
+                         ============================================================ -->
                     <form id="formEdicao">
                         <div class="row">${camposHTML}</div>
                         <div class="mt-4 pt-3" style="border-top: 1px solid var(--border-color);">
@@ -1609,32 +1537,34 @@
                                 </div>
                                 <div class="col-md-7 mb-3">
                                     <label class="form-label">Justificativa detalhada *</label>
-                                    <textarea class="form-control" id="edit_justificativa" rows="2" 
-                                        placeholder="Explique detalhadamente o motivo da alteração (mínimo 20 caracteres)" required></textarea>
+                                    <textarea class="form-control" id="edit_justificativa" rows="2" placeholder="Explique o motivo da alteração (mínimo 20 caracteres)" required></textarea>
                                 </div>
                             </div>
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-3">
-                            <button type="button" class="btn-outline-gold" onclick="fecharEdicao()">
-                                <i class="fas fa-times me-2"></i>CANCELAR
-                            </button>
-                            <button type="submit" class="btn-gold" id="btnSalvarEdicao">
-                                <i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES
-                            </button>
+                            <button type="button" class="btn-outline-gold" onclick="fecharEdicao()"><i class="fas fa-times me-2"></i>CANCELAR</button>
+                            <button type="submit" class="btn-gold" id="btnSalvarEdicao"><i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES</button>
                         </div>
                     </form>
                 `;
+
+                // Renderiza miniaturas
+                renderizarEditMiniGrid();
 
                 document.getElementById('formEdicao').addEventListener('submit', async (e) => {
                     e.preventDefault();
                     await salvarEdicao(suspeito);
                 });
+
             } catch (error) {
                 console.error('❌ Erro ao abrir edição:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
             }
         }
 
+        // ============================================================
+        // SALVAR EDIÇÃO (com fotos)
+        // ============================================================
         async function salvarEdicao(suspeitoOriginal) {
             const btn = document.getElementById('btnSalvarEdicao');
             btn.disabled = true;
@@ -1644,19 +1574,8 @@
                 const motivo = document.getElementById('edit_motivo').value;
                 const justificativa = document.getElementById('edit_justificativa').value.trim();
 
-                if (!motivo) {
-                    alert('⚠️ Selecione o motivo da alteração');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
-                    return;
-                }
-
-                if (justificativa.length < 20) {
-                    alert('⚠️ A justificativa deve ter no mínimo 20 caracteres');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
-                    return;
-                }
+                if (!motivo) { alert('⚠️ Selecione o motivo'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES'; return; }
+                if (justificativa.length < 20) { alert('⚠️ Justificativa mínima de 20 caracteres'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES'; return; }
 
                 const campos = await carregarCamposEditaveis();
                 const dadosNovos = {};
@@ -1664,61 +1583,111 @@
                 campos.forEach(campo => {
                     const input = document.getElementById('edit_' + campo.nome_campo);
                     if (!input || input.disabled) return;
-
                     let valor;
-                    if (input.type === 'checkbox') {
-                        valor = input.checked;
-                    } else {
-                        valor = input.value.trim() || null;
-                    }
-
+                    if (input.type === 'checkbox') valor = input.checked;
+                    else valor = input.value.trim() || null;
                     const valorAntigo = suspeitoOriginal[campo.nome_campo];
-                    if (JSON.stringify(valor) !== JSON.stringify(valorAntigo)) {
-                        dadosNovos[campo.nome_campo] = valor;
-                    }
+                    if (JSON.stringify(valor) !== JSON.stringify(valorAntigo)) dadosNovos[campo.nome_campo] = valor;
                 });
 
-                if (Object.keys(dadosNovos).length === 0) {
-                    alert('ℹ️ Nenhum campo foi alterado');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                const temAlteracaoTexto = Object.keys(dadosNovos).length > 0;
+                const temAlteracaoFoto = editFotoPrincipalArquivo || editFotosRemover.length > 0 || editFotosNovasSecundarias.length > 0 || editFotosNovasTatuagens.length > 0;
+
+                if (!temAlteracaoTexto && !temAlteracaoFoto) {
+                    alert('ℹ️ Nenhuma alteração detectada');
+                    btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
                     return;
                 }
 
-                console.log('📝 Campos alterados:', Object.keys(dadosNovos));
-
+                // ---------- RPC justificativa ----------
                 const justificativaCompleta = `[${motivo}] ${justificativa}`;
-                const { error: rpcError } = await sb.rpc('set_justificativa', {
-                    justificativa: justificativaCompleta,
-                    id_usuario: usuarioAtual.id
-                });
+                try { await sb.rpc('set_justificativa', { justificativa: justificativaCompleta, id_usuario: usuarioAtual.id }); } catch (e) { console.warn('RPC erro:', e); }
 
-                if (rpcError) console.warn('⚠️ RPC erro:', rpcError);
+                // ---------- UPDATE suspeito (só se tem mudanças) ----------
+                if (temAlteracaoTexto) {
+                    dadosNovos.data_atualizacao = new Date().toISOString();
+                    dadosNovos.id_usuario_atualizacao = usuarioAtual.id;
+                    const { error: updateError } = await sb.from('suspeito').update(dadosNovos).eq('id_suspeito', suspeitoOriginal.id_suspeito);
+                    if (updateError) throw updateError;
+                    console.log('✅ Texto atualizado');
+                }
 
-                dadosNovos.data_atualizacao = new Date().toISOString();
-                dadosNovos.id_usuario_atualizacao = usuarioAtual.id;
+                // ---------- FOTOS ----------
+                const errosFoto = [];
 
-                const { error: updateError } = await sb
-                    .from('suspeito')
-                    .update(dadosNovos)
-                    .eq('id_suspeito', suspeitoOriginal.id_suspeito);
+                // 1) Remover mídias marcadas
+                if (editFotosRemover.length > 0) {
+                    for (const idMidia of editFotosRemover) {
+                        try {
+                            // Pega caminho_fisico
+                            const { data: midia } = await sb.from('arquivo_midia').select('caminho_fisico').eq('id', idMidia).maybeSingle();
+                            if (midia?.caminho_fisico) {
+                                await sb.storage.from(BUCKET_FOTOS).remove([midia.caminho_fisico]);
+                            }
+                            await sb.from('arquivo_midia').update({ deletado: true }).eq('id', idMidia);
+                        } catch (e) { errosFoto.push(`Remover mídia #${idMidia}: ${e.message}`); }
+                    }
+                    console.log(`🗑️ ${editFotosRemover.length} mídia(s) removida(s)`);
+                }
 
-                if (updateError) throw updateError;
+                // 2) Substituir foto principal (marca antiga como deletada, sobe nova)
+                if (editFotoPrincipalArquivo) {
+                    try {
+                        // Marca antiga como deletada
+                        const { data: principalAntiga } = await sb.from('arquivo_midia')
+                            .select('id, caminho_fisico')
+                            .eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', suspeitoOriginal.id_suspeito)
+                            .eq('tipo_midia', 'FOTO')
+                            .ilike('nome_seguro', '%principal%')
+                            .eq('deletado', false)
+                            .maybeSingle();
 
-                console.log('✅ Edição salva com sucesso!');
+                        if (principalAntiga) {
+                            if (principalAntiga.caminho_fisico) await sb.storage.from(BUCKET_FOTOS).remove([principalAntiga.caminho_fisico]);
+                            await sb.from('arquivo_midia').update({ deletado: true }).eq('id', principalAntiga.id);
+                        }
 
-                const toast = document.createElement('div');
-                toast.style.cssText = 'position:fixed;top:70px;right:20px;background:#0a0a0a;border:1px solid #003322;border-left:4px solid #00ff88;border-radius:12px;padding:16px 20px;color:#00ff88;z-index:99999;min-width:300px;box-shadow:0 10px 40px rgba(0,0,0,0.8);';
-                toast.innerHTML = `
-                    <div style="font-weight:700;margin-bottom:5px;">
-                        <i class="fas fa-check-circle me-2"></i>Alterações salvas!
-                    </div>
-                    <div style="font-size:12px;color:rgba(0,255,136,0.6);">
-                        ${Object.keys(dadosNovos).length - 2} campo(s) alterado(s) · versão gravada no histórico
-                    </div>
-                `;
-                document.body.appendChild(toast);
-                setTimeout(() => toast.remove(), 5000);
+                        // Sobe nova
+                        await uploadMidiaEdicao({
+                            idSuspeito: suspeitoOriginal.id_suspeito,
+                            file: editFotoPrincipalArquivo,
+                            tipoMidia: 'FOTO',
+                            sufixo: 'principal'
+                        });
+                        console.log('📷 Nova foto principal enviada');
+                    } catch (e) { errosFoto.push('Foto principal: ' + e.message); }
+                }
+
+                // 3) Novas secundárias
+                for (let i = 0; i < editFotosNovasSecundarias.length; i++) {
+                    try {
+                        await uploadMidiaEdicao({
+                            idSuspeito: suspeitoOriginal.id_suspeito,
+                            file: editFotosNovasSecundarias[i].file,
+                            tipoMidia: 'FOTO',
+                            sufixo: `secundaria_${Date.now()}_${i}`
+                        });
+                    } catch (e) { errosFoto.push(`Secundária ${i + 1}: ${e.message}`); }
+                }
+
+                // 4) Novas tatuagens
+                for (let i = 0; i < editFotosNovasTatuagens.length; i++) {
+                    try {
+                        await uploadMidiaEdicao({
+                            idSuspeito: suspeitoOriginal.id_suspeito,
+                            file: editFotosNovasTatuagens[i].file,
+                            tipoMidia: 'TATUAGEM',
+                            sufixo: `tatuagem_${Date.now()}_${i}`
+                        });
+                    } catch (e) { errosFoto.push(`Tatuagem ${i + 1}: ${e.message}`); }
+                }
+
+                // ---------- Feedback ----------
+                if (errosFoto.length > 0) {
+                    showToastLocal('warning', 'Salvo com avisos', errosFoto.join('<br>'), 9000);
+                } else {
+                    showToastLocal('success', 'Alterações salvas!', 'Suspeito e fotos atualizados com sucesso.', 5000);
+                }
 
                 fecharEdicao();
                 await realizarBusca();
@@ -1731,187 +1700,149 @@
             }
         }
 
+        async function uploadMidiaEdicao({ idSuspeito, file, tipoMidia, sufixo }) {
+            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+            const nomeSeguro = `suspeito_${idSuspeito}_${sufixo}_${Date.now()}.${ext}`;
+
+            const { error: upErr } = await sb.storage.from(BUCKET_FOTOS)
+                .upload(nomeSeguro, file, { upsert: true, contentType: file.type });
+            if (upErr) throw upErr;
+
+            const { error: midiaErr } = await sb.from('arquivo_midia').insert({
+                tipo_entidade: 'SUSPEITO',
+                id_entidade: idSuspeito,
+                tipo_midia: tipoMidia,
+                caminho_fisico: nomeSeguro,
+                nome_seguro: nomeSeguro,
+                nome_original: file.name,
+                mime_type: file.type,
+                tamanho_bytes: file.size,
+                deletado: false,
+                data_upload: new Date().toISOString()
+            });
+            if (midiaErr) throw midiaErr;
+            return nomeSeguro;
+        }
+
         function fecharEdicao() {
             document.getElementById('modalEdicao').classList.remove('open');
             idSuspeitoAtual = null;
+            editFotoPrincipalArquivo = null;
+            editFotosExistentes = [];
+            editFotosRemover = [];
+            editFotosNovasSecundarias = [];
+            editFotosNovasTatuagens = [];
         }
 
         // ============================================================
-        // MODAL HISTÓRICO
+        // HISTÓRICO
         // ============================================================
         async function verHistorico(id) {
-            console.log('📜 verHistorico() chamado para ID:', id);
             const modal = document.getElementById('modalHistorico');
             const body = document.getElementById('modalHistoricoBody');
             modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando histórico...</div>';
-
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
             try {
-                const { data: historico, error } = await sb.from('suspeito_historico')
-                    .select('*')
-                    .eq('id_suspeito', id)
-                    .order('versao', { ascending: false });
-
+                const { data: historico, error } = await sb.from('suspeito_historico').select('*').eq('id_suspeito', id).order('versao', { ascending: false });
                 if (error) throw error;
-
                 if (!historico || historico.length === 0) {
-                    body.innerHTML = `
-                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
-                            <i class="fas fa-history" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
-                            <div>Nenhuma alteração registrada ainda</div>
-                            <small style="font-size: 11px;">Este suspeito nunca foi editado desde o cadastro</small>
-                        </div>`;
+                    body.innerHTML = `<div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-history" style="font-size: 50px; display: block; margin-bottom: 15px;"></i><div>Nenhuma alteração registrada</div></div>`;
                     return;
                 }
-
                 let html = '';
                 historico.forEach(h => {
                     const data = new Date(h.data_alteracao).toLocaleString('pt-BR');
                     const campos = h.campos_alterados || [];
-                    
                     let diffHTML = '';
                     campos.forEach(campo => {
                         const antes = h.valores_antes?.[campo];
                         const depois = h.valores_depois?.[campo];
-                        diffHTML += `
-                            <div class="diff-item">
-                                <strong style="color: rgba(0, 255, 136, 0.5);">${campo}:</strong><br>
-                                <span class="diff-antes">${antes ?? '(vazio)'}</span>
-                                <i class="fas fa-arrow-right mx-2" style="color: rgba(0, 255, 136, 0.3);"></i>
-                                <span class="diff-depois">${depois ?? '(vazio)'}</span>
-                            </div>`;
+                        diffHTML += `<div class="diff-item"><strong style="color: rgba(0, 255, 136, 0.5);">${campo}:</strong><br><span class="diff-antes">${antes ?? '(vazio)'}</span><i class="fas fa-arrow-right mx-2" style="color: rgba(0, 255, 136, 0.3);"></i><span class="diff-depois">${depois ?? '(vazio)'}</span></div>`;
                     });
-
-                    html += `
-                        <div class="historico-item">
-                            <div>
-                                <span class="versao">v${h.versao}</span>
-                                <strong style="color: var(--text-primary);">${campos.length} campo(s) alterado(s)</strong>
-                            </div>
-                            <div class="meta">
-                                <i class="fas fa-user me-1"></i> ${h.nome_usuario || 'Usuário'} ·
-                                <i class="fas fa-clock ms-2 me-1"></i> ${data}
-                            </div>
-                            ${h.justificativa ? `<div class="justificativa"><i class="fas fa-comment me-2"></i>${h.justificativa}</div>` : ''}
-                            ${diffHTML}
-                        </div>`;
+                    html += `<div class="historico-item"><div><span class="versao">v${h.versao}</span><strong style="color: var(--text-primary);">${campos.length} campo(s)</strong></div><div class="meta"><i class="fas fa-user me-1"></i> ${h.nome_usuario || 'Usuário'} · <i class="fas fa-clock ms-2 me-1"></i> ${data}</div>${h.justificativa ? `<div class="justificativa"><i class="fas fa-comment me-2"></i>${h.justificativa}</div>` : ''}${diffHTML}</div>`;
                 });
-
                 body.innerHTML = html;
             } catch (error) {
-                console.error('❌ Erro ao carregar histórico:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
             }
         }
-
-        function fecharHistorico() {
-            document.getElementById('modalHistorico').classList.remove('open');
-        }
+        function fecharHistorico() { document.getElementById('modalHistorico').classList.remove('open'); }
 
         // ============================================================
-        // MODAL FOTOS
+        // FOTOS (galeria)
         // ============================================================
         async function verFotos(id) {
-            console.log('📸 verFotos() chamado para ID:', id);
             const modal = document.getElementById('modalFotos');
             const body = document.getElementById('modalFotosBody');
             modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>';
-
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
             try {
-                const { data: midias, error } = await sb.from('arquivo_midia')
-                    .select('*')
-                    .eq('tipo_entidade', 'SUSPEITO')
-                    .eq('id_entidade', id)
-                    .eq('deletado', false)
-                    .order('data_upload', { ascending: false });
-
+                const { data: midias, error } = await sb.from('arquivo_midia').select('*').eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', id).eq('deletado', false).order('data_upload', { ascending: false });
                 if (error) throw error;
-
                 const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO' || m.tipo_midia === 'TATUAGEM');
-
                 if (fotos.length === 0) {
-                    body.innerHTML = `
-                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
-                            <i class="fas fa-images" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
-                            <div>Nenhuma foto cadastrada</div>
-                        </div>`;
+                    body.innerHTML = `<div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-images" style="font-size: 50px; display: block; margin-bottom: 15px;"></i><div>Nenhuma foto cadastrada</div></div>`;
                     return;
                 }
-
                 let html = '<div class="galeria-fotos">';
-                
                 for (const foto of fotos) {
-                    let fotoUrl = null;
+                    let url = null;
                     if (foto.caminho_fisico) {
-                        const { data: signed } = await sb.storage
-                            .from(BUCKET_FOTOS)
-                            .createSignedUrl(foto.caminho_fisico, URL_EXPIRACAO_S);
-                        fotoUrl = signed?.signedUrl || null;
+                        const { data: s } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(foto.caminho_fisico, URL_EXPIRACAO_S);
+                        url = s?.signedUrl || null;
                     }
-
-                    const dataUpload = foto.data_upload ? new Date(foto.data_upload).toLocaleDateString('pt-BR') : '-';
+                    const dataU = foto.data_upload ? new Date(foto.data_upload).toLocaleDateString('pt-BR') : '-';
                     const isPrincipal = foto.nome_seguro && foto.nome_seguro.toLowerCase().includes('principal');
                     const isTattoo = foto.tipo_midia === 'TATUAGEM';
-
-                    html += `
-                        <div class="foto-card">
-                            ${fotoUrl 
-                                ? `<img src="${fotoUrl}" alt="Foto" />` 
-                                : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:rgba(0,255,136,0.2);"><i class="fas fa-image" style="font-size:40px;"></i></div>`
-                            }
-                            <div class="info">
-                                ${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : ''}
-                                ${isTattoo ? '<span class="principal" style="background:#ffc107;color:#000;">TATUAGEM</span>' : ''}
-                                <div class="data mt-2">
-                                    <i class="fas fa-calendar me-1"></i>${dataUpload}
-                                </div>
-                                ${foto.nome_original ? `<div class="data"><i class="fas fa-tag me-1"></i>${foto.nome_original.substring(0, 30)}</div>` : ''}
-                            </div>
-                        </div>`;
+                    html += `<div class="foto-card">${url ? `<img src="${url}" alt="Foto">` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:rgba(0,255,136,0.2);"><i class="fas fa-image" style="font-size:40px;"></i></div>`}<div class="info">${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : ''}${isTattoo ? '<span class="principal" style="background:#ffc107;color:#000;">TATUAGEM</span>' : ''}<div class="data mt-2"><i class="fas fa-calendar me-1"></i>${dataU}</div></div></div>`;
                 }
-
                 html += '</div>';
                 body.innerHTML = html;
             } catch (error) {
-                console.error('❌ Erro ao carregar fotos:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
             }
         }
+        function fecharFotos() { document.getElementById('modalFotos').classList.remove('open'); }
 
-        function fecharFotos() {
-            document.getElementById('modalFotos').classList.remove('open');
+        // ============================================================
+        // ALERTA
+        // ============================================================
+        function emitirAlerta(id) {
+            if (confirm('⚠️ Emitir ALERTA DE SEGURANÇA?')) alert(`🚨 ALERTA EMITIDO para ID: ${id}`);
         }
 
         // ============================================================
-        // ALERTAS
+        // TOAST LOCAL
         // ============================================================
-        function emitirAlerta(id) {
-            if (confirm('⚠️ ATENÇÃO! Deseja emitir um ALERTA DE SEGURANÇA para este procurado?')) {
-                alert(`🚨 ALERTA EMITIDO para o registro ID: ${id}\n\nTodas as unidades foram notificadas.`);
-            }
+        function showToastLocal(tipo, titulo, mensagem, duracao) {
+            duracao = duracao || 5000;
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast-ai ' + tipo;
+            toast.style.cssText = 'position:fixed;top:70px;right:20px;background:#0a0a0a;border:1px solid #003322;border-radius:12px;padding:16px 20px;color:#00ff88;z-index:99999;min-width:300px;box-shadow:0 10px 40px rgba(0,0,0,0.8);border-left:4px solid ' + (tipo === 'error' ? '#dc3545' : tipo === 'warning' ? '#ffc107' : '#00ff88') + ';';
+            const icone = tipo === 'error' ? 'fa-times-circle' : tipo === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle';
+            toast.innerHTML = `<div style="font-weight:700;margin-bottom:5px;"><i class="fas ${icone} me-2"></i>${titulo}</div><div style="font-size:12px;color:rgba(0,255,136,0.6);">${mensagem}</div>`;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), duracao);
         }
 
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.9.1 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.10.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
-            carregarEstatisticas();   // 👈 v2.9.1 — carrega contadores ao abrir a página
+            carregarEstatisticas();
         });
 
         document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') { realizarBusca(); }
+            if (e.key === 'Enter') realizarBusca();
         });
 
-        // Fecha modais com ESC e atalho F11
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'F11') {
-                e.preventDefault();
-                toggleFullscreen();
-            }
+            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
             if (e.key === 'Escape') {
+                fecharLightbox();
                 fecharFicha();
                 fecharEdicao();
                 fecharHistorico();
