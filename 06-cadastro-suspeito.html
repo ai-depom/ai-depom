@@ -2,16 +2,14 @@
      AI-DEPOM - CADASTRO DE SUSPEITOS
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.0.0
-     Data: 18/09/2026 - 04:00
+     Versão: 3.1.0
+     Data: 18/09/2026 - 04:30
      ============================================================
-     ALTERAÇÕES v3.0.0:
-     - ✨ Tela de cadastro reconstruída (o arquivo estava com o
-       conteúdo do 07-consulta.html por engano)
-     - ✨ Formulário completo de suspeito
-     - ✨ Upload de foto principal para o bucket fotos-suspeitos
-     - ✨ Criação automática do registro em arquivo_midia
-     - ✅ Mesmo layout/padrão visual das outras telas
+     ALTERAÇÕES v3.1.0:
+     - ✨ Foto Principal (1 foto) com preview
+     - ✨ Fotos de Tatuagem (múltiplas) com miniaturas
+     - ✨ Upload para bucket fotos-suspeitos + insert em arquivo_midia
+     - ✅ Formulário completo de suspeito
      ============================================================
 -->
 <!DOCTYPE html>
@@ -31,7 +29,6 @@
             --text-secondary: #00cc77;
             --text-muted: #004d33;
             --border-color: #003322;
-            --shadow-color: rgba(0, 255, 136, 0.08);
             --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
             --control-size: 36px;
         }
@@ -44,7 +41,7 @@
             overflow-x: hidden;
         }
 
-        /* HEADER / CONTROLES */
+        /* HEADER */
         .controls-bar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
@@ -113,7 +110,6 @@
 
         .main-content { margin-left: 260px; padding: 70px 30px 30px; min-height: 100vh; }
 
-        /* TOP BAR */
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 15px;
@@ -124,7 +120,6 @@
         .top-bar .page-title h4 { color: var(--text-primary); font-weight: 700; margin: 0; letter-spacing: 1px; font-size: 1.2rem; }
         .top-bar .page-title small { color: rgba(0, 255, 136, 0.2); font-size: 11px; letter-spacing: 1px; }
 
-        /* FORM */
         .form-card { background: var(--bg-secondary); border-radius: 14px; padding: 25px; border: 1px solid var(--border-color); margin-bottom: 20px; }
         .form-card .card-title { color: var(--text-primary); font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 20px; }
         .form-card .card-title i { margin-right: 10px; opacity: 0.7; }
@@ -157,7 +152,9 @@
         .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
 
-        /* UPLOAD DE FOTO */
+        /* ============================================================
+           UPLOAD DE FOTOS
+           ============================================================ */
         .foto-upload-area {
             border: 2px dashed var(--border-color);
             border-radius: 12px;
@@ -168,9 +165,11 @@
             cursor: pointer;
             min-height: 220px;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: relative;
         }
         .foto-upload-area:hover { border-color: var(--text-primary); background: rgba(0, 255, 136, 0.05); }
-        .foto-upload-area i.fa-camera { font-size: 40px; color: rgba(0, 255, 136, 0.3); margin-bottom: 10px; }
+        .foto-upload-area i.fa-camera,
+        .foto-upload-area i.fa-pen-nib { font-size: 40px; color: rgba(0, 255, 136, 0.3); margin-bottom: 10px; }
         .foto-upload-area .hint { color: rgba(0, 255, 136, 0.4); font-size: 12px; }
         .foto-preview {
             max-width: 100%;
@@ -180,9 +179,81 @@
             display: none;
         }
         .foto-upload-area.tem-foto { padding: 8px; }
-        .foto-upload-area.tem-foto i, .foto-upload-area.tem-foto .hint, .foto-upload-area.tem-foto .btn-remover-foto { display: none; }
+        .foto-upload-area.tem-foto > i,
+        .foto-upload-area.tem-foto > .hint { display: none; }
         .foto-upload-area.tem-foto .foto-preview { display: block; }
-        .btn-remover-foto { margin-top: 10px; background: rgba(220, 53, 69, 0.1); border: 1px solid #dc3545; color: #dc3545; padding: 5px 14px; border-radius: 8px; font-size: 12px; cursor: pointer; }
+        .btn-remover-foto {
+            margin-top: 10px;
+            background: rgba(220, 53, 69, 0.1);
+            border: 1px solid #dc3545;
+            color: #dc3545;
+            padding: 5px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+        .foto-upload-area.tem-foto .btn-remover-foto { display: inline-block; }
+
+        /* Grid de tatuagens */
+        .tatuagens-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .tatuagem-card {
+            position: relative;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 1;
+        }
+        .tatuagem-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .tatuagem-card .remove-btn {
+            position: absolute;
+            top: 6px; right: 6px;
+            background: rgba(220, 53, 69, 0.9);
+            color: #fff;
+            border: none;
+            width: 26px; height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .tatuagem-card .remove-btn:hover { background: #dc3545; transform: scale(1.1); }
+        .tatuagem-upload-btn {
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            background: rgba(0, 255, 136, 0.02);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            aspect-ratio: 1;
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 11px;
+            text-align: center;
+            padding: 10px;
+        }
+        .tatuagem-upload-btn:hover {
+            border-color: var(--text-primary);
+            background: rgba(0, 255, 136, 0.05);
+            color: var(--text-primary);
+        }
+        .tatuagem-upload-btn i { font-size: 26px; margin-bottom: 6px; }
 
         /* TOAST */
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
@@ -297,10 +368,10 @@
         </header>
 
         <form id="formCadastro" novalidate>
+
             <!-- IDENTIFICAÇÃO -->
             <div class="form-card">
                 <div class="card-title"><i class="fas fa-id-card"></i>Identificação</div>
-
                 <div class="row g-3">
                     <div class="col-md-12">
                         <label class="form-label">Nome Completo *</label>
@@ -340,22 +411,56 @@
                         <input type="text" class="form-control" id="nome_mae" maxlength="200">
                     </div>
                 </div>
+            </div>
 
-                <!-- FOTO -->
-                <div class="section-title"><i class="fas fa-camera"></i>Foto do Suspeito</div>
+            <!-- FOTOS -->
+            <div class="form-card">
+                <div class="card-title"><i class="fas fa-camera"></i>Fotos</div>
+
+                <!-- FOTO PRINCIPAL -->
+                <div class="section-title" style="margin-top:0;">
+                    <i class="fas fa-portrait"></i>Foto Principal
+                </div>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <label class="form-label">Foto Principal</label>
-                        <div class="foto-upload-area" id="fotoArea" onclick="document.getElementById('fotoInput').click()">
+                        <div class="foto-upload-area" id="fotoPrincipalArea" onclick="document.getElementById('fotoPrincipalInput').click()">
                             <i class="fas fa-camera"></i>
-                            <div class="hint">Clique para escolher uma foto</div>
+                            <div class="hint">Clique para escolher a foto principal</div>
                             <div class="hint" style="font-size:10px; margin-top:4px;">JPG, PNG ou WEBP · até 5MB</div>
-                            <img id="fotoPreview" class="foto-preview" alt="Pré-visualização">
-                            <button type="button" class="btn-remover-foto" onclick="event.stopPropagation(); removerFoto()">Remover foto</button>
+                            <img id="fotoPrincipalPreview" class="foto-preview" alt="Pré-visualização">
+                            <button type="button" class="btn-remover-foto" onclick="event.stopPropagation(); removerFotoPrincipal()">
+                                <i class="fas fa-trash"></i> Remover foto
+                            </button>
                         </div>
-                        <input type="file" id="fotoInput" accept="image/*" style="display:none;" onchange="onFotoSelecionada(event)">
+                        <input type="file" id="fotoPrincipalInput" accept="image/*" style="display:none;" onchange="onFotoPrincipalSelecionada(event)">
+                    </div>
+                    <div class="col-md-8 d-flex align-items-center">
+                        <div style="color: rgba(0,255,136,0.4); font-size: 12px; line-height: 1.7;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Esta é a <strong>foto principal</strong> do suspeito. Ela aparece na lista da Consulta e em todos os lugares onde o suspeito é referenciado.
+                            <br>
+                            <i class="fas fa-lightbulb me-1" style="margin-top:8px; display:inline-block;"></i>
+                            Recomendado: foto de frente, rosto visível, fundo neutro.
+                        </div>
                     </div>
                 </div>
+
+                <!-- TATUAGENS -->
+                <div class="section-title">
+                    <i class="fas fa-pen-nib"></i>Fotos de Tatuagem
+                </div>
+                <div class="tatuagens-grid" id="tatuagensGrid">
+                    <!-- Cards de tatuagem serão inseridos aqui via JS -->
+                    <div class="tatuagem-upload-btn" onclick="document.getElementById('tatuagemInput').click()">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Adicionar tatuagem</span>
+                    </div>
+                </div>
+                <input type="file" id="tatuagemInput" accept="image/*" style="display:none;" onchange="onTatuagemSelecionada(event)">
+                <small style="color: rgba(0,255,136,0.3); font-size: 11px;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    Você pode adicionar quantas fotos de tatuagem quiser. Cada uma será registrada separadamente.
+                </small>
             </div>
 
             <!-- ENDEREÇO -->
@@ -476,7 +581,7 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         // ============================================================
-        // SUPABASE (mesmo padrão das outras telas)
+        // SUPABASE
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const sb = (function() {
@@ -489,7 +594,8 @@
         })();
 
         let usuarioAtual = null;
-        let fotoArquivo = null;
+        let fotoPrincipalArquivo = null;
+        let tatuagensArquivos = []; // { file, url, nome }
 
         // ============================================================
         // USUÁRIO
@@ -536,7 +642,10 @@
             } catch (e) { console.error('ViaCEP:', e); }
         }
 
-        function onFotoSelecionada(ev) {
+        // ============================================================
+        // FOTO PRINCIPAL
+        // ============================================================
+        function onFotoPrincipalSelecionada(ev) {
             const file = ev.target.files[0];
             if (!file) return;
             if (file.size > 5 * 1024 * 1024) {
@@ -544,18 +653,67 @@
                 ev.target.value = '';
                 return;
             }
-            fotoArquivo = file;
+            fotoPrincipalArquivo = file;
             const url = URL.createObjectURL(file);
-            const img = document.getElementById('fotoPreview');
-            img.src = url;
-            document.getElementById('fotoArea').classList.add('tem-foto');
+            document.getElementById('fotoPrincipalPreview').src = url;
+            document.getElementById('fotoPrincipalArea').classList.add('tem-foto');
         }
 
-        function removerFoto() {
-            fotoArquivo = null;
-            document.getElementById('fotoInput').value = '';
-            document.getElementById('fotoPreview').src = '';
-            document.getElementById('fotoArea').classList.remove('tem-foto');
+        function removerFotoPrincipal() {
+            fotoPrincipalArquivo = null;
+            document.getElementById('fotoPrincipalInput').value = '';
+            document.getElementById('fotoPrincipalPreview').src = '';
+            document.getElementById('fotoPrincipalArea').classList.remove('tem-foto');
+        }
+
+        // ============================================================
+        // TATUAGENS (múltiplas)
+        // ============================================================
+        function renderizarTatuagens() {
+            const grid = document.getElementById('tatuagensGrid');
+            grid.innerHTML = '';
+
+            tatuagensArquivos.forEach((t, idx) => {
+                const card = document.createElement('div');
+                card.className = 'tatuagem-card';
+                card.innerHTML = `
+                    <img src="${t.url}" alt="Tatuagem ${idx + 1}">
+                    <button type="button" class="remove-btn" title="Remover" onclick="removerTatuagem(${idx})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Botão de adicionar sempre por último
+            const btn = document.createElement('div');
+            btn.className = 'tatuagem-upload-btn';
+            btn.onclick = () => document.getElementById('tatuagemInput').click();
+            btn.innerHTML = `
+                <i class="fas fa-plus-circle"></i>
+                <span>Adicionar tatuagem</span>
+            `;
+            grid.appendChild(btn);
+        }
+
+        function onTatuagemSelecionada(ev) {
+            const file = ev.target.files[0];
+            if (!file) return;
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('error', 'Arquivo grande', 'A imagem deve ter no máximo 5 MB.');
+                ev.target.value = '';
+                return;
+            }
+            const url = URL.createObjectURL(file);
+            tatuagensArquivos.push({ file, url, nome: file.name });
+            ev.target.value = ''; // permite selecionar a mesma imagem de novo
+            renderizarTatuagens();
+        }
+
+        function removerTatuagem(idx) {
+            if (idx < 0 || idx >= tatuagensArquivos.length) return;
+            tatuagensArquivos.splice(idx, 1);
+            renderizarTatuagens();
         }
 
         // ============================================================
@@ -569,7 +727,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
 
             try {
-                // --- Validações mínimas ---
                 const nome = document.getElementById('nome_completo').value.trim();
                 const cpf = document.getElementById('cpf').value.trim();
                 const dataNasc = document.getElementById('data_nascimento').value;
@@ -580,7 +737,6 @@
                 if (!dataNasc) throw new Error('Informe a data de nascimento.');
                 if (!status) throw new Error('Selecione o status atual.');
 
-                // --- Monta o objeto ---
                 const dados = {
                     nome_completo: nome,
                     apelido: document.getElementById('apelido').value.trim() || null,
@@ -614,11 +770,9 @@
                     data_cadastro: new Date().toISOString()
                 };
 
-                if (usuarioAtual?.id) {
-                    dados.id_usuario_cadastro = usuarioAtual.id;
-                }
+                if (usuarioAtual?.id) dados.id_usuario_cadastro = usuarioAtual.id;
 
-                // --- INSERT ---
+                // INSERT do suspeito
                 console.log('📝 Inserindo suspeito:', dados);
                 const { data: novo, error } = await sb
                     .from('suspeito')
@@ -631,48 +785,54 @@
 
                 console.log('✅ Suspeito cadastrado. ID:', novo.id_suspeito);
 
-                // --- Upload da foto ---
-                if (fotoArquivo) {
+                // ============== UPLOADS ==============
+                const errosUpload = [];
+
+                // Foto principal
+                if (fotoPrincipalArquivo) {
                     try {
-                        const ext = (fotoArquivo.name.split('.').pop() || 'jpg').toLowerCase();
-                        const nomeSeguro = `suspeito_${novo.id_suspeito}_principal_${Date.now()}.${ext}`;
-
-                        const { error: upErr } = await sb.storage
-                            .from(BUCKET_FOTOS)
-                            .upload(nomeSeguro, fotoArquivo, { upsert: true, contentType: fotoArquivo.type });
-
-                        if (upErr) throw upErr;
-
-                        const { error: midiaErr } = await sb.from('arquivo_midia').insert({
-                            tipo_entidade: 'SUSPEITO',
-                            id_entidade: novo.id_suspeito,
-                            tipo_midia: 'FOTO',
-                            caminho_fisico: nomeSeguro,
-                            nome_seguro: nomeSeguro,
-                            nome_original: fotoArquivo.name,
-                            mime_type: fotoArquivo.type,
-                            tamanho_bytes: fotoArquivo.size,
-                            deletado: false,
-                            data_upload: new Date().toISOString()
+                        await uploadMidia({
+                            idSuspeito: novo.id_suspeito,
+                            file: fotoPrincipalArquivo,
+                            tipoMidia: 'FOTO',
+                            sufixo: 'principal'
                         });
-
-                        if (midiaErr) throw midiaErr;
-                        console.log('📷 Foto vinculada:', nomeSeguro);
+                        console.log('📷 Foto principal vinculada');
                     } catch (eFoto) {
-                        console.warn('⚠️ Suspeito salvo, mas a foto falhou:', eFoto);
-                        showToast('warning', 'Suspeito salvo, foto falhou', eFoto.message || 'Erro ao subir a foto.', 8000);
+                        console.warn('⚠️ Foto principal falhou:', eFoto);
+                        errosUpload.push('Foto principal: ' + eFoto.message);
                     }
                 }
 
-                showToast('success', 'Suspeito cadastrado!', `<strong>${nome}</strong> foi salvo com sucesso.`, 6000);
+                // Tatuagens
+                for (let i = 0; i < tatuagensArquivos.length; i++) {
+                    try {
+                        await uploadMidia({
+                            idSuspeito: novo.id_suspeito,
+                            file: tatuagensArquivos[i].file,
+                            tipoMidia: 'TATUAGEM',
+                            sufixo: `tatuagem_${i + 1}`
+                        });
+                    } catch (eTat) {
+                        console.warn(`⚠️ Tatuagem ${i + 1} falhou:`, eTat);
+                        errosUpload.push(`Tatuagem ${i + 1}: ${eTat.message}`);
+                    }
+                }
 
-                // Limpa e oferece ir pra consulta
+                if (errosUpload.length > 0) {
+                    showToast('warning', 'Suspeito salvo, mas algumas fotos falharam',
+                        errosUpload.join('<br>'), 10000);
+                } else {
+                    showToast('success', 'Suspeito cadastrado!',
+                        `<strong>${nome}</strong> foi salvo com ${1 + tatuagensArquivos.length} foto(s).`, 6000);
+                }
+
                 resetFormulario();
                 setTimeout(() => {
                     if (confirm('Suspeito cadastrado! Deseja ir para a Consulta agora?')) {
                         window.location.href = '07-consulta.html';
                     }
-                }, 400);
+                }, 600);
 
             } catch (err) {
                 console.error('❌ Erro ao cadastrar:', err);
@@ -683,11 +843,45 @@
             }
         });
 
+        // ============================================================
+        // UPLOAD DE MÍDIA (storage + arquivo_midia)
+        // ============================================================
+        async function uploadMidia({ idSuspeito, file, tipoMidia, sufixo }) {
+            const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+            const nomeSeguro = `suspeito_${idSuspeito}_${sufixo}_${Date.now()}.${ext}`;
+
+            const { error: upErr } = await sb.storage
+                .from(BUCKET_FOTOS)
+                .upload(nomeSeguro, file, { upsert: true, contentType: file.type });
+            if (upErr) throw upErr;
+
+            const { error: midiaErr } = await sb.from('arquivo_midia').insert({
+                tipo_entidade: 'SUSPEITO',
+                id_entidade: idSuspeito,
+                tipo_midia: tipoMidia,
+                caminho_fisico: nomeSeguro,
+                nome_seguro: nomeSeguro,
+                nome_original: file.name,
+                mime_type: file.type,
+                tamanho_bytes: file.size,
+                deletado: false,
+                data_upload: new Date().toISOString()
+            });
+            if (midiaErr) throw midiaErr;
+
+            return nomeSeguro;
+        }
+
+        // ============================================================
+        // RESET
+        // ============================================================
         function resetFormulario() {
             document.getElementById('formCadastro').reset();
             document.getElementById('cidade').value = 'Salvador';
             document.getElementById('uf').value = 'BA';
-            removerFoto();
+            removerFotoPrincipal();
+            tatuagensArquivos = [];
+            renderizarTatuagens();
         }
 
         // ============================================================
@@ -711,7 +905,7 @@
         }
 
         // ============================================================
-        // CONTROLES DE JANELA / SIDEBAR / LOGOUT
+        // CONTROLES
         // ============================================================
         function toggleFullscreen() {
             const doc = window.document; const el = doc.documentElement;
@@ -750,8 +944,9 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Cadastro v3.0.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Cadastro v3.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
+            renderizarTatuagens();
         });
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
