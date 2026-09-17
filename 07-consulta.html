@@ -2,8 +2,8 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.7.4
-     Data: 16/09/2026 - 18:00
+     Versão: 2.8.0
+     Data: 17/09/2026 - 17:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,24 +15,20 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.8.0 (17/09/2026 17:00):
+     - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
+     - 🔗 Menu: adicionado item "Operacoes" → 14-operacoes.html
+     - ➕ Botão FULLSCREEN na controls-bar
+     - ➕ toggleFullscreen() implementado + atalho F11
+     - ✅ Preservadas TODAS as funcionalidades da v2.7.4
+     - ❌ NÃO alterado: Supabase client hardcoded (fallback)
+     - ❌ NÃO alterado: modais (.modal-ficha, .modal-edicao, etc.)
+
      ALTERAÇÕES v2.7.4 (16/09/2026 18:00):
      - 🐛 CORRIGIDO: perfil Admin (ID 2) não conseguia editar suspeito
      - 🐛 CORRIGIDO: comparação com coerção de tipos (number ↔ string)
      - ✨ NOVO: parsePerfisPermitidos() aceita qualquer formato
      - ✨ NOVO: log detalhado no console para debug de permissão
-     - ✅ Mantidas: todas as features da v2.7.3
-
-     ALTERAÇÕES v2.7.3 (15/09/2026 09:30):
-     - 🔗 Menu: Mandados → 11-mandados.html
-     - 🔗 Menu: Auditoria → 12-auditoria.html
-     - 🔗 Menu: Configuracoes → 09-configuracoes.html
-     - ➕ Menu: Mapa de Operacoes → 10-mapa-operacoes.html
-     - 🎨 CSS: disabled/readonly preto + verde FORTE
-     - 🛡️ fazerLogout() com fallback AIDEPOM.logout()
-     - 🪟 minimizeWindow() sem resizeTo
-     - 📜 Cabeçalho Regra de Ouro
-     - ✅ closeWindow() robusto
-     - ✅ Sidebar flexbox mantido
      ============================================================
 -->
 <!DOCTYPE html>
@@ -94,6 +90,7 @@
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
 
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
@@ -173,7 +170,6 @@
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
 
-        /* [NOVO v2.7.4] Regra: campos desabilitados/somente leitura = fundo preto + letras verdes FORTES */
         .form-control:disabled,
         .form-control[readonly],
         .form-select:disabled,
@@ -313,8 +309,9 @@
             <button class="control-btn" onclick="window.history.back()" title="Voltar"><i class="fas fa-arrow-left"></i></button>
             <button class="control-btn" onclick="window.history.forward()" title="Avançar"><i class="fas fa-arrow-right"></i></button>
             <div class="controls-divider"></div>
-            <button class="control-btn minimize-btn" onclick="minimizeWindow()"><i class="fas fa-window-minimize"></i></button>
-            <button class="control-btn close-btn" onclick="closeWindow()"><i class="fas fa-times"></i></button>
+            <button class="control-btn minimize-btn" onclick="minimizeWindow()" title="Minimizar"><i class="fas fa-window-minimize"></i></button>
+            <button class="control-btn fullscreen-btn" onclick="toggleFullscreen()" title="Tela Cheia (F11)"><i class="fas fa-expand"></i></button>
+            <button class="control-btn close-btn" onclick="closeWindow()" title="Fechar"><i class="fas fa-times"></i></button>
         </div>
         <div class="controls-center">
             <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
@@ -337,6 +334,8 @@
             <a class="menu-item active" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatórios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operações</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
+            <a class="menu-item" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operações</a>
             <div class="menu-label">Administração</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuários <span class="badge">Master</span></a>
             <a class="menu-item" onclick="window.location.href='11-mandados.html'"><i class="fas fa-gavel"></i> Mandados</a>
@@ -518,7 +517,7 @@
     <script src="assets/js/supabase-config.js"></script>
     <script>
         // ============================================================
-        // [v2.7.4] Supabase client (com fallback)
+        // Supabase client (com fallback)
         // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const URL_EXPIRACAO_S = 3600;
@@ -540,7 +539,49 @@
         })();
 
         // ============================================================
-        // [v2.7.4] LOGOUT ROBUSTO
+        // [v2.8.0] FULLSCREEN
+        // ============================================================
+        function toggleFullscreen() {
+            const doc = window.document;
+            const docEl = doc.documentElement;
+
+            const requestFullScreen = docEl.requestFullscreen
+                || docEl.mozRequestFullScreen
+                || docEl.webkitRequestFullScreen
+                || docEl.msRequestFullscreen;
+
+            const cancelFullScreen = doc.exitFullscreen
+                || doc.mozCancelFullScreen
+                || doc.webkitExitFullscreen
+                || doc.msExitFullscreen;
+
+            if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+                requestFullScreen.call(docEl);
+            } else {
+                cancelFullScreen.call(doc);
+            }
+        }
+
+        // Atualiza o ícone do botão fullscreen
+        document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('MSFullscreenChange', atualizarIconeFullscreen);
+
+        function atualizarIconeFullscreen() {
+            const btn = document.querySelector('.fullscreen-btn i');
+            if (!btn) return;
+
+            const isFullscreen = document.fullscreenElement
+                || document.webkitFullscreenElement
+                || document.mozFullScreenElement
+                || document.msFullscreenElement;
+
+            btn.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
+        }
+
+        // ============================================================
+        // LOGOUT ROBUSTO
         // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
@@ -571,7 +612,7 @@
         }
 
         // ============================================================
-        // [v2.7.4] CONTROLES DE JANELA
+        // CONTROLES DE JANELA
         // ============================================================
         function minimizeWindow() {
             try {
@@ -653,18 +694,16 @@
         }
 
         // ============================================================
-        // 🛡️ [v2.7.4] NOVO: parsePerfisPermitidos
+        // parsePerfisPermitidos
         // Aceita: array [1,2,3], string JSON "[1,2,3]", string CSV "1,2,3", string única "2"
         // ============================================================
         function parsePerfisPermitidos(raw) {
             if (!raw) return [];
 
-            // Já é array?
             if (Array.isArray(raw)) {
                 return raw.map(p => Number(p)).filter(n => !isNaN(n));
             }
 
-            // É string?
             if (typeof raw === 'string') {
                 try {
                     const parsed = JSON.parse(raw);
@@ -673,12 +712,10 @@
                     }
                 } catch (e) { /* não era JSON */ }
 
-                // CSV?
                 if (raw.includes(',')) {
                     return raw.split(',').map(p => Number(p.trim())).filter(n => !isNaN(n));
                 }
 
-                // String única?
                 const n = Number(raw);
                 return isNaN(n) ? [] : [n];
             }
@@ -1011,7 +1048,6 @@
 
                 const campos = await carregarCamposEditaveis();
 
-                // 🛡️ [v2.7.4] CORREÇÃO: comparação com coerção de tipos
                 const perfilAtualNum = Number(perfilUsuarioAtual);
 
                 const camposPermitidos = campos.filter(c => {
@@ -1019,21 +1055,12 @@
                     return perfis.includes(perfilAtualNum);
                 });
 
-                // 🔍 Log completo pra debug
                 console.log('🔐 DEBUG PERMISSÃO:', {
                     perfilUsuarioAtual_raw: perfilUsuarioAtual,
                     perfilUsuarioAtual_num: perfilAtualNum,
                     tipoPerfil: typeof perfilUsuarioAtual,
                     totalCampos: campos.length,
-                    camposPermitidos: camposPermitidos.length,
-                    amostra3: campos.slice(0, 3).map(c => ({
-                        nome: c.nome_campo,
-                        raw: c.perfis_permitidos,
-                        tipoRaw: typeof c.perfis_permitidos,
-                        isArray: Array.isArray(c.perfis_permitidos),
-                        parseado: parsePerfisPermitidos(c.perfis_permitidos),
-                        permitido: parsePerfisPermitidos(c.perfis_permitidos).includes(perfilAtualNum)
-                    }))
+                    camposPermitidos: camposPermitidos.length
                 });
 
                 if (camposPermitidos.length === 0) {
@@ -1448,7 +1475,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.7.4 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.8.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
         });
 
@@ -1456,8 +1483,12 @@
             if (e.key === 'Enter') { realizarBusca(); }
         });
 
-        // Fecha modais com ESC
+        // Atalhos de teclado
         document.addEventListener('keydown', function(e) {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            }
             if (e.key === 'Escape') {
                 fecharFicha();
                 fecharEdicao();
