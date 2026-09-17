@@ -1,23 +1,23 @@
  <!-- ============================================================
      AI-DEPOM - OPERAÇÕES POLICIAIS
      Arquivo: 14-operacoes.html
-     Versão: 1.4.0
-     Data: 17/09/2026 - 09:00
+     Versão: 1.4.1
+     Data: 17/09/2026 - 14:30
      ============================================================
+     ALTERAÇÕES v1.4.1 (17/09/2026 14:30):
+     - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
+     - ✅ Mantidas todas as features da v1.4.0
+
      ALTERAÇÕES v1.4.0 (17/09/2026 09:00):
      - ✨ NOVO: Editar operação completa
        - Botão de editar na lista (lápis)
-       - Modal com TODOS os campos: básicos, endereço,
-         coordenadas, natureza/objetivo, equipe policial,
-         viaturas, presos e observações
+       - Modal com TODOS os campos
        - Auto-preenchimento de CEP (ViaCEP) na edição
        - Busca de coordenadas na edição
-       - Preservação de dados vinculados
 
      ALTERAÇÕES v1.3.0 (17/09/2026 08:00):
      - ✨ NOVO: Seção ENDEREÇO DA OPERAÇÃO (CEP + ViaCEP)
      - 🐛 FIX: Latitude/Longitude aceitam vírgula
-     - ✨ Botão "BUSCAR COORDENADAS" usa endereço completo
      ============================================================
 -->
 <!DOCTYPE html>
@@ -224,6 +224,7 @@
             <a class="menu-item" onclick="window.location.href='07-consulta.html'"><i class="fas fa-search"></i> Consulta</a>
             <a class="menu-item" onclick="window.location.href='08-relatorios.html'"><i class="fas fa-chart-bar"></i> Relatorios</a>
             <a class="menu-item" onclick="window.location.href='10-mapa-operacoes.html'"><i class="fas fa-map-marked-alt"></i> Mapa de Operacoes</a>
+            <a class="menu-item" onclick="window.location.href='15-mapa-mandados.html'"><i class="fas fa-gavel"></i> Mapa de Mandados</a>
             <a class="menu-item active" onclick="window.location.href='14-operacoes.html'"><i class="fas fa-bullseye"></i> Operacoes</a>
             <div class="menu-label">Administracao</div>
             <a class="menu-item" onclick="window.location.href='05-cadastro-usuario.html'"><i class="fas fa-users-cog"></i> Usuarios <span class="badge">Master</span></a>
@@ -511,7 +512,6 @@
         </div>
     </div>
 
-    <!-- [v1.4.0] MODAL DE EDICAO -->
     <div class="modal-custom" id="modalEdicaoOperacao">
         <div class="modal-custom-content modal-lg">
             <div class="modal-custom-header">
@@ -540,7 +540,6 @@
         let suspeitosCache = [];
         let usuariosSistemaCache = [];
 
-        // [v1.4.0] Estado da edicao
         let editandoOperacaoId = null;
         let editViaturas = [];
         let editPresos = [];
@@ -551,7 +550,7 @@
         const FUNCOES_POLICIAL = ['Comandante', 'Subcomandante', 'Motorista', 'Atirador', 'Apoio', 'Negociador', 'Comunicacoes', 'Inteligencia', 'Observador', 'Outro'];
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Operacoes v1.4.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Operacoes v1.4.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -611,7 +610,6 @@
             if (lngEl) lngEl.value = Number(lng).toFixed(8);
         }
 
-        // Form principal
         async function buscarCepOperacao() {
             const cep = document.getElementById('cepOperacao').value.replace(/\D/g, '');
             if (cep.length !== 8) return;
@@ -630,7 +628,6 @@
             await geocodificar(event, 'logradouroOperacao', 'numeroOperacao', 'complementoOperacao', 'bairroOperacao', 'cidadeOperacao', 'ufOperacao', 'cepOperacao', '');
         }
 
-        // [v1.4.0] Edicao - CEP e geocode
         async function buscarCepEdicao() {
             const cep = document.getElementById('editCep').value.replace(/\D/g, '');
             if (cep.length !== 8) return;
@@ -649,7 +646,6 @@
             await geocodificar(event, 'editLogradouro', 'editNumero', 'editComplemento', 'editBairro', 'editCidade', 'editUf', 'editCep', 'edit');
         }
 
-        // Geocode comum
         async function geocodificar(event, logId, numId, compId, baiId, cidId, ufId, cepId, prefixo) {
             const btn = event ? event.currentTarget || event.target : null;
             const originalHTML = btn ? btn.innerHTML : '';
@@ -682,9 +678,6 @@
             }
         }
 
-        // ============================================================
-        // CACHE
-        // ============================================================
         async function carregarSuspeitosCache() {
             try {
                 const { data, error } = await window.supabaseClient.from('suspeito').select('id_suspeito, nome_completo, apelido, cpf, data_nascimento, status_atual, nivel_periculosidade').eq('deletado', false).order('nome_completo');
@@ -702,9 +695,6 @@
             } catch (e) { console.error('❌', e); }
         }
 
-        // ============================================================
-        // FORM PRINCIPAL - POLICIAIS / VIATURAS / PRESOS
-        // ============================================================
         function adicionarPolicial() { policiais.push({ id_usuario: null, nome_completo: '', matricula: '', funcao: '', cadastrado: false }); renderizarPoliciais(); }
         function removerPolicial(i) { if (!confirm('Remover este policial?')) return; policiais.splice(i, 1); renderizarPoliciais(); }
         function atualizarPolicial(i, c, v) { if (policiais[i]) policiais[i][c] = v; }
@@ -820,9 +810,6 @@
             showToast('success', 'Vinculado!', `${s.nome_completo} ja cadastrado.`);
         }
 
-        // ============================================================
-        // CADASTRAR
-        // ============================================================
         async function cadastrarOperacao(e) {
             e.preventDefault();
             const btn = document.getElementById('btnCadastrarOperacao');
@@ -902,9 +889,6 @@
             });
         }
 
-        // ============================================================
-        // LISTAR
-        // ============================================================
         async function carregarOperacoes() {
             const container = document.getElementById('listaOperacoes');
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando...</div>';
@@ -959,9 +943,6 @@
             }
         }
 
-        // ============================================================
-        // DETALHES
-        // ============================================================
         async function verDetalhesOperacao(id) {
             const modal = document.getElementById('modalDetalhesOperacao');
             const body = document.getElementById('modalDetalhesOperacaoBody');
@@ -1006,9 +987,6 @@
         }
         function fecharDetalhesOperacao() { document.getElementById('modalDetalhesOperacao').classList.remove('open'); }
 
-        // ============================================================
-        // [v1.4.0] EDITAR OPERACAO
-        // ============================================================
         async function editarOperacao(id) {
             const modal = document.getElementById('modalEdicaoOperacao');
             const body = document.getElementById('modalEdicaoOperacaoBody');
@@ -1023,7 +1001,6 @@
 
                 const { data: pd } = await window.supabaseClient.from('operacao_preso').select('*').eq('id_operacao', id).eq('deletado', false);
 
-                // Popula estados de edicao
                 editPoliciais = Array.isArray(o.equipe_policial) ? o.equipe_policial.map(p => ({ ...p })) : [];
                 editViaturas = Array.isArray(o.viaturas_placas) ? o.viaturas_placas.map(pl => ({ placa: pl })) : [];
                 editPresos = (pd || []).map(p => ({
@@ -1110,7 +1087,6 @@
             editPoliciais = []; editViaturas = []; editPresos = [];
         }
 
-        // Edicao - policiais
         function adicionarPolicialEdicao() { editPoliciais.push({ id_usuario: null, nome_completo: '', matricula: '', funcao: '', cadastrado: false }); renderizarPoliciaisEdicao(); }
         function removerPolicialEdicao(i) { if (!confirm('Remover?')) return; editPoliciais.splice(i, 1); renderizarPoliciaisEdicao(); }
         function atualizarPolicialEdicao(i, c, v) { if (editPoliciais[i]) editPoliciais[i][c] = v; }
@@ -1152,7 +1128,6 @@
             renderizarPoliciaisEdicao();
         }
 
-        // Edicao - viaturas
         function adicionarViaturaEdicao() { editViaturas.push({ placa: '' }); renderizarViaturasEdicao(); }
         function removerViaturaEdicao(i) { editViaturas.splice(i, 1); renderizarViaturasEdicao(); }
         function atualizarPlacaViaturaEdicao(i, v) { if (editViaturas[i]) editViaturas[i].placa = v.toUpperCase(); }
@@ -1166,7 +1141,6 @@
             </div>`).join('');
         }
 
-        // Edicao - presos
         function adicionarPresoEdicao() { editPresos.push({ id_operacao_preso: null, id_suspeito: null, nome_completo: '', apelido: '', cpf: '', data_nascimento: '', tipo: 'PRESO', observacoes: '', foi_identificado: false }); renderizarPresosEdicao(); }
         function removerPresoEdicao(i) { if (!confirm('Remover?')) return; editPresos.splice(i, 1); renderizarPresosEdicao(); }
         function atualizarPresoEdicao(i, c, v) { if (editPresos[i]) editPresos[i][c] = v; }
@@ -1208,7 +1182,6 @@
             renderizarPresosEdicao();
         }
 
-        // Salvar edicao
         async function salvarEdicaoOperacao() {
             if (!editandoOperacaoId) return;
             const btn = document.getElementById('btnSalvarEdicaoOperacao');
@@ -1255,7 +1228,6 @@
                 const { error } = await window.supabaseClient.from('operacao').update(dados).eq('id_operacao', editandoOperacaoId);
                 if (error) throw error;
 
-                // Atualiza presos: deleta antigos e insere novos
                 await window.supabaseClient.from('operacao_preso').update({ deletado: true }).eq('id_operacao', editandoOperacaoId);
 
                 const pv2 = editPresos.filter(p => p.nome_completo && p.nome_completo.trim());
@@ -1281,9 +1253,6 @@
             }
         }
 
-        // ============================================================
-        // TOAST / CONTROLES
-        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -1317,7 +1286,7 @@
             if (e.key === 'Escape') { fecharDetalhesOperacao(); fecharEdicaoOperacao(); }
         });
 
-        console.log('✅ Pagina de Operacoes v1.4.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Operacoes v1.4.1 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
