@@ -1,25 +1,28 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.4.1
-     Data: 18/09/2026 - 01:00
+     Versão: 1.4.2
+     Data: 18/09/2026 - 02:00
      ============================================================
+     ALTERAÇÕES v1.4.2 (18/09/2026 02:00):
+     - ✨ NOVO: Endereço de cumprimento no modal de edição
+       - CEP + auto-preenchimento via ViaCEP
+       - Logradouro, número, complemento, bairro, cidade, UF
+     - ✨ NOVO: Coordenadas geográficas no modal de edição
+       - Botão "Buscar Coordenadas" via Nominatim
+       - Aceita vírgula ou ponto
+     - ✨ NOVO: 4 helpers (mascaraCepMandado, sanitizarCoordMandado,
+       parseCoordMandado, buscarCepMandado, buscarCoordenadasMandado)
+     - 🔗 Colunas adicionadas no banco (7 de endereço)
+     - ✅ Preservadas TODAS as funcionalidades da v1.4.1
+
      ALTERAÇÕES v1.4.1 (18/09/2026 01:00):
      - ✨ NOVO: Badge de aviso "X mandados não validados no BNMP"
-       - Aparece acima da lista quando há mandados sem validação
-       - Clicável → filtra só os não validados
      - ✨ NOVO: Filtro "Status BNMP" nos filtros avançados
-       - 9 opções (Todos, Não validados, Válidos, Novos, Cancelados,
-         Suspensos, Cumpridos, Extintos, Não encontrados)
-     - ✨ NOVO: Contador de não-validados no badge do topo
      - ✨ NOVO: Botão "Abrir todos no BNMP" (abre até 5 abas)
-     - ✅ Preservadas TODAS as funcionalidades da v1.4.0
 
      ALTERAÇÕES v1.4.0 (17/09/2026 22:00):
      - ✨ Validação manual BNMP com ícones por status
-
-     ALTERAÇÕES v1.3.2 (17/09/2026 13:00):
-     - ✨ maxlength atualizado nos 3 campos ampliados no banco
      ============================================================
 -->
 <!DOCTYPE html>
@@ -270,9 +273,7 @@
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
         .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
 
-        /* ============================================================
-           [v1.4.1] BADGE DE AVISO - MANDADOS NÃO VALIDADOS
-           ============================================================ */
+        /* BADGE DE AVISO - MANDADOS NÃO VALIDADOS */
         .aviso-nao-validados {
             background: rgba(255, 193, 7, 0.08);
             border: 1px solid rgba(255, 193, 7, 0.3);
@@ -356,9 +357,7 @@
             background: rgba(255, 193, 7, 0.1);
         }
 
-        /* ============================================================
-           BNMP - Badges e ícones (v1.4.0)
-           ============================================================ */
+        /* BNMP - Badges e ícones */
         .bnmp-badge {
             cursor: pointer;
             font-size: 18px;
@@ -408,9 +407,7 @@
         }
         .aviso-bnmp i { margin-right: 6px; }
 
-        /* ============================================================
-           MODAIS (mantidos v1.4.0)
-           ============================================================ */
+        /* MODAIS */
         .modal-custom {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -426,7 +423,7 @@
             max-height: 90vh; overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1);
         }
-        .modal-custom-content.modal-lg { max-width: 900px; }
+        .modal-custom-content.modal-lg { max-width: 950px; }
         .modal-custom-header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 15px 25px; border-bottom: 1px solid var(--border-color);
@@ -735,7 +732,6 @@
                 </button>
             </div>
 
-            <!-- [v1.4.1] AVISO DE NÃO VALIDADOS -->
             <div id="avisoNaoValidados"></div>
 
             <div class="row g-3 mb-3">
@@ -765,7 +761,6 @@
                         <option value="URGENTE">Urgente</option>
                     </select>
                 </div>
-                <!-- [v1.4.1] FILTRO BNMP -->
                 <div class="col-md-3">
                     <select class="form-select" id="filtroBnmpLista">
                         <option value="">Todas as validações BNMP</option>
@@ -897,7 +892,7 @@
         const LIMITE_PROCESSO_NUMERO = 70;
         const LIMITE_DESCRICAO = 5000;
         const LIMITE_OBSERVACOES = 3000;
-        const LIMITE_ABAS_BNMP = 5; // máximo de abas que o navegador costuma aceitar
+        const LIMITE_ABAS_BNMP = 5;
 
         let usuarioAtual = null;
         let mandadosAtuais = [];
@@ -905,18 +900,15 @@
         let mandadoCumprindoId = null;
         let mandadoValidandoId = null;
 
-        // [v1.4.1] Estado do aviso de não validados
         let naoValidadosCache = [];
         let filtroNaoValidadosAtivo = false;
 
-        // 🔐 Perfis autorizados (por ID)
         const IDS_PERFIS_EDITORES = [1, 2, 3, 4];
         const NOMES_PERFIS_EDITORES = [
             'ADMINISTRADOR_MASTER', 'ADMINISTRADOR', 'DELEGADO', 'INVESTIGADOR',
             'MASTER', 'ADMINISTRATIVO'
         ];
 
-        // 🎨 Mapeamento de ícones e classes BNMP
         const BNMP_ICONES = {
             'VALIDO':         { icone: 'fa-check-circle',  classe: 'bnmp-valido',         label: 'Válido no BNMP' },
             'CANCELADO':      { icone: 'fa-ban',           classe: 'bnmp-cancelado',      label: 'Cancelado no BNMP' },
@@ -930,7 +922,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.4.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.4.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -955,16 +947,6 @@
                 e.preventDefault();
                 confirmarCumprimento();
             });
-
-            // [v1.4.1] Reaplica filtro BNMP se houver
-            const filtroBnmp = document.getElementById('filtroBnmpLista');
-            if (filtroBnmp) {
-                filtroBnmp.addEventListener('change', function() {
-                    if (!this.value || this.value !== '__NAO_VALIDADO__') {
-                        filtroNaoValidadosAtivo = false;
-                    }
-                });
-            }
         });
 
         function atualizarDadosUsuario(usuario) {
@@ -1030,7 +1012,7 @@
                 el.style.background = podeEditar ? 'rgba(0,0,0,0.5)' : '#000000';
 
                 if (!prefixo) {
-                    const hintEl = document.getElementById(hintsEl[base]);
+                    const hintEl = document.getElementById(hintsForm[base]);
                     if (hintEl) {
                         hintEl.innerHTML = podeEditar
                             ? '<i class="fas fa-info-circle"></i> Campo livre — você pode editar'
@@ -1042,6 +1024,9 @@
             console.log(`🔐 Campos livres — ${podeEditar ? 'EDITÁVEIS' : 'SOMENTE LEITURA'}`);
         }
 
+        // ============================================================
+        // CONTADORES DE CARACTERES
+        // ============================================================
         function inicializarContadores() {
             const descricao = document.getElementById('descricao');
             const observacoes = document.getElementById('observacoes');
@@ -1253,7 +1238,7 @@
         }
 
         // ============================================================
-        // [v1.4.1] CARREGAR CONTAGEM DE NÃO VALIDADOS
+        // CARREGAR NÃO VALIDADOS
         // ============================================================
         async function carregarNaoValidados() {
             try {
@@ -1276,7 +1261,7 @@
         }
 
         // ============================================================
-        // [v1.4.1] RENDERIZAR AVISO DE NÃO VALIDADOS
+        // RENDERIZAR AVISO DE NÃO VALIDADOS
         // ============================================================
         function renderizarAvisoNaoValidados() {
             const container = document.getElementById('avisoNaoValidados');
@@ -1335,7 +1320,7 @@
             for (let i = 0; i < limite; i++) {
                 setTimeout(() => {
                     window.open('https://portalbnmp.pdpj.jus.br/#/pesquisa-peca', '_blank', 'noopener,noreferrer');
-                }, i * 400); // intervalo pra não bloquear popups
+                }, i * 400);
             }
         }
 
@@ -1355,6 +1340,11 @@
                 const tipo = document.getElementById('filtroTipoLista').value;
                 const prioridade = document.getElementById('filtroPrioridadeLista').value;
                 const filtroBnmp = document.getElementById('filtroBnmpLista').value;
+
+                // [v1.4.2] Se o select não está em __NAO_VALIDADO__, desativa o flag
+                if (filtroBnmp !== '__NAO_VALIDADO__') {
+                    filtroNaoValidadosAtivo = false;
+                }
 
                 let countQuery = window.supabaseClient
                     .from('mandado_prisao')
@@ -1403,7 +1393,6 @@
                 document.getElementById('totalMandadosBadge').innerHTML = 
                     '<i class="fas fa-list"></i> ' + (totalGeral || 0) + ' mandado(s)';
 
-                // [v1.4.1] Atualiza aviso de não validados
                 await carregarNaoValidados();
 
                 if (!data || data.length === 0) {
@@ -1462,12 +1451,6 @@
 
                 console.log(`✅ ${data.length} mandados carregados`);
 
-                // Se o filtroNaoValidados estava ativo e agora mostrou, mantém
-                // Se não havia mandados, reseta
-                if (filtroNaoValidadosAtivo && data.length > 0) {
-                    // mantém o filtro para próxima atualização
-                }
-
             } catch (error) {
                 console.error('❌ Erro:', error);
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar mandados</div>';
@@ -1502,7 +1485,6 @@
 
                 const s = m.suspeito || {};
 
-                // Bloco BNMP
                 let bnmpHTML = '';
                 if (m.validacao_bnmp_status) {
                     const cfg = BNMP_ICONES[m.validacao_bnmp_status];
@@ -1529,6 +1511,9 @@
                     `;
                 }
 
+                // [v1.4.2] Monta o endereço do mandado
+                const enderecoMandado = [m.logradouro, m.numero, m.complemento, m.bairro, m.cidade, m.uf, m.cep].filter(Boolean).join(', ') || '-';
+
                 body.innerHTML = `
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -1545,7 +1530,7 @@
                             <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">Endereço</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Endereço do Suspeito</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
                         </div>
@@ -1553,7 +1538,10 @@
                             <div class="detalhe-campo"><span class="label">Juiz</span><span class="valor">${m.juiz_nome || '-'} ${m.juiz_matricula ? '(' + m.juiz_matricula + ')' : ''}</span></div>
                             <div class="detalhe-campo"><span class="label">Vara/Tribunal</span><span class="valor">${m.vara_tribunal || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Número do Processo</span><span class="valor">${m.processo_numero || '-'}</span></div>
-                            ${m.latitude && m.longitude ? `<div class="detalhe-campo"><span class="label">Coordenadas</span><span class="valor">${m.latitude}, ${m.longitude}</span></div>` : ''}
+                        </div>
+                        <div class="col-md-12">
+                            <div class="detalhe-campo"><span class="label">Endereço de Cumprimento (Mandado)</span><span class="valor"><i class="fas fa-map-marked-alt" style="color:#00ff88;margin-right:6px;"></i>${enderecoMandado}</span></div>
+                            ${m.latitude && m.longitude ? `<div class="detalhe-campo"><span class="label">Coordenadas Geográficas</span><span class="valor"><i class="fas fa-map-marker-alt" style="color:#00ff88;margin-right:6px;"></i>${m.latitude}, ${m.longitude}</span></div>` : ''}
                         </div>
                         <div class="col-md-12">
                             ${bnmpHTML}
@@ -1580,7 +1568,7 @@
         }
 
         // ============================================================
-        // EDITAR MANDADO
+        // EDITAR MANDADO (v1.4.2 - com endereço e coordenadas)
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -1653,6 +1641,82 @@
                                 <label class="form-label">Data de Validade</label>
                                 <input type="date" class="form-control" id="editDataValidade" value="${m.data_validade || ''}">
                             </div>
+
+                            <!-- ENDEREÇO -->
+                            <div class="col-md-12">
+                                <div class="section-title" style="margin-top:15px;">
+                                    <i class="fas fa-map-marked-alt"></i> ENDEREÇO DE CUMPRIMENTO
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">CEP</label>
+                                <input type="text" class="form-control" id="editCep" maxlength="9" placeholder="00000-000"
+                                       value="${m.cep || ''}"
+                                       oninput="mascaraCepMandado(this)"
+                                       onblur="buscarCepMandado()">
+                            </div>
+                            <div class="col-md-7">
+                                <label class="form-label">Rua / Logradouro</label>
+                                <input type="text" class="form-control" id="editLogradouro" placeholder="Ex: Rua das Flores, Avenida Sete..."
+                                       value="${m.logradouro || ''}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Número</label>
+                                <input type="text" class="form-control" id="editNumeroEndereco" placeholder="Ex: 123"
+                                       value="${m.numero || ''}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Complemento</label>
+                                <input type="text" class="form-control" id="editComplemento" placeholder="Apto / Bloco / Referência"
+                                       value="${m.complemento || ''}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Bairro</label>
+                                <input type="text" class="form-control" id="editBairro" placeholder="Bairro"
+                                       value="${m.bairro || ''}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Cidade</label>
+                                <input type="text" class="form-control" id="editCidade" value="${m.cidade || 'Salvador'}">
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">UF</label>
+                                <input type="text" class="form-control" id="editUf" maxlength="2" style="text-transform: uppercase;"
+                                       value="${m.uf || 'BA'}">
+                            </div>
+
+                            <!-- COORDENADAS -->
+                            <div class="col-md-12">
+                                <div class="section-title" style="margin-top:15px;">
+                                    <i class="fas fa-map-marker-alt"></i> COORDENADAS GEOGRÁFICAS
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Latitude</label>
+                                <input type="text" inputmode="decimal" class="form-control" id="editLatitude" placeholder="-12.9714"
+                                       value="${m.latitude || ''}"
+                                       oninput="sanitizarCoordMandado(this)">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Longitude</label>
+                                <input type="text" inputmode="decimal" class="form-control" id="editLongitude" placeholder="-38.5014"
+                                       value="${m.longitude || ''}"
+                                       oninput="sanitizarCoordMandado(this)">
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="button" class="btn-outline-gold w-100" onclick="buscarCoordenadasMandado(event)">
+                                    <i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS
+                                </button>
+                            </div>
+                            <div class="col-md-12">
+                                <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    As coordenadas são usadas para plotar o mandado no <strong>Mapa de Mandados</strong>.
+                                    Aceita vírgula ou ponto: <code>-12,9714</code> ou <code>-12.9714</code>.
+                                </small>
+                            </div>
+
+                            <!-- DESCRIÇÃO -->
                             <div class="col-md-12">
                                 <label class="form-label">
                                     <i class="fas fa-file-alt me-1"></i> Descrição *
@@ -1726,6 +1790,20 @@
                     processo_numero: document.getElementById('editProcesso').value.trim() || null,
                     data_emissao: document.getElementById('editDataEmissao').value,
                     data_validade: document.getElementById('editDataValidade').value || null,
+
+                    // [v1.4.2] Endereço
+                    cep: document.getElementById('editCep').value.trim() || null,
+                    logradouro: document.getElementById('editLogradouro').value.trim() || null,
+                    numero: document.getElementById('editNumeroEndereco').value.trim() || null,
+                    complemento: document.getElementById('editComplemento').value.trim() || null,
+                    bairro: document.getElementById('editBairro').value.trim() || null,
+                    cidade: document.getElementById('editCidade').value.trim() || null,
+                    uf: (document.getElementById('editUf').value.trim() || '').toUpperCase() || null,
+
+                    // [v1.4.2] Coordenadas
+                    latitude: parseCoordMandado(document.getElementById('editLatitude').value),
+                    longitude: parseCoordMandado(document.getElementById('editLongitude').value),
+
                     descricao: document.getElementById('editDescricao').value.trim(),
                     observacoes: document.getElementById('editObservacoes').value.trim() || null,
                     data_atualizacao: new Date().toISOString()
@@ -1748,6 +1826,101 @@
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+            }
+        }
+
+        // ============================================================
+        // HELPERS DE ENDEREÇO / COORDENADAS (modal de edição)
+        // ============================================================
+        function mascaraCepMandado(input) {
+            let v = input.value.replace(/\D/g, '').slice(0, 8);
+            if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
+            input.value = v;
+        }
+
+        function sanitizarCoordMandado(input) {
+            let v = String(input.value || '').trim().replace(/[^0-9.,\-]/g, '').replace(',', '.');
+            const partes = v.split('.');
+            if (partes.length > 2) v = partes[0] + '.' + partes.slice(1).join('');
+            input.value = v;
+        }
+
+        function parseCoordMandado(str) {
+            if (str === null || str === undefined || str === '') return null;
+            const num = parseFloat(String(str).trim().replace(',', '.'));
+            return Number.isFinite(num) ? num : null;
+        }
+
+        async function buscarCepMandado() {
+            const cep = document.getElementById('editCep').value.replace(/\D/g, '');
+            if (cep.length !== 8) return;
+
+            try {
+                const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await resp.json();
+                if (data.erro) {
+                    showToast('warning', 'CEP não encontrado', 'Verifique o CEP digitado.');
+                    return;
+                }
+                document.getElementById('editLogradouro').value = data.logradouro || '';
+                document.getElementById('editBairro').value = data.bairro || '';
+                document.getElementById('editCidade').value = data.localidade || 'Salvador';
+                document.getElementById('editUf').value = (data.uf || 'BA').toUpperCase();
+                showToast('success', 'CEP encontrado!', `${data.logradouro || '-'}, ${data.bairro || '-'}`, 4000);
+            } catch (e) {
+                console.error('Erro ViaCEP:', e);
+                showToast('error', 'Erro ao buscar CEP', 'Tente novamente.');
+            }
+        }
+
+        async function buscarCoordenadasMandado(event) {
+            const btn = event ? event.currentTarget || event.target : null;
+            const originalHTML = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
+            }
+
+            try {
+                const partes = [
+                    document.getElementById('editLogradouro').value.trim(),
+                    document.getElementById('editNumeroEndereco').value.trim(),
+                    document.getElementById('editComplemento').value.trim(),
+                    document.getElementById('editBairro').value.trim(),
+                    document.getElementById('editCidade').value.trim(),
+                    document.getElementById('editUf').value.trim(),
+                    document.getElementById('editCep').value.trim(),
+                    'Brasil'
+                ].filter(Boolean);
+
+                if (partes.length < 3) {
+                    throw new Error('Preencha ao menos Rua e Bairro (ou Cidade).');
+                }
+
+                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(partes.join(', '))}&limit=1&countrycodes=br`;
+                const resp = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
+                const resultado = await resp.json();
+
+                if (!resultado || resultado.length === 0) {
+                    throw new Error('Endereço não encontrado. Tente sem o número ou apenas com o CEP.');
+                }
+
+                const { lat, lon, display_name } = resultado[0];
+                document.getElementById('editLatitude').value = Number(lat).toFixed(8);
+                document.getElementById('editLongitude').value = Number(lon).toFixed(8);
+
+                showToast('success', 'Coordenadas encontradas!',
+                    `Lat: ${Number(lat).toFixed(5)} | Lng: ${Number(lon).toFixed(5)}`, 6000);
+                console.log('✅ Geocodificado:', display_name);
+
+            } catch (error) {
+                console.error('❌ Erro geocode:', error);
+                showToast('error', 'Erro ao buscar', error.message);
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML || '<i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS';
+                }
             }
         }
 
@@ -1813,7 +1986,7 @@
         }
 
         // ============================================================
-        // VALIDAÇÃO BNMP (mantida v1.4.0)
+        // VALIDAÇÃO BNMP
         // ============================================================
         async function abrirValidacaoBNMP(id) {
             mandadoValidandoId = id;
@@ -2006,7 +2179,7 @@
         }
 
         // ============================================================
-        // GEOCODIFICAÇÃO
+        // GEOCODIFICAÇÃO (form principal)
         // ============================================================
         async function geocodificarEndereco(event) {
             const idSuspeito = document.getElementById('idSuspeito').value;
@@ -2157,7 +2330,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.4.1 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.4.2 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
