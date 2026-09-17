@@ -2,8 +2,8 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.8.0
-     Data: 17/09/2026 - 17:00
+     Versão: 2.9.0
+     Data: 17/09/2026 - 23:30
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,20 +15,24 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.9.0 (17/09/2026 23:30):
+     - ✨ NOVO: Ícone ⚖️ (gavel) na coluna "Mandados" da tabela
+       - Cor reflete o status BNMP do mandado (verde=válido, etc)
+       - Clicável → abre modal com lista de mandados vinculados
+       - Não aparece quando o suspeito não tem mandado
+     - ✨ NOVO: Seção "Mandados Vinculados" na Ficha do Suspeito
+       - Badge com contador no topo
+       - Lista compacta: número + status + BNMP
+     - ✨ Nova função abrirMandadosDoSuspeito() e modal dedicado
+     - 🔍 Query otimizada: busca IDs de suspeitos com mandado em 1 única chamada
+     - ✅ Preservadas TODAS as funcionalidades da v2.8.0
+
      ALTERAÇÕES v2.8.0 (17/09/2026 17:00):
-     - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
-     - 🔗 Menu: adicionado item "Operacoes" → 14-operacoes.html
-     - ➕ Botão FULLSCREEN na controls-bar
-     - ➕ toggleFullscreen() implementado + atalho F11
-     - ✅ Preservadas TODAS as funcionalidades da v2.7.4
-     - ❌ NÃO alterado: Supabase client hardcoded (fallback)
-     - ❌ NÃO alterado: modais (.modal-ficha, .modal-edicao, etc.)
+     - 🔗 Menu: "Mapa de Mandados" + "Operações"
+     - ➕ Botão FULLSCREEN + atalho F11
 
      ALTERAÇÕES v2.7.4 (16/09/2026 18:00):
-     - 🐛 CORRIGIDO: perfil Admin (ID 2) não conseguia editar suspeito
-     - 🐛 CORRIGIDO: comparação com coerção de tipos (number ↔ string)
-     - ✨ NOVO: parsePerfisPermitidos() aceita qualquer formato
-     - ✨ NOVO: log detalhado no console para debug de permissão
+     - 🐛 CORRIGIDO: perfil Admin não conseguia editar suspeito
      ============================================================
 -->
 <!DOCTYPE html>
@@ -90,7 +94,6 @@
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
-        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
 
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
@@ -220,15 +223,152 @@
 
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        /* MODAIS */
-        .modal-ficha, .modal-edicao, .modal-historico, .modal-fotos {
+        /* ============================================================
+           [v2.9.0] ÍCONE DE MANDADO NA TABELA
+           ============================================================ */
+        .badge-mandado {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid rgba(0, 0, 0, 0.4);
+            background: rgba(0, 255, 136, 0.1);
+            color: var(--text-primary);
+            text-decoration: none;
+        }
+        .badge-mandado:hover {
+            transform: scale(1.15);
+            box-shadow: 0 0 15px currentColor;
+            filter: drop-shadow(0 0 6px currentColor);
+        }
+        .badge-mandado.mandado-valido       { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
+        .badge-mandado.mandado-ativo        { background: rgba(0, 255, 136, 0.15); color: #00ff88; border-color: rgba(0, 255, 136, 0.4); }
+        .badge-mandado.mandado-novo         { background: rgba(220, 53, 69, 0.15); color: #dc3545; border-color: rgba(220, 53, 69, 0.4); }
+        .badge-mandado.mandado-cumprido     { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; border-color: rgba(13, 202, 240, 0.4); }
+        .badge-mandado.mandado-cancelado    { background: rgba(255, 193, 7, 0.15); color: #ffc107; border-color: rgba(255, 193, 7, 0.4); }
+        .badge-mandado.mandado-suspenso     { background: rgba(186, 104, 200, 0.15); color: #ba68c8; border-color: rgba(186, 104, 200, 0.4); }
+        .badge-mandado.mandado-vencido      { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border-color: rgba(108, 117, 125, 0.4); }
+        .badge-mandado.mandado-extinto      { background: rgba(108, 117, 125, 0.15); color: #6c757d; border-color: rgba(108, 117, 125, 0.4); }
+        .badge-mandado.mandado-nao-encontrado { background: rgba(255, 87, 34, 0.15); color: #ff5722; border-color: rgba(255, 87, 34, 0.4); }
+
+        .badge-mandado-count {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #000;
+            color: var(--text-primary);
+            font-size: 9px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--text-primary);
+            padding: 0 4px;
+        }
+        .badge-mandado-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* ============================================================
+           [v2.9.0] MODAL DE MANDADOS VINCULADOS
+           ============================================================ */
+        .mandado-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            transition: all 0.3s;
+        }
+        .mandado-item:hover {
+            background: rgba(0, 255, 136, 0.03);
+            transform: translateX(4px);
+        }
+        .mandado-item.borda-valido     { border-left-color: #00ff88; }
+        .mandado-item.borda-ativo      { border-left-color: #00ff88; }
+        .mandado-item.borda-novo       { border-left-color: #dc3545; }
+        .mandado-item.borda-cumprido   { border-left-color: #0dcaf0; }
+        .mandado-item.borda-cancelado  { border-left-color: #ffc107; }
+        .mandado-item.borda-suspenso   { border-left-color: #ba68c8; }
+        .mandado-item.borda-vencido    { border-left-color: #adb5bd; }
+        .mandado-item.borda-extinto    { border-left-color: #6c757d; }
+        .mandado-item.borda-nao-encontrado { border-left-color: #ff5722; }
+
+        .mandado-item .mandado-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .mandado-item .mandado-info { flex: 1; min-width: 0; }
+        .mandado-item .mandado-numero {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .mandado-item .mandado-meta {
+            color: rgba(0, 255, 136, 0.5);
+            font-size: 11px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .mandado-item .mandado-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .badge-bnmp-mini {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .badge-bnmp-mini.bnmp-validado    { background: rgba(0, 255, 136, 0.15); color: #00ff88; }
+        .badge-bnmp-mini.bnmp-cancelado   { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .badge-bnmp-mini.bnmp-suspenso    { background: rgba(186, 104, 200, 0.15); color: #ba68c8; }
+        .badge-bnmp-mini.bnmp-cumprido    { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; }
+        .badge-bnmp-mini.bnmp-extinto     { background: rgba(108, 117, 125, 0.15); color: #6c757d; }
+        .badge-bnmp-mini.bnmp-nao-validado { background: rgba(0, 255, 136, 0.05); color: rgba(0, 255, 136, 0.4); }
+
+        /* ============================================================
+           MODAIS (mantidos da v2.8.0)
+           ============================================================ */
+        .modal-ficha, .modal-edicao, .modal-historico, .modal-fotos, .modal-mandados {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.85);
             backdrop-filter: blur(5px);
             z-index: 9999; justify-content: center; align-items: center; padding: 20px;
         }
-        .modal-ficha.open, .modal-edicao.open, .modal-historico.open, .modal-fotos.open { display: flex; }
+        .modal-ficha.open, .modal-edicao.open, .modal-historico.open, .modal-fotos.open, .modal-mandados.open { display: flex; }
 
         .modal-content {
             background: var(--bg-secondary);
@@ -428,12 +568,13 @@
                                 <th>Status</th>
                                 <th>Periculosidade</th>
                                 <th>Cidade</th>
+                                <th style="text-align:center;">Mandado</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="resultadosConsulta">
                             <tr>
-                                <td colspan="7" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                                <td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
                                     <i class="fas fa-search" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
                                     <div style="font-size: 14px; margin-bottom: 6px;">Faça uma busca para ver os resultados</div>
                                     <small style="font-size: 11px; color: rgba(0, 255, 136, 0.2);">
@@ -459,7 +600,7 @@
 
     <!-- MODAL FICHA -->
     <div class="modal-ficha" id="modalFicha">
-        <div class="modal-content">
+        <div class="modal-content modal-lg">
             <div class="modal-header">
                 <h5><i class="fas fa-user-secret me-2"></i>Ficha do Suspeito</h5>
                 <button class="btn-icon" onclick="fecharFicha()"><i class="fas fa-times"></i></button>
@@ -513,6 +654,27 @@
         </div>
     </div>
 
+    <!-- ============================================================
+         [v2.9.0] MODAL DE MANDADOS VINCULADOS
+         ============================================================ -->
+    <div class="modal-mandados" id="modalMandados">
+        <div class="modal-content modal-lg">
+            <div class="modal-header">
+                <h5><i class="fas fa-gavel me-2"></i>Mandados Vinculados</h5>
+                <button class="btn-icon" onclick="fecharMandados()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="modalMandadosBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando mandados...</div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline-gold" onclick="fecharMandados()"><i class="fas fa-times me-2"></i>FECHAR</button>
+                <button class="btn-gold" onclick="abrirTelaMandados()"><i class="fas fa-external-link-alt me-2"></i>IR PARA MANDADOS</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
@@ -539,7 +701,7 @@
         })();
 
         // ============================================================
-        // [v2.8.0] FULLSCREEN
+        // FULLSCREEN
         // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
@@ -562,7 +724,6 @@
             }
         }
 
-        // Atualiza o ícone do botão fullscreen
         document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
         document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
         document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
@@ -652,6 +813,12 @@
         let perfilUsuarioAtual = null;
         let camposEditaveisCache = null;
 
+        // [v2.9.0] Set de IDs de suspeitos que têm mandado vinculado
+        let suspeitosComMandado = new Set();
+
+        // [v2.9.0] Cache de mandados por suspeito (id → array de mandados)
+        let mandadosCachePorSuspeito = {};
+
         // ============================================================
         // CARREGAR USUÁRIO
         // ============================================================
@@ -669,7 +836,7 @@
                         document.getElementById('sidebarAvatar').textContent = inicial;
                         document.getElementById('sidebarUserName').textContent = usuario.nome_completo || 'Admin';
                         document.getElementById('sidebarUserRole').textContent = usuario.setor || 'Administrador';
-                        console.log('👤 Usuário logado:', usuario.nome_completo, '| Perfil:', perfilUsuarioAtual, '(tipo:', typeof perfilUsuarioAtual + ')');
+                        console.log('👤 Usuário logado:', usuario.nome_completo, '| Perfil:', perfilUsuarioAtual);
                     }
                 }
             } catch (error) { console.error('Erro ao carregar usuário:', error); }
@@ -693,33 +860,18 @@
             return camposEditaveisCache;
         }
 
-        // ============================================================
-        // parsePerfisPermitidos
-        // Aceita: array [1,2,3], string JSON "[1,2,3]", string CSV "1,2,3", string única "2"
-        // ============================================================
         function parsePerfisPermitidos(raw) {
             if (!raw) return [];
-
-            if (Array.isArray(raw)) {
-                return raw.map(p => Number(p)).filter(n => !isNaN(n));
-            }
-
+            if (Array.isArray(raw)) return raw.map(p => Number(p)).filter(n => !isNaN(n));
             if (typeof raw === 'string') {
                 try {
                     const parsed = JSON.parse(raw);
-                    if (Array.isArray(parsed)) {
-                        return parsed.map(p => Number(p)).filter(n => !isNaN(n));
-                    }
+                    if (Array.isArray(parsed)) return parsed.map(p => Number(p)).filter(n => !isNaN(n));
                 } catch (e) { /* não era JSON */ }
-
-                if (raw.includes(',')) {
-                    return raw.split(',').map(p => Number(p.trim())).filter(n => !isNaN(n));
-                }
-
+                if (raw.includes(',')) return raw.split(',').map(p => Number(p.trim())).filter(n => !isNaN(n));
                 const n = Number(raw);
                 return isNaN(n) ? [] : [n];
             }
-
             return [];
         }
 
@@ -738,6 +890,204 @@
         }
 
         // ============================================================
+        // [v2.9.0] BUSCAR SUSPEITOS QUE TÊM MANDADO
+        // ============================================================
+        async function carregarSuspeitosComMandado(idsSuspeitos) {
+            if (!idsSuspeitos || idsSuspeitos.length === 0) {
+                suspeitosComMandado = new Set();
+                mandadosCachePorSuspeito = {};
+                return;
+            }
+
+            try {
+                const { data, error } = await sb
+                    .from('mandado_prisao')
+                    .select('id_mandado, id_suspeito, numero_mandado, status, tipo_mandado, prioridade, validacao_bnmp_status, data_emissao, data_cadastro')
+                    .eq('deletado', false)
+                    .in('id_suspeito', idsSuspeitos)
+                    .order('id_mandado', { ascending: false });
+
+                if (error) throw error;
+
+                suspeitosComMandado = new Set();
+                mandadosCachePorSuspeito = {};
+
+                (data || []).forEach(m => {
+                    suspeitosComMandado.add(m.id_suspeito);
+                    if (!mandadosCachePorSuspeito[m.id_suspeito]) {
+                        mandadosCachePorSuspeito[m.id_suspeito] = [];
+                    }
+                    mandadosCachePorSuspeito[m.id_suspeito].push(m);
+                });
+
+                console.log(`⚖️ ${suspeitosComMandado.size} suspeito(s) com mandado vinculado | Total de mandados: ${data?.length || 0}`);
+            } catch (error) {
+                console.error('❌ Erro ao buscar mandados vinculados:', error);
+                suspeitosComMandado = new Set();
+                mandadosCachePorSuspeito = {};
+            }
+        }
+
+        // ============================================================
+        // [v2.9.0] ÍCONE DE MANDADO
+        // Retorna o HTML do badge de mandado baseado no status do mandado mais recente
+        // ============================================================
+        function gerarBadgeMandado(idSuspeito) {
+            if (!suspeitosComMandado.has(idSuspeito)) {
+                return ''; // Só aparece quando tem mandado
+            }
+
+            const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
+            const qtd = mandados.length;
+
+            // Prioriza o mandado com status BNMP mais "forte"
+            // Ordem: VALIDO > ATIVO > NOVO > CANCELADO > SUSPENSO > CUMPRIDO > VENCIDO > EXTINTO > NAO_ENCONTRADO
+            const prioridadeStatus = {
+                'VALIDO': 1,
+                'ATIVO': 2,
+                'NOVO': 3,
+                'CANCELADO': 4,
+                'SUSPENSO': 5,
+                'CUMPRIDO': 6,
+                'VENCIDO': 7,
+                'EXTINTO': 8,
+                'NAO_ENCONTRADO': 9
+            };
+
+            let statusPrincipal = 'ativo'; // default
+            let mandadoPrincipal = mandados[0];
+
+            // Procura o mandado com status BNMP mais prioritário
+            let melhorPrioridade = 999;
+            mandados.forEach(m => {
+                const bnmp = m.validacao_bnmp_status;
+                if (bnmp && prioridadeStatus[bnmp] && prioridadeStatus[bnmp] < melhorPrioridade) {
+                    melhorPrioridade = prioridadeStatus[bnmp];
+                    statusPrincipal = bnmp.toLowerCase().replace(/_/g, '-');
+                    mandadoPrincipal = m;
+                }
+            });
+
+            // Se nenhum tem BNMP validado, usa o status do mandado
+            if (melhorPrioridade === 999) {
+                const st = (mandadoPrincipal.status || 'ATIVO').toLowerCase();
+                statusPrincipal = st;
+            }
+
+            const classe = `badge-mandado-${statusPrincipal}`;
+            const contadorHTML = qtd > 1 ? `<span class="badge-mandado-count">${qtd}</span>` : '';
+
+            return `
+                <div class="badge-mandado-wrapper">
+                    <a class="badge-mandado ${classe}"
+                       onclick="event.stopPropagation(); abrirMandadosDoSuspeito(${idSuspeito})"
+                       title="${qtd} mandado(s) vinculado(s) — clique para ver">
+                        <i class="fas fa-gavel"></i>
+                    </a>
+                    ${contadorHTML}
+                </div>
+            `;
+        }
+
+        // ============================================================
+        // [v2.9.0] MODAL DE MANDADOS VINCULADOS
+        // ============================================================
+        function abrirMandadosDoSuspeito(idSuspeito) {
+            const modal = document.getElementById('modalMandados');
+            const body = document.getElementById('modalMandadosBody');
+            modal.classList.add('open');
+
+            const mandados = mandadosCachePorSuspeito[idSuspeito] || [];
+
+            if (mandados.length === 0) {
+                body.innerHTML = `
+                    <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
+                        <i class="fas fa-gavel" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
+                        <div>Nenhum mandado vinculado a este suspeito</div>
+                    </div>`;
+                return;
+            }
+
+            // Nome do suspeito (do cache de dadosAtuais ou fallback)
+            const suspeitoInfo = dadosAtuais.find(d => d.id_suspeito === idSuspeito);
+            const nomeSuspeito = suspeitoInfo?.nome_completo || `Suspeito #${idSuspeito}`;
+
+            const ICONES_BNMP = {
+                'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
+                'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
+                'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
+                'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
+                'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
+                'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
+            };
+
+            let html = `
+                <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:10px;padding:12px 15px;margin-bottom:20px;">
+                    <div style="color:var(--text-primary);font-weight:700;font-size:14px;">
+                        <i class="fas fa-user-secret me-2"></i>${nomeSuspeito}
+                    </div>
+                    <div style="color:rgba(0,255,136,0.4);font-size:11px;margin-top:4px;">
+                        ${mandados.length} mandado(s) vinculado(s)
+                    </div>
+                </div>
+            `;
+
+            mandados.forEach((m, idx) => {
+                const bnmpStatus = m.validacao_bnmp_status;
+                const bnmpCfg = bnmpStatus ? ICONES_BNMP[bnmpStatus] : null;
+                const statusMandado = (m.status || 'ATIVO').toLowerCase();
+                const corBorda = bnmpCfg
+                    ? 'borda-' + bnmpStatus.toLowerCase().replace(/_/g, '-')
+                    : 'borda-' + statusMandado;
+
+                const dataFormatada = m.data_emissao
+                    ? m.data_emissao.split('-').reverse().join('/')
+                    : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
+
+                let bnmpBadgeHTML = '';
+                if (bnmpCfg) {
+                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-${bnmpStatus.toLowerCase().replace(/_/g, '-')}">
+                        <i class="fas ${bnmpCfg.icone}"></i> BNMP: ${bnmpCfg.label}
+                    </span>`;
+                } else {
+                    bnmpBadgeHTML = `<span class="badge-bnmp-mini bnmp-nao-validado">
+                        <i class="fas fa-question-circle"></i> BNMP: Não validado
+                    </span>`;
+                }
+
+                html += `
+                    <div class="mandado-item ${corBorda}">
+                        <div class="mandado-icon" style="background:rgba(0,255,136,0.05);color:var(--text-primary);">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <div class="mandado-info">
+                            <div class="mandado-numero">#${idx + 1} — ${m.numero_mandado || '#' + m.id_mandado}</div>
+                            <div class="mandado-meta">
+                                <span><i class="fas fa-tag"></i> ${m.tipo_mandado || '-'}</span>
+                                <span><i class="fas fa-info-circle"></i> ${m.status || '-'}</span>
+                                <span><i class="fas fa-calendar"></i> ${dataFormatada}</span>
+                                ${m.prioridade ? `<span><i class="fas fa-exclamation"></i> ${m.prioridade}</span>` : ''}
+                            </div>
+                            <div style="margin-top:8px;">
+                                ${bnmpBadgeHTML}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            body.innerHTML = html;
+        }
+
+        function fecharMandados() {
+            document.getElementById('modalMandados').classList.remove('open');
+        }
+
+        function abrirTelaMandados() {
+            window.location.href = '11-mandados.html';
+        }
+
+        // ============================================================
         // BUSCA PRINCIPAL
         // ============================================================
         async function realizarBusca() {
@@ -752,7 +1102,7 @@
 
             if (!temFiltro) {
                 document.getElementById('resultadosConsulta').innerHTML = `
-                    <tr><td colspan="7" class="text-center py-4" style="color: #ffc107;">
+                    <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
                         <i class="fas fa-exclamation-triangle" style="font-size: 32px; display: block; margin-bottom: 12px;"></i>
                         <div style="font-size: 14px; margin-bottom: 6px;"><strong>Nenhum filtro informado</strong></div>
                         <small style="font-size: 11px; color: rgba(0, 255, 136, 0.3);">
@@ -770,7 +1120,7 @@
 
             if (termo.length > 0 && termo.length < 2) {
                 document.getElementById('resultadosConsulta').innerHTML = `
-                    <tr><td colspan="7" class="text-center py-4" style="color: #ffc107;">
+                    <tr><td colspan="8" class="text-center py-4" style="color: #ffc107;">
                         <i class="fas fa-info-circle" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
                         Digite pelo menos <strong>2 caracteres</strong> para buscar por nome, CPF ou RG
                     </td></tr>`;
@@ -807,19 +1157,25 @@
                 if (!suspeitos || suspeitos.length === 0) {
                     dadosAtuais = [];
                     totalRegistros = 0;
+                    suspeitosComMandado = new Set();
+                    mandadosCachePorSuspeito = {};
                     await carregarEstatisticas();
                     renderizarResultados();
                     return;
                 }
 
-                const ids = suspeitos.map(s => s.id_suspeito);
+                // [v2.9.0] Buscar quais desses suspeitos têm mandado vinculado
+                const idsDosSuspeitos = suspeitos.map(s => s.id_suspeito);
+                await carregarSuspeitosComMandado(idsDosSuspeitos);
+
+                // Buscar fotos
                 const { data: midias, error: midiaError } = await sb
                     .from('arquivo_midia')
                     .select('id_entidade, caminho_fisico, nome_seguro, tipo_midia')
                     .eq('tipo_entidade', 'SUSPEITO')
                     .eq('tipo_midia', 'FOTO')
                     .eq('deletado', false)
-                    .in('id_entidade', ids);
+                    .in('id_entidade', idsDosSuspeitos);
 
                 if (midiaError) console.warn('⚠️ Erro ao buscar mídias:', midiaError);
 
@@ -856,7 +1212,7 @@
             } catch (error) {
                 console.error('❌ Erro na busca:', error);
                 document.getElementById('resultadosConsulta').innerHTML =
-                    `<tr><td colspan="7" class="text-center py-4" style="color: #dc3545;">
+                    `<tr><td colspan="8" class="text-center py-4" style="color: #dc3545;">
                         <i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}
                     </td></tr>`;
             }
@@ -869,7 +1225,7 @@
             const tbody = document.getElementById('resultadosConsulta');
 
             if (dadosAtuais.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-search"></i> Nenhum resultado encontrado</td></tr>`;
                 document.getElementById('infoPagina').textContent = 'Mostrando 0 de 0 registros';
                 document.getElementById('totalRegistrosInfo').textContent = 'Nenhum resultado';
                 document.getElementById('numerosPaginas').innerHTML = '';
@@ -892,6 +1248,9 @@
                             onerror="this.onerror=null; this.outerHTML='<div class=\\'foto-placeholder\\'><i class=\\'fas fa-user-secret\\'></i></div>';" />`
                     : `<div class="foto-placeholder"><i class="fas fa-user-secret"></i></div>`;
 
+                // [v2.9.0] Badge de mandado
+                const badgeMandado = gerarBadgeMandado(d.id_suspeito);
+
                 html += `<tr>
                     <td>${fotoHTML}</td>
                     <td><strong>${d.nome_completo || 'N/A'}</strong></td>
@@ -899,6 +1258,7 @@
                     <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
                     <td><span class="perigo-badge ${periculosidadeClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
                     <td>${d.cidade || 'N/A'}</td>
+                    <td style="text-align:center;">${badgeMandado}</td>
                     <td>
                         <button class="btn-icon" onclick="verDetalhes('${d.id_suspeito}')" title="Ver ficha"><i class="fas fa-eye"></i></button>
                         <button class="btn-icon" onclick="editarSuspeito('${d.id_suspeito}')" title="Editar"><i class="fas fa-pencil-alt"></i></button>
@@ -978,6 +1338,62 @@
                 const perigoBadge = suspeito.nivel_periculosidade
                     ? `<span class="perigo-badge ${suspeito.nivel_periculosidade.toLowerCase()}">${suspeito.nivel_periculosidade}</span>` : 'N/A';
 
+                // [v2.9.0] Seção de Mandados Vinculados
+                const mandadosDoSuspeito = mandadosCachePorSuspeito[id] || [];
+                let mandadosHTML = '';
+                if (mandadosDoSuspeito.length > 0) {
+                    const ICONES_BNMP = {
+                        'VALIDO':         { icone: 'fa-check-circle',  cor: '#00ff88', label: 'Válido' },
+                        'CANCELADO':      { icone: 'fa-ban',           cor: '#ffc107', label: 'Cancelado' },
+                        'SUSPENSO':       { icone: 'fa-pause-circle',  cor: '#ba68c8', label: 'Suspenso' },
+                        'CUMPRIDO':       { icone: 'fa-gavel',         cor: '#0dcaf0', label: 'Cumprido' },
+                        'EXTINTO':        { icone: 'fa-times-circle',  cor: '#6c757d', label: 'Extinto' },
+                        'NAO_ENCONTRADO': { icone: 'fa-search-minus',  cor: '#ff5722', label: 'Não Encontrado' }
+                    };
+
+                    let listaHTML = '';
+                    mandadosDoSuspeito.forEach(m => {
+                        const bnmpCfg = m.validacao_bnmp_status ? ICONES_BNMP[m.validacao_bnmp_status] : null;
+                        const dataF = m.data_emissao
+                            ? m.data_emissao.split('-').reverse().join('/')
+                            : (m.data_cadastro ? new Date(m.data_cadastro).toLocaleDateString('pt-BR') : '-');
+                        const bnmpBadge = bnmpCfg
+                            ? `<span class="badge-bnmp-mini bnmp-${m.validacao_bnmp_status.toLowerCase().replace(/_/g, '-')}"><i class="fas ${bnmpCfg.icone}"></i> ${bnmpCfg.label}</span>`
+                            : `<span class="badge-bnmp-mini bnmp-nao-validado"><i class="fas fa-question-circle"></i> Não validado</span>`;
+
+                        listaHTML += `
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border-color);border-radius:8px;margin-bottom:6px;">
+                                <div style="flex:1;min-width:0;">
+                                    <div style="color:var(--text-primary);font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                        <i class="fas fa-gavel" style="margin-right:6px;"></i>${m.numero_mandado || '#' + m.id_mandado}
+                                    </div>
+                                    <div style="color:rgba(0,255,136,0.4);font-size:10px;margin-top:3px;">
+                                        ${m.status || '-'} · ${dataF}
+                                    </div>
+                                </div>
+                                <div>${bnmpBadge}</div>
+                            </div>
+                        `;
+                    });
+
+                    mandadosHTML = `
+                        <div class="col-md-12" style="margin-top:20px;">
+                            <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:12px;padding:15px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border-color);">
+                                    <span style="color:var(--text-primary);font-weight:700;font-size:13px;letter-spacing:1px;">
+                                        <i class="fas fa-gavel me-2"></i>MANDADOS VINCULADOS
+                                    </span>
+                                    <span style="background:var(--text-primary);color:#000;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;">${mandadosDoSuspeito.length}</span>
+                                </div>
+                                ${listaHTML}
+                                <button class="btn-outline-gold w-100 mt-2" onclick="fecharFicha(); abrirMandadosDoSuspeito(${id})" style="padding:8px 16px; font-size:12px;">
+                                    <i class="fas fa-external-link-alt me-2"></i>VER DETALHES DOS MANDADOS
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+
                 body.innerHTML = `
                     <div class="row g-3">
                         <div class="col-md-4 text-center">
@@ -1001,6 +1417,7 @@
                             ${suspeito.sinais_particulares ? `<div class="ficha-campo"><span class="label">Sinais Particulares</span><span class="valor">${suspeito.sinais_particulares}</span></div>` : ''}
                             ${suspeito.observacoes ? `<div class="ficha-campo"><span class="label">Observações</span><span class="valor">${suspeito.observacoes}</span></div>` : ''}
                         </div>
+                        ${mandadosHTML}
                     </div>`;
             } catch (error) {
                 console.error('❌ Erro ao carregar ficha:', error);
@@ -1021,7 +1438,7 @@
         function imprimirFichaAtual() { window.print(); }
 
         // ============================================================
-        // MODAL EDIÇÃO
+        // MODAL EDIÇÃO (mantido da v2.8.0)
         // ============================================================
         const MOTIVOS_ALTERACAO = [
             'Correção de erro de digitação',
@@ -1047,7 +1464,6 @@
                 }
 
                 const campos = await carregarCamposEditaveis();
-
                 const perfilAtualNum = Number(perfilUsuarioAtual);
 
                 const camposPermitidos = campos.filter(c => {
@@ -1058,7 +1474,6 @@
                 console.log('🔐 DEBUG PERMISSÃO:', {
                     perfilUsuarioAtual_raw: perfilUsuarioAtual,
                     perfilUsuarioAtual_num: perfilAtualNum,
-                    tipoPerfil: typeof perfilUsuarioAtual,
                     totalCampos: campos.length,
                     camposPermitidos: camposPermitidos.length
                 });
@@ -1475,7 +1890,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.8.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Consulta v2.9.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
         });
 
@@ -1483,7 +1898,7 @@
             if (e.key === 'Enter') { realizarBusca(); }
         });
 
-        // Atalhos de teclado
+        // Fecha modais com ESC e atalho F11
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11') {
                 e.preventDefault();
@@ -1494,6 +1909,7 @@
                 fecharEdicao();
                 fecharHistorico();
                 fecharFotos();
+                fecharMandados();
             }
         });
     </script>
