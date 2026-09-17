@@ -1,9 +1,17 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.4.2
-     Data: 18/09/2026 - 02:00
+     Versão: 1.4.3
+     Data: 18/09/2026 - 03:00
      ============================================================
+     ALTERAÇÕES v1.4.3 (18/09/2026 03:00):
+     - ✨ NOVO: Foto do suspeito vinculado exibida em Detalhes do Mandado
+       - Foto grande à esquerda, dados do suspeito ao lado
+       - Clique na foto → lightbox em tela cheia (mesmo padrão do 07-consulta)
+       - Fallback "Sem foto cadastrada" quando não houver
+     - ✨ Novas funções abrirLightboxMandado() / fecharLightboxMandado()
+     - ✅ Preservadas TODAS as funcionalidades da v1.4.2
+
      ALTERAÇÕES v1.4.2 (18/09/2026 02:00):
      - ✨ NOVO: Endereço de cumprimento no modal de edição
        - CEP + auto-preenchimento via ViaCEP
@@ -465,6 +473,111 @@
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
+        /* ============================================================
+           [v1.4.3] FOTO DO SUSPEITO NO MODAL DE DETALHES + LIGHTBOX
+           ============================================================ */
+        .mandado-foto-wrapper {
+            display: inline-block;
+            position: relative;
+            cursor: zoom-in;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+        .mandado-foto-wrapper:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.25);
+        }
+        .mandado-foto-wrapper::after {
+            content: '\f00e';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            bottom: 8px; right: 8px;
+            background: rgba(0, 0, 0, 0.75);
+            color: var(--text-primary);
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .mandado-foto-wrapper:hover::after { opacity: 1; }
+
+        .mandado-foto {
+            width: 180px;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid var(--border-color);
+            display: block;
+        }
+        .mandado-foto-placeholder {
+            width: 180px;
+            height: 220px;
+            background: rgba(0, 255, 136, 0.05);
+            border-radius: 10px;
+            border: 2px dashed var(--border-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(0, 255, 136, 0.25);
+            margin: 0 auto;
+        }
+        .mandado-foto-placeholder i { font-size: 44px; margin-bottom: 8px; }
+        .mandado-foto-placeholder span { font-size: 11px; }
+
+        .foto-label-mandado {
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .foto-lightbox {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+        }
+        .foto-lightbox.open { display: flex; }
+        .foto-lightbox img {
+            max-width: 95%;
+            max-height: 95%;
+            border-radius: 12px;
+            border: 2px solid var(--text-primary);
+            box-shadow: 0 0 60px rgba(0, 255, 136, 0.3);
+        }
+        .foto-lightbox .fechar {
+            position: absolute;
+            top: 20px; right: 20px;
+            background: transparent;
+            border: 1px solid var(--text-primary);
+            color: var(--text-primary);
+            width: 44px; height: 44px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .foto-lightbox .fechar:hover {
+            background: rgba(0, 255, 136, 0.1);
+            transform: rotate(90deg);
+        }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -479,6 +592,7 @@
             .btn-gold, .btn-outline-gold { width: 100%; }
             .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
             .aviso-nao-validados { flex-direction: column; align-items: flex-start; }
+            .mandado-foto, .mandado-foto-placeholder { width: 140px; height: 175px; }
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
@@ -878,6 +992,14 @@
         </div>
     </div>
 
+    <!-- ============================================================
+         [v1.4.3] LIGHTBOX DE FOTO
+         ============================================================ -->
+    <div class="foto-lightbox" id="fotoLightboxMandado" onclick="fecharLightboxMandado(event)">
+        <button class="fechar" onclick="fecharLightboxMandado(event)"><i class="fas fa-times"></i></button>
+        <img id="fotoLightboxMandadoImg" src="" alt="Foto do suspeito" />
+    </div>
+
     <div class="toast-container" id="toastContainer"></div>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -893,6 +1015,9 @@
         const LIMITE_DESCRICAO = 5000;
         const LIMITE_OBSERVACOES = 3000;
         const LIMITE_ABAS_BNMP = 5;
+
+        const BUCKET_FOTOS = 'fotos-suspeitos';
+        const URL_EXPIRACAO_S = 3600;
 
         let usuarioAtual = null;
         let mandadosAtuais = [];
@@ -922,7 +1047,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.4.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.4.3 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1046,6 +1171,25 @@
 
             atualizarContador(descricao, counterDesc, LIMITE_DESCRICAO);
             atualizarContador(observacoes, counterObs, LIMITE_OBSERVACOES);
+        }
+
+        // ============================================================
+        // [v1.4.3] LIGHTBOX DE FOTO
+        // ============================================================
+        function abrirLightboxMandado(url) {
+            if (!url) return;
+            const lb = document.getElementById('fotoLightboxMandado');
+            const img = document.getElementById('fotoLightboxMandadoImg');
+            img.src = url;
+            lb.classList.add('open');
+        }
+
+        function fecharLightboxMandado(e) {
+            if (e) e.stopPropagation();
+            const lb = document.getElementById('fotoLightboxMandado');
+            if (lb) lb.classList.remove('open');
+            const img = document.getElementById('fotoLightboxMandadoImg');
+            if (img) img.src = '';
         }
 
         // ============================================================
@@ -1341,7 +1485,6 @@
                 const prioridade = document.getElementById('filtroPrioridadeLista').value;
                 const filtroBnmp = document.getElementById('filtroBnmpLista').value;
 
-                // [v1.4.2] Se o select não está em __NAO_VALIDADO__, desativa o flag
                 if (filtroBnmp !== '__NAO_VALIDADO__') {
                     filtroNaoValidadosAtivo = false;
                 }
@@ -1458,7 +1601,7 @@
         }
 
         // ============================================================
-        // VER DETALHES
+        // VER DETALHES  [v1.4.3 - com FOTO do suspeito]
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -1484,6 +1627,42 @@
                 if (!m) throw new Error('Mandado não encontrado');
 
                 const s = m.suspeito || {};
+
+                // [v1.4.3] Buscar foto do suspeito vinculado
+                let fotoUrl = null;
+                if (s.id_suspeito) {
+                    try {
+                        const { data: midias } = await window.supabaseClient
+                            .from('arquivo_midia')
+                            .select('caminho_fisico, nome_seguro, tipo_midia')
+                            .eq('tipo_entidade', 'SUSPEITO')
+                            .eq('id_entidade', s.id_suspeito)
+                            .eq('tipo_midia', 'FOTO')
+                            .eq('deletado', false);
+
+                        const principal = (midias || []).find(x =>
+                            x.nome_seguro && x.nome_seguro.toLowerCase().includes('principal')
+                        ) || (midias || [])[0];
+
+                        if (principal && principal.caminho_fisico) {
+                            const { data: signed } = await window.supabaseClient.storage
+                                .from(BUCKET_FOTOS)
+                                .createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
+                            fotoUrl = signed?.signedUrl || null;
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ Erro ao buscar foto do suspeito:', e);
+                    }
+                }
+
+                const fotoHTML = fotoUrl
+                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar">
+                           <img src="${fotoUrl}" alt="${s.nome_completo || 'Suspeito'}" class="mandado-foto" />
+                       </div>`
+                    : `<div class="mandado-foto-placeholder">
+                           <i class="fas fa-user-secret"></i>
+                           <span>Sem foto cadastrada</span>
+                       </div>`;
 
                 let bnmpHTML = '';
                 if (m.validacao_bnmp_status) {
@@ -1511,22 +1690,22 @@
                     `;
                 }
 
-                // [v1.4.2] Monta o endereço do mandado
                 const enderecoMandado = [m.logradouro, m.numero, m.complemento, m.bairro, m.cidade, m.uf, m.cep].filter(Boolean).join(', ') || '-';
 
                 body.innerHTML = `
                     <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Número do Mandado</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div>
-                            <div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div>
-                            <div class="detalhe-campo"><span class="label">Status</span><span class="valor"><span class="badge-status status-${(m.status || 'ativo').toLowerCase()}">${m.status || '-'}</span></span></div>
-                            <div class="detalhe-campo"><span class="label">Prioridade</span><span class="valor"><span class="badge-prioridade prioridade-${(m.prioridade || 'normal').toLowerCase()}">${m.prioridade || '-'}</span></span></div>
-                            <div class="detalhe-campo"><span class="label">Data de Emissão</span><span class="valor">${formatarData(m.data_emissao)}</span></div>
-                            <div class="detalhe-campo"><span class="label">Data de Validade</span><span class="valor">${formatarData(m.data_validade) || '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">Data de Cumprimento</span><span class="valor">${formatarData(m.data_cumprimento) || '-'}</span></div>
+                        <!-- [v1.4.3] FOTO + SUSPEITO -->
+                        <div class="col-md-12">
+                            <div class="section-title" style="margin-top:0;">
+                                <i class="fas fa-user-secret"></i> SUSPEITO VINCULADO
+                            </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor"><strong>${s.nome_completo || '-'}</strong></span></div>
+                        <div class="col-md-4 text-center">
+                            <span class="foto-label-mandado"><i class="fas fa-camera me-1"></i>Foto do Suspeito</span>
+                            ${fotoHTML}
+                        </div>
+                        <div class="col-md-8">
+                            <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${s.nome_completo || '-'}</strong></span></div>
                             <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
@@ -1534,18 +1713,40 @@
                             <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
                         </div>
+
+                        <!-- DADOS DO MANDADO -->
+                        <div class="col-md-12">
+                            <div class="section-title">
+                                <i class="fas fa-gavel"></i> DADOS DO MANDADO
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Número do Mandado</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div>
+                            <div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div>
+                            <div class="detalhe-campo"><span class="label">Status</span><span class="valor"><span class="badge-status status-${(m.status || 'ativo').toLowerCase()}">${m.status || '-'}</span></span></div>
+                            <div class="detalhe-campo"><span class="label">Prioridade</span><span class="valor"><span class="badge-prioridade prioridade-${(m.prioridade || 'normal').toLowerCase()}">${m.prioridade || '-'}</span></span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Data de Emissão</span><span class="valor">${formatarData(m.data_emissao) || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Data de Validade</span><span class="valor">${formatarData(m.data_validade) || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Data de Cumprimento</span><span class="valor">${formatarData(m.data_cumprimento) || '-'}</span></div>
+                        </div>
+
                         <div class="col-md-12">
                             <div class="detalhe-campo"><span class="label">Juiz</span><span class="valor">${m.juiz_nome || '-'} ${m.juiz_matricula ? '(' + m.juiz_matricula + ')' : ''}</span></div>
                             <div class="detalhe-campo"><span class="label">Vara/Tribunal</span><span class="valor">${m.vara_tribunal || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Número do Processo</span><span class="valor">${m.processo_numero || '-'}</span></div>
                         </div>
+
                         <div class="col-md-12">
                             <div class="detalhe-campo"><span class="label">Endereço de Cumprimento (Mandado)</span><span class="valor"><i class="fas fa-map-marked-alt" style="color:#00ff88;margin-right:6px;"></i>${enderecoMandado}</span></div>
                             ${m.latitude && m.longitude ? `<div class="detalhe-campo"><span class="label">Coordenadas Geográficas</span><span class="valor"><i class="fas fa-map-marker-alt" style="color:#00ff88;margin-right:6px;"></i>${m.latitude}, ${m.longitude}</span></div>` : ''}
                         </div>
+
                         <div class="col-md-12">
                             ${bnmpHTML}
                         </div>
+
                         <div class="col-md-12">
                             <div class="detalhe-campo"><span class="label">Descrição</span><span class="valor">${m.descricao || '-'}</span></div>
                             ${m.observacoes ? `<div class="detalhe-campo"><span class="label">Observações</span><span class="valor">${m.observacoes}</span></div>` : ''}
@@ -2290,6 +2491,7 @@
         document.addEventListener('keydown', function(e) { 
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); } 
             if (e.key === 'Escape') {
+                fecharLightboxMandado();
                 fecharDetalhes();
                 fecharEdicao();
                 fecharCumprir();
@@ -2330,7 +2532,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.4.2 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.4.3 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
