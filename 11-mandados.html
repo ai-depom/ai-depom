@@ -1,9 +1,16 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.4.3
-     Data: 18/09/2026 - 03:00
+     Versão: 1.4.4
+     Data: 18/09/2026 - 03:30
      ============================================================
+     ALTERAÇÕES v1.4.4 (18/09/2026 03:30):
+     - ✨ NOVO: Foto do suspeito também no modal de EDIÇÃO (lápis)
+       - Seção "SUSPEITO VINCULADO" no topo do formulário de edição
+       - Foto clicável → lightbox (mesmo padrão do modal de detalhes)
+       - Mostra nome, CPF e status do suspeito
+     - ✅ Preservadas TODAS as funcionalidades da v1.4.3
+
      ALTERAÇÕES v1.4.3 (18/09/2026 03:00):
      - ✨ NOVO: Foto do suspeito vinculado exibida em Detalhes do Mandado
        - Foto grande à esquerda, dados do suspeito ao lado
@@ -1047,7 +1054,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.4.3 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.4.4 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1628,7 +1635,6 @@
 
                 const s = m.suspeito || {};
 
-                // [v1.4.3] Buscar foto do suspeito vinculado
                 let fotoUrl = null;
                 if (s.id_suspeito) {
                     try {
@@ -1694,7 +1700,6 @@
 
                 body.innerHTML = `
                     <div class="row g-3">
-                        <!-- [v1.4.3] FOTO + SUSPEITO -->
                         <div class="col-md-12">
                             <div class="section-title" style="margin-top:0;">
                                 <i class="fas fa-user-secret"></i> SUSPEITO VINCULADO
@@ -1714,7 +1719,6 @@
                             <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
                         </div>
 
-                        <!-- DADOS DO MANDADO -->
                         <div class="col-md-12">
                             <div class="section-title">
                                 <i class="fas fa-gavel"></i> DADOS DO MANDADO
@@ -1769,7 +1773,7 @@
         }
 
         // ============================================================
-        // EDITAR MANDADO (v1.4.2 - com endereço e coordenadas)
+        // EDITAR MANDADO  [v1.4.4 - com FOTO do suspeito]
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -1789,8 +1793,76 @@
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
 
+                // [v1.4.4] Buscar dados + foto do suspeito vinculado
+                let suspeito = null;
+                let fotoUrl = null;
+                if (m.id_suspeito) {
+                    try {
+                        const { data: sData } = await window.supabaseClient
+                            .from('suspeito')
+                            .select('id_suspeito, nome_completo, apelido, cpf, status_atual')
+                            .eq('id_suspeito', m.id_suspeito)
+                            .maybeSingle();
+                        suspeito = sData || null;
+
+                        const { data: midias } = await window.supabaseClient
+                            .from('arquivo_midia')
+                            .select('caminho_fisico, nome_seguro, tipo_midia')
+                            .eq('tipo_entidade', 'SUSPEITO')
+                            .eq('id_entidade', m.id_suspeito)
+                            .eq('tipo_midia', 'FOTO')
+                            .eq('deletado', false);
+
+                        const principal = (midias || []).find(x =>
+                            x.nome_seguro && x.nome_seguro.toLowerCase().includes('principal')
+                        ) || (midias || [])[0];
+
+                        if (principal && principal.caminho_fisico) {
+                            const { data: signed } = await window.supabaseClient.storage
+                                .from(BUCKET_FOTOS)
+                                .createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
+                            fotoUrl = signed?.signedUrl || null;
+                        }
+                    } catch (e) {
+                        console.warn('⚠️ Erro ao buscar foto do suspeito na edição:', e);
+                    }
+                }
+
+                const fotoEdicaoHTML = fotoUrl
+                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar">
+                           <img src="${fotoUrl}" alt="${suspeito?.nome_completo || 'Suspeito'}" class="mandado-foto" />
+                       </div>`
+                    : `<div class="mandado-foto-placeholder">
+                           <i class="fas fa-user-secret"></i>
+                           <span>Sem foto cadastrada</span>
+                       </div>`;
+
+                const nomeSuspeito = suspeito?.nome_completo || 'Não vinculado';
+                const cpfSuspeito = suspeito?.cpf || '-';
+                const statusSuspeito = suspeito?.status_atual || '-';
+
                 body.innerHTML = `
                     <form id="formEdicao" novalidate>
+                        <!-- [v1.4.4] SUSPEITO VINCULADO + FOTO -->
+                        <div class="section-title" style="margin-top:0;">
+                            <i class="fas fa-user-secret"></i> SUSPEITO VINCULADO
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4 text-center">
+                                <span class="foto-label-mandado"><i class="fas fa-camera me-1"></i>Foto do Suspeito</span>
+                                ${fotoEdicaoHTML}
+                            </div>
+                            <div class="col-md-8">
+                                <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${nomeSuspeito}</strong></span></div>
+                                <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${cpfSuspeito}</span></div>
+                                <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${statusSuspeito}</span></div>
+                                <small style="display:block; margin-top:10px; color:rgba(0,255,136,0.4); font-size:11px;">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    O vínculo do suspeito é definido no cadastro do mandado e não pode ser alterado por aqui.
+                                </small>
+                            </div>
+                        </div>
+
                         <div class="row g-3">
                             <div class="col-md-3">
                                 <label class="form-label">Número *</label>
@@ -2532,7 +2604,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.4.3 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.4.4 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
