@@ -2,8 +2,8 @@
      AI-DEPOM - ATIVIDADE POR USUÁRIO
      ============================================================
      Arquivo: 13-atividade-usuario.html
-     Versão: 1.2.0
-     Data: 17/09/2026 - 18:00
+     Versão: 1.3.0
+     Data: 17/09/2026 - 22:30
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,19 +15,18 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v1.3.0 (17/09/2026 22:30):
+     - ✨ NOVO: Suporte à ação VALIDACAO_BNMP no histórico
+       - Ícone de escudo (fa-shield-alt)
+       - Cor azul (#0dcaf0)
+       - Descrição detalhada com número do mandado + status
+
      ALTERAÇÕES v1.2.0 (17/09/2026 18:00):
      - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
      - ➕ Botão MINIMIZE + FULLSCREEN na controls-bar
      - ➕ toggleFullscreen() + minimizeWindow() implementados + atalho F11
-     - 🎨 FONTES REDUZIDAS (padrão das outras telas):
-       - Tabela: 13px → 12px
-       - Badges: 11px → 10px
-       - Stats: 28px → 24px
-       - Mini-stats: 22px → 18px
-       - User hero: 22px → 18px
-       - Timeline: 11px → 10px
+     - 🎨 FONTES REDUZIDAS (padrão das outras telas)
      - ✨ Botão 👁️ de histórico com onclick direto + stopPropagation()
-     - ✅ Preservadas TODAS as funcionalidades da v1.1.0
 
      ALTERAÇÕES v1.1.0 (16/09/2026 21:00):
      - ✨ NOVO: coluna "Operações" na tabela
@@ -169,12 +168,10 @@
             font-size: 20px; margin: 0 auto 12px;
             background: rgba(0, 255, 136, 0.05); color: var(--text-primary);
         }
-        /* [v1.2.0] FONTE REDUZIDA */
         .stat-card .number { font-size: 24px; font-weight: 700; color: var(--text-primary); }
         .stat-card .label { font-size: 10px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
         .table-container { overflow-x: auto; }
         .table-custom { width: 100%; border-collapse: collapse; }
-        /* [v1.2.0] FONTE REDUZIDA */
         .table-custom th {
             color: rgba(0, 255, 136, 0.4); font-size: 10px; text-transform: uppercase;
             letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color);
@@ -193,7 +190,6 @@
             display: flex; align-items: center; justify-content: center;
             font-weight: 700; font-size: 12px; color: #000; flex-shrink: 0;
         }
-        /* [v1.2.0] FONTE REDUZIDA */
         .user-cell .user-nome { font-size: 12px; color: var(--text-primary); font-weight: 600; }
         .user-cell .user-meta { font-size: 9px; color: rgba(0, 255, 136, 0.3); }
         .num-badge {
@@ -248,7 +244,6 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 32px; font-weight: 700; color: #000;
         }
-        /* [v1.2.0] FONTE REDUZIDA */
         .user-hero .info h3 { color: var(--text-primary); font-size: 18px; margin: 0 0 8px 0; }
         .user-hero .info .meta { color: rgba(0, 255, 136, 0.5); font-size: 11px; line-height: 1.8; }
         .user-hero .info .meta i { width: 20px; }
@@ -261,7 +256,6 @@
             border: 1px solid var(--border-color);
             border-radius: 10px; padding: 14px; text-align: center;
         }
-        /* [v1.2.0] FONTE REDUZIDA */
         .mini-stat .num { font-size: 18px; font-weight: 700; color: var(--text-primary); }
         .mini-stat .lbl { font-size: 9px; color: rgba(0, 255, 136, 0.3); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
         .timeline-list { max-height: 500px; overflow-y: auto; padding-right: 8px; }
@@ -272,7 +266,6 @@
             border-radius: 8px; transition: all 0.3s;
         }
         .timeline-row:hover { border-left-color: var(--text-primary); background: rgba(0, 255, 136, 0.03); }
-        /* [v1.2.0] FONTE REDUZIDA */
         .timeline-row .tl-hora {
             min-width: 140px; color: rgba(0, 255, 136, 0.4);
             font-size: 10px; font-family: monospace; padding-top: 2px;
@@ -464,7 +457,8 @@
             'CRIAR_OPERACAO': 'fa-bullseye',
             'UPDATE': 'fa-edit', 'DELETE': 'fa-trash',
             'DESATIVAR': 'fa-user-slash', 'RESET_SENHA': 'fa-key',
-            'TROCA_PERFIL': 'fa-exchange-alt', 'UPLOAD': 'fa-upload'
+            'TROCA_PERFIL': 'fa-exchange-alt', 'UPLOAD': 'fa-upload',
+            'VALIDACAO_BNMP': 'fa-shield-alt'
         };
         const CORES_ACAO = {
             'LOGIN': '#0dcaf0', 'LOGOUT': '#6c757d',
@@ -472,11 +466,12 @@
             'CRIAR_OPERACAO': '#ff5722',
             'UPDATE': '#ffc107', 'DELETE': '#dc3545',
             'DESATIVAR': '#dc3545', 'RESET_SENHA': '#ba68c8',
-            'TROCA_PERFIL': '#ff5722', 'UPLOAD': '#0dcaf0'
+            'TROCA_PERFIL': '#ff5722', 'UPLOAD': '#0dcaf0',
+            'VALIDACAO_BNMP': '#0dcaf0'
         };
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Atividade por Usuario v1.2.0 iniciado');
+            console.log('AI-DEPOM - Atividade por Usuario v1.3.0 iniciado');
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -678,6 +673,7 @@
                     <span class="chip ${filtroAtivo === 'UPDATE' ? 'ativo' : ''}" onclick="setFiltro('UPDATE')">Edicoes</span>
                     <span class="chip ${filtroAtivo === 'DELETE' ? 'ativo' : ''}" onclick="setFiltro('DELETE')">Exclusoes</span>
                     <span class="chip ${filtroAtivo === 'CRIAR_OPERACAO' ? 'ativo' : ''}" onclick="setFiltro('CRIAR_OPERACAO')">Operacoes</span>
+                    <span class="chip ${filtroAtivo === 'VALIDACAO_BNMP' ? 'ativo' : ''}" onclick="setFiltro('VALIDACAO_BNMP')">Validações BNMP</span>
                     <span class="chip ${filtroAtivo === 'TROCA_PERFIL' ? 'ativo' : ''}" onclick="setFiltro('TROCA_PERFIL')">Trocas de Perfil</span>
                     <span class="chip ${filtroAtivo === 'RESET_SENHA' ? 'ativo' : ''}" onclick="setFiltro('RESET_SENHA')">Resets Senha</span>
                 </div>
@@ -725,7 +721,7 @@
                 case 'INSERT': return 'Nova insercao no sistema';
                 case 'CRIAR_OPERACAO': return `Criou operacao${dados.nome_operacao ? ' - ' + dados.nome_operacao : ''}`;
                 case 'UPDATE':
-                    const campos = Object.keys(dados).filter(k => k !== 'justificativa');
+                    const campos = Object.keys(dados).filter(k => k !== 'justificativa' && k !== 'tipo_evento');
                     return `Alterou ${campos.length} campo(s)${dados.justificativa ? ' - ' + dados.justificativa : ''}`;
                 case 'TROCA_PERFIL':
                     const de = antigos.nome_perfil || antigos.id_perfil_acesso || '?';
@@ -734,6 +730,8 @@
                 case 'RESET_SENHA': return 'Resetou senha de usuario';
                 case 'DESATIVAR': return 'Desativou usuario';
                 case 'UPLOAD': return `Upload${dados.nome_original ? ' - ' + dados.nome_original : ''}`;
+                case 'VALIDACAO_BNMP':
+                    return `Validou mandado <strong>${dados.numero_mandado || '-'}</strong> no BNMP: <strong style="color:#00ff88;">${dados.status_novo || '-'}</strong>${dados.observacao_nova ? ' — ' + dados.observacao_nova : ''}`;
                 default: return h.acao || 'Acao';
             }
         }
@@ -796,7 +794,7 @@
         }
 
         // ============================================================
-        // [v1.2.0] CONTROLES DE JANELA
+        // CONTROLES DE JANELA
         // ============================================================
         function minimizeWindow() {
             try {
@@ -826,7 +824,6 @@
             }
         }
 
-        // Atualiza o ícone do botão fullscreen
         document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
         document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
         document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
@@ -844,7 +841,6 @@
             btn.className = isFullscreen ? 'fas fa-compress' : 'fas fa-expand';
         }
 
-        // Atalhos de teclado
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11') {
                 e.preventDefault();
