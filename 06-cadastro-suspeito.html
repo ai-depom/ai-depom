@@ -2,8 +2,8 @@
      AI-DEPOM - CADASTRO DE SUSPEITOS
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.3.0
-     Data: 18/09/2026 - 04:45
+     Versão: 3.3.1
+     Data: 18/09/2026 - 05:15
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,25 +15,29 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v3.3.1 (18/09/2026 05:15):
+     - 🐛 CORRIGIDO: Checagem de CPF duplicado não estava funcionando
+       - Problema: a query usava o CPF COM máscara (998.857.005-87)
+         mas o banco armazena SEM máscara (99885700587)
+       - Correção: usar `cpf` (só números) em vez de `input.value.trim()`
+         na função checarDuplicidadeCpf()
+       - Correção: usar `cpfLimpo` em vez de `cpf` no bloco de bloqueio
+         do submit
+     - ✅ Preservadas TODAS as funcionalidades da v3.3.0
+
      ALTERAÇÕES v3.3.0 (18/09/2026 04:45):
      - ✨ ETAPA 1: Checagem de CPF duplicado em 3 camadas
        - Máscara de CPF em tempo real (000.000.000-00)
-       - Aviso visual abaixo do campo enquanto digita (com debounce)
-       - Bloqueio total no momento de salvar (não permite CPF duplicado)
+       - Aviso visual abaixo do campo enquanto digita
+       - Bloqueio total no momento de salvar
      - ✨ ETAPA 2: Checagem de nome duplicado (com homônimos)
-       - Aviso visual abaixo do campo ao digitar nome já existente
-       - Confirm no salvar (permite continuar se for homônimo)
-     - 🎨 CSS: adicionadas classes .aviso-duplicidade e .input-duplicado
-     - ✅ Preservadas TODAS as funcionalidades da v3.2.0
+       - Aviso visual abaixo do campo
+       - Confirm no salvar (permite homônimos)
 
      ALTERAÇÕES v3.2.0 (18/09/2026 04:00):
-     - Foto Principal movida para o canto superior esquerdo da Identificação
+     - Foto Principal no canto superior esquerdo da Identificação
      - Foto Secundária na seção de Fotos Complementares
      - Fotos de Tatuagem (múltiplas)
-     - Upload para bucket fotos-suspeitos + insert arquivo_midia
-
-     ALTERAÇÕES v3.1.0 (18/09/2026 03:00):
-     - Foto Principal + Secundária + Tatuagens
      ============================================================
 -->
 <!DOCTYPE html>
@@ -173,9 +177,7 @@
         .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
 
-        /* ============================================================
-           FOTO PRINCIPAL (canto superior esquerdo da Identificação)
-           ============================================================ */
+        /* FOTO PRINCIPAL (canto superior esquerdo da Identificação) */
         .foto-principal-wrapper {
             border: 2px solid var(--border-color);
             border-radius: 12px;
@@ -245,9 +247,7 @@
             margin-bottom: 8px;
         }
 
-        /* ============================================================
-           UPLOAD DE FOTOS (secundária / tatuagens)
-           ============================================================ */
+        /* UPLOAD DE FOTOS (secundária / tatuagens) */
         .foto-upload-area {
             border: 2px dashed var(--border-color);
             border-radius: 12px;
@@ -347,9 +347,7 @@
         }
         .tatuagem-upload-btn i { font-size: 26px; margin-bottom: 6px; }
 
-        /* ============================================================
-           [v3.3.0] CHECAGEM DE DUPLICIDADE (CPF + Nome)
-           ============================================================ */
+        /* [v3.3.0] CHECAGEM DE DUPLICIDADE (CPF + Nome) */
         .aviso-duplicidade {
             display: flex; align-items: center; gap: 6px;
             padding: 6px 10px; border-radius: 8px;
@@ -490,9 +488,7 @@
 
         <form id="formCadastro" novalidate>
 
-            <!-- ============================================================
-                 IDENTIFICAÇÃO (com FOTO PRINCIPAL no canto superior esquerdo)
-                 ============================================================ -->
+            <!-- IDENTIFICAÇÃO (com FOTO PRINCIPAL no canto superior esquerdo) -->
             <div class="form-card">
                 <div class="card-title"><i class="fas fa-id-card"></i>Identificação</div>
 
@@ -522,7 +518,6 @@
                         <div class="row g-3">
                             <div class="col-md-12">
                                 <label class="form-label">Nome Completo *</label>
-                                <!-- [v3.3.0] Adicionado oninput e onblur para checar duplicidade -->
                                 <input type="text" class="form-control" id="nome_completo" maxlength="200" required
                                        oninput="checarDuplicidadeNomeDebounce()"
                                        onblur="checarDuplicidadeNome()">
@@ -534,7 +529,6 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">CPF *</label>
-                                <!-- [v3.3.0] Adicionado oninput (máscara + checagem) e onblur (checagem) -->
                                 <input type="text" class="form-control" id="cpf" maxlength="14" placeholder="000.000.000-00" required
                                        oninput="mascaraCpf(this); checarDuplicidadeCpfDebounce()"
                                        onblur="checarDuplicidadeCpf()">
@@ -570,9 +564,7 @@
                 </div>
             </div>
 
-            <!-- ============================================================
-                 FOTOS COMPLEMENTARES (Secundária + Tatuagens)
-                 ============================================================ -->
+            <!-- FOTOS COMPLEMENTARES (Secundária + Tatuagens) -->
             <div class="form-card">
                 <div class="card-title"><i class="fas fa-images"></i>Fotos Complementares</div>
 
@@ -802,12 +794,11 @@
         }
 
         // ============================================================
-        // [v3.3.0] ETAPA 1 — MÁSCARA E CHECAGEM DE CPF DUPLICADO
+        // [v3.3.0] MÁSCARA E CHECAGEM DE CPF DUPLICADO
         // ============================================================
 
         /**
          * Aplica máscara no CPF: 000.000.000-00
-         * Chamada a cada tecla digitada (oninput)
          */
         function mascaraCpf(input) {
             let v = input.value.replace(/\D/g, '').slice(0, 11);
@@ -818,8 +809,7 @@
         }
 
         /**
-         * Debounce da checagem de CPF (evita várias queries enquanto digita)
-         * Aguarda 600ms após a última tecla
+         * Debounce da checagem de CPF (600ms)
          */
         let _timerCpf = null;
         function checarDuplicidadeCpfDebounce() {
@@ -828,15 +818,16 @@
         }
 
         /**
-         * Verifica se o CPF já está cadastrado na tabela `suspeito`
-         * Se sim: mostra aviso vermelho + borda vermelha no campo
-         * Se não: mostra "CPF disponível" por 2.5s
+         * [v3.3.1] Verifica se o CPF já está cadastrado
+         * CORREÇÃO: usa `cpf` (apenas números) na query,
+         * porque o banco armazena SEM máscara.
          */
         async function checarDuplicidadeCpf() {
             const input = document.getElementById('cpf');
             const aviso = document.getElementById('avisoCpf');
             if (!input || !aviso) return false;
 
+            // Pega só os números (o banco guarda sem máscara)
             const cpf = (input.value || '').replace(/\D/g, '');
 
             input.classList.remove('input-duplicado');
@@ -853,7 +844,7 @@
                 const { data, error } = await sb.from('suspeito')
                     .select('id_suspeito, nome_completo')
                     .eq('deletado', false)
-                    .eq('cpf', input.value.trim())
+                    .eq('cpf', cpf)   // ← [v3.3.1] usa cpf SEM máscara
                     .limit(1);
                 if (error) throw error;
 
@@ -876,23 +867,14 @@
         }
 
         // ============================================================
-        // [v3.3.0] ETAPA 2 — CHECAGEM DE NOME DUPLICADO
+        // [v3.3.0] CHECAGEM DE NOME DUPLICADO
         // ============================================================
-
-        /**
-         * Debounce da checagem de nome (aguarda 700ms após a última tecla)
-         */
         let _timerNome = null;
         function checarDuplicidadeNomeDebounce() {
             clearTimeout(_timerNome);
             _timerNome = setTimeout(checarDuplicidadeNome, 700);
         }
 
-        /**
-         * Verifica se já existe suspeito com o mesmo nome completo
-         * Se sim: mostra aviso vermelho (a pergunta final é feita no submit)
-         * Se não: mostra "Nome disponível" por 2.5s
-         */
         async function checarDuplicidadeNome() {
             const input = document.getElementById('nome_completo');
             const aviso = document.getElementById('avisoNome');
@@ -1024,7 +1006,7 @@
         }
 
         // ============================================================
-        // [v3.3.0] SALVAR COM VALIDAÇÕES DE DUPLICIDADE
+        // [v3.3.1] SALVAR COM VALIDAÇÕES DE DUPLICIDADE
         // ============================================================
         document.getElementById('formCadastro').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1045,14 +1027,15 @@
                 if (!dataNasc) throw new Error('Informe a data de nascimento.');
                 if (!status) throw new Error('Selecione o status atual.');
 
-                // ---------- [v3.3.0] BLOQUEIO DE CPF DUPLICADO ----------
-                // Se o CPF já existe, bloqueia o cadastro (não permite continuar)
+                // ---------- [v3.3.1] BLOQUEIO DE CPF DUPLICADO ----------
+                // CORREÇÃO: usa `cpfLimpo` (apenas números) na query,
+                // porque o banco armazena o CPF SEM máscara.
                 const cpfLimpo = cpf.replace(/\D/g, '');
                 if (cpfLimpo.length === 11) {
                     const { data: cpfExistente, error: errCpf } = await sb.from('suspeito')
                         .select('id_suspeito, nome_completo')
                         .eq('deletado', false)
-                        .eq('cpf', cpf)
+                        .eq('cpf', cpfLimpo)   // ← [v3.3.1] sem máscara
                         .limit(1);
 
                     if (errCpf) throw errCpf;
@@ -1072,7 +1055,6 @@
                 // ---------- FIM DO BLOQUEIO DE CPF ----------
 
                 // ---------- [v3.3.0] AVISO DE NOME DUPLICADO ----------
-                // Se já existe alguém com o mesmo nome, PERGUNTA (por causa de homônimos)
                 const { data: nomeExistente, error: errNome } = await sb.from('suspeito')
                     .select('id_suspeito, nome_completo, cpf')
                     .eq('deletado', false)
@@ -1165,7 +1147,6 @@
 
                 const totalFotos = (fotoPrincipalArquivo ? 1 : 0) + (fotoSecundariaArquivo ? 1 : 0) + tatuagensArquivos.length;
 
-                // ---------- Feedback final ----------
                 if (errosUpload.length > 0) {
                     showToast('warning', 'Suspeito salvo, mas algumas fotos falharam', errosUpload.join('<br>'), 10000);
                 } else {
@@ -1228,7 +1209,7 @@
             removerFotoSecundaria();
             tatuagensArquivos = [];
             renderizarTatuagens();
-            // [v3.3.0] Limpa os avisos de duplicidade
+            // Limpa os avisos de duplicidade
             const avisoCpf = document.getElementById('avisoCpf');
             const avisoNome = document.getElementById('avisoNome');
             if (avisoCpf) { avisoCpf.style.display = 'none'; avisoCpf.innerHTML = ''; }
@@ -1297,7 +1278,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Cadastro v3.3.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Cadastro v3.3.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             renderizarTatuagens();
         });
