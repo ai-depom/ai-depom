@@ -1,10 +1,19 @@
-<!-- ============================================================
+ <!-- ============================================================
      AI-DEPOM - MAPA DE MANDADOS
      ============================================================
      Arquivo: 15-mapa-mandados.html
-     Versão: 1.0.0
-     Data: 17/09/2026 - 12:00
+     Versão: 1.1.0
+     Data: 18/09/2026 - 08:45
      ============================================================
+     ALTERAÇÕES v1.1.0 (18/09/2026 08:45):
+     - 🔒 SEGURANÇA: consulta migrada para RPC buscar_mandados_mapa()
+       - Elimina embed suspeito:suspeito(...) do PostgREST
+       - Fim do erro "column reference id_suspeito is ambiguous"
+       - 1 round-trip em vez de 1 query com JOIN
+       - Função retorna suspeito já achatado (nome_suspeito, cpf_suspeito...)
+     - ✅ Preservadas TODAS as funcionalidades da v1.0.0
+       (mapa, cluster, popups, legenda, estatísticas, cores por status)
+
      ALTERAÇÕES v1.0.0 (17/09/2026 12:00):
      - ✨ NOVO: Mapa exclusivo de Mandados
      - 🎨 Cores por status de execução:
@@ -404,7 +413,7 @@
         const DIAS_NOVO_MANDADO = 7;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Mandados v1.0.0 iniciado');
+            console.log('AI-DEPOM - Mapa de Mandados v1.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -476,28 +485,43 @@
             return 'ativo';
         }
 
+        // ============================================================
+        // [v1.1.0] CARREGAR MANDADOS — via RPC buscar_mandados_mapa
+        // Elimina o embed suspeito:suspeito(...) que causava
+        // "column reference id_suspeito is ambiguous".
+        // ============================================================
         async function carregarMandados() {
-            console.log('📡 Carregando mandados...');
+            console.log('📡 Carregando mandados (RPC buscar_mandados_mapa)...');
             try {
-                const { data, error } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .select(`
-                        id_mandado, numero_mandado, tipo_mandado, status, prioridade,
-                        juiz_nome, vara_tribunal, data_emissao, data_validade, data_cadastro,
-                        descricao, observacoes,
-                        latitude, longitude,
-                        suspeito:suspeito (
-                            id_suspeito, nome_completo, apelido, cpf, bairro, cidade, uf
-                        )
-                    `)
-                    .eq('deletado', false)
-                    .not('latitude', 'is', null)
-                    .not('longitude', 'is', null);
-
+                const { data, error } = await window.supabaseClient.rpc('buscar_mandados_mapa');
                 if (error) throw error;
 
+                // Transforma o resultado plano da RPC no formato que o resto
+                // do código já espera (com objeto `suspeito` aninhado).
                 todosMandados = (data || []).map(m => ({
-                    ...m,
+                    id_mandado:     m.id_mandado,
+                    numero_mandado: m.numero_mandado,
+                    tipo_mandado:   m.tipo_mandado,
+                    status:         m.status,
+                    prioridade:     m.prioridade,
+                    juiz_nome:      m.juiz_nome,
+                    vara_tribunal:  m.vara_tribunal,
+                    data_emissao:   m.data_emissao,
+                    data_validade:  m.data_validade,
+                    data_cadastro:  m.data_cadastro,
+                    descricao:      m.descricao,
+                    observacoes:    m.observacoes,
+                    latitude:       m.latitude,
+                    longitude:      m.longitude,
+                    suspeito: {
+                        id_suspeito:    m.id_suspeito,
+                        nome_completo:  m.nome_suspeito,
+                        apelido:        m.apelido_suspeito,
+                        cpf:            m.cpf_suspeito,
+                        bairro:         m.bairro_suspeito,
+                        cidade:         m.cidade_suspeito,
+                        uf:             m.uf_suspeito
+                    },
                     tipo_ponto: 'MANDADO',
                     lat: parseFloat(m.latitude),
                     lng: parseFloat(m.longitude),
@@ -511,6 +535,8 @@
                 console.error('❌ Erro ao carregar mandados:', error);
                 todosMandados = [];
                 renderizarEstatisticas();
+                showToast('error', 'Erro ao carregar mandados',
+                    error.message || 'Falha na consulta ao banco.', 8000);
             }
         }
 
@@ -680,7 +706,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina Mapa de Mandados v1.0.0 carregada');
+        console.log('✅ Pagina Mapa de Mandados v1.1.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
