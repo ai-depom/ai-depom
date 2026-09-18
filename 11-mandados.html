@@ -1,40 +1,30 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.4.4
-     Data: 18/09/2026 - 03:30
+     Versão: 1.5.0
+     Data: 18/09/2026 - 07:45
      ============================================================
+     ALTERAÇÕES v1.5.0 (18/09/2026 07:45):
+     - 🔒 SEGURANÇA: lista de mandados migrada para RPC buscar_mandado
+       - sb.rpc('buscar_mandado', { p_termo, p_status, ... })
+       - Fim do erro "column reference id_suspeito is ambiguous"
+       - Filtro "__NAO_VALIDADO__" tratado via parâmetro sentinela
+     - 🐛 FIX: verDetalhes() e abrirValidacaoBNMP() SEM embed
+       - Buscam suspeito separadamente via id_suspeito
+       - Elimina ambiguidade no PostgREST
+     - ✅ Preservadas TODAS as funcionalidades da v1.4.4
+
      ALTERAÇÕES v1.4.4 (18/09/2026 03:30):
      - ✨ NOVO: Foto do suspeito também no modal de EDIÇÃO (lápis)
-       - Seção "SUSPEITO VINCULADO" no topo do formulário de edição
-       - Foto clicável → lightbox (mesmo padrão do modal de detalhes)
-       - Mostra nome, CPF e status do suspeito
-     - ✅ Preservadas TODAS as funcionalidades da v1.4.3
 
      ALTERAÇÕES v1.4.3 (18/09/2026 03:00):
-     - ✨ NOVO: Foto do suspeito vinculado exibida em Detalhes do Mandado
-       - Foto grande à esquerda, dados do suspeito ao lado
-       - Clique na foto → lightbox em tela cheia (mesmo padrão do 07-consulta)
-       - Fallback "Sem foto cadastrada" quando não houver
-     - ✨ Novas funções abrirLightboxMandado() / fecharLightboxMandado()
-     - ✅ Preservadas TODAS as funcionalidades da v1.4.2
+     - ✨ NOVO: Foto do suspeito vinculado em Detalhes do Mandado
 
      ALTERAÇÕES v1.4.2 (18/09/2026 02:00):
      - ✨ NOVO: Endereço de cumprimento no modal de edição
-       - CEP + auto-preenchimento via ViaCEP
-       - Logradouro, número, complemento, bairro, cidade, UF
-     - ✨ NOVO: Coordenadas geográficas no modal de edição
-       - Botão "Buscar Coordenadas" via Nominatim
-       - Aceita vírgula ou ponto
-     - ✨ NOVO: 4 helpers (mascaraCepMandado, sanitizarCoordMandado,
-       parseCoordMandado, buscarCepMandado, buscarCoordenadasMandado)
-     - 🔗 Colunas adicionadas no banco (7 de endereço)
-     - ✅ Preservadas TODAS as funcionalidades da v1.4.1
 
      ALTERAÇÕES v1.4.1 (18/09/2026 01:00):
      - ✨ NOVO: Badge de aviso "X mandados não validados no BNMP"
-     - ✨ NOVO: Filtro "Status BNMP" nos filtros avançados
-     - ✨ NOVO: Botão "Abrir todos no BNMP" (abre até 5 abas)
 
      ALTERAÇÕES v1.4.0 (17/09/2026 22:00):
      - ✨ Validação manual BNMP com ícones por status
@@ -288,7 +278,6 @@
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
         .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
 
-        /* BADGE DE AVISO - MANDADOS NÃO VALIDADOS */
         .aviso-nao-validados {
             background: rgba(255, 193, 7, 0.08);
             border: 1px solid rgba(255, 193, 7, 0.3);
@@ -372,7 +361,6 @@
             background: rgba(255, 193, 7, 0.1);
         }
 
-        /* BNMP - Badges e ícones */
         .bnmp-badge {
             cursor: pointer;
             font-size: 18px;
@@ -422,7 +410,6 @@
         }
         .aviso-bnmp i { margin-right: 6px; }
 
-        /* MODAIS */
         .modal-custom {
             display: none; position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -480,9 +467,6 @@
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        /* ============================================================
-           [v1.4.3] FOTO DO SUSPEITO NO MODAL DE DETALHES + LIGHTBOX
-           ============================================================ */
         .mandado-foto-wrapper {
             display: inline-block;
             position: relative;
@@ -999,9 +983,6 @@
         </div>
     </div>
 
-    <!-- ============================================================
-         [v1.4.3] LIGHTBOX DE FOTO
-         ============================================================ -->
     <div class="foto-lightbox" id="fotoLightboxMandado" onclick="fecharLightboxMandado(event)">
         <button class="fechar" onclick="fecharLightboxMandado(event)"><i class="fas fa-times"></i></button>
         <img id="fotoLightboxMandadoImg" src="" alt="Foto do suspeito" />
@@ -1054,7 +1035,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.4.4 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.5.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1181,7 +1162,7 @@
         }
 
         // ============================================================
-        // [v1.4.3] LIGHTBOX DE FOTO
+        // LIGHTBOX DE FOTO
         // ============================================================
         function abrirLightboxMandado(url) {
             if (!url) return;
@@ -1476,7 +1457,7 @@
         }
 
         // ============================================================
-        // CARREGAR MANDADOS
+        // CARREGAR MANDADOS  [v1.5.0 — via RPC buscar_mandado]
         // ============================================================
         async function carregarMandados() {
             const container = document.getElementById('listaMandados');
@@ -1487,65 +1468,50 @@
             infoContainer.innerHTML = '';
 
             try {
-                const status = document.getElementById('filtroStatusLista').value;
-                const tipo = document.getElementById('filtroTipoLista').value;
-                const prioridade = document.getElementById('filtroPrioridadeLista').value;
-                const filtroBnmp = document.getElementById('filtroBnmpLista').value;
+                const status = document.getElementById('filtroStatusLista').value || null;
+                const tipo = document.getElementById('filtroTipoLista').value || null;
+                const prioridade = document.getElementById('filtroPrioridadeLista').value || null;
+                const filtroBnmp = document.getElementById('filtroBnmpLista').value || null;
 
                 if (filtroBnmp !== '__NAO_VALIDADO__') {
                     filtroNaoValidadosAtivo = false;
                 }
 
-                let countQuery = window.supabaseClient
-                    .from('mandado_prisao')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('deletado', false);
-                if (status) countQuery = countQuery.eq('status', status);
-                if (tipo) countQuery = countQuery.eq('tipo_mandado', tipo);
-                if (prioridade) countQuery = countQuery.eq('prioridade', prioridade);
-                if (filtroBnmp === '__NAO_VALIDADO__') {
-                    countQuery = countQuery.is('validacao_bnmp_status', null);
-                } else if (filtroBnmp) {
-                    countQuery = countQuery.eq('validacao_bnmp_status', filtroBnmp);
-                }
+                // [v1.5.0] RPC — termo/vínculo vai como PARÂMETRO, sem ambiguidade
+                const p_bnmp_status = filtroBnmp === '__NAO_VALIDADO__'
+                    ? '__NAO_VALIDADO__'
+                    : (filtroBnmp || null);
 
-                const { count: totalGeral } = await countQuery;
-
-                let query = window.supabaseClient
-                    .from('mandado_prisao')
-                    .select(`
-                        *,
-                        suspeito:suspeito (
-                            id_suspeito,
-                            nome_completo,
-                            apelido,
-                            cpf
-                        )
-                    `)
-                    .eq('deletado', false);
-
-                if (status) query = query.eq('status', status);
-                if (tipo) query = query.eq('tipo_mandado', tipo);
-                if (prioridade) query = query.eq('prioridade', prioridade);
-                if (filtroBnmp === '__NAO_VALIDADO__') {
-                    query = query.is('validacao_bnmp_status', null);
-                } else if (filtroBnmp) {
-                    query = query.eq('validacao_bnmp_status', filtroBnmp);
-                }
-
-                const { data, error } = await query
-                    .order('id_mandado', { ascending: false })
-                    .limit(LIMITE_LISTA);
+                const { data: rows, error } = await window.supabaseClient.rpc('buscar_mandado', {
+                    p_termo:        null,
+                    p_status:       status,
+                    p_tipo_mandado: tipo,
+                    p_prioridade:   prioridade,
+                    p_bnmp_status:  p_bnmp_status,
+                    p_data_inicio:  null,
+                    p_data_fim:     null,
+                    p_limit:        LIMITE_LISTA,
+                    p_offset:       0
+                });
 
                 if (error) throw error;
 
-                mandadosAtuais = data || [];
-                document.getElementById('totalMandadosBadge').innerHTML = 
-                    '<i class="fas fa-list"></i> ' + (totalGeral || 0) + ' mandado(s)';
+                const totalGeral = (rows && rows.length > 0) ? Number(rows[0].total_count) : 0;
+
+                // Limpa o total_count de cada linha (não é campo da tabela)
+                const data = (rows || []).map(r => {
+                    const { total_count, ...rest } = r;
+                    return rest;
+                });
+
+                mandadosAtuais = data;
+
+                document.getElementById('totalMandadosBadge').innerHTML =
+                    '<i class="fas fa-list"></i> ' + totalGeral + ' mandado(s)';
 
                 await carregarNaoValidados();
 
-                if (!data || data.length === 0) {
+                if (data.length === 0) {
                     container.innerHTML = '<div class="empty-state"><i class="fas fa-gavel"></i>Nenhum mandado cadastrado com esses filtros</div>';
                     if (filtroNaoValidadosAtivo) {
                         filtroNaoValidadosAtivo = false;
@@ -1554,7 +1520,7 @@
                     return;
                 }
 
-                if (totalGeral !== null && totalGeral !== undefined && totalGeral > LIMITE_LISTA) {
+                if (totalGeral > LIMITE_LISTA) {
                     infoContainer.innerHTML = `
                         <div class="info-lista">
                             <i class="fas fa-info-circle"></i>
@@ -1577,11 +1543,10 @@
                 data.forEach(m => {
                     const statusClass = `status-${(m.status || 'ativo').toLowerCase()}`;
                     const prioridadeClass = `prioridade-${(m.prioridade || 'normal').toLowerCase()}`;
-                    const s = m.suspeito || {};
 
                     html += '<tr>';
                     html += `<td><strong style="color:var(--text-primary);">${m.numero_mandado || '#' + m.id_mandado}</strong></td>`;
-                    html += `<td>${s.nome_completo || '-'}<br><small style="color:rgba(0,255,136,0.3);">${s.cpf || ''}</small></td>`;
+                    html += `<td>${m.nome_suspeito || '-'}<br><small style="color:rgba(0,255,136,0.3);">${m.cpf_suspeito || ''}</small></td>`;
                     html += `<td>${traduzirTipo(m.tipo_mandado)}</td>`;
                     html += `<td><span class="badge-status ${statusClass}">${m.status || '-'}</span></td>`;
                     html += `<td><span class="badge-prioridade ${prioridadeClass}">${m.prioridade || 'NORMAL'}</span></td>`;
@@ -1599,7 +1564,7 @@
                 html += '</tbody></table></div>';
                 container.innerHTML = html;
 
-                console.log(`✅ ${data.length} mandados carregados`);
+                console.log(`✅ ${data.length} mandados carregados (total: ${totalGeral})`);
 
             } catch (error) {
                 console.error('❌ Erro:', error);
@@ -1608,7 +1573,7 @@
         }
 
         // ============================================================
-        // VER DETALHES  [v1.4.3 - com FOTO do suspeito]
+        // VER DETALHES  [v1.5.0 — SEM embed]
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -1617,23 +1582,26 @@
             body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
 
             try {
+                // [v1.5.0] Sem embed — evita ambiguidade id_suspeito
                 const { data: m, error } = await window.supabaseClient
                     .from('mandado_prisao')
-                    .select(`
-                        *,
-                        suspeito:suspeito (
-                            id_suspeito, nome_completo, apelido, cpf, rg,
-                            logradouro, numero, bairro, cidade, uf,
-                            status_atual, nivel_periculosidade
-                        )
-                    `)
+                    .select('*')
                     .eq('id_mandado', id)
                     .maybeSingle();
 
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
 
-                const s = m.suspeito || {};
+                // Busca o suspeito separadamente
+                let s = {};
+                if (m.id_suspeito) {
+                    const { data: sData } = await window.supabaseClient
+                        .from('suspeito')
+                        .select('id_suspeito, nome_completo, apelido, cpf, rg, logradouro, numero, bairro, cidade, uf, status_atual, nivel_periculosidade')
+                        .eq('id_suspeito', m.id_suspeito)
+                        .maybeSingle();
+                    s = sData || {};
+                }
 
                 let fotoUrl = null;
                 if (s.id_suspeito) {
@@ -1773,7 +1741,7 @@
         }
 
         // ============================================================
-        // EDITAR MANDADO  [v1.4.4 - com FOTO do suspeito]
+        // EDITAR MANDADO
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -1793,7 +1761,6 @@
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
 
-                // [v1.4.4] Buscar dados + foto do suspeito vinculado
                 let suspeito = null;
                 let fotoUrl = null;
                 if (m.id_suspeito) {
@@ -1843,7 +1810,6 @@
 
                 body.innerHTML = `
                     <form id="formEdicao" novalidate>
-                        <!-- [v1.4.4] SUSPEITO VINCULADO + FOTO -->
                         <div class="section-title" style="margin-top:0;">
                             <i class="fas fa-user-secret"></i> SUSPEITO VINCULADO
                         </div>
@@ -1915,7 +1881,6 @@
                                 <input type="date" class="form-control" id="editDataValidade" value="${m.data_validade || ''}">
                             </div>
 
-                            <!-- ENDEREÇO -->
                             <div class="col-md-12">
                                 <div class="section-title" style="margin-top:15px;">
                                     <i class="fas fa-map-marked-alt"></i> ENDEREÇO DE CUMPRIMENTO
@@ -1958,7 +1923,6 @@
                                        value="${m.uf || 'BA'}">
                             </div>
 
-                            <!-- COORDENADAS -->
                             <div class="col-md-12">
                                 <div class="section-title" style="margin-top:15px;">
                                     <i class="fas fa-map-marker-alt"></i> COORDENADAS GEOGRÁFICAS
@@ -1989,7 +1953,6 @@
                                 </small>
                             </div>
 
-                            <!-- DESCRIÇÃO -->
                             <div class="col-md-12">
                                 <label class="form-label">
                                     <i class="fas fa-file-alt me-1"></i> Descrição *
@@ -2063,8 +2026,6 @@
                     processo_numero: document.getElementById('editProcesso').value.trim() || null,
                     data_emissao: document.getElementById('editDataEmissao').value,
                     data_validade: document.getElementById('editDataValidade').value || null,
-
-                    // [v1.4.2] Endereço
                     cep: document.getElementById('editCep').value.trim() || null,
                     logradouro: document.getElementById('editLogradouro').value.trim() || null,
                     numero: document.getElementById('editNumeroEndereco').value.trim() || null,
@@ -2072,11 +2033,8 @@
                     bairro: document.getElementById('editBairro').value.trim() || null,
                     cidade: document.getElementById('editCidade').value.trim() || null,
                     uf: (document.getElementById('editUf').value.trim() || '').toUpperCase() || null,
-
-                    // [v1.4.2] Coordenadas
                     latitude: parseCoordMandado(document.getElementById('editLatitude').value),
                     longitude: parseCoordMandado(document.getElementById('editLongitude').value),
-
                     descricao: document.getElementById('editDescricao').value.trim(),
                     observacoes: document.getElementById('editObservacoes').value.trim() || null,
                     data_atualizacao: new Date().toISOString()
@@ -2103,7 +2061,7 @@
         }
 
         // ============================================================
-        // HELPERS DE ENDEREÇO / COORDENADAS (modal de edição)
+        // HELPERS DE ENDEREÇO / COORDENADAS
         // ============================================================
         function mascaraCepMandado(input) {
             let v = input.value.replace(/\D/g, '').slice(0, 8);
@@ -2259,7 +2217,7 @@
         }
 
         // ============================================================
-        // VALIDAÇÃO BNMP
+        // VALIDAÇÃO BNMP  [v1.5.0 — SEM embed]
         // ============================================================
         async function abrirValidacaoBNMP(id) {
             mandadoValidandoId = id;
@@ -2269,19 +2227,26 @@
             body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados do mandado...</div>';
 
             try {
+                // [v1.5.0] Sem embed — evita ambiguidade id_suspeito
                 const { data: m, error } = await window.supabaseClient
                     .from('mandado_prisao')
-                    .select(`
-                        *,
-                        suspeito:suspeito (id_suspeito, nome_completo, cpf, apelido)
-                    `)
+                    .select('*')
                     .eq('id_mandado', id)
                     .maybeSingle();
 
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
 
-                const s = m.suspeito || {};
+                let s = {};
+                if (m.id_suspeito) {
+                    const { data: sData } = await window.supabaseClient
+                        .from('suspeito')
+                        .select('id_suspeito, nome_completo, cpf, apelido')
+                        .eq('id_suspeito', m.id_suspeito)
+                        .maybeSingle();
+                    s = sData || {};
+                }
+
                 const statusAtual = m.validacao_bnmp_status || '';
                 const obsAtual = m.validacao_bnmp_observacao || '';
                 const dataAtual = m.validacao_bnmp_data ? new Date(m.validacao_bnmp_data).toLocaleString('pt-BR') : null;
@@ -2604,7 +2569,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.4.4 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.5.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
