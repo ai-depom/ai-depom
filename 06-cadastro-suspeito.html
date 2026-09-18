@@ -2,8 +2,8 @@
      AI-DEPOM - CADASTRO DE SUSPEITOS
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.3.1
-     Data: 18/09/2026 - 05:15
+     Versão: 3.4.0
+     Data: 18/09/2026 - 08:30
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,24 +15,21 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v3.4.0 (18/09/2026 08:30):
+     - 🔒 SEGURANÇA: Checagens de duplicidade migradas para RPC
+       - Nova RPC: verificar_duplicidade_suspeito(p_cpf, p_nome)
+       - Elimina .ilike('nome_completo', valor) vulnerável a wildcard
+       - Agora "%", "_", "*" são tratados como texto LITERAL
+       - CPF: match EXATO (só dígitos, sem máscara)
+       - Nome: match EXATO case-insensitive com TRIM
+     - ✅ Preservadas TODAS as funcionalidades da v3.3.1
+
      ALTERAÇÕES v3.3.1 (18/09/2026 05:15):
-     - 🐛 CORRIGIDO: Checagem de CPF duplicado não estava funcionando
-       - Problema: a query usava o CPF COM máscara (998.857.005-87)
-         mas o banco armazena SEM máscara (99885700587)
-       - Correção: usar `cpf` (só números) em vez de `input.value.trim()`
-         na função checarDuplicidadeCpf()
-       - Correção: usar `cpfLimpo` em vez de `cpf` no bloco de bloqueio
-         do submit
-     - ✅ Preservadas TODAS as funcionalidades da v3.3.0
+     - 🐛 CORRIGIDO: Checagem de CPF duplicado (usa cpf sem máscara)
 
      ALTERAÇÕES v3.3.0 (18/09/2026 04:45):
      - ✨ ETAPA 1: Checagem de CPF duplicado em 3 camadas
-       - Máscara de CPF em tempo real (000.000.000-00)
-       - Aviso visual abaixo do campo enquanto digita
-       - Bloqueio total no momento de salvar
      - ✨ ETAPA 2: Checagem de nome duplicado (com homônimos)
-       - Aviso visual abaixo do campo
-       - Confirm no salvar (permite homônimos)
 
      ALTERAÇÕES v3.2.0 (18/09/2026 04:00):
      - Foto Principal no canto superior esquerdo da Identificação
@@ -818,9 +815,8 @@
         }
 
         /**
-         * [v3.3.1] Verifica se o CPF já está cadastrado
-         * CORREÇÃO: usa `cpf` (apenas números) na query,
-         * porque o banco armazena SEM máscara.
+         * [v3.4.0] Verifica se o CPF já está cadastrado.
+         * Usa RPC `verificar_duplicidade_suspeito` (match exato, sem wildcards).
          */
         async function checarDuplicidadeCpf() {
             const input = document.getElementById('cpf');
@@ -841,18 +837,19 @@
             aviso.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando CPF...';
 
             try {
-                const { data, error } = await sb.from('suspeito')
-                    .select('id_suspeito, nome_completo')
-                    .eq('deletado', false)
-                    .eq('cpf', cpf)   // ← [v3.3.1] usa cpf SEM máscara
-                    .limit(1);
+                // [v3.4.0] RPC — evita qualquer injeção de wildcard
+                const { data, error } = await sb.rpc('verificar_duplicidade_suspeito', {
+                    p_cpf: cpf,
+                    p_nome: null
+                });
                 if (error) throw error;
 
-                if (data && data.length > 0) {
-                    const e = data[0];
+                const encontrado = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+                if (encontrado && encontrado.tipo === 'CPF') {
                     input.classList.add('input-duplicado');
                     aviso.className = 'aviso-duplicidade erro';
-                    aviso.innerHTML = `<i class="fas fa-exclamation-triangle"></i> CPF já cadastrado para <strong>${e.nome_completo}</strong> (ID #${e.id_suspeito})`;
+                    aviso.innerHTML = `<i class="fas fa-exclamation-triangle"></i> CPF já cadastrado para <strong>${encontrado.nome_completo}</strong> (ID #${encontrado.id_suspeito})`;
                     return true;
                 }
                 aviso.className = 'aviso-duplicidade ok';
@@ -875,6 +872,10 @@
             _timerNome = setTimeout(checarDuplicidadeNome, 700);
         }
 
+        /**
+         * [v3.4.0] Verifica se o nome já está cadastrado.
+         * Usa RPC `verificar_duplicidade_suspeito` (match exato case-insensitive, sem wildcards).
+         */
         async function checarDuplicidadeNome() {
             const input = document.getElementById('nome_completo');
             const aviso = document.getElementById('avisoNome');
@@ -893,18 +894,19 @@
             aviso.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando nome...';
 
             try {
-                const { data, error } = await sb.from('suspeito')
-                    .select('id_suspeito, nome_completo, cpf')
-                    .eq('deletado', false)
-                    .ilike('nome_completo', nome)
-                    .limit(1);
+                // [v3.4.0] RPC — evita wildcards %, _, * no ILIKE
+                const { data, error } = await sb.rpc('verificar_duplicidade_suspeito', {
+                    p_cpf: null,
+                    p_nome: nome
+                });
                 if (error) throw error;
 
-                if (data && data.length > 0) {
-                    const e = data[0];
+                const encontrado = Array.isArray(data) && data.length > 0 ? data[0] : null;
+
+                if (encontrado && encontrado.tipo === 'NOME') {
                     input.classList.add('input-duplicado');
                     aviso.className = 'aviso-duplicidade erro';
-                    aviso.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Já existe suspeito com este nome: <strong>${e.nome_completo}</strong> (CPF ${e.cpf || 'não informado'})`;
+                    aviso.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Já existe suspeito com este nome: <strong>${encontrado.nome_completo}</strong> (CPF ${encontrado.cpf || 'não informado'})`;
                     return true;
                 }
                 aviso.className = 'aviso-duplicidade ok';
@@ -1006,7 +1008,7 @@
         }
 
         // ============================================================
-        // [v3.3.1] SALVAR COM VALIDAÇÕES DE DUPLICIDADE
+        // [v3.4.0] SALVAR COM VALIDAÇÕES DE DUPLICIDADE VIA RPC
         // ============================================================
         document.getElementById('formCadastro').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1027,23 +1029,20 @@
                 if (!dataNasc) throw new Error('Informe a data de nascimento.');
                 if (!status) throw new Error('Selecione o status atual.');
 
-                // ---------- [v3.3.1] BLOQUEIO DE CPF DUPLICADO ----------
-                // CORREÇÃO: usa `cpfLimpo` (apenas números) na query,
-                // porque o banco armazena o CPF SEM máscara.
+                // ---------- [v3.4.0] BLOQUEIO DE CPF DUPLICADO (via RPC) ----------
                 const cpfLimpo = cpf.replace(/\D/g, '');
                 if (cpfLimpo.length === 11) {
-                    const { data: cpfExistente, error: errCpf } = await sb.from('suspeito')
-                        .select('id_suspeito, nome_completo')
-                        .eq('deletado', false)
-                        .eq('cpf', cpfLimpo)   // ← [v3.3.1] sem máscara
-                        .limit(1);
-
+                    const { data: dupCpf, error: errCpf } = await sb.rpc('verificar_duplicidade_suspeito', {
+                        p_cpf: cpfLimpo,
+                        p_nome: null
+                    });
                     if (errCpf) throw errCpf;
 
-                    if (cpfExistente && cpfExistente.length > 0) {
-                        const e = cpfExistente[0];
+                    const encontrado = Array.isArray(dupCpf) && dupCpf.length > 0 ? dupCpf[0] : null;
+
+                    if (encontrado && encontrado.tipo === 'CPF') {
                         showToast('error', 'CPF já cadastrado',
-                            `Este CPF pertence a <strong>${e.nome_completo}</strong> (ID #${e.id_suspeito}). Cadastro bloqueado.`,
+                            `Este CPF pertence a <strong>${encontrado.nome_completo}</strong> (ID #${encontrado.id_suspeito}). Cadastro bloqueado.`,
                             8000);
                         document.getElementById('cpf').focus();
                         document.getElementById('cpf').classList.add('input-duplicado');
@@ -1054,22 +1053,21 @@
                 }
                 // ---------- FIM DO BLOQUEIO DE CPF ----------
 
-                // ---------- [v3.3.0] AVISO DE NOME DUPLICADO ----------
-                const { data: nomeExistente, error: errNome } = await sb.from('suspeito')
-                    .select('id_suspeito, nome_completo, cpf')
-                    .eq('deletado', false)
-                    .ilike('nome_completo', nome)
-                    .limit(1);
-
+                // ---------- [v3.4.0] AVISO DE NOME DUPLICADO (via RPC) ----------
+                const { data: dupNome, error: errNome } = await sb.rpc('verificar_duplicidade_suspeito', {
+                    p_cpf: null,
+                    p_nome: nome
+                });
                 if (errNome) throw errNome;
 
-                if (nomeExistente && nomeExistente.length > 0) {
-                    const e = nomeExistente[0];
+                const eNome = Array.isArray(dupNome) && dupNome.length > 0 ? dupNome[0] : null;
+
+                if (eNome && eNome.tipo === 'NOME') {
                     const continuar = confirm(
                         `⚠️ Já existe um suspeito cadastrado com este nome:\n\n` +
-                        `${e.nome_completo}\n` +
-                        `CPF: ${e.cpf || 'não informado'}\n` +
-                        `ID: #${e.id_suspeito}\n\n` +
+                        `${eNome.nome_completo}\n` +
+                        `CPF: ${eNome.cpf || 'não informado'}\n` +
+                        `ID: #${eNome.id_suspeito}\n\n` +
                         `Se for um HOMÔNIMO (pessoa diferente), clique OK para continuar.\n` +
                         `Se for a MESMA pessoa, clique CANCELAR.`
                     );
@@ -1278,7 +1276,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Cadastro v3.3.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Cadastro v3.4.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             renderizarTatuagens();
         });
