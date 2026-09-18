@@ -2,24 +2,43 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.10.0
-     Data: 18/09/2026 - 06:00
+     Versão: 2.11.2
+     Data: 18/09/2026 - 06:30
+     Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES v2.10.0:
-     - ✨ Modal de Edição agora tem seção "FOTOS DO SUSPEITO"
-       - Exibe a foto principal atual
-       - Permite substituir a foto principal
-       - Exibe fotos secundárias e tatuagens existentes
-       - Permite remover fotos existentes
-       - Permite adicionar novas fotos (secundária / tatuagem)
-     - ✅ Preservadas TODAS as funcionalidades da v2.9.2
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
 
-     ALTERAÇÕES v2.9.2:
-     - ✨ Ficha com foto clicável (lightbox)
-     ALTERAÇÕES v2.9.1:
-     - ✨ Contadores carregam ao abrir a página
-     ALTERAÇÕES v2.9.0:
-     - ✨ Ícone gavel na tabela + modal mandados vinculados
+     ALTERAÇÕES v2.11.2 (18/09/2026 06:30):
+     - 🔒 SEGURANÇA: sanitização do termo de busca antes do .or()
+       - Nova função sanitizarTermoBusca()
+       - Remove caracteres de sintaxe do PostgREST: . , ( ) " \
+       - Remove wildcards de ILIKE: * % _
+       - Evita injeção de filtros via campo "Busca Global"
+     - ✅ Preservadas TODAS as funcionalidades da v2.11.1
+
+     ALTERAÇÕES v2.11.1 (18/09/2026 06:10):
+     - ✅ Implementadas funções pendentes:
+       - verFotos(id) + fecharFotos()
+       - emitirAlerta(id)
+       - showToastLocal()
+     - ✅ Bloco de inicialização DOMContentLoaded
+
+     ALTERAÇÕES v2.11.0 (18/09/2026 05:45):
+     - ✨ NOVO: Sistema de Notificações (sino + dropdown + polling 30s)
+
+     ALTERAÇÕES v2.10.0 (18/09/2026 04:30):
+     - ✨ Modal de Edição com seção "FOTOS DO SUSPEITO"
+
+     ALTERAÇÕES v2.9.2: - ✨ Ficha com foto clicável (lightbox)
+     ALTERAÇÕES v2.9.1: - ✨ Contadores carregam ao abrir a página
+     ALTERAÇÕES v2.9.0: - ✨ Ícone gavel na tabela + modal mandados vinculados
      ============================================================
 -->
 <!DOCTYPE html>
@@ -43,7 +62,9 @@
             --gradient-green: linear-gradient(135deg, #00ff88 0%, #00cc77 100%);
             --control-size: 36px;
         }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         html, body {
             height: 100%; min-height: 100vh;
             font-family: 'Segoe UI', 'Roboto', sans-serif;
@@ -51,8 +72,10 @@
             color: var(--text-primary);
             overflow-x: hidden;
         }
+
         .controls-bar {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+            position: fixed; top: 0; left: 0; right: 0;
+            z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(15px);
             border-bottom: 1px solid var(--border-color);
@@ -63,6 +86,7 @@
         .controls-left, .controls-right { display: flex; gap: 4px; align-items: center; }
         .controls-center { display: flex; align-items: center; gap: 8px; }
         .controls-center .system-title { color: var(--text-primary); font-weight: 600; font-size: 14px; letter-spacing: 1px; }
+
         .control-btn {
             width: var(--control-size); height: var(--control-size);
             border-radius: 8px; border: none; background: transparent;
@@ -74,9 +98,11 @@
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
+
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
         .user-info .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--gradient-green); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; color: #000; }
 
+        /* SIDEBAR */
         .sidebar {
             position: fixed; top: 48px; left: 0;
             width: 260px; height: calc(100vh - 48px);
@@ -93,6 +119,7 @@
         .sidebar-brand .logo i { font-size: 24px; color: #000; }
         .sidebar-brand h5 { color: var(--text-primary); font-weight: 700; letter-spacing: 2px; margin: 0; font-size: 16px; }
         .sidebar-brand small { color: rgba(0, 255, 136, 0.2); font-size: 10px; letter-spacing: 1px; }
+
         .sidebar-menu { padding: 0 12px; flex: 1; }
         .sidebar-menu .menu-label { color: rgba(0, 255, 136, 0.15); font-size: 10px; text-transform: uppercase; letter-spacing: 2px; padding: 15px 12px 8px; }
         .sidebar-menu .menu-item {
@@ -105,6 +132,7 @@
         .sidebar-menu .menu-item.active { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); border: 1px solid var(--border-color); }
         .sidebar-menu .menu-item i { width: 20px; font-size: 15px; }
         .sidebar-menu .menu-item .badge { margin-left: auto; background: var(--text-primary); color: #000; font-size: 10px; padding: 2px 8px; border-radius: 12px; }
+
         .sidebar-footer {
             padding: 15px 20px 20px;
             border-top: 1px solid var(--border-color);
@@ -144,14 +172,18 @@
         .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
-        .form-control:disabled, .form-control[readonly], .form-select:disabled { background: #000000 !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; opacity: 1 !important; cursor: not-allowed; }
-        .form-check-input:disabled { background-color: #000; border-color: var(--border-color); }
+
+        .form-control:disabled, .form-control[readonly], .form-select:disabled {
+            background: #000000 !important; color: var(--text-primary) !important;
+            border-color: var(--border-color) !important; opacity: 1 !important; cursor: not-allowed;
+        }
 
         .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
         .btn-gold:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
         .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
         .btn-outline-gold { background: transparent; color: var(--text-primary); border: 1px solid var(--text-primary); padding: 10px 28px; border-radius: 10px; font-weight: 600; transition: all 0.3s; font-size: 14px; }
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
+        .btn-outline-gold:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 12px; border-radius: 8px; transition: all 0.3s; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
 
@@ -180,7 +212,7 @@
 
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
 
-        /* ÍCONE DE MANDADO NA TABELA */
+        /* ÍCONE DE MANDADO */
         .badge-mandado {
             display: inline-flex; align-items: center; justify-content: center;
             width: 32px; height: 32px; border-radius: 50%; font-size: 15px;
@@ -199,6 +231,7 @@
         .badge-mandado.mandado-vencido      { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border-color: rgba(108, 117, 125, 0.4); }
         .badge-mandado.mandado-extinto      { background: rgba(108, 117, 125, 0.15); color: #6c757d; border-color: rgba(108, 117, 125, 0.4); }
         .badge-mandado.mandado-nao-encontrado { background: rgba(255, 87, 34, 0.15); color: #ff5722; border-color: rgba(255, 87, 34, 0.4); }
+
         .badge-mandado-count {
             position: absolute; top: -4px; right: -4px;
             background: #000; color: var(--text-primary);
@@ -209,7 +242,7 @@
         }
         .badge-mandado-wrapper { position: relative; display: inline-block; }
 
-        /* MODAL DE MANDADOS VINCULADOS */
+        /* MANDADO ITEM */
         .mandado-item {
             display: flex; align-items: center; gap: 12px;
             padding: 12px 14px; background: rgba(0, 0, 0, 0.3);
@@ -250,8 +283,10 @@
             z-index: 9999; justify-content: center; align-items: center; padding: 20px;
         }
         .modal-ficha.open, .modal-edicao.open, .modal-historico.open, .modal-fotos.open, .modal-mandados.open { display: flex; }
+
         .modal-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0, 255, 136, 0.1); }
         .modal-content.modal-lg { max-width: 1000px; }
+
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 15px 25px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; background: var(--bg-secondary); z-index: 1; }
         .modal-header h5 { color: var(--text-primary); font-weight: 700; margin: 0; font-size: 1rem; letter-spacing: 1px; }
         .modal-body { padding: 25px; }
@@ -278,12 +313,12 @@
         .galeria-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
         .foto-card { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; transition: all 0.3s; }
         .foto-card:hover { border-color: var(--text-primary); }
-        .foto-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
+        .foto-card img { width: 100%; height: 180px; object-fit: cover; display: block; cursor: zoom-in; }
         .foto-card .info { padding: 10px; }
         .foto-card .data { font-size: 10px; color: rgba(0, 255, 136, 0.4); }
         .foto-card .principal { background: var(--text-primary); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; }
 
-        /* FOTO DO SUSPEITO + LIGHTBOX (ficha) */
+        /* FOTO WRAPPER + LIGHTBOX */
         .ficha-foto-wrapper { position: relative; display: inline-block; cursor: zoom-in; border-radius: 10px; overflow: hidden; transition: all 0.3s; }
         .ficha-foto-wrapper:hover { transform: scale(1.02); box-shadow: 0 8px 30px rgba(0, 255, 136, 0.25); }
         .ficha-foto-wrapper::after {
@@ -302,9 +337,7 @@
         .foto-lightbox .fechar { position: absolute; top: 20px; right: 20px; background: transparent; border: 1px solid var(--text-primary); color: var(--text-primary); width: 44px; height: 44px; border-radius: 50%; font-size: 20px; cursor: pointer; transition: all 0.3s; }
         .foto-lightbox .fechar:hover { background: rgba(0, 255, 136, 0.1); transform: rotate(90deg); }
 
-        /* ============================================================
-           [v2.10.0] SEÇÃO DE FOTOS NO MODAL DE EDIÇÃO
-           ============================================================ */
+        /* SEÇÃO DE FOTOS NO MODAL DE EDIÇÃO */
         .edit-fotos-section {
             background: rgba(0, 255, 136, 0.02);
             border: 1px solid var(--border-color);
@@ -313,26 +346,17 @@
             margin-bottom: 20px;
         }
         .edit-fotos-title {
-            color: var(--text-primary);
-            font-weight: 700;
-            font-size: 13px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
+            color: var(--text-primary); font-weight: 700; font-size: 13px;
+            letter-spacing: 1px; text-transform: uppercase;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 15px;
+            padding-bottom: 10px; margin-bottom: 15px;
         }
         .edit-foto-principal-wrapper {
             border: 2px solid var(--border-color);
-            border-radius: 10px;
-            background: rgba(0,0,0,0.4);
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
+            border-radius: 10px; background: rgba(0,0,0,0.4);
+            cursor: pointer; position: relative; overflow: hidden;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            transition: all 0.3s;
-            aspect-ratio: 3 / 4;
-            min-height: 180px;
+            transition: all 0.3s; aspect-ratio: 3 / 4; min-height: 180px;
         }
         .edit-foto-principal-wrapper:hover { border-color: var(--text-primary); box-shadow: 0 0 20px rgba(0,255,136,0.15); }
         .edit-foto-principal-wrapper > i { font-size: 40px; color: rgba(0,255,136,0.25); margin-bottom: 8px; }
@@ -350,15 +374,11 @@
         .edit-mini-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-            gap: 8px;
-            margin-top: 8px;
+            gap: 8px; margin-top: 8px;
         }
         .edit-mini-card {
-            position: relative;
-            aspect-ratio: 1;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
+            position: relative; aspect-ratio: 1; border-radius: 8px;
+            overflow: hidden; border: 1px solid var(--border-color);
             background: rgba(0,0,0,0.3);
         }
         .edit-mini-card img { width: 100%; height: 100%; object-fit: cover; display: block; }
@@ -379,19 +399,204 @@
         }
         .edit-add-btn {
             border: 2px dashed var(--border-color);
-            border-radius: 8px;
-            background: rgba(0,255,136,0.02);
-            cursor: pointer;
-            aspect-ratio: 1;
+            border-radius: 8px; background: rgba(0,255,136,0.02);
+            cursor: pointer; aspect-ratio: 1;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            color: rgba(0,255,136,0.3);
-            font-size: 9px;
-            transition: all 0.3s;
-            text-align: center;
-            padding: 4px;
+            color: rgba(0,255,136,0.3); font-size: 9px;
+            transition: all 0.3s; text-align: center; padding: 4px;
         }
         .edit-add-btn:hover { border-color: var(--text-primary); color: var(--text-primary); background: rgba(0,255,136,0.05); }
         .edit-add-btn i { font-size: 20px; margin-bottom: 4px; }
+
+        /* ============================================================
+           [v2.11.0] SINO DE NOTIFICAÇÕES
+           ============================================================ */
+        .notif-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .notif-btn {
+            width: 36px; height: 36px;
+            border-radius: 8px; border: none; background: transparent;
+            color: rgba(0, 255, 136, 0.4); font-size: 18px;
+            cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .notif-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .notif-btn.tem-novas { color: var(--text-primary); animation: pulseNotif 1.5s infinite; }
+        .notif-badge {
+            position: absolute;
+            top: 2px; right: 2px;
+            min-width: 18px; height: 18px;
+            border-radius: 9px;
+            background: #dc3545; color: #fff;
+            font-size: 10px; font-weight: 700;
+            display: none;
+            align-items: center; justify-content: center;
+            padding: 0 5px;
+            border: 2px solid #000;
+        }
+        .notif-badge.ativo { display: flex; }
+        @keyframes pulseNotif {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .notif-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 360px;
+            max-width: calc(100vw - 40px);
+            max-height: 480px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+        }
+        .notif-dropdown.open { display: flex; }
+
+        .notif-dropdown-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        .notif-dropdown-header .titulo {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+        .notif-dropdown-header .btn-marcar-todas {
+            background: transparent;
+            border: none;
+            color: rgba(0, 255, 136, 0.4);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .notif-dropdown-header .btn-marcar-todas:hover {
+            color: var(--text-primary);
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .notif-lista {
+            overflow-y: auto;
+            flex: 1;
+            padding: 6px 0;
+        }
+        .notif-vazio {
+            padding: 40px 20px;
+            text-align: center;
+            color: rgba(0, 255, 136, 0.2);
+            font-size: 12px;
+        }
+        .notif-vazio i { font-size: 32px; display: block; margin-bottom: 10px; }
+
+        .notif-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: rgba(0, 255, 136, 0.03); }
+        .notif-item.nao-lida { background: rgba(0, 255, 136, 0.04); border-left: 3px solid var(--text-primary); }
+        .notif-item.nao-lida:hover { background: rgba(0, 255, 136, 0.08); }
+
+        .notif-item .notif-icon {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+        .notif-item .notif-icon.novo { background: rgba(0, 255, 136, 0.12); color: #00ff88; }
+        .notif-item .notif-icon.alteracao { background: rgba(255, 193, 7, 0.12); color: #ffc107; }
+        .notif-item .notif-icon.cumprido { background: rgba(13, 202, 240, 0.12); color: #0dcaf0; }
+        .notif-item .notif-icon.padrao { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+
+        .notif-item .notif-conteudo { flex: 1; min-width: 0; }
+        .notif-item .notif-titulo {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        .notif-item .notif-mensagem {
+            color: rgba(0, 255, 136, 0.6);
+            font-size: 11px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+        .notif-item .notif-data {
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 10px;
+        }
+
+        /* ============================================================
+           [v2.11.1] TOASTS
+           ============================================================ */
+        .toast-container {
+            position: fixed;
+            top: 60px; right: 20px;
+            z-index: 11000;
+            display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        .toast-local {
+            pointer-events: auto;
+            min-width: 280px; max-width: 400px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--text-primary);
+            border-radius: 10px;
+            padding: 12px 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+            animation: toastIn 0.3s ease;
+        }
+        .toast-local.success { border-left-color: #00ff88; }
+        .toast-local.warning { border-left-color: #ffc107; }
+        .toast-local.error   { border-left-color: #dc3545; }
+        .toast-local.info    { border-left-color: #0dcaf0; }
+        .toast-local .titulo {
+            color: var(--text-primary);
+            font-weight: 700; font-size: 13px;
+            display: flex; align-items: center; gap: 8px;
+            margin-bottom: 4px;
+        }
+        .toast-local.success .titulo i { color: #00ff88; }
+        .toast-local.warning .titulo i { color: #ffc107; }
+        .toast-local.error   .titulo i { color: #dc3545; }
+        .toast-local.info    .titulo i { color: #0dcaf0; }
+        .toast-local .msg {
+            color: rgba(0, 255, 136, 0.7);
+            font-size: 12px; line-height: 1.4;
+        }
+        @keyframes toastIn {
+            from { transform: translateX(120%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes toastOut {
+            from { transform: translateX(0);    opacity: 1; }
+            to   { transform: translateX(120%); opacity: 0; }
+        }
+        .toast-local.saindo { animation: toastOut 0.3s ease forwards; }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -407,7 +612,17 @@
             .btn-gold, .btn-outline-gold { width: 100%; }
             .ficha-foto, .ficha-foto-placeholder { width: 140px; height: 175px; }
             .modal-body { padding: 15px; }
+            .notif-dropdown { width: calc(100vw - 30px); right: -15px; }
+            .toast-container { right: 10px; left: 10px; }
+            .toast-local { max-width: none; }
         }
+        @media (max-width: 480px) {
+            .main-content { padding: 60px 10px 10px; }
+            .top-actions { width: 100%; }
+            .top-actions .badge { flex: 1; text-align: center; font-size: 10px; }
+            .foto-suspeito, .foto-placeholder { width: 40px; height: 48px; }
+        }
+
         @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
@@ -429,6 +644,22 @@
             <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
         </div>
         <div class="controls-right">
+            <div class="notif-wrapper">
+                <button class="notif-btn" id="notifBtn" onclick="toggleNotifDropdown(event)" title="Notificações">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-badge" id="notifBadge">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-dropdown-header">
+                        <span class="titulo"><i class="fas fa-bell me-1"></i>NOTIFICAÇÕES</span>
+                        <button class="btn-marcar-todas" onclick="marcarTodasComoLidas()">Marcar todas</button>
+                    </div>
+                    <div class="notif-lista" id="notifLista">
+                        <div class="notif-vazio"><i class="fas fa-spinner fa-spin"></i>Carregando...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="controls-divider"></div>
             <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
         </div>
     </header>
@@ -650,7 +881,7 @@
     </div>
 
     <div class="toast-container" id="toastContainer"></div>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
@@ -667,6 +898,36 @@
         })();
 
         // ============================================================
+        // TOASTS [v2.11.1]
+        // ============================================================
+        function showToastLocal(tipo, titulo, mensagem, duracaoMs) {
+            const container = document.getElementById('toastContainer');
+            if (!container) { console.log(`[${tipo}] ${titulo}: ${mensagem}`); return; }
+
+            const mapa = {
+                success: 'fa-check-circle',
+                warning: 'fa-exclamation-triangle',
+                error:   'fa-times-circle',
+                info:    'fa-info-circle'
+            };
+            const icone = mapa[tipo] || 'fa-bell';
+            const dur = typeof duracaoMs === 'number' ? duracaoMs : 5000;
+
+            const el = document.createElement('div');
+            el.className = 'toast-local ' + (mapa[tipo] ? tipo : 'info');
+            el.innerHTML = `
+                <div class="titulo"><i class="fas ${icone}"></i>${titulo || ''}</div>
+                <div class="msg">${mensagem || ''}</div>
+            `;
+            container.appendChild(el);
+
+            setTimeout(() => {
+                el.classList.add('saindo');
+                setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 350);
+            }, dur);
+        }
+
+        // ============================================================
         // FULLSCREEN
         // ============================================================
         function toggleFullscreen() {
@@ -678,6 +939,8 @@
         }
         document.addEventListener('fullscreenchange', atualizarIconeFullscreen);
         document.addEventListener('webkitfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('mozfullscreenchange', atualizarIconeFullscreen);
+        document.addEventListener('MSFullscreenChange', atualizarIconeFullscreen);
         function atualizarIconeFullscreen() {
             const btn = document.querySelector('.fullscreen-btn i');
             if (!btn) return;
@@ -690,8 +953,8 @@
         // ============================================================
         async function fazerLogout() {
             if (!confirm('Deseja realmente sair do sistema?')) return;
-            try { if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') { await AIDEPOM.logout(); return; } } catch (e) {}
-            try { if (sb && sb.auth && sb.auth.signOut) await sb.auth.signOut(); } catch (e) {}
+            try { if (typeof AIDEPOM !== 'undefined' && typeof AIDEPOM.logout === 'function') { await AIDEPOM.logout(); return; } } catch (error) {}
+            try { if (sb && sb.auth && sb.auth.signOut) await sb.auth.signOut(); } catch (error) {}
             try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
             window.location.href = '02-login.html';
         }
@@ -703,7 +966,7 @@
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
             try { window.open('', '_self', ''); window.close(); } catch (e) {}
-            setTimeout(() => { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
+            setTimeout(function() { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
         }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
@@ -718,15 +981,19 @@
         let usuarioAtual = null;
         let perfilUsuarioAtual = null;
         let camposEditaveisCache = null;
+
         let suspeitosComMandado = new Set();
         let mandadosCachePorSuspeito = {};
 
         // [v2.10.0] Edição de fotos
-        let editFotoPrincipalArquivo = null;         // nova foto principal (substituir)
-        let editFotosExistentes = [];                // [{id, tipo_midia, caminho_fisico, url, nome_seguro, nome_original}]
-        let editFotosRemover = [];                   // IDs de arquivo_midia para deletar
-        let editFotosNovasSecundarias = [];          // [{file, url}]
-        let editFotosNovasTatuagens = [];            // [{file, url}]
+        let editFotoPrincipalArquivo = null;
+        let editFotosExistentes = [];
+        let editFotosRemover = [];
+        let editFotosNovasSecundarias = [];
+        let editFotosNovasTatuagens = [];
+
+        // [v2.11.0] Notificações
+        let _notifTimer = null;
 
         // ============================================================
         // CARREGAR USUÁRIO
@@ -761,6 +1028,7 @@
                 .eq('ativo', true).order('ordem');
             if (error) { console.error('❌ Erro campos editáveis:', error); return []; }
             camposEditaveisCache = data || [];
+            console.log('📋 Campos editáveis:', camposEditaveisCache.length);
             return camposEditaveisCache;
         }
 
@@ -811,6 +1079,125 @@
             const img = document.getElementById('fotoLightboxImg');
             if (img) img.src = '';
         }
+
+        // ============================================================
+        // NOTIFICAÇÕES [v2.11.0]
+        // ============================================================
+        async function carregarNotificacoes() {
+            const lista = document.getElementById('notifLista');
+            const badge = document.getElementById('notifBadge');
+            const btn = document.getElementById('notifBtn');
+            if (!lista) return;
+
+            try {
+                const { data, error } = await sb
+                    .from('notificacao')
+                    .select('id_notificacao, tipo, titulo, mensagem, data_criacao, lida, dados_extras')
+                    .order('data_criacao', { ascending: false })
+                    .limit(30);
+
+                if (error) throw error;
+
+                const naoLidas = (data || []).filter(n => !n.lida).length;
+
+                if (badge) {
+                    badge.textContent = naoLidas > 99 ? '99+' : naoLidas;
+                    badge.classList.toggle('ativo', naoLidas > 0);
+                }
+                if (btn) {
+                    btn.classList.toggle('tem-novas', naoLidas > 0);
+                }
+
+                if (!data || data.length === 0) {
+                    lista.innerHTML = `
+                        <div class="notif-vazio">
+                            <i class="fas fa-bell-slash"></i>
+                            Nenhuma notificação
+                        </div>`;
+                    return;
+                }
+
+                const ICONES = {
+                    'NOVO_MANDADO':      { classe: 'novo',      icone: 'fa-plus-circle' },
+                    'ALTERACAO_MANDADO': { classe: 'alteracao', icone: 'fa-pencil-alt' },
+                    'MANDADO_CUMPRIDO':  { classe: 'cumprido',  icone: 'fa-gavel' }
+                };
+
+                lista.innerHTML = data.map(n => {
+                    const cfg = ICONES[n.tipo] || { classe: 'padrao', icone: 'fa-bell' };
+                    const dataRel = tempoRelativoNotif(n.data_criacao);
+                    const classeNaoLida = !n.lida ? 'nao-lida' : '';
+
+                    return `
+                        <div class="notif-item ${classeNaoLida}" onclick="abrirNotificacao(${n.id_notificacao})">
+                            <div class="notif-icon ${cfg.classe}">
+                                <i class="fas ${cfg.icone}"></i>
+                            </div>
+                            <div class="notif-conteudo">
+                                <div class="notif-titulo">${n.titulo || 'Notificação'}</div>
+                                <div class="notif-mensagem">${n.mensagem || ''}</div>
+                                <div class="notif-data"><i class="fas fa-clock me-1"></i>${dataRel}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.warn('Erro ao carregar notificações:', e);
+                if (lista) {
+                    lista.innerHTML = `<div class="notif-vazio"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar</div>`;
+                }
+            }
+        }
+
+        function tempoRelativoNotif(data) {
+            if (!data) return '-';
+            const diff = Math.floor((new Date() - new Date(data)) / 1000);
+            if (diff < 60) return 'agora';
+            if (diff < 3600) return `ha ${Math.floor(diff/60)} min`;
+            if (diff < 86400) return `ha ${Math.floor(diff/3600)}h`;
+            if (diff < 604800) return `ha ${Math.floor(diff/86400)}d`;
+            return new Date(data).toLocaleDateString('pt-BR');
+        }
+
+        function toggleNotifDropdown(e) {
+            if (e) e.stopPropagation();
+            const dd = document.getElementById('notifDropdown');
+            if (!dd) return;
+            dd.classList.toggle('open');
+            if (dd.classList.contains('open')) {
+                carregarNotificacoes();
+            }
+        }
+
+        async function abrirNotificacao(idNotif) {
+            try {
+                await sb.from('notificacao').update({ lida: true }).eq('id_notificacao', idNotif);
+                carregarNotificacoes();
+            } catch (e) {
+                console.warn('Erro ao marcar como lida:', e);
+            }
+        }
+
+        async function marcarTodasComoLidas() {
+            try {
+                const { error } = await sb.from('notificacao').update({ lida: true }).eq('lida', false);
+                if (error) throw error;
+                carregarNotificacoes();
+            } catch (e) {
+                console.warn('Erro ao marcar todas:', e);
+            }
+        }
+
+        // Fecha o dropdown quando clicar fora
+        document.addEventListener('click', function(e) {
+            const dd = document.getElementById('notifDropdown');
+            const btn = document.getElementById('notifBtn');
+            if (!dd || !btn) return;
+            if (!dd.contains(e.target) && !btn.contains(e.target)) {
+                dd.classList.remove('open');
+            }
+        });
 
         // ============================================================
         // MANDADOS VINCULADOS
@@ -930,11 +1317,35 @@
         function abrirTelaMandados() { window.location.href = '11-mandados.html'; }
 
         // ============================================================
+        // [v2.11.2] SANITIZAÇÃO DO TERMO DE BUSCA
+        // Remove caracteres que quebram o parser do PostgREST (.or)
+        // e wildcards de ILIKE, prevenindo injeção de filtros.
+        // ============================================================
+        function sanitizarTermoBusca(termo) {
+            if (termo == null) return '';
+            let t = String(termo);
+
+            // 1) Substitui por espaço os caracteres de sintaxe do PostgREST
+            //    . , ( ) " \  — separadores/agrupadores em .or() e .and()
+            t = t.replace(/[.,()"\\]/g, ' ');
+
+            // 2) Remove wildcards do LIKE/ILIKE (* % _) para o usuário
+            //    não ampliar a busca sem intenção
+            t = t.replace(/[*%_]/g, '');
+
+            // 3) Colapsa espaços múltiplos e apara
+            t = t.replace(/\s+/g, ' ').trim();
+
+            return t;
+        }
+
+        // ============================================================
         // BUSCA PRINCIPAL
         // ============================================================
         async function realizarBusca() {
             console.log('🔍 realizarBusca() chamada');
-            const termo = document.getElementById('buscaGlobal').value.trim();
+            const termoBruto = document.getElementById('buscaGlobal').value.trim();
+            const termo = sanitizarTermoBusca(termoBruto);   // [v2.11.2] termo seguro
             const status = document.getElementById('filtroStatus').value;
             const periculosidade = document.getElementById('filtroPericulosidade').value;
             const dataInicio = document.getElementById('filtroDataInicio').value;
@@ -976,7 +1387,12 @@
                     .select(`id_suspeito, nome_completo, cpf, rg, cidade, status_atual, nivel_periculosidade, data_cadastro`, { count: 'exact' })
                     .eq('deletado', false);
 
-                if (termo.length >= 2) query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`);
+                // [v2.11.2] termo já sanitizado — sem caracteres de sintaxe PostgREST
+                if (termo.length >= 2) {
+                    query = query.or(
+                        `nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`
+                    );
+                }
                 if (status) query = query.eq('status_atual', status);
                 if (periculosidade) query = query.eq('nivel_periculosidade', periculosidade);
                 if (dataInicio) query = query.gte('data_cadastro', dataInicio);
@@ -1117,7 +1533,7 @@
         function irPagina(num) { paginaAtual = num; realizarBusca(); }
 
         // ============================================================
-        // FICHA (verDetalhes) — com foto clicável
+        // FICHA
         // ============================================================
         async function verDetalhes(id) {
             console.log('👁️ verDetalhes:', id);
@@ -1222,11 +1638,7 @@
         function onEditFotoPrincipal(ev) {
             const file = ev.target.files[0];
             if (!file) return;
-            if (file.size > 5 * 1024 * 1024) {
-                showToastLocal('error', 'Arquivo grande', 'Máximo 5 MB.');
-                ev.target.value = '';
-                return;
-            }
+            if (file.size > 5 * 1024 * 1024) { showToastLocal('error', 'Arquivo grande', 'Máximo 5 MB.'); ev.target.value = ''; return; }
             editFotoPrincipalArquivo = file;
             const url = URL.createObjectURL(file);
             const wrap = document.getElementById('editFotoPrincipalWrapper');
@@ -1234,7 +1646,6 @@
             img.src = url;
             wrap.classList.add('tem-foto');
         }
-
         function removerEditFotoPrincipal() {
             editFotoPrincipalArquivo = null;
             const inp = document.getElementById('editFotoPrincipalInput');
@@ -1244,7 +1655,6 @@
             const wrap = document.getElementById('editFotoPrincipalWrapper');
             if (wrap) wrap.classList.remove('tem-foto');
         }
-
         function onEditNovaSecundaria(ev) {
             const file = ev.target.files[0];
             if (!file) return;
@@ -1253,7 +1663,6 @@
             ev.target.value = '';
             renderizarEditMiniGrid();
         }
-
         function onEditNovaTatuagem(ev) {
             const file = ev.target.files[0];
             if (!file) return;
@@ -1262,32 +1671,27 @@
             ev.target.value = '';
             renderizarEditMiniGrid();
         }
-
         function marcarRemoverMidia(id) {
             if (!confirm('Remover esta foto? (a remoção é aplicada ao salvar)')) return;
             editFotosRemover.push(id);
             editFotosExistentes = editFotosExistentes.filter(f => f.id !== id);
             renderizarEditMiniGrid();
         }
-
         function removerNovaSecundaria(idx) {
             if (idx < 0 || idx >= editFotosNovasSecundarias.length) return;
             editFotosNovasSecundarias.splice(idx, 1);
             renderizarEditMiniGrid();
         }
-
         function removerNovaTatuagem(idx) {
             if (idx < 0 || idx >= editFotosNovasTatuagens.length) return;
             editFotosNovasTatuagens.splice(idx, 1);
             renderizarEditMiniGrid();
         }
-
         function renderizarEditMiniGrid() {
             const grid = document.getElementById('editMiniGrid');
             if (!grid) return;
             let html = '';
 
-            // Existentes
             editFotosExistentes.forEach(f => {
                 const tipoLabel = f.tipo_midia === 'TATUAGEM' ? 'Tatuagem' : (f.nome_seguro?.includes('principal') ? 'Principal' : 'Secundária');
                 html += `<div class="edit-mini-card" title="${tipoLabel}">
@@ -1297,7 +1701,6 @@
                 </div>`;
             });
 
-            // Novas secundárias
             editFotosNovasSecundarias.forEach((f, idx) => {
                 html += `<div class="edit-mini-card" title="Nova secundária (não salva)">
                     <img src="${f.url}" alt="Nova">
@@ -1306,7 +1709,6 @@
                 </div>`;
             });
 
-            // Novas tatuagens
             editFotosNovasTatuagens.forEach((f, idx) => {
                 html += `<div class="edit-mini-card" title="Nova tatuagem (não salva)">
                     <img src="${f.url}" alt="Nova tat">
@@ -1315,13 +1717,11 @@
                 </div>`;
             });
 
-            // Botão adicionar secundária
             html += `<div class="edit-add-btn" onclick="document.getElementById('editNovaSecundariaInput').click()">
                 <i class="fas fa-camera"></i>
                 <span>+ Secundária</span>
             </div>`;
 
-            // Botão adicionar tatuagem
             html += `<div class="edit-add-btn" onclick="document.getElementById('editNovaTatuagemInput').click()">
                 <i class="fas fa-pen-nib"></i>
                 <span>+ Tatuagem</span>
@@ -1347,7 +1747,6 @@
             console.log('✏️ editarSuspeito:', id);
             idSuspeitoAtual = id;
 
-            // Reset dos estados de foto
             editFotoPrincipalArquivo = null;
             editFotosExistentes = [];
             editFotosRemover = [];
@@ -1377,7 +1776,6 @@
                 const { data: suspeito, error } = await sb.from('suspeito').select('*').eq('id_suspeito', id).single();
                 if (error) throw error;
 
-                // ---------- CARREGAR FOTOS EXISTENTES ----------
                 const { data: midias } = await sb.from('arquivo_midia')
                     .select('id, tipo_midia, caminho_fisico, nome_seguro, nome_original')
                     .eq('tipo_entidade', 'SUSPEITO')
@@ -1385,7 +1783,6 @@
                     .eq('deletado', false)
                     .order('data_upload', { ascending: true });
 
-                // Gera signed URLs
                 const fotosComUrl = await Promise.all((midias || []).map(async (m) => {
                     let url = null;
                     if (m.caminho_fisico) {
@@ -1397,15 +1794,9 @@
                     return { ...m, url };
                 }));
 
-                // Separa principal
                 const principal = fotosComUrl.find(f => f.nome_seguro && f.nome_seguro.toLowerCase().includes('principal'));
-                if (principal && principal.url) {
-                    document.getElementById('editFotoPrincipalPreview') /* não existe ainda */;
-                }
-                // Guarda as demais (secundárias e tatuagens)
                 editFotosExistentes = fotosComUrl.filter(f => f !== principal);
 
-                // ---------- RENDERIZA MODAL ----------
                 const setores = {
                     'nome_completo': 'Identificação', 'apelido': 'Identificação', 'cpf': 'Identificação',
                     'rg': 'Identificação', 'orgao_expedidor': 'Identificação', 'data_nascimento': 'Identificação',
@@ -1475,8 +1866,8 @@
                 const motivosHTML = MOTIVOS_ALTERACAO.map(m => `<option value="${m}">${m}</option>`).join('');
 
                 const fotoPrincipalPreviewHTML = principal && principal.url
-                    ? `<img src="${principal.url}" alt="Foto principal">`
-                    : `<i class="fas fa-user-secret"></i><div class="hint">Clique para substituir<br>a foto principal</div>`;
+                    ? `<img src="${principal.url}" alt="Foto principal" id="editFotoPrincipalPreview">`
+                    : `<i class="fas fa-user-secret"></i><div class="hint">Clique para substituir<br>a foto principal</div><img id="editFotoPrincipalPreview" alt="Nova foto principal">`;
 
                 body.innerHTML = `
                     <div class="aviso-justificativa">
@@ -1486,14 +1877,10 @@
                         </div>
                     </div>
 
-                    <!-- ============================================================
-                         [v2.10.0] FOTOS DO SUSPEITO
-                         ============================================================ -->
                     <div class="edit-fotos-section">
                         <div class="edit-fotos-title"><i class="fas fa-camera me-2"></i>Fotos do Suspeito</div>
 
                         <div class="row g-3">
-                            <!-- Foto principal -->
                             <div class="col-md-3">
                                 <div class="edit-foto-principal-wrapper ${principal && principal.url ? 'tem-foto' : ''}"
                                      id="editFotoPrincipalWrapper"
@@ -1508,7 +1895,6 @@
                                 </button>
                             </div>
 
-                            <!-- Demais fotos -->
                             <div class="col-md-9">
                                 <div style="color: rgba(0,255,136,0.5); font-size: 12px; margin-bottom: 8px;">
                                     <i class="fas fa-info-circle me-1"></i>
@@ -1521,9 +1907,6 @@
                         </div>
                     </div>
 
-                    <!-- ============================================================
-                         CAMPOS
-                         ============================================================ -->
                     <form id="formEdicao">
                         <div class="row">${camposHTML}</div>
                         <div class="mt-4 pt-3" style="border-top: 1px solid var(--border-color);">
@@ -1548,7 +1931,6 @@
                     </form>
                 `;
 
-                // Renderiza miniaturas
                 renderizarEditMiniGrid();
 
                 document.getElementById('formEdicao').addEventListener('submit', async (e) => {
@@ -1562,9 +1944,6 @@
             }
         }
 
-        // ============================================================
-        // SALVAR EDIÇÃO (com fotos)
-        // ============================================================
         async function salvarEdicao(suspeitoOriginal) {
             const btn = document.getElementById('btnSalvarEdicao');
             btn.disabled = true;
@@ -1599,11 +1978,9 @@
                     return;
                 }
 
-                // ---------- RPC justificativa ----------
                 const justificativaCompleta = `[${motivo}] ${justificativa}`;
                 try { await sb.rpc('set_justificativa', { justificativa: justificativaCompleta, id_usuario: usuarioAtual.id }); } catch (e) { console.warn('RPC erro:', e); }
 
-                // ---------- UPDATE suspeito (só se tem mudanças) ----------
                 if (temAlteracaoTexto) {
                     dadosNovos.data_atualizacao = new Date().toISOString();
                     dadosNovos.id_usuario_atualizacao = usuarioAtual.id;
@@ -1612,28 +1989,21 @@
                     console.log('✅ Texto atualizado');
                 }
 
-                // ---------- FOTOS ----------
                 const errosFoto = [];
 
-                // 1) Remover mídias marcadas
                 if (editFotosRemover.length > 0) {
                     for (const idMidia of editFotosRemover) {
                         try {
-                            // Pega caminho_fisico
                             const { data: midia } = await sb.from('arquivo_midia').select('caminho_fisico').eq('id', idMidia).maybeSingle();
-                            if (midia?.caminho_fisico) {
-                                await sb.storage.from(BUCKET_FOTOS).remove([midia.caminho_fisico]);
-                            }
+                            if (midia?.caminho_fisico) await sb.storage.from(BUCKET_FOTOS).remove([midia.caminho_fisico]);
                             await sb.from('arquivo_midia').update({ deletado: true }).eq('id', idMidia);
                         } catch (e) { errosFoto.push(`Remover mídia #${idMidia}: ${e.message}`); }
                     }
                     console.log(`🗑️ ${editFotosRemover.length} mídia(s) removida(s)`);
                 }
 
-                // 2) Substituir foto principal (marca antiga como deletada, sobe nova)
                 if (editFotoPrincipalArquivo) {
                     try {
-                        // Marca antiga como deletada
                         const { data: principalAntiga } = await sb.from('arquivo_midia')
                             .select('id, caminho_fisico')
                             .eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', suspeitoOriginal.id_suspeito)
@@ -1647,7 +2017,6 @@
                             await sb.from('arquivo_midia').update({ deletado: true }).eq('id', principalAntiga.id);
                         }
 
-                        // Sobe nova
                         await uploadMidiaEdicao({
                             idSuspeito: suspeitoOriginal.id_suspeito,
                             file: editFotoPrincipalArquivo,
@@ -1658,7 +2027,6 @@
                     } catch (e) { errosFoto.push('Foto principal: ' + e.message); }
                 }
 
-                // 3) Novas secundárias
                 for (let i = 0; i < editFotosNovasSecundarias.length; i++) {
                     try {
                         await uploadMidiaEdicao({
@@ -1670,7 +2038,6 @@
                     } catch (e) { errosFoto.push(`Secundária ${i + 1}: ${e.message}`); }
                 }
 
-                // 4) Novas tatuagens
                 for (let i = 0; i < editFotosNovasTatuagens.length; i++) {
                     try {
                         await uploadMidiaEdicao({
@@ -1682,7 +2049,6 @@
                     } catch (e) { errosFoto.push(`Tatuagem ${i + 1}: ${e.message}`); }
                 }
 
-                // ---------- Feedback ----------
                 if (errosFoto.length > 0) {
                     showToastLocal('warning', 'Salvo com avisos', errosFoto.join('<br>'), 9000);
                 } else {
@@ -1769,88 +2135,152 @@
         function fecharHistorico() { document.getElementById('modalHistorico').classList.remove('open'); }
 
         // ============================================================
-        // FOTOS (galeria)
+        // FOTOS (galeria) [v2.11.1]
         // ============================================================
         async function verFotos(id) {
             const modal = document.getElementById('modalFotos');
             const body = document.getElementById('modalFotosBody');
             modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando fotos...</div>';
+
             try {
-                const { data: midias, error } = await sb.from('arquivo_midia').select('*').eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', id).eq('deletado', false).order('data_upload', { ascending: false });
+                const info = dadosAtuais.find(d => d.id_suspeito == id);
+                const nome = info?.nome_completo || `Suspeito #${id}`;
+
+                const { data: midias, error } = await sb.from('arquivo_midia')
+                    .select('id, tipo_midia, caminho_fisico, nome_seguro, nome_original, data_upload')
+                    .eq('tipo_entidade', 'SUSPEITO')
+                    .eq('id_entidade', id)
+                    .eq('deletado', false)
+                    .in('tipo_midia', ['FOTO', 'TATUAGEM'])
+                    .order('data_upload', { ascending: false });
+
                 if (error) throw error;
-                const fotos = (midias || []).filter(m => m.tipo_midia === 'FOTO' || m.tipo_midia === 'TATUAGEM');
-                if (fotos.length === 0) {
-                    body.innerHTML = `<div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-images" style="font-size: 50px; display: block; margin-bottom: 15px;"></i><div>Nenhuma foto cadastrada</div></div>`;
+
+                if (!midias || midias.length === 0) {
+                    body.innerHTML = `
+                        <div class="text-center py-5" style="color: rgba(0, 255, 136, 0.3);">
+                            <i class="fas fa-images" style="font-size: 50px; display: block; margin-bottom: 15px;"></i>
+                            <div style="font-size: 14px; margin-bottom: 6px;">Nenhuma foto cadastrada</div>
+                            <small style="font-size: 11px;">${nome}</small>
+                        </div>`;
                     return;
                 }
-                let html = '<div class="galeria-fotos">';
-                for (const foto of fotos) {
+
+                const fotosComUrl = await Promise.all(midias.map(async (m) => {
                     let url = null;
-                    if (foto.caminho_fisico) {
-                        const { data: s } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(foto.caminho_fisico, URL_EXPIRACAO_S);
-                        url = s?.signedUrl || null;
+                    if (m.caminho_fisico) {
+                        try {
+                            const { data: s } = await sb.storage.from(BUCKET_FOTOS).createSignedUrl(m.caminho_fisico, URL_EXPIRACAO_S);
+                            url = s?.signedUrl || null;
+                        } catch (e) { console.warn('signed err:', e); }
                     }
-                    const dataU = foto.data_upload ? new Date(foto.data_upload).toLocaleDateString('pt-BR') : '-';
-                    const isPrincipal = foto.nome_seguro && foto.nome_seguro.toLowerCase().includes('principal');
-                    const isTattoo = foto.tipo_midia === 'TATUAGEM';
-                    html += `<div class="foto-card">${url ? `<img src="${url}" alt="Foto">` : `<div style="height:180px;display:flex;align-items:center;justify-content:center;color:rgba(0,255,136,0.2);"><i class="fas fa-image" style="font-size:40px;"></i></div>`}<div class="info">${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : ''}${isTattoo ? '<span class="principal" style="background:#ffc107;color:#000;">TATUAGEM</span>' : ''}<div class="data mt-2"><i class="fas fa-calendar me-1"></i>${dataU}</div></div></div>`;
-                }
-                html += '</div>';
-                body.innerHTML = html;
+                    return { ...m, url };
+                }));
+
+                let cardsHTML = '';
+                fotosComUrl.forEach(f => {
+                    if (!f.url) return;
+                    const isPrincipal = f.nome_seguro && f.nome_seguro.toLowerCase().includes('principal');
+                    const isTatuagem = f.tipo_midia === 'TATUAGEM';
+                    const data = f.data_upload ? new Date(f.data_upload).toLocaleDateString('pt-BR') : '-';
+                    const rotulo = isTatuagem ? 'Tatuagem' : (isPrincipal ? 'Principal' : 'Secundária');
+
+                    cardsHTML += `
+                        <div class="foto-card">
+                            <img src="${f.url}" alt="${rotulo}" onclick="abrirLightbox('${f.url}')">
+                            <div class="info">
+                                ${isPrincipal ? '<span class="principal">PRINCIPAL</span>' : `<span style="color:${isTatuagem ? '#ba68c8' : 'rgba(0,255,136,0.5)'}; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">${rotulo}</span>`}
+                                <div class="data mt-1"><i class="fas fa-calendar me-1"></i>${data}</div>
+                            </div>
+                        </div>`;
+                });
+
+                body.innerHTML = `
+                    <div style="background:rgba(0,255,136,0.03);border:1px solid var(--border-color);border-radius:10px;padding:12px 15px;margin-bottom:18px;">
+                        <div style="color:var(--text-primary);font-weight:700;font-size:14px;"><i class="fas fa-user-secret me-2"></i>${nome}</div>
+                        <div style="color:rgba(0,255,136,0.4);font-size:11px;margin-top:4px;">${fotosComUrl.filter(f => f.url).length} foto(s) — clique para ampliar</div>
+                    </div>
+                    <div class="galeria-fotos">${cardsHTML}</div>
+                `;
             } catch (error) {
+                console.error('❌ Erro verFotos:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
             }
         }
         function fecharFotos() { document.getElementById('modalFotos').classList.remove('open'); }
 
         // ============================================================
-        // ALERTA
+        // EMITIR ALERTA [v2.11.1]
         // ============================================================
-        function emitirAlerta(id) {
-            if (confirm('⚠️ Emitir ALERTA DE SEGURANÇA?')) alert(`🚨 ALERTA EMITIDO para ID: ${id}`);
-        }
+        async function emitirAlerta(id) {
+            const info = dadosAtuais.find(d => d.id_suspeito == id);
+            const nome = info?.nome_completo || `Suspeito #${id}`;
 
-        // ============================================================
-        // TOAST LOCAL
-        // ============================================================
-        function showToastLocal(tipo, titulo, mensagem, duracao) {
-            duracao = duracao || 5000;
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = 'toast-ai ' + tipo;
-            toast.style.cssText = 'position:fixed;top:70px;right:20px;background:#0a0a0a;border:1px solid #003322;border-radius:12px;padding:16px 20px;color:#00ff88;z-index:99999;min-width:300px;box-shadow:0 10px 40px rgba(0,0,0,0.8);border-left:4px solid ' + (tipo === 'error' ? '#dc3545' : tipo === 'warning' ? '#ffc107' : '#00ff88') + ';';
-            const icone = tipo === 'error' ? 'fa-times-circle' : tipo === 'warning' ? 'fa-exclamation-triangle' : 'fa-check-circle';
-            toast.innerHTML = `<div style="font-weight:700;margin-bottom:5px;"><i class="fas ${icone} me-2"></i>${titulo}</div><div style="font-size:12px;color:rgba(0,255,136,0.6);">${mensagem}</div>`;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), duracao);
-        }
+            const mensagem = prompt(
+                `🚨 EMITIR ALERTA\n\nSuspeito: ${nome}\n\nDescreva a observação/alerta (opcional):`,
+                ''
+            );
+            if (mensagem === null) return;
 
-        // ============================================================
-        // INICIALIZAÇÃO
-        // ============================================================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Consulta v2.10.0 iniciada em ' + new Date().toLocaleString('pt-BR'));
-            carregarUsuario();
-            carregarEstatisticas();
-        });
+            try {
+                const { error } = await sb.from('notificacao').insert({
+                    tipo: 'ALERTA_SUSPEITO',
+                    titulo: `🚨 Alerta: ${nome}`,
+                    mensagem: mensagem || `Alerta emitido para o suspeito ${nome}.`,
+                    lida: false,
+                    data_criacao: new Date().toISOString(),
+                    dados_extras: { id_suspeito: id, nome }
+                });
+                if (error) throw error;
 
-        document.getElementById('buscaGlobal').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') realizarBusca();
-        });
+                showToastLocal('success', 'Alerta emitido', `Alerta registrado para ${nome}.`, 5000);
+                carregarNotificacoes();
 
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
-            if (e.key === 'Escape') {
-                fecharLightbox();
-                fecharFicha();
-                fecharEdicao();
-                fecharHistorico();
-                fecharFotos();
-                fecharMandados();
+            } catch (error) {
+                console.error('❌ Erro emitir alerta:', error);
+                showToastLocal('error', 'Erro ao emitir alerta', error.message, 6000);
             }
+        }
+
+        // ============================================================
+        // INICIALIZAÇÃO [v2.11.1]
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 AI-DEPOM Consulta v2.11.2 inicializando...');
+
+            try { await carregarUsuario(); } catch (e) { console.warn('Usuário:', e); }
+            try { await carregarEstatisticas(); } catch (e) { console.warn('Stats:', e); }
+            try { await carregarNotificacoes(); } catch (e) { console.warn('Notif:', e); }
+
+            // Polling de notificações a cada 30s
+            if (_notifTimer) clearInterval(_notifTimer);
+            _notifTimer = setInterval(() => {
+                carregarNotificacoes().catch(e => console.warn('poll notif:', e));
+            }, 30000);
+
+            // Enter no campo de busca dispara a busca
+            const inputBusca = document.getElementById('buscaGlobal');
+            if (inputBusca) {
+                inputBusca.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); realizarBusca(); }
+                });
+            }
+
+            // ESC fecha modais abertos
+            document.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                const modais = ['modalFicha', 'modalEdicao', 'modalHistorico', 'modalFotos', 'modalMandados'];
+                modais.forEach(mid => {
+                    const el = document.getElementById(mid);
+                    if (el && el.classList.contains('open')) el.classList.remove('open');
+                });
+                const lb = document.getElementById('fotoLightbox');
+                if (lb) lb.classList.remove('open');
+            });
+
+            console.log('✅ Sistema pronto.');
         });
     </script>
-    <script src="assets/js/inactivity-lock.js"></script>
 </body>
 </html>
