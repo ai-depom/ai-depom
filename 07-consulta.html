@@ -2,8 +2,8 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.11.2
-     Data: 18/09/2026 - 06:30
+     Versão: 2.11.3
+     Data: 18/09/2026 - 07:15
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,12 +15,17 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.11.3 (18/09/2026 07:15):
+     - 🔒 SEGURANÇA DEFINITIVA: busca migrada para RPC Postgres
+       - sb.rpc('buscar_suspeito', { p_termo, p_status, ... })
+       - Termo vai como PARÂMETRO, nunca como string de filtro
+       - sanitizarTermoBusca() removida (não é mais necessária)
+       - CPF com pontos (123.456.789-00) agora funciona corretamente
+     - 🐛 FIX: paginação — realizarBusca(resetPagina) evita reset
+     - ✅ Preservadas TODAS as funcionalidades da v2.11.2
+
      ALTERAÇÕES v2.11.2 (18/09/2026 06:30):
      - 🔒 SEGURANÇA: sanitização do termo de busca antes do .or()
-       - Nova função sanitizarTermoBusca()
-       - Remove caracteres de sintaxe do PostgREST: . , ( ) " \
-       - Remove wildcards de ILIKE: * % _
-       - Evita injeção de filtros via campo "Busca Global"
      - ✅ Preservadas TODAS as funcionalidades da v2.11.1
 
      ALTERAÇÕES v2.11.1 (18/09/2026 06:10):
@@ -1317,39 +1322,16 @@
         function abrirTelaMandados() { window.location.href = '11-mandados.html'; }
 
         // ============================================================
-        // [v2.11.2] SANITIZAÇÃO DO TERMO DE BUSCA
-        // Remove caracteres que quebram o parser do PostgREST (.or)
-        // e wildcards de ILIKE, prevenindo injeção de filtros.
+        // BUSCA PRINCIPAL [v2.11.3 — via RPC buscar_suspeito]
         // ============================================================
-        function sanitizarTermoBusca(termo) {
-            if (termo == null) return '';
-            let t = String(termo);
+        async function realizarBusca(resetPagina = true) {
+            console.log('🔍 realizarBusca() | resetPagina =', resetPagina);
 
-            // 1) Substitui por espaço os caracteres de sintaxe do PostgREST
-            //    . , ( ) " \  — separadores/agrupadores em .or() e .and()
-            t = t.replace(/[.,()"\\]/g, ' ');
-
-            // 2) Remove wildcards do LIKE/ILIKE (* % _) para o usuário
-            //    não ampliar a busca sem intenção
-            t = t.replace(/[*%_]/g, '');
-
-            // 3) Colapsa espaços múltiplos e apara
-            t = t.replace(/\s+/g, ' ').trim();
-
-            return t;
-        }
-
-        // ============================================================
-        // BUSCA PRINCIPAL
-        // ============================================================
-        async function realizarBusca() {
-            console.log('🔍 realizarBusca() chamada');
-            const termoBruto = document.getElementById('buscaGlobal').value.trim();
-            const termo = sanitizarTermoBusca(termoBruto);   // [v2.11.2] termo seguro
-            const status = document.getElementById('filtroStatus').value;
-            const periculosidade = document.getElementById('filtroPericulosidade').value;
-            const dataInicio = document.getElementById('filtroDataInicio').value;
-            const dataFim = document.getElementById('filtroDataFim').value;
+            const termo = document.getElementById('buscaGlobal').value.trim();
+            const status = document.getElementById('filtroStatus').value || null;
+            const periculosidade = document.getElementById('filtroPericulosidade').value || null;
+            const dataInicio = document.getElementById('filtroDataInicio').value || null;
+            const dataFim = document.getElementById('filtroDataFim').value || null;
             const temFiltro = termo.length > 0 || status || periculosidade || dataInicio || dataFim;
 
             if (!temFiltro) {
@@ -1380,32 +1362,27 @@
                 return;
             }
 
+            if (resetPagina) paginaAtual = 1;
+
             try {
-                paginaAtual = 1;
-
-                let query = sb.from('suspeito')
-                    .select(`id_suspeito, nome_completo, cpf, rg, cidade, status_atual, nivel_periculosidade, data_cadastro`, { count: 'exact' })
-                    .eq('deletado', false);
-
-                // [v2.11.2] termo já sanitizado — sem caracteres de sintaxe PostgREST
-                if (termo.length >= 2) {
-                    query = query.or(
-                        `nome_completo.ilike.%${termo}%,cpf.ilike.%${termo}%,rg.ilike.%${termo}%`
-                    );
-                }
-                if (status) query = query.eq('status_atual', status);
-                if (periculosidade) query = query.eq('nivel_periculosidade', periculosidade);
-                if (dataInicio) query = query.gte('data_cadastro', dataInicio);
-                if (dataFim) query = query.lte('data_cadastro', dataFim);
-
-                const { data: suspeitos, count, error } = await query
-                    .order('data_cadastro', { ascending: false })
-                    .range((paginaAtual - 1) * itensPorPagina, paginaAtual * itensPorPagina - 1);
+                // [v2.11.3] Chamada RPC — termo vai como parâmetro, nunca como string de filtro
+                const { data: rows, error } = await sb.rpc('buscar_suspeito', {
+                    p_termo:           termo.length >= 2 ? termo : null,
+                    p_status:          status,
+                    p_periculosidade:  periculosidade,
+                    p_data_inicio:     dataInicio,
+                    p_data_fim:        dataFim,
+                    p_limit:           itensPorPagina,
+                    p_offset:          (paginaAtual - 1) * itensPorPagina
+                });
 
                 if (error) throw error;
-                console.log('📋 Suspeitos:', count);
 
-                if (!suspeitos || suspeitos.length === 0) {
+                const suspeitos = rows || [];
+                const total = suspeitos.length > 0 ? Number(suspeitos[0].total_count) : 0;
+                console.log('📋 Suspeitos:', suspeitos.length, '| total:', total);
+
+                if (suspeitos.length === 0) {
                     dadosAtuais = [];
                     totalRegistros = 0;
                     suspeitosComMandado = new Set();
@@ -1415,7 +1392,13 @@
                     return;
                 }
 
-                const ids = suspeitos.map(s => s.id_suspeito);
+                // Remove o campo auxiliar total_count de cada linha
+                const limpos = suspeitos.map(r => {
+                    const { total_count, ...rest } = r;
+                    return rest;
+                });
+
+                const ids = limpos.map(s => s.id_suspeito);
                 await carregarSuspeitosComMandado(ids);
 
                 const { data: midias } = await sb.from('arquivo_midia')
@@ -1431,7 +1414,7 @@
                     midiasPorSuspeito[m.id_entidade].push(m);
                 });
 
-                const dadosComFoto = await Promise.all(suspeitos.map(async (s) => {
+                const dadosComFoto = await Promise.all(limpos.map(async (s) => {
                     const lista = midiasPorSuspeito[s.id_suspeito] || [];
                     const principal = lista.find(m => m.nome_seguro && m.nome_seguro.toLowerCase().includes('principal')) || lista[0];
                     let fotoUrl = null;
@@ -1445,7 +1428,7 @@
                 }));
 
                 dadosAtuais = dadosComFoto;
-                totalRegistros = count || 0;
+                totalRegistros = total;
                 await carregarEstatisticas();
                 renderizarResultados();
             } catch (error) {
@@ -1528,9 +1511,10 @@
             document.getElementById('btnProximo').style.display = paginaAtual < totalPaginas ? 'inline-block' : 'none';
         }
 
-        function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; realizarBusca(); } }
-        function proximaPagina() { const tp = Math.ceil(totalRegistros / itensPorPagina); if (paginaAtual < tp) { paginaAtual++; realizarBusca(); } }
-        function irPagina(num) { paginaAtual = num; realizarBusca(); }
+        // [v2.11.3] Paginação não reseta mais para a página 1
+        function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; realizarBusca(false); } }
+        function proximaPagina() { const tp = Math.ceil(totalRegistros / itensPorPagina); if (paginaAtual < tp) { paginaAtual++; realizarBusca(false); } }
+        function irPagina(num) { paginaAtual = num; realizarBusca(false); }
 
         // ============================================================
         // FICHA
@@ -2056,7 +2040,7 @@
                 }
 
                 fecharEdicao();
-                await realizarBusca();
+                await realizarBusca(false);   // [v2.11.3] preserva página atual
 
             } catch (error) {
                 console.error('❌ Erro ao salvar:', error);
@@ -2247,7 +2231,7 @@
         // INICIALIZAÇÃO [v2.11.1]
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 AI-DEPOM Consulta v2.11.2 inicializando...');
+            console.log('🚀 AI-DEPOM Consulta v2.11.3 inicializando...');
 
             try { await carregarUsuario(); } catch (e) { console.warn('Usuário:', e); }
             try { await carregarEstatisticas(); } catch (e) { console.warn('Stats:', e); }
