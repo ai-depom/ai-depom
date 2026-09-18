@@ -2,15 +2,38 @@
      AI-DEPOM - CADASTRO DE SUSPEITOS
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.2.0
-     Data: 18/09/2026 - 05:00
+     Versão: 3.3.0
+     Data: 18/09/2026 - 04:45
+     Autor: AI-DEPOM Team
      ============================================================
-     ALTERAÇÕES v3.2.0:
-     - ✨ Foto Principal movida para o canto superior esquerdo
-       da seção "Identificação" (ao lado dos campos)
-     - ✨ Foto Secundária na seção de Fotos complementares
-     - ✨ Fotos de Tatuagem mantidas (múltiplas)
-     - ✅ Upload para bucket fotos-suspeitos + insert arquivo_midia
+     REGRA DE OURO:
+     1. Zero placeholders quebrados
+     2. Zero TODOs esquecidos
+     3. Zero duplicações
+     4. Toda função referenciada DEVE existir
+     5. Todo botão DEVE ter handler real
+     6. Todo módulo DEVE estar conectado
+     7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v3.3.0 (18/09/2026 04:45):
+     - ✨ ETAPA 1: Checagem de CPF duplicado em 3 camadas
+       - Máscara de CPF em tempo real (000.000.000-00)
+       - Aviso visual abaixo do campo enquanto digita (com debounce)
+       - Bloqueio total no momento de salvar (não permite CPF duplicado)
+     - ✨ ETAPA 2: Checagem de nome duplicado (com homônimos)
+       - Aviso visual abaixo do campo ao digitar nome já existente
+       - Confirm no salvar (permite continuar se for homônimo)
+     - 🎨 CSS: adicionadas classes .aviso-duplicidade e .input-duplicado
+     - ✅ Preservadas TODAS as funcionalidades da v3.2.0
+
+     ALTERAÇÕES v3.2.0 (18/09/2026 04:00):
+     - Foto Principal movida para o canto superior esquerdo da Identificação
+     - Foto Secundária na seção de Fotos Complementares
+     - Fotos de Tatuagem (múltiplas)
+     - Upload para bucket fotos-suspeitos + insert arquivo_midia
+
+     ALTERAÇÕES v3.1.0 (18/09/2026 03:00):
+     - Foto Principal + Secundária + Tatuagens
      ============================================================
 -->
 <!DOCTYPE html>
@@ -41,7 +64,6 @@
             color: var(--text-primary);
             overflow-x: hidden;
         }
-
         .controls-bar {
             position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
             background: rgba(0, 0, 0, 0.95);
@@ -152,7 +174,7 @@
         .btn-outline-gold:hover { background: rgba(0, 255, 136, 0.05); }
 
         /* ============================================================
-           FOTO PRINCIPAL (canto superior esquerdo, estilo "mugshot")
+           FOTO PRINCIPAL (canto superior esquerdo da Identificação)
            ============================================================ */
         .foto-principal-wrapper {
             border: 2px solid var(--border-color);
@@ -325,6 +347,34 @@
         }
         .tatuagem-upload-btn i { font-size: 26px; margin-bottom: 6px; }
 
+        /* ============================================================
+           [v3.3.0] CHECAGEM DE DUPLICIDADE (CPF + Nome)
+           ============================================================ */
+        .aviso-duplicidade {
+            display: flex; align-items: center; gap: 6px;
+            padding: 6px 10px; border-radius: 8px;
+            margin-top: 6px; font-size: 12px; font-weight: 600;
+        }
+        .aviso-duplicidade.erro {
+            background: rgba(220, 53, 69, 0.12);
+            border: 1px solid rgba(220, 53, 69, 0.5);
+            color: #dc3545;
+        }
+        .aviso-duplicidade.ok {
+            background: rgba(0, 255, 136, 0.08);
+            border: 1px solid rgba(0, 255, 136, 0.35);
+            color: var(--text-primary);
+        }
+        .aviso-duplicidade.verificando {
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.35);
+            color: #ffc107;
+        }
+        input.input-duplicado {
+            border-color: #dc3545 !important;
+            box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.15) !important;
+        }
+
         /* TOAST */
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai {
@@ -441,7 +491,7 @@
         <form id="formCadastro" novalidate>
 
             <!-- ============================================================
-                 IDENTIFICAÇÃO (com FOTO PRINCIPAL na parte superior esquerda)
+                 IDENTIFICAÇÃO (com FOTO PRINCIPAL no canto superior esquerdo)
                  ============================================================ -->
             <div class="form-card">
                 <div class="card-title"><i class="fas fa-id-card"></i>Identificação</div>
@@ -449,7 +499,7 @@
                 <div class="row g-3">
                     <!-- FOTO PRINCIPAL - canto superior esquerdo -->
                     <div class="col-md-3">
-                        <span class="foto-principal-label"><i class="fas fa-camera me-1"></i>Foto Principal *</span>
+                        <span class="foto-principal-label"><i class="fas fa-camera me-1"></i>Foto Principal</span>
                         <div class="foto-principal-wrapper" id="fotoPrincipalWrapper"
                              onclick="document.getElementById('fotoPrincipalInput').click()">
                             <i class="fas fa-user-secret"></i>
@@ -472,7 +522,11 @@
                         <div class="row g-3">
                             <div class="col-md-12">
                                 <label class="form-label">Nome Completo *</label>
-                                <input type="text" class="form-control" id="nome_completo" maxlength="200" required>
+                                <!-- [v3.3.0] Adicionado oninput e onblur para checar duplicidade -->
+                                <input type="text" class="form-control" id="nome_completo" maxlength="200" required
+                                       oninput="checarDuplicidadeNomeDebounce()"
+                                       onblur="checarDuplicidadeNome()">
+                                <small id="avisoNome" style="display:none;"></small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Apelido</label>
@@ -480,7 +534,11 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">CPF *</label>
-                                <input type="text" class="form-control" id="cpf" maxlength="14" placeholder="000.000.000-00" required>
+                                <!-- [v3.3.0] Adicionado oninput (máscara + checagem) e onblur (checagem) -->
+                                <input type="text" class="form-control" id="cpf" maxlength="14" placeholder="000.000.000-00" required
+                                       oninput="mascaraCpf(this); checarDuplicidadeCpfDebounce()"
+                                       onblur="checarDuplicidadeCpf()">
+                                <small id="avisoCpf" style="display:none;"></small>
                             </div>
                             <div class="col-md-5">
                                 <label class="form-label">RG</label>
@@ -680,6 +738,9 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="assets/js/supabase-config.js"></script>
     <script>
+        // ============================================================
+        // SUPABASE
+        // ============================================================
         const BUCKET_FOTOS = 'fotos-suspeitos';
         const sb = (function() {
             if (typeof window.supabaseClient !== 'undefined' && window.supabaseClient?.from) return window.supabaseClient;
@@ -695,6 +756,9 @@
         let fotoSecundariaArquivo = null;
         let tatuagensArquivos = [];
 
+        // ============================================================
+        // USUÁRIO
+        // ============================================================
         async function carregarUsuario() {
             try {
                 const { data: { user } } = await sb.auth.getUser();
@@ -713,6 +777,9 @@
             } catch (e) { console.error('Erro ao carregar usuário:', e); }
         }
 
+        // ============================================================
+        // HELPERS
+        // ============================================================
         function mascaraCep(input) {
             let v = input.value.replace(/\D/g, '').slice(0, 8);
             if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
@@ -734,7 +801,144 @@
             } catch (e) { console.error('ViaCEP:', e); }
         }
 
-        // ---------- FOTO PRINCIPAL ----------
+        // ============================================================
+        // [v3.3.0] ETAPA 1 — MÁSCARA E CHECAGEM DE CPF DUPLICADO
+        // ============================================================
+
+        /**
+         * Aplica máscara no CPF: 000.000.000-00
+         * Chamada a cada tecla digitada (oninput)
+         */
+        function mascaraCpf(input) {
+            let v = input.value.replace(/\D/g, '').slice(0, 11);
+            if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+            else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/, '$1.$2.$3');
+            else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
+            input.value = v;
+        }
+
+        /**
+         * Debounce da checagem de CPF (evita várias queries enquanto digita)
+         * Aguarda 600ms após a última tecla
+         */
+        let _timerCpf = null;
+        function checarDuplicidadeCpfDebounce() {
+            clearTimeout(_timerCpf);
+            _timerCpf = setTimeout(checarDuplicidadeCpf, 600);
+        }
+
+        /**
+         * Verifica se o CPF já está cadastrado na tabela `suspeito`
+         * Se sim: mostra aviso vermelho + borda vermelha no campo
+         * Se não: mostra "CPF disponível" por 2.5s
+         */
+        async function checarDuplicidadeCpf() {
+            const input = document.getElementById('cpf');
+            const aviso = document.getElementById('avisoCpf');
+            if (!input || !aviso) return false;
+
+            const cpf = (input.value || '').replace(/\D/g, '');
+
+            input.classList.remove('input-duplicado');
+            aviso.style.display = 'none';
+            aviso.className = 'aviso-duplicidade';
+
+            if (cpf.length < 11) return false;
+
+            aviso.style.display = 'flex';
+            aviso.className = 'aviso-duplicidade verificando';
+            aviso.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando CPF...';
+
+            try {
+                const { data, error } = await sb.from('suspeito')
+                    .select('id_suspeito, nome_completo')
+                    .eq('deletado', false)
+                    .eq('cpf', input.value.trim())
+                    .limit(1);
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const e = data[0];
+                    input.classList.add('input-duplicado');
+                    aviso.className = 'aviso-duplicidade erro';
+                    aviso.innerHTML = `<i class="fas fa-exclamation-triangle"></i> CPF já cadastrado para <strong>${e.nome_completo}</strong> (ID #${e.id_suspeito})`;
+                    return true;
+                }
+                aviso.className = 'aviso-duplicidade ok';
+                aviso.innerHTML = '<i class="fas fa-check-circle"></i> CPF disponível';
+                setTimeout(() => { if (aviso.innerHTML.includes('disponível')) aviso.style.display = 'none'; }, 2500);
+                return false;
+            } catch (e) {
+                console.warn('Erro ao checar CPF:', e);
+                aviso.style.display = 'none';
+                return false;
+            }
+        }
+
+        // ============================================================
+        // [v3.3.0] ETAPA 2 — CHECAGEM DE NOME DUPLICADO
+        // ============================================================
+
+        /**
+         * Debounce da checagem de nome (aguarda 700ms após a última tecla)
+         */
+        let _timerNome = null;
+        function checarDuplicidadeNomeDebounce() {
+            clearTimeout(_timerNome);
+            _timerNome = setTimeout(checarDuplicidadeNome, 700);
+        }
+
+        /**
+         * Verifica se já existe suspeito com o mesmo nome completo
+         * Se sim: mostra aviso vermelho (a pergunta final é feita no submit)
+         * Se não: mostra "Nome disponível" por 2.5s
+         */
+        async function checarDuplicidadeNome() {
+            const input = document.getElementById('nome_completo');
+            const aviso = document.getElementById('avisoNome');
+            if (!input || !aviso) return false;
+
+            const nome = (input.value || '').trim();
+
+            input.classList.remove('input-duplicado');
+            aviso.style.display = 'none';
+            aviso.className = 'aviso-duplicidade';
+
+            if (nome.length < 5) return false;
+
+            aviso.style.display = 'flex';
+            aviso.className = 'aviso-duplicidade verificando';
+            aviso.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando nome...';
+
+            try {
+                const { data, error } = await sb.from('suspeito')
+                    .select('id_suspeito, nome_completo, cpf')
+                    .eq('deletado', false)
+                    .ilike('nome_completo', nome)
+                    .limit(1);
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const e = data[0];
+                    input.classList.add('input-duplicado');
+                    aviso.className = 'aviso-duplicidade erro';
+                    aviso.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Já existe suspeito com este nome: <strong>${e.nome_completo}</strong> (CPF ${e.cpf || 'não informado'})`;
+                    return true;
+                }
+                aviso.className = 'aviso-duplicidade ok';
+                aviso.innerHTML = '<i class="fas fa-check-circle"></i> Nome disponível';
+                setTimeout(() => { if (aviso.innerHTML.includes('disponível')) aviso.style.display = 'none'; }, 2500);
+                return false;
+            } catch (e) {
+                console.warn('Erro ao checar nome:', e);
+                aviso.style.display = 'none';
+                return false;
+            }
+        }
+
+        // ============================================================
+        // FOTO PRINCIPAL
+        // ============================================================
         function onFotoPrincipalSelecionada(ev) {
             const file = ev.target.files[0];
             if (!file) return;
@@ -754,7 +958,9 @@
             document.getElementById('fotoPrincipalWrapper').classList.remove('tem-foto');
         }
 
-        // ---------- FOTO SECUNDÁRIA ----------
+        // ============================================================
+        // FOTO SECUNDÁRIA
+        // ============================================================
         function onFotoSecundariaSelecionada(ev) {
             const file = ev.target.files[0];
             if (!file) return;
@@ -774,7 +980,9 @@
             document.getElementById('fotoSecundariaArea').classList.remove('tem-foto');
         }
 
-        // ---------- TATUAGENS ----------
+        // ============================================================
+        // TATUAGENS
+        // ============================================================
         function renderizarTatuagens() {
             const grid = document.getElementById('tatuagensGrid');
             grid.innerHTML = '';
@@ -815,14 +1023,18 @@
             renderizarTatuagens();
         }
 
-        // ---------- SALVAR ----------
+        // ============================================================
+        // [v3.3.0] SALVAR COM VALIDAÇÕES DE DUPLICIDADE
+        // ============================================================
         document.getElementById('formCadastro').addEventListener('submit', async function(e) {
             e.preventDefault();
+
             const btn = document.getElementById('btnSalvar');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
 
             try {
+                // ---------- Validações básicas ----------
                 const nome = document.getElementById('nome_completo').value.trim();
                 const cpf = document.getElementById('cpf').value.trim();
                 const dataNasc = document.getElementById('data_nascimento').value;
@@ -833,6 +1045,63 @@
                 if (!dataNasc) throw new Error('Informe a data de nascimento.');
                 if (!status) throw new Error('Selecione o status atual.');
 
+                // ---------- [v3.3.0] BLOQUEIO DE CPF DUPLICADO ----------
+                // Se o CPF já existe, bloqueia o cadastro (não permite continuar)
+                const cpfLimpo = cpf.replace(/\D/g, '');
+                if (cpfLimpo.length === 11) {
+                    const { data: cpfExistente, error: errCpf } = await sb.from('suspeito')
+                        .select('id_suspeito, nome_completo')
+                        .eq('deletado', false)
+                        .eq('cpf', cpf)
+                        .limit(1);
+
+                    if (errCpf) throw errCpf;
+
+                    if (cpfExistente && cpfExistente.length > 0) {
+                        const e = cpfExistente[0];
+                        showToast('error', 'CPF já cadastrado',
+                            `Este CPF pertence a <strong>${e.nome_completo}</strong> (ID #${e.id_suspeito}). Cadastro bloqueado.`,
+                            8000);
+                        document.getElementById('cpf').focus();
+                        document.getElementById('cpf').classList.add('input-duplicado');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR SUSPEITO';
+                        return;
+                    }
+                }
+                // ---------- FIM DO BLOQUEIO DE CPF ----------
+
+                // ---------- [v3.3.0] AVISO DE NOME DUPLICADO ----------
+                // Se já existe alguém com o mesmo nome, PERGUNTA (por causa de homônimos)
+                const { data: nomeExistente, error: errNome } = await sb.from('suspeito')
+                    .select('id_suspeito, nome_completo, cpf')
+                    .eq('deletado', false)
+                    .ilike('nome_completo', nome)
+                    .limit(1);
+
+                if (errNome) throw errNome;
+
+                if (nomeExistente && nomeExistente.length > 0) {
+                    const e = nomeExistente[0];
+                    const continuar = confirm(
+                        `⚠️ Já existe um suspeito cadastrado com este nome:\n\n` +
+                        `${e.nome_completo}\n` +
+                        `CPF: ${e.cpf || 'não informado'}\n` +
+                        `ID: #${e.id_suspeito}\n\n` +
+                        `Se for um HOMÔNIMO (pessoa diferente), clique OK para continuar.\n` +
+                        `Se for a MESMA pessoa, clique CANCELAR.`
+                    );
+                    if (!continuar) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR SUSPEITO';
+                        document.getElementById('nome_completo').focus();
+                        document.getElementById('nome_completo').classList.add('input-duplicado');
+                        return;
+                    }
+                }
+                // ---------- FIM DO AVISO DE NOME ----------
+
+                // ---------- Monta o objeto para INSERT ----------
                 const dados = {
                     nome_completo: nome,
                     apelido: document.getElementById('apelido').value.trim() || null,
@@ -863,6 +1132,7 @@
                 };
                 if (usuarioAtual?.id) dados.id_usuario_cadastro = usuarioAtual.id;
 
+                // ---------- INSERT do suspeito ----------
                 console.log('📝 Inserindo suspeito:', dados);
                 const { data: novo, error } = await sb
                     .from('suspeito')
@@ -874,6 +1144,7 @@
 
                 console.log('✅ Suspeito cadastrado. ID:', novo.id_suspeito);
 
+                // ---------- UPLOADS DE FOTOS ----------
                 const errosUpload = [];
 
                 if (fotoPrincipalArquivo) {
@@ -894,6 +1165,7 @@
 
                 const totalFotos = (fotoPrincipalArquivo ? 1 : 0) + (fotoSecundariaArquivo ? 1 : 0) + tatuagensArquivos.length;
 
+                // ---------- Feedback final ----------
                 if (errosUpload.length > 0) {
                     showToast('warning', 'Suspeito salvo, mas algumas fotos falharam', errosUpload.join('<br>'), 10000);
                 } else {
@@ -917,6 +1189,9 @@
             }
         });
 
+        // ============================================================
+        // UPLOAD DE MÍDIA (storage + arquivo_midia)
+        // ============================================================
         async function uploadMidia({ idSuspeito, file, tipoMidia, sufixo }) {
             const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
             const nomeSeguro = `suspeito_${idSuspeito}_${sufixo}_${Date.now()}.${ext}`;
@@ -942,6 +1217,9 @@
             return nomeSeguro;
         }
 
+        // ============================================================
+        // RESET
+        // ============================================================
         function resetFormulario() {
             document.getElementById('formCadastro').reset();
             document.getElementById('cidade').value = 'Salvador';
@@ -950,8 +1228,20 @@
             removerFotoSecundaria();
             tatuagensArquivos = [];
             renderizarTatuagens();
+            // [v3.3.0] Limpa os avisos de duplicidade
+            const avisoCpf = document.getElementById('avisoCpf');
+            const avisoNome = document.getElementById('avisoNome');
+            if (avisoCpf) { avisoCpf.style.display = 'none'; avisoCpf.innerHTML = ''; }
+            if (avisoNome) { avisoNome.style.display = 'none'; avisoNome.innerHTML = ''; }
+            const campoCpf = document.getElementById('cpf');
+            const campoNome = document.getElementById('nome_completo');
+            if (campoCpf) campoCpf.classList.remove('input-duplicado');
+            if (campoNome) campoNome.classList.remove('input-duplicado');
         }
 
+        // ============================================================
+        // TOAST
+        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -969,6 +1259,9 @@
             }, duracao);
         }
 
+        // ============================================================
+        // CONTROLES DE JANELA / SIDEBAR / LOGOUT
+        // ============================================================
         function toggleFullscreen() {
             const doc = window.document; const el = doc.documentElement;
             const req = el.requestFullscreen || el.mozRequestFullScreen || el.webkitRequestFullScreen || el.msRequestFullscreen;
@@ -1000,8 +1293,11 @@
             window.location.href = '02-login.html';
         }
 
+        // ============================================================
+        // INICIALIZAÇÃO
+        // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Cadastro v3.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Cadastro v3.3.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             renderizarTatuagens();
         });
