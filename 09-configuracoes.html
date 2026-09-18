@@ -2,22 +2,28 @@
      AI-DEPOM - CONFIGURAÇÕES
      ============================================================
      Arquivo: 09-configuracoes.html
-     Versão: 1.1.0
-     Data: 17/09/2026 - 21:00
+     Versão: 1.2.0
+     Data: 18/09/2026 - 11:30
      Autor: AI-DEPOM Team
      ============================================================
+     ALTERAÇÕES v1.2.0 (18/09/2026 11:30):
+     - ✨ NOVO: Sino de notificações no topo (padrão 04-dashboard, 12-auditoria)
+       - Badge com contador de não lidas
+       - Dropdown com lista
+       - Marcar como lida (individual e todas)
+       - Polling automático a cada 30s
+     - 🔍 AUDITORIA DE SEGURANÇA: sem embed, sem .or/.ilike com input
+       → ZERO risco de injeção, RPC desnecessária
+     - ✅ Preservadas TODAS as funcionalidades da v1.1.0
+
      ALTERAÇÕES v1.1.0 (17/09/2026 21:00):
      - 🔗 Menu: adicionados "Mapa de Mandados", "Operações" e "Atividade"
      - ➕ Botão MINIMIZE na controls-bar
      - ➕ minimizeWindow() implementada
-     - 🎨 CSS hover do botão minimize
      - 🐛 CORRIGIDO: alterarSenha() usava caminho absoluto
-       (agora usa relativo — funciona em qualquer subpasta)
-     - ✅ Preservadas TODAS as funcionalidades da v1.0.4
 
      ALTERAÇÕES v1.0.4 (15/09/2026 18:00):
      - ✨ Campos disabled com fundo preto + letras verdes
-     - ✨ -webkit-text-fill-color forçando verde
      ============================================================
 -->
 <!DOCTYPE html>
@@ -72,7 +78,6 @@
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
         .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
-        /* [v1.1.0] CSS hover do minimize */
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
@@ -161,7 +166,6 @@
             box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary);
         }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
-
         .form-control:disabled,
         .form-control[readonly],
         .form-select:disabled,
@@ -173,12 +177,10 @@
             border-color: #003322 !important;
             cursor: not-allowed;
         }
-
         .form-control:disabled::placeholder {
             color: rgba(0, 255, 136, 0.3) !important;
             -webkit-text-fill-color: rgba(0, 255, 136, 0.3) !important;
         }
-
         .form-select option { background: #000; color: var(--text-primary); }
         .form-check-input { accent-color: var(--text-primary); }
         .form-check-label { color: rgba(0, 255, 136, 0.5); font-size: 13px; }
@@ -261,6 +263,142 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
+
+        /* ============================================================
+           [v1.2.0] SINO DE NOTIFICAÇÕES
+           ============================================================ */
+        .notif-wrapper {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+        }
+        .notif-btn {
+            width: 36px; height: 36px;
+            border-radius: 8px; border: none; background: transparent;
+            color: rgba(0, 255, 136, 0.4); font-size: 18px;
+            cursor: pointer; transition: all 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .notif-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .notif-btn.tem-novas { color: var(--text-primary); animation: pulseNotif 1.5s infinite; }
+        .notif-badge {
+            position: absolute;
+            top: 2px; right: 2px;
+            min-width: 18px; height: 18px;
+            border-radius: 9px;
+            background: #dc3545; color: #fff;
+            font-size: 10px; font-weight: 700;
+            display: none;
+            align-items: center; justify-content: center;
+            padding: 0 5px;
+            border: 2px solid #000;
+        }
+        .notif-badge.ativo { display: flex; }
+        @keyframes pulseNotif {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .notif-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            width: 360px;
+            max-width: calc(100vw - 40px);
+            max-height: 480px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            overflow: hidden;
+            display: none;
+            flex-direction: column;
+        }
+        .notif-dropdown.open { display: flex; }
+        .notif-dropdown-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.4);
+        }
+        .notif-dropdown-header .titulo {
+            color: var(--text-primary);
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+        .notif-dropdown-header .btn-marcar-todas {
+            background: transparent;
+            border: none;
+            color: rgba(0, 255, 136, 0.4);
+            font-size: 11px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+        .notif-dropdown-header .btn-marcar-todas:hover {
+            color: var(--text-primary);
+            background: rgba(0, 255, 136, 0.05);
+        }
+        .notif-lista {
+            overflow-y: auto;
+            flex: 1;
+            padding: 6px 0;
+        }
+        .notif-vazio {
+            padding: 40px 20px;
+            text-align: center;
+            color: rgba(0, 255, 136, 0.2);
+            font-size: 12px;
+        }
+        .notif-vazio i { font-size: 32px; display: block; margin-bottom: 10px; }
+        .notif-item {
+            padding: 12px 16px;
+            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .notif-item:last-child { border-bottom: none; }
+        .notif-item:hover { background: rgba(0, 255, 136, 0.03); }
+        .notif-item.nao-lida { background: rgba(0, 255, 136, 0.04); border-left: 3px solid var(--text-primary); }
+        .notif-item.nao-lida:hover { background: rgba(0, 255, 136, 0.08); }
+        .notif-item .notif-icon {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 14px;
+        }
+        .notif-item .notif-icon.novo { background: rgba(0, 255, 136, 0.12); color: #00ff88; }
+        .notif-item .notif-icon.alteracao { background: rgba(255, 193, 7, 0.12); color: #ffc107; }
+        .notif-item .notif-icon.cumprido { background: rgba(13, 202, 240, 0.12); color: #0dcaf0; }
+        .notif-item .notif-icon.padrao { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
+        .notif-item .notif-conteudo { flex: 1; min-width: 0; }
+        .notif-item .notif-titulo {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+        .notif-item .notif-mensagem {
+            color: rgba(0, 255, 136, 0.6);
+            font-size: 11px;
+            line-height: 1.4;
+            margin-bottom: 4px;
+            word-break: break-word;
+        }
+        .notif-item .notif-data {
+            color: rgba(0, 255, 136, 0.3);
+            font-size: 10px;
+        }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -275,6 +413,7 @@
             .btn-gold, .btn-outline-gold { width: 100%; }
             .toast-ai { min-width: auto; max-width: calc(100vw - 40px); }
             .config-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .notif-dropdown { width: calc(100vw - 30px); right: -15px; }
         }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg-primary); }
@@ -295,6 +434,22 @@
             <span class="system-title"><i class="fas fa-shield-halved"></i> AI-DEPOM</span>
         </div>
         <div class="controls-right">
+            <div class="notif-wrapper">
+                <button class="notif-btn" id="notifBtn" onclick="toggleNotifDropdown(event)" title="Notificações">
+                    <i class="fas fa-bell"></i>
+                    <span class="notif-badge" id="notifBadge">0</span>
+                </button>
+                <div class="notif-dropdown" id="notifDropdown">
+                    <div class="notif-dropdown-header">
+                        <span class="titulo"><i class="fas fa-bell me-1"></i>NOTIFICAÇÕES</span>
+                        <button class="btn-marcar-todas" onclick="marcarTodasComoLidas()">Marcar todas</button>
+                    </div>
+                    <div class="notif-lista" id="notifLista">
+                        <div class="notif-vazio"><i class="fas fa-spinner fa-spin"></i>Carregando...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="controls-divider"></div>
             <div class="user-info"><div class="avatar" id="topAvatar">AM</div><span class="name" id="topUserName">Admin Master</span></div>
         </div>
     </header>
@@ -507,8 +662,11 @@
     <script>
         let usuarioAtual = null;
 
+        // [v1.2.0] Notificações
+        let _notifTimer = null;
+
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('⚙️ AI-DEPOM - Configuracoes v1.1.0');
+            console.log('⚙️ AI-DEPOM - Configuracoes v1.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             usuarioAtual = AIDEPOM.getUsuario();
             if (!usuarioAtual) {
@@ -522,6 +680,23 @@
             carregarConfiguracoes();
 
             document.getElementById('ultimaAtualizacao').value = new Date().toLocaleString('pt-BR');
+
+            // [v1.2.0] Notificações
+            await carregarNotificacoes();
+            if (_notifTimer) clearInterval(_notifTimer);
+            _notifTimer = setInterval(() => {
+                carregarNotificacoes().catch(e => console.warn('poll notif:', e));
+            }, 30000);
+
+            // Fecha dropdown ao clicar fora
+            document.addEventListener('click', function(e) {
+                const dd = document.getElementById('notifDropdown');
+                const btn = document.getElementById('notifBtn');
+                if (!dd || !btn) return;
+                if (!dd.contains(e.target) && !btn.contains(e.target)) {
+                    dd.classList.remove('open');
+                }
+            });
         });
 
         function atualizarDadosUsuario(usuario) {
@@ -541,6 +716,120 @@
             document.getElementById('perfilPerfil').value = AIDEPOM.getNomePerfil(usuario.id_perfil_acesso);
             document.getElementById('perfilEmail').value = usuario.email || '-';
             document.getElementById('perfilSetor').value = usuario.setor || '-';
+        }
+
+        // ============================================================
+        // [v1.2.0] NOTIFICAÇÕES
+        // ============================================================
+        async function carregarNotificacoes() {
+            const lista = document.getElementById('notifLista');
+            const badge = document.getElementById('notifBadge');
+            const btn = document.getElementById('notifBtn');
+            if (!lista) return;
+
+            try {
+                const { data, error } = await window.supabaseClient
+                    .from('notificacao')
+                    .select('id_notificacao, tipo, titulo, mensagem, data_criacao, lida, dados_extras')
+                    .order('data_criacao', { ascending: false })
+                    .limit(30);
+
+                if (error) throw error;
+
+                const naoLidas = (data || []).filter(n => !n.lida).length;
+
+                if (badge) {
+                    badge.textContent = naoLidas > 99 ? '99+' : naoLidas;
+                    badge.classList.toggle('ativo', naoLidas > 0);
+                }
+                if (btn) {
+                    btn.classList.toggle('tem-novas', naoLidas > 0);
+                }
+
+                if (!data || data.length === 0) {
+                    lista.innerHTML = `
+                        <div class="notif-vazio">
+                            <i class="fas fa-bell-slash"></i>
+                            Nenhuma notificação
+                        </div>`;
+                    return;
+                }
+
+                const ICONES = {
+                    'NOVO_MANDADO':      { classe: 'novo',      icone: 'fa-plus-circle' },
+                    'ALTERACAO_MANDADO': { classe: 'alteracao', icone: 'fa-pencil-alt' },
+                    'MANDADO_CUMPRIDO':  { classe: 'cumprido',  icone: 'fa-gavel' },
+                    'ALERTA_SUSPEITO':   { classe: 'novo',      icone: 'fa-exclamation-triangle' }
+                };
+
+                lista.innerHTML = data.map(n => {
+                    const cfg = ICONES[n.tipo] || { classe: 'padrao', icone: 'fa-bell' };
+                    const dataRel = tempoRelativoNotif(n.data_criacao);
+                    const classeNaoLida = !n.lida ? 'nao-lida' : '';
+
+                    return `
+                        <div class="notif-item ${classeNaoLida}" onclick="abrirNotificacao(${n.id_notificacao})">
+                            <div class="notif-icon ${cfg.classe}">
+                                <i class="fas ${cfg.icone}"></i>
+                            </div>
+                            <div class="notif-conteudo">
+                                <div class="notif-titulo">${n.titulo || 'Notificação'}</div>
+                                <div class="notif-mensagem">${n.mensagem || ''}</div>
+                                <div class="notif-data"><i class="fas fa-clock me-1"></i>${dataRel}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (e) {
+                console.warn('Erro ao carregar notificações:', e);
+                if (lista) {
+                    lista.innerHTML = `<div class="notif-vazio"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar</div>`;
+                }
+            }
+        }
+
+        function tempoRelativoNotif(data) {
+            if (!data) return '-';
+            const diff = Math.floor((new Date() - new Date(data)) / 1000);
+            if (diff < 60) return 'agora';
+            if (diff < 3600) return `ha ${Math.floor(diff/60)} min`;
+            if (diff < 86400) return `ha ${Math.floor(diff/3600)}h`;
+            if (diff < 604800) return `ha ${Math.floor(diff/86400)}d`;
+            return new Date(data).toLocaleDateString('pt-BR');
+        }
+
+        function toggleNotifDropdown(e) {
+            if (e) e.stopPropagation();
+            const dd = document.getElementById('notifDropdown');
+            if (!dd) return;
+            dd.classList.toggle('open');
+            if (dd.classList.contains('open')) {
+                carregarNotificacoes();
+            }
+        }
+
+        async function abrirNotificacao(idNotif) {
+            try {
+                await window.supabaseClient.from('notificacao').update({ lida: true }).eq('id_notificacao', idNotif);
+                carregarNotificacoes();
+            } catch (e) {
+                console.warn('Erro ao marcar como lida:', e);
+            }
+        }
+
+        async function marcarTodasComoLidas() {
+            try {
+                const { error } = await window.supabaseClient
+                    .from('notificacao')
+                    .update({ lida: true })
+                    .eq('lida', false);
+                if (error) throw error;
+                carregarNotificacoes();
+                showToast('success', 'Notificações', 'Todas foram marcadas como lidas.', 3000);
+            } catch (e) {
+                console.warn('Erro ao marcar todas:', e);
+            }
         }
 
         function toggleConfig(elemento, chave) {
@@ -585,7 +874,6 @@
             showToast('info', 'Enviando link...', 'Aguarde um instante...');
 
             try {
-                // [v1.1.0] CORRIGIDO: caminho relativo (funciona em qualquer subpasta)
                 const { error } = await window.supabaseClient.auth.resetPasswordForEmail(email, {
                     redirectTo: window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + '03b-redefinir-senha.html'
                 });
@@ -640,7 +928,6 @@
             }
         }
 
-        // [v1.1.0] minimizeWindow()
         function minimizeWindow() {
             try {
                 window.blur();
@@ -650,6 +937,10 @@
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); }
+            if (e.key === 'Escape') {
+                const dd = document.getElementById('notifDropdown');
+                if (dd) dd.classList.remove('open');
+            }
         });
 
         async function fazerLogout() {
@@ -700,7 +991,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina de Configuracoes v1.1.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Configuracoes v1.2.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
