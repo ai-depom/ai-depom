@@ -1,28 +1,31 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.8.4
-     Data: 22/09/2026 - 02:30
+     Versão: 1.9.0
+     Data: 22/09/2026 - 04:30
      ============================================================
+     ALTERAÇÕES v1.9.0 (22/09/2026 04:30):
+     - ✨ NOVO: Suporte a mandado órfão (sem suspeito cadastrado)
+       - Coluna nova no banco: nome_suspeito_texto
+       - id_suspeito agora é OPCIONAL (constraint garante id OU nome)
+       - Checkbox "Suspeito ainda não cadastrado" no formulário
+       - Campo de texto livre para o nome quando marcado
+       - Campo "Nome do Suspeito" (readonly) quando vinculado
+     - ✨ NOVO: Filtro "Órfãos (sem vínculo)" na barra de filtros
+     - ✨ NOVO: Badge amarelo ⚠️ na lista para mandados órfãos
+     - ✨ NOVO: Modal de reconciliação
+       - Busca suspeito existente por nome/CPF
+       - Botão "Vincular" preenche id_suspeito
+       - Botão "Cadastrar novo suspeito" abre 06 com nome pré-preenchido
+     - ✅ Preservadas TODAS as funcionalidades da v1.8.4
+
      ALTERAÇÕES v1.8.4 (22/09/2026 02:30):
-     - ✨ NOVO: Campo "CPF do Suspeito" no cadastro de mandados
-       - Máscara automática 000.000.000-00
-       - Ao digitar CPF válido, busca e auto-seleciona o suspeito
-       - Ao trocar o dropdown, preenche o CPF formatado (feedback visual)
-       - CPF não cadastrado → avisa, mas não bloqueia
-       - Dropdown de suspeitos exibe CPF formatado
-       - Cache em memória (id ↔ CPF) para busca rápida
-     - 🔒 VALIDAÇÃO: dígitos verificadores do CPF
-       - cpfValido() — algoritmo oficial (módulo 11)
-       - Rejeita sequências repetidas (111.111.111-11, ...)
-       - Bloqueia cadastro se CPF digitado for inválido
-       - Feedback visual (borda vermelha) em tempo real
-     - ✨ CPF exibido formatado (000.000.000-00) em todas as telas
-       - Tabela, Detalhes, Edição, Validação BNMP
-     - ✅ Preservadas TODAS as funcionalidades da v1.8.3
+     - ✨ Campo "CPF do Suspeito" com máscara e validação
+     - 🔒 Validação de CPF (dígitos verificadores)
+     - ✨ CPF formatado em todas as telas
 
      ALTERAÇÕES v1.8.3 (22/09/2026 01:30):
-     - ✨ CPF formatado na tabela e nos modais (helper formatarCPF)
+     - ✨ CPF formatado na tabela e nos modais
 
      ALTERAÇÕES v1.8.2 (21/09/2026 23:45):
      - ✨ Campo de busca textual na lista (M4)
@@ -43,6 +46,13 @@
 
      ALTERAÇÕES v1.5.0 (18/09/2026 07:45):
      - 🔒 SEGURANÇA: lista migrada para RPC buscar_mandado
+
+     REQUISITOS DE BANCO (aplicados):
+     - Coluna nome_suspeito_texto (TEXT)
+     - id_suspeito passou a ser NULLABLE
+     - Constraint chk_mandado_tem_suspeito_ou_nome
+     - Índice idx_mandado_nome_texto
+     - RPC buscar_mandado v3 (retorna nome_suspeito_texto)
      ============================================================
 -->
 <!DOCTYPE html>
@@ -276,6 +286,32 @@
         @keyframes pulse-urgent { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 10px; border-radius: 8px; transition: all 0.3s; font-size: 12px; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
+
+        /* [v1.9.0] Badge de mandado órfão */
+        .badge-orfao {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 10px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: pulseOrfao 2s ease-in-out infinite;
+        }
+        .badge-orfao:hover {
+            background: rgba(255, 193, 7, 0.3);
+            transform: scale(1.05);
+        }
+        @keyframes pulseOrfao {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+            50% { box-shadow: 0 0 0 6px rgba(255, 193, 7, 0.1); }
+        }
+
         .info-lista {
             background: rgba(0, 255, 136, 0.03);
             border: 1px solid var(--border-color);
@@ -374,6 +410,47 @@
         .aviso-nao-validados .btn-fechar:hover {
             color: #ffc107;
             background: rgba(255, 193, 7, 0.1);
+        }
+
+        /* Aviso de órfãos */
+        .aviso-orfaos {
+            background: rgba(255, 193, 7, 0.08);
+            border: 1px solid rgba(255, 193, 7, 0.3);
+            border-left: 4px solid #ffc107;
+            border-radius: 10px;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .aviso-orfaos .texto {
+            color: #ffc107;
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .aviso-orfaos .btn-filtrar-orfaos {
+            background: rgba(255, 193, 7, 0.15);
+            border: 1px solid rgba(255, 193, 7, 0.4);
+            color: #ffc107;
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .aviso-orfaos .btn-filtrar-orfaos:hover {
+            background: rgba(255, 193, 7, 0.25);
+            border-color: #ffc107;
         }
 
         .bnmp-badge {
@@ -584,9 +661,6 @@
             transform: rotate(90deg);
         }
 
-        /* ============================================================
-           [v1.6.0] VALIDAÇÃO DE NÚMERO DE PROCESSO (CNJ)
-           ============================================================ */
         .processo-validacao {
             display: inline-flex;
             align-items: center;
@@ -598,33 +672,12 @@
             transition: all 0.3s;
             font-weight: 600;
         }
-        .processo-validacao.vazio {
-            color: rgba(0, 255, 136, 0.35);
-            background: rgba(0, 255, 136, 0.02);
-            border: 1px solid transparent;
-        }
-        .processo-validacao.incompleto {
-            color: #ffc107;
-            background: rgba(255, 193, 7, 0.06);
-            border: 1px solid rgba(255, 193, 7, 0.25);
-        }
-        .processo-validacao.valido {
-            color: #00ff88;
-            background: rgba(0, 255, 136, 0.06);
-            border: 1px solid rgba(0, 255, 136, 0.3);
-        }
-        .processo-validacao.erro {
-            color: #dc3545;
-            background: rgba(220, 53, 69, 0.08);
-            border: 1px solid rgba(220, 53, 69, 0.3);
-        }
-        .processo-validacao i {
-            font-size: 12px;
-        }
+        .processo-validacao.vazio { color: rgba(0, 255, 136, 0.35); background: rgba(0, 255, 136, 0.02); border: 1px solid transparent; }
+        .processo-validacao.incompleto { color: #ffc107; background: rgba(255, 193, 7, 0.06); border: 1px solid rgba(255, 193, 7, 0.25); }
+        .processo-validacao.valido { color: #00ff88; background: rgba(0, 255, 136, 0.06); border: 1px solid rgba(0, 255, 136, 0.3); }
+        .processo-validacao.erro { color: #dc3545; background: rgba(220, 53, 69, 0.08); border: 1px solid rgba(220, 53, 69, 0.3); }
+        .processo-validacao i { font-size: 12px; }
 
-        /* ============================================================
-           [v1.8.0] COLUNA DATAJUD — Status do processo
-           ============================================================ */
         .badge-datajud {
             display: inline-flex;
             align-items: center;
@@ -637,67 +690,85 @@
             white-space: nowrap;
             cursor: help;
         }
-        .badge-datajud.encontrado {
-            background: rgba(0, 255, 136, 0.12);
-            color: #00ff88;
-            border: 1px solid rgba(0, 255, 136, 0.3);
-        }
+        .badge-datajud.encontrado { background: rgba(0, 255, 136, 0.12); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.3); }
         .badge-datajud.sigiloso_provavel,
-        .badge-datajud.sigiloso_manual {
-            background: rgba(255, 193, 7, 0.12);
-            color: #ffc107;
-            border: 1px solid rgba(255, 193, 7, 0.35);
-        }
-        .badge-datajud.nao_encontrado {
-            background: rgba(220, 53, 69, 0.12);
-            color: #dc3545;
-            border: 1px solid rgba(220, 53, 69, 0.3);
-        }
+        .badge-datajud.sigiloso_manual { background: rgba(255, 193, 7, 0.12); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.35); }
+        .badge-datajud.nao_encontrado { background: rgba(220, 53, 69, 0.12); color: #dc3545; border: 1px solid rgba(220, 53, 69, 0.3); }
         .badge-datajud.erro_tecnico,
         .badge-datajud.numero_invalido,
-        .badge-datajud.tribunal_nao_mapeado {
-            background: rgba(108, 117, 125, 0.15);
-            color: #adb5bd;
-            border: 1px solid rgba(108, 117, 125, 0.3);
+        .badge-datajud.tribunal_nao_mapeado { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
+        .badge-datajud.nunca_consultado { background: rgba(0, 255, 136, 0.03); color: rgba(0, 255, 136, 0.35); border: 1px dashed var(--border-color); }
+
+        /* [v1.9.0] Modal de reconciliação — lista de suspeitos */
+        .suspeito-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
-        .badge-datajud.nunca_consultado {
-            background: rgba(0, 255, 136, 0.03);
-            color: rgba(0, 255, 136, 0.35);
-            border: 1px dashed var(--border-color);
+        .suspeito-item:hover {
+            background: rgba(0, 255, 136, 0.05);
+            border-color: var(--text-primary);
+            transform: translateX(4px);
+        }
+        .suspeito-item .avatar-mini {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: var(--gradient-green);
+            color: #000;
+            font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 16px;
+        }
+        .suspeito-item .info { flex: 1; min-width: 0; }
+        .suspeito-item .nome {
+            color: var(--text-primary);
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .suspeito-item .meta {
+            color: rgba(0, 255, 136, 0.4);
+            font-size: 11px;
         }
 
-        /* ============================================================
-           [v1.8.1] IMPRESSÃO — isola apenas o modal aberto (C1)
-           ============================================================ */
+        /* [v1.9.0] Checkbox de "sem suspeito" */
+        .check-sem-suspeito {
+            background: rgba(255, 193, 7, 0.05);
+            border: 1px solid rgba(255, 193, 7, 0.25);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-top: 10px;
+        }
+        .check-sem-suspeito .form-check-label {
+            color: #ffc107;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
         @media print {
             body { background: #fff !important; color: #000 !important; }
             body > *:not(.modal-custom.open) { display: none !important; }
-            .modal-custom.open {
-                position: static !important;
-                display: block !important;
-                background: #fff !important;
-                padding: 0 !important;
-                backdrop-filter: none !important;
-            }
-            .modal-custom.open .modal-custom-content {
-                box-shadow: none !important;
-                border: 1px solid #ccc !important;
-                max-width: 100% !important;
-                max-height: none !important;
-                background: #fff !important;
-                color: #000 !important;
-                overflow: visible !important;
-            }
+            .modal-custom.open { position: static !important; display: block !important; background: #fff !important; padding: 0 !important; backdrop-filter: none !important; }
+            .modal-custom.open .modal-custom-content { box-shadow: none !important; border: 1px solid #ccc !important; max-width: 100% !important; max-height: none !important; background: #fff !important; color: #000 !important; overflow: visible !important; }
             .modal-custom.open .modal-custom-header,
             .modal-custom.open .modal-custom-footer,
             .modal-custom.open .btn-icon { display: none !important; }
             .modal-custom.open .modal-custom-body { color: #000 !important; }
             .modal-custom.open .detalhe-campo .label { color: #666 !important; }
             .modal-custom.open .detalhe-campo .valor { color: #000 !important; }
-            .modal-custom.open .section-title {
-                color: #000 !important;
-                border-color: #ccc !important;
-            }
+            .modal-custom.open .section-title { color: #000 !important; border-color: #ccc !important; }
             .modal-custom.open .detalhe-campo { border-bottom-color: #eee !important; }
             .toast-container, .foto-lightbox { display: none !important; }
         }
@@ -851,9 +922,38 @@
                         <select class="form-select" id="idSuspeito" onchange="preencherCPFDoSuspeito()">
                             <option value="">Carregando suspeitos...</option>
                         </select>
+                        <input type="text" class="form-control mt-2" id="nomeSuspeitoReadonly" readonly placeholder="Nome do suspeito selecionado aparecerá aqui" style="font-weight:600;">
                         <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
                             <i class="fas fa-info-circle"></i> Se o suspeito não estiver na lista, cadastre-o primeiro em <strong>Cadastro</strong>.
                         </small>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="check-sem-suspeito">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="suspeitoNaoCadastrado"
+                                       style="accent-color: #ffc107; cursor: pointer;"
+                                       onchange="toggleSuspeitoNaoCadastrado()">
+                                <label class="form-check-label" for="suspeitoNaoCadastrado">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    O suspeito ainda NÃO está cadastrado no sistema
+                                </label>
+                            </div>
+                            <small style="display:block; color: rgba(255, 193, 7, 0.7); font-size: 11px; margin-top: 8px; margin-left: 24px;">
+                                Marque esta opção se o mandado chegou antes do cadastro do suspeito.
+                                O sistema vai guardar o nome informado abaixo e permitir vincular depois.
+                            </small>
+                            <div id="blocoNomeLivre" style="display:none; margin-top: 12px;">
+                                <label class="form-label" style="color:#ffc107;">Nome do Suspeito (como veio no mandado) *</label>
+                                <input type="text" class="form-control" id="nomeSuspeitoTexto" maxlength="200"
+                                       placeholder="Ex: JOSÉ DA SILVA SANTOS"
+                                       style="border-color: rgba(255, 193, 7, 0.4);">
+                                <small style="color: rgba(255, 193, 7, 0.5); font-size: 11px;">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Digite o nome completo exatamente como consta no mandado.
+                                </small>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1011,8 +1111,9 @@
             </div>
 
             <div id="avisoNaoValidados"></div>
+            <div id="avisoOrfaos"></div>
 
-            <!-- [v1.8.2] M4: Busca textual -->
+            <!-- Busca textual -->
             <div class="row g-3 mb-2">
                 <div class="col-md-12">
                     <div class="input-group">
@@ -1070,13 +1171,10 @@
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <select class="form-select" id="filtroDataJudLista">
-                        <option value="">DataJud: Todos</option>
-                        <option value="PENDENTE">⏳ Pendente</option>
-                        <option value="encontrado">🟢 Encontrado</option>
-                        <option value="sigiloso">🟡 Sigiloso</option>
-                        <option value="nao_encontrado">🔴 Não encontrado</option>
-                        <option value="erro">⚠️ Erro técnico</option>
+                    <select class="form-select" id="filtroVinculoLista">
+                        <option value="">Vínculo: Todos</option>
+                        <option value="__ORFAOS__">⚠️ Órfãos (sem vínculo)</option>
+                        <option value="__VINCULADOS__">✅ Vinculados</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -1102,6 +1200,7 @@
                 <div class="item"><i class="fas fa-times-circle bnmp-extinto"></i> Extinto</div>
                 <div class="item"><i class="fas fa-search-minus bnmp-nao-encontrado"></i> Não Encontrado</div>
                 <div class="item"><i class="fas fa-question-circle bnmp-nao-validado"></i> Não Validado</div>
+                <div class="item"><i class="fas fa-exclamation-triangle" style="color:#ffc107;"></i> Mandado órfão</div>
             </div>
         </div>
     </main>
@@ -1183,6 +1282,26 @@
         </div>
     </div>
 
+    <!-- [v1.9.0] Modal de reconciliação -->
+    <div class="modal-custom" id="modalReconciliar">
+        <div class="modal-custom-content modal-lg">
+            <div class="modal-custom-header">
+                <h5><i class="fas fa-link me-2"></i>Vincular Mandado a um Suspeito</h5>
+                <button class="btn-icon" onclick="fecharReconciliar()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-custom-body" id="modalReconciliarBody">
+                <div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);">
+                    <i class="fas fa-spinner fa-spin"></i> Carregando...
+                </div>
+            </div>
+            <div class="modal-custom-footer">
+                <button class="btn-outline-gold" onclick="fecharReconciliar()">
+                    <i class="fas fa-times me-2"></i>CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="foto-lightbox" id="fotoLightboxMandado" onclick="fecharLightboxMandado(event)">
         <button class="fechar" onclick="fecharLightboxMandado(event)"><i class="fas fa-times"></i></button>
         <img id="fotoLightboxMandadoImg" src="" alt="Foto do suspeito" />
@@ -1212,16 +1331,14 @@
         let mandadoEditandoId = null;
         let mandadoCumprindoId = null;
         let mandadoValidandoId = null;
+        let mandadoReconciliandoId = null;   // [v1.9.0]
 
         let naoValidadosCache = [];
         let filtroNaoValidadosAtivo = false;
 
-        // [v1.8.1] Flag de loading
         let _carregandoLista = false;
-        // [v1.8.1] Flag: colunas DataJud ausentes?
         let _datajudIndisponivel = false;
 
-        // [v1.8.4] Caches de suspeitos
         let suspeitosCachePorId = {};
         let suspeitosCachePorCpf = {};
 
@@ -1240,9 +1357,6 @@
             'NAO_ENCONTRADO': { icone: 'fa-search-minus',  classe: 'bnmp-nao-encontrado', label: 'Não encontrado no BNMP' }
         };
 
-        // ============================================================
-        // [v1.7.0] MAPA DE TRIBUNAIS
-        // ============================================================
         const TRIBUNAIS = {
             '1.00': 'stf', '3.00': 'stj', '5.00': 'tst', '6.00': 'tse', '7.00': 'stm',
             '8.01': 'tjac', '8.02': 'tjal', '8.03': 'tjap', '8.04': 'tjam',
@@ -1306,13 +1420,11 @@
                 feedback.className = 'processo-validacao vazio';
                 return { valido: false, digitos: 0 };
             }
-
             if (digitos < 20) {
                 feedback.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Faltam ${20 - digitos} dígito(s) — atual: ${digitos}/20`;
                 feedback.className = 'processo-validacao incompleto';
                 return { valido: false, digitos };
             }
-
             if (digitos > 20) {
                 feedback.innerHTML = `<i class="fas fa-times-circle"></i> Excesso de dígitos (${digitos}/20) — remova o sufixo`;
                 feedback.className = 'processo-validacao erro';
@@ -1344,7 +1456,7 @@
         }
 
         // ============================================================
-        // [v1.8.3] FORMATAÇÃO DE CPF PARA EXIBIÇÃO
+        // FORMATAÇÃO DE CPF
         // ============================================================
         function formatarCPF(cpf) {
             if (!cpf) return '-';
@@ -1353,9 +1465,6 @@
             return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         }
 
-        // ============================================================
-        // [v1.8.4] MÁSCARA DE CPF EM TEMPO REAL (000.000.000-00)
-        // ============================================================
         function mascaraCPF(input) {
             let v = String(input.value || '').replace(/\D/g, '').slice(0, 11);
             let out = '';
@@ -1364,46 +1473,26 @@
             if (v.length > 6) out += '.' + v.slice(6, 9);
             if (v.length > 9) out += '-' + v.slice(9, 11);
             input.value = out;
-
-            // [v1.8.4.1] Limpa feedback visual quando o campo fica vazio
-            if (v.length === 0) {
-                input.style.borderColor = '';
-            }
+            if (v.length === 0) input.style.borderColor = '';
         }
 
-        // ============================================================
-        // [v1.8.4] VALIDAÇÃO DE CPF — TAMANHO + DÍGITOS VERIFICADORES
-        // ============================================================
         function cpfTemOnzeDigitos(cpf) {
             return String(cpf || '').replace(/\D/g, '').length === 11;
         }
 
-        // Valida CPF com o algoritmo oficial (módulo 11).
-        // Rejeita:
-        //   - Menos/mais de 11 dígitos
-        //   - Todos os dígitos iguais (000.000.000-00, 111.111.111-11, ...)
-        //   - Dígitos verificadores que não batem
         function cpfValido(cpf) {
             const digitos = String(cpf || '').replace(/\D/g, '');
             if (digitos.length !== 11) return false;
-
-            // Rejeita sequências repetidas
             if (/^(\d)\1{10}$/.test(digitos)) return false;
 
-            // 1º dígito verificador
             let soma = 0;
-            for (let i = 0; i < 9; i++) {
-                soma += parseInt(digitos[i], 10) * (10 - i);
-            }
+            for (let i = 0; i < 9; i++) soma += parseInt(digitos[i], 10) * (10 - i);
             let resto = soma % 11;
             const dv1 = resto < 2 ? 0 : 11 - resto;
             if (dv1 !== parseInt(digitos[9], 10)) return false;
 
-            // 2º dígito verificador
             soma = 0;
-            for (let i = 0; i < 10; i++) {
-                soma += parseInt(digitos[i], 10) * (11 - i);
-            }
+            for (let i = 0; i < 10; i++) soma += parseInt(digitos[i], 10) * (11 - i);
             resto = soma % 11;
             const dv2 = resto < 2 ? 0 : 11 - resto;
             if (dv2 !== parseInt(digitos[10], 10)) return false;
@@ -1411,32 +1500,31 @@
             return true;
         }
 
-        // ============================================================
-        // [v1.8.4] PREENCHE O CPF AO SELECIONAR UM SUSPEITO
-        // ============================================================
+        // [v1.9.0] Preenche CPF + Nome ao selecionar
         function preencherCPFDoSuspeito() {
             const select = document.getElementById('idSuspeito');
             const campoCpf = document.getElementById('cpfSuspeito');
+            const campoNome = document.getElementById('nomeSuspeitoReadonly');
             if (!select || !campoCpf) return;
 
             const id = select.value;
             if (!id) {
                 campoCpf.value = '';
+                if (campoNome) campoNome.value = '';
                 return;
             }
 
             const suspeito = suspeitosCachePorId[String(id)];
-            if (suspeito && suspeito.cpf) {
-                campoCpf.value = formatarCPF(suspeito.cpf);
+            if (suspeito) {
+                campoCpf.value = suspeito.cpf ? formatarCPF(suspeito.cpf) : '';
                 campoCpf.style.borderColor = '';
-            } else if (suspeito) {
+                if (campoNome) campoNome.value = suspeito.nome_completo || '';
+            } else {
                 campoCpf.value = '';
+                if (campoNome) campoNome.value = '';
             }
         }
 
-        // ============================================================
-        // [v1.8.4] BUSCA SUSPEITO PELO CPF DIGITADO E AUTO-SELECIONA
-        // ============================================================
         let _buscaCpfTimer = null;
         function buscarSuspeitoPorCPF(cpfDigitado) {
             if (_buscaCpfTimer) clearTimeout(_buscaCpfTimer);
@@ -1446,15 +1534,12 @@
             if (!select || !campoCpf) return;
 
             const digitos = String(cpfDigitado).replace(/\D/g, '');
-
-            // Ainda não completou 11 dígitos → não faz nada
             if (digitos.length !== 11) {
                 campoCpf.style.borderColor = '';
                 return;
             }
 
             _buscaCpfTimer = setTimeout(() => {
-                // Valida dígitos verificadores antes de buscar
                 if (!cpfValido(digitos)) {
                     campoCpf.style.borderColor = '#dc3545';
                     showToast('error', 'CPF inválido',
@@ -1463,14 +1548,11 @@
                 }
 
                 const idEncontrado = suspeitosCachePorCpf[digitos];
-
                 if (idEncontrado) {
                     select.value = String(idEncontrado);
                     preencherCPFDoSuspeito();
-
                     campoCpf.style.borderColor = '#00ff88';
                     setTimeout(() => { campoCpf.style.borderColor = ''; }, 1500);
-
                     const suspeito = suspeitosCachePorId[String(idEncontrado)];
                     if (suspeito) {
                         showToast('success', 'Suspeito encontrado',
@@ -1480,13 +1562,39 @@
                     campoCpf.style.borderColor = '#ffc107';
                     setTimeout(() => { campoCpf.style.borderColor = ''; }, 2500);
                     showToast('warning', 'CPF não cadastrado',
-                        `Nenhum suspeito com o CPF <strong>${formatarCPF(digitos)}</strong>. Cadastre-o em <strong>Cadastro</strong> ou selecione outro na lista.`, 7000);
+                        `Nenhum suspeito com o CPF <strong>${formatarCPF(digitos)}</strong>. Cadastre-o em <strong>Cadastro</strong> ou marque a opção "suspeito não cadastrado".`, 8000);
                 }
             }, 400);
         }
 
         // ============================================================
-        // [v1.8.0] BADGE DE STATUS DATAJUD
+        // [v1.9.0] TOGGLE "SUSPEITO NÃO CADASTRADO"
+        // ============================================================
+        function toggleSuspeitoNaoCadastrado() {
+            const checked = document.getElementById('suspeitoNaoCadastrado').checked;
+            const blocoNome = document.getElementById('blocoNomeLivre');
+            const select = document.getElementById('idSuspeito');
+            const campoCpf = document.getElementById('cpfSuspeito');
+            const campoNome = document.getElementById('nomeSuspeitoReadonly');
+
+            if (checked) {
+                blocoNome.style.display = 'block';
+                select.value = '';
+                select.disabled = true;
+                campoCpf.value = '';
+                campoCpf.disabled = true;
+                if (campoNome) campoNome.value = '';
+                setTimeout(() => document.getElementById('nomeSuspeitoTexto')?.focus(), 100);
+            } else {
+                blocoNome.style.display = 'none';
+                select.disabled = false;
+                campoCpf.disabled = false;
+                document.getElementById('nomeSuspeitoTexto').value = '';
+            }
+        }
+
+        // ============================================================
+        // [v1.8.0] BADGE DATAJUD
         // ============================================================
         function gerarBadgeDataJud(statusConsulta, sigilosoManual, tribunal, indisponivel) {
             if (indisponivel) {
@@ -1494,13 +1602,11 @@
                             <i class="fas fa-database"></i> N/D
                         </span>`;
             }
-
             if (sigilosoManual === true) {
                 return `<span class="badge-datajud sigiloso_manual" title="Marcado manualmente como sigiloso">
                             <i class="fas fa-lock"></i> Sigiloso
                         </span>`;
             }
-
             if (!statusConsulta) {
                 return `<span class="badge-datajud nunca_consultado" title="Ainda não consultado pelo DataJud">
                             <i class="fas fa-clock"></i> Pendente
@@ -1523,9 +1629,6 @@
                     </span>`;
         }
 
-        // ============================================================
-        // [v1.8.0] CARREGA O STATUS DATAJUD DOS MANDADOS VISÍVEIS
-        // ============================================================
         async function enriquecerComDataJud(mandados) {
             if (!mandados || mandados.length === 0) return mandados;
 
@@ -1564,9 +1667,6 @@
             }));
         }
 
-        // ============================================================
-        // [v1.8.1] AGUARDA TODAS AS IMAGENS DE UM CONTAINER (C2)
-        // ============================================================
         function aguardarImagens(container) {
             if (!container) return Promise.resolve();
             const imgs = Array.from(container.querySelectorAll('img'));
@@ -1582,9 +1682,6 @@
             }));
         }
 
-        // ============================================================
-        // [v1.8.1] ANEXA CONTADOR DE CARACTERES EM TEXTAREA (m4)
-        // ============================================================
         function anexarContadorTextarea(textareaEl, maxLen) {
             if (!textareaEl || textareaEl.dataset.contadorAnexado === '1') return;
             textareaEl.dataset.contadorAnexado = '1';
@@ -1606,9 +1703,6 @@
             atualizar();
         }
 
-        // ============================================================
-        // [v1.8.2] M3: HELPERS DE GEOCODIFICAÇÃO COM FALLBACK
-        // ============================================================
         async function _geocodificarNominatim(endereco) {
             const email = (usuarioAtual?.email || 'aidedom@exemplo.com');
             const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br`
@@ -1650,7 +1744,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.8.4 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.9.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1688,9 +1782,6 @@
             document.getElementById('sidebarUserRole').textContent = perfil;
         }
 
-        // ============================================================
-        // PERMISSÃO DE EDIÇÃO DOS CAMPOS LIVRES
-        // ============================================================
         function usuarioPodeEditarCamposLivres() {
             if (!usuarioAtual) return false;
             const idPerfil = parseInt(usuarioAtual.id_perfil_acesso);
@@ -1729,9 +1820,6 @@
             });
         }
 
-        // ============================================================
-        // CONTADORES DE CARACTERES (form principal)
-        // ============================================================
         function inicializarContadores() {
             const descricao = document.getElementById('descricao');
             const observacoes = document.getElementById('observacoes');
@@ -1752,9 +1840,6 @@
             atualizarContador(observacoes, counterObs, LIMITE_OBSERVACOES);
         }
 
-        // ============================================================
-        // LIGHTBOX DE FOTO
-        // ============================================================
         function abrirLightboxMandado(url) {
             if (!url) return;
             const lb = document.getElementById('fotoLightboxMandado');
@@ -1772,7 +1857,7 @@
         }
 
         // ============================================================
-        // CARREGAR SUSPEITOS — [v1.8.4] com cache
+        // CARREGAR SUSPEITOS
         // ============================================================
         async function carregarSuspeitos() {
             try {
@@ -1784,7 +1869,6 @@
 
                 if (error) throw error;
 
-                // [v1.8.4] Reseta caches
                 suspeitosCachePorId = {};
                 suspeitosCachePorCpf = {};
 
@@ -1799,13 +1883,11 @@
                 data.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.id_suspeito;
-                    // [v1.8.4] CPF exibido FORMATADO no dropdown
                     const cpfFormatado = s.cpf ? ` - ${formatarCPF(s.cpf)}` : '';
                     const apelido = s.apelido ? ` (${s.apelido})` : '';
                     opt.textContent = `${s.nome_completo}${apelido}${cpfFormatado}`;
                     select.appendChild(opt);
 
-                    // [v1.8.4] Popula caches
                     suspeitosCachePorId[String(s.id_suspeito)] = {
                         id_suspeito: s.id_suspeito,
                         nome_completo: s.nome_completo,
@@ -1829,7 +1911,7 @@
         }
 
         // ============================================================
-        // CADASTRAR MANDADO
+        // [v1.9.0] CADASTRAR MANDADO (com suporte a órfão)
         // ============================================================
         async function cadastrarMandado(e) {
             e.preventDefault();
@@ -1839,7 +1921,6 @@
                 { id: 'tipoMandado',       nome: 'Tipo' },
                 { id: 'statusMandado',     nome: 'Status' },
                 { id: 'prioridadeMandado', nome: 'Prioridade' },
-                { id: 'idSuspeito',        nome: 'Suspeito' },
                 { id: 'juizNome',          nome: 'Juiz' },
                 { id: 'varaTribunal',      nome: 'Vara/Tribunal' },
                 { id: 'dataEmissao',       nome: 'Data de Emissão' },
@@ -1866,10 +1947,33 @@
                 }
             }
 
-            // [v1.8.4] Valida o CPF digitado (se preenchido)
+            // [v1.9.0] Verifica vínculo: id_suspeito OU nome livre
+            const suspeitoNaoCadastrado = document.getElementById('suspeitoNaoCadastrado').checked;
+            const idSuspeito = document.getElementById('idSuspeito').value;
+            const nomeLivre = document.getElementById('nomeSuspeitoTexto').value.trim();
+
+            if (suspeitoNaoCadastrado) {
+                if (!nomeLivre) {
+                    showToast('warning', 'Nome obrigatório',
+                        'Marque "suspeito não cadastrado" exige que você informe o <strong>nome</strong> como veio no mandado.', 7000);
+                    document.getElementById('nomeSuspeitoTexto').focus();
+                    document.getElementById('nomeSuspeitoTexto').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+            } else {
+                if (!idSuspeito) {
+                    showToast('warning', 'Vínculo obrigatório',
+                        'Selecione um <strong>suspeito</strong> ou marque a opção <strong>"suspeito não cadastrado"</strong>.', 7000);
+                    document.getElementById('idSuspeito').focus();
+                    document.getElementById('idSuspeito').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+            }
+
+            // CPF válido (se informado e não for órfão)
             const campoCpf = document.getElementById('cpfSuspeito');
             const cpfValor = (campoCpf?.value || '').trim();
-            if (cpfValor && !cpfValido(cpfValor)) {
+            if (!suspeitoNaoCadastrado && cpfValor && !cpfValido(cpfValor)) {
                 showToast('error', 'CPF inválido',
                     `O CPF <strong>${cpfValor}</strong> não é válido. Corrija antes de cadastrar.`, 7000);
                 campoCpf.focus();
@@ -1878,13 +1982,14 @@
                 return;
             }
 
+            // Processo CNJ
             const processoNumeroEl = document.getElementById('processoNumero');
             const processoValor = (processoNumeroEl?.value || '').trim();
             if (processoValor) {
                 const limpo = processoValor.replace(/\D/g, '');
                 if (limpo.length !== 20) {
                     showToast('warning', 'Número do processo inválido',
-                        `O número do processo deve ter <strong>exatamente 20 dígitos</strong>. Atual: <strong>${limpo.length}</strong>`, 7000);
+                        `Deve ter <strong>20 dígitos</strong>. Atual: <strong>${limpo.length}</strong>`, 7000);
                     processoNumeroEl.focus();
                     processoNumeroEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return;
@@ -1910,7 +2015,8 @@
                     tipo_mandado: document.getElementById('tipoMandado').value,
                     status: document.getElementById('statusMandado').value,
                     prioridade: document.getElementById('prioridadeMandado').value,
-                    id_suspeito: parseInt(document.getElementById('idSuspeito').value) || null,
+                    id_suspeito: suspeitoNaoCadastrado ? null : (parseInt(idSuspeito) || null),
+                    nome_suspeito_texto: suspeitoNaoCadastrado ? nomeLivre : null,
                     juiz_nome: document.getElementById('juizNome').value.trim(),
                     juiz_matricula: document.getElementById('juizMatricula').value.trim() || null,
                     vara_tribunal: document.getElementById('varaTribunal').value.trim(),
@@ -1934,8 +2040,13 @@
 
                 if (error) throw new Error(error.message || 'Erro ao cadastrar no banco');
 
-                showToast('success', 'Mandado cadastrado!',
-                    `<strong>${dados.numero_mandado}</strong> foi cadastrado com sucesso.`, 6000);
+                if (suspeitoNaoCadastrado) {
+                    showToast('warning', 'Mandado órfão cadastrado',
+                        `<strong>${dados.numero_mandado}</strong> foi salvo SEM vínculo. Vincule a um suspeito quando cadastrá-lo.`, 8000);
+                } else {
+                    showToast('success', 'Mandado cadastrado!',
+                        `<strong>${dados.numero_mandado}</strong> foi cadastrado com sucesso.`, 6000);
+                }
 
                 resetFormulario();
                 await carregarMandados();
@@ -1950,7 +2061,7 @@
         }
 
         // ============================================================
-        // RESET FORMULÁRIO — [v1.8.4] limpa CPF
+        // RESET
         // ============================================================
         function resetFormulario() {
             document.getElementById('formMandado').reset();
@@ -1958,12 +2069,14 @@
             document.getElementById('statusMandado').value = 'ATIVO';
             document.getElementById('prioridadeMandado').value = 'NORMAL';
 
-            // [v1.8.4] Limpa o campo CPF e reset visual
-            const campoCpf = document.getElementById('cpfSuspeito');
-            if (campoCpf) {
-                campoCpf.value = '';
-                campoCpf.style.borderColor = '';
-            }
+            document.getElementById('suspeitoNaoCadastrado').checked = false;
+            document.getElementById('blocoNomeLivre').style.display = 'none';
+            document.getElementById('idSuspeito').disabled = false;
+            document.getElementById('cpfSuspeito').disabled = false;
+            document.getElementById('cpfSuspeito').style.borderColor = '';
+
+            const campoNome = document.getElementById('nomeSuspeitoReadonly');
+            if (campoNome) campoNome.value = '';
 
             document.getElementById('counterDescricao').textContent = '0';
             document.getElementById('counterDescricao').className = 'counter';
@@ -2003,7 +2116,7 @@
         }
 
         // ============================================================
-        // CARREGAR NÃO VALIDADOS
+        // NÃO VALIDADOS
         // ============================================================
         async function carregarNaoValidados() {
             try {
@@ -2055,6 +2168,53 @@
             `;
         }
 
+        // ============================================================
+        // [v1.9.0] AVISO DE ÓRFÃOS
+        // ============================================================
+        async function carregarOrfaos() {
+            try {
+                const { count, error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select('id_mandado', { count: 'exact', head: true })
+                    .eq('deletado', false)
+                    .is('id_suspeito', null)
+                    .not('nome_suspeito_texto', 'is', null);
+
+                if (error) throw error;
+                renderizarAvisoOrfaos(count || 0);
+            } catch (error) {
+                console.warn('Erro ao contar órfãos:', error);
+                renderizarAvisoOrfaos(0);
+            }
+        }
+
+        function renderizarAvisoOrfaos(qtd) {
+            const container = document.getElementById('avisoOrfaos');
+            if (!container) return;
+
+            if (qtd === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="aviso-orfaos">
+                    <div class="texto">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span><strong>${qtd}</strong> mandado(s) órfão(s) — sem suspeito vinculado</span>
+                    </div>
+                    <button class="btn-filtrar-orfaos" onclick="filtrarOrfaos()">
+                        <i class="fas fa-filter"></i> Ver apenas esses
+                    </button>
+                </div>
+            `;
+        }
+
+        function filtrarOrfaos() {
+            document.getElementById('filtroVinculoLista').value = '__ORFAOS__';
+            carregarMandados();
+        }
+
         function ocultarAvisoNaoValidados() {
             const el = document.getElementById('boxAvisoNaoValidados');
             if (el) el.style.display = 'none';
@@ -2066,7 +2226,6 @@
             carregarMandados();
         }
 
-        // [v1.8.2] M4: limpa o campo de busca textual
         function limparBuscaMandado() {
             const input = document.getElementById('buscaMandadoLista');
             if (!input) return;
@@ -2075,9 +2234,6 @@
             carregarMandados();
         }
 
-        // ============================================================
-        // [v1.8.1] ABRIR TODOS NÃO VALIDADOS (C4)
-        // ============================================================
         function abrirTodosNaoValidados() {
             const limite = Math.min(naoValidadosCache.length, LIMITE_ABAS_BNMP);
             if (limite === 0) return;
@@ -2107,7 +2263,7 @@
         }
 
         // ============================================================
-        // CARREGAR MANDADOS — via RPC + enriquecimento DataJud
+        // [v1.9.0] CARREGAR MANDADOS (com filtro de órfãos)
         // ============================================================
         async function carregarMandados() {
             if (_carregandoLista) {
@@ -2128,10 +2284,8 @@
                 const tipo = document.getElementById('filtroTipoLista').value || null;
                 const prioridade = document.getElementById('filtroPrioridadeLista').value || null;
                 const filtroBnmp = document.getElementById('filtroBnmpLista').value || null;
-                const filtroDataJudRaw = document.getElementById('filtroDataJudLista')?.value || '';
-                const filtroDataJud = String(filtroDataJudRaw).toLowerCase();
+                const filtroVinculo = document.getElementById('filtroVinculoLista').value || null;
 
-                // [v1.8.2] M4: termo de busca textual
                 const termoBusca = (document.getElementById('buscaMandadoLista')?.value || '').trim();
                 const termoNormalizado = termoBusca.toLowerCase();
                 const termoDigitos = termoBusca.replace(/\D/g, '');
@@ -2150,6 +2304,7 @@
                         .select(`
                             id_mandado, numero_mandado, tipo_mandado, status, prioridade,
                             data_emissao, validacao_bnmp_status, id_suspeito, juiz_nome, processo_numero,
+                            nome_suspeito_texto,
                             suspeito:suspeito(id_suspeito, nome_completo, cpf)
                         `, { count: 'exact' })
                         .eq('deletado', false)
@@ -2168,30 +2323,13 @@
                         prioridade: m.prioridade,
                         data_emissao: m.data_emissao,
                         validacao_bnmp_status: m.validacao_bnmp_status,
+                        id_suspeito: m.id_suspeito,
                         juiz_nome: m.juiz_nome || null,
                         processo_numero: m.processo_numero || null,
+                        nome_suspeito_texto: m.nome_suspeito_texto || null,
                         nome_suspeito: m.suspeito?.nome_completo || null,
                         cpf_suspeito: m.suspeito?.cpf || null
                     }));
-
-                    // Filtro textual client-side
-                    if (termoBusca) {
-                        data = data.filter(m => {
-                            const alvo = [
-                                m.numero_mandado || '',
-                                m.nome_suspeito || '',
-                                m.cpf_suspeito || '',
-                                m.juiz_nome || '',
-                                m.processo_numero || ''
-                            ].join(' ').toLowerCase();
-
-                            const alvoDigitos = alvo.replace(/\D/g, '');
-                            const casaTexto = alvo.includes(termoNormalizado);
-                            const casaDigitos = termoDigitos && alvoDigitos.includes(termoDigitos);
-                            return casaTexto || casaDigitos;
-                        });
-                        totalGeral = data.length;
-                    }
                 } else {
                     const { data: rpcRows, error: rpcError } = await window.supabaseClient.rpc('buscar_mandado', {
                         p_termo: termoBusca || null,
@@ -2209,52 +2347,42 @@
                     rows = rpcRows || [];
                     totalGeral = (rows.length > 0) ? Number(rows[0].total_count) : 0;
                     data = rows.map(r => { const { total_count, ...rest } = r; return rest; });
+                }
 
-                    if (termoBusca && data.length > 0) {
-                        data = data.filter(m => {
-                            const alvo = [
-                                m.numero_mandado || '',
-                                m.nome_suspeito || '',
-                                m.cpf_suspeito || '',
-                                m.juiz_nome || '',
-                                m.processo_numero || ''
-                            ].join(' ').toLowerCase();
+                // Filtro client-side de vínculo (órfão/vinculado)
+                if (filtroVinculo === '__ORFAOS__') {
+                    data = data.filter(m => !m.id_suspeito && m.nome_suspeito_texto);
+                    totalGeral = data.length;
+                } else if (filtroVinculo === '__VINCULADOS__') {
+                    data = data.filter(m => !!m.id_suspeito);
+                    totalGeral = data.length;
+                }
 
-                            const alvoDigitos = alvo.replace(/\D/g, '');
-                            const casaTexto = alvo.includes(termoNormalizado);
-                            const casaDigitos = termoDigitos && alvoDigitos.includes(termoDigitos);
-                            return casaTexto || casaDigitos;
-                        });
-                    }
+                // Filtro textual client-side (reforço)
+                if (termoBusca && data.length > 0) {
+                    data = data.filter(m => {
+                        const alvo = [
+                            m.numero_mandado || '',
+                            m.nome_suspeito || '',
+                            m.nome_suspeito_texto || '',
+                            m.cpf_suspeito || '',
+                            m.juiz_nome || '',
+                            m.processo_numero || ''
+                        ].join(' ').toLowerCase();
+
+                        const alvoDigitos = alvo.replace(/\D/g, '');
+                        const casaTexto = alvo.includes(termoNormalizado);
+                        const casaDigitos = termoDigitos && alvoDigitos.includes(termoDigitos);
+                        return casaTexto || casaDigitos;
+                    });
                 }
 
                 mandadosAtuais = await enriquecerComDataJud(data);
 
-                // Filtro DataJud (client-side)
-                if (filtroDataJud) {
-                    if (filtroDataJud === 'pendente') {
-                        mandadosAtuais = mandadosAtuais.filter(m => !m.datajud_status_consulta && !m.datajud_sigiloso_manual);
-                    } else if (filtroDataJud === 'sigiloso') {
-                        mandadosAtuais = mandadosAtuais.filter(m =>
-                            m.datajud_sigiloso_manual ||
-                            String(m.datajud_status_consulta || '').toLowerCase().startsWith('sigiloso')
-                        );
-                    } else if (filtroDataJud === 'erro') {
-                        mandadosAtuais = mandadosAtuais.filter(m =>
-                            ['erro_tecnico', 'numero_invalido', 'tribunal_nao_mapeado'].includes(
-                                String(m.datajud_status_consulta || '').toLowerCase()
-                            )
-                        );
-                    } else {
-                        mandadosAtuais = mandadosAtuais.filter(m =>
-                            String(m.datajud_status_consulta || '').toLowerCase() === filtroDataJud
-                        );
-                    }
-                }
-
                 document.getElementById('totalMandadosBadge').innerHTML = '<i class="fas fa-list"></i> ' + totalGeral + ' mandado(s)';
 
                 await carregarNaoValidados();
+                await carregarOrfaos();
 
                 if (mandadosAtuais.length === 0) {
                     container.innerHTML = '<div class="empty-state"><i class="fas fa-gavel"></i>Nenhum mandado cadastrado com esses filtros</div>';
@@ -2267,10 +2395,12 @@
 
                 const badgesInfo = [
                     filtroBnmp === '__NAO_VALIDADO__' ? 'NÃO VALIDADOS' : null,
+                    filtroVinculo === '__ORFAOS__' ? 'ÓRFÃOS' : null,
+                    filtroVinculo === '__VINCULADOS__' ? 'VINCULADOS' : null,
                     termoBusca ? `busca: "${termoBusca}"` : null
                 ].filter(Boolean);
 
-                if (totalGeral > LIMITE_LISTA || termoBusca) {
+                if (totalGeral > LIMITE_LISTA || termoBusca || filtroVinculo) {
                     infoContainer.innerHTML = `
                         <div class="info-lista">
                             <i class="fas fa-info-circle"></i>
@@ -2291,11 +2421,23 @@
                 mandadosAtuais.forEach(m => {
                     const statusClass = `status-${(m.status || 'ativo').toLowerCase()}`;
                     const prioridadeClass = `prioridade-${(m.prioridade || 'normal').toLowerCase()}`;
+                    const ehOrfao = !m.id_suspeito && m.nome_suspeito_texto;
 
                     html += '<tr>';
                     html += `<td><strong style="color:var(--text-primary);">${m.numero_mandado || '#' + m.id_mandado}</strong></td>`;
-                    // [v1.8.3] CPF formatado no canto do nome do suspeito
-                    html += `<td>${m.nome_suspeito || '-'}<br><small style="color:rgba(0,255,136,0.3);">${m.cpf_suspeito ? formatarCPF(m.cpf_suspeito) : ''}</small></td>`;
+
+                    if (ehOrfao) {
+                        html += `<td>
+                            <span class="badge-orfao" onclick="abrirReconciliar(${m.id_mandado})" title="Clique para vincular a um suspeito">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                ${m.nome_suspeito_texto}
+                            </span>
+                            <br><small style="color:rgba(255,193,7,0.6); font-size:10px;">(sem vínculo — clique para resolver)</small>
+                        </td>`;
+                    } else {
+                        html += `<td>${m.nome_suspeito || '-'}<br><small style="color:rgba(0,255,136,0.3);">${m.cpf_suspeito ? formatarCPF(m.cpf_suspeito) : ''}</small></td>`;
+                    }
+
                     html += `<td>${traduzirTipo(m.tipo_mandado)}</td>`;
                     html += `<td><span class="badge-status ${statusClass}">${m.status || '-'}</span></td>`;
                     html += `<td><span class="badge-prioridade ${prioridadeClass}">${m.prioridade || 'NORMAL'}</span></td>`;
@@ -2304,6 +2446,7 @@
                     html += `<td style="text-align:center;">${iconeBNMP(m.validacao_bnmp_status, m.id_mandado)}</td>`;
                     html += `<td>
                         <button class="btn-icon" onclick="verDetalhes(${m.id_mandado})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
+                        ${ehOrfao ? `<button class="btn-icon" onclick="abrirReconciliar(${m.id_mandado})" title="Vincular a suspeito" style="color:#ffc107;"><i class="fas fa-link"></i></button>` : ''}
                         <button class="btn-icon" onclick="editarMandado(${m.id_mandado})" title="Editar"><i class="fas fa-edit"></i></button>
                         ${m.status !== 'CUMPRIDO' ? `<button class="btn-icon" onclick="abrirModalCumprir(${m.id_mandado})" title="Marcar como cumprido" style="color:#00ff88;"><i class="fas fa-check"></i></button>` : ''}
                         <button class="btn-icon" onclick="imprimirMandado(${m.id_mandado})" title="Imprimir"><i class="fas fa-print"></i></button>
@@ -2323,7 +2466,199 @@
         }
 
         // ============================================================
-        // VER DETALHES — [v1.8.3] CPF formatado
+        // [v1.9.0] MODAL DE RECONCILIAÇÃO
+        // ============================================================
+        async function abrirReconciliar(idMandado) {
+            mandadoReconciliandoId = idMandado;
+            const modal = document.getElementById('modalReconciliar');
+            const body = document.getElementById('modalReconciliarBody');
+            modal.classList.add('open');
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
+
+            try {
+                const { data: m, error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select('id_mandado, numero_mandado, nome_suspeito_texto, tipo_mandado, status, data_emissao')
+                    .eq('id_mandado', idMandado)
+                    .maybeSingle();
+
+                if (error) throw error;
+                if (!m) throw new Error('Mandado não encontrado');
+
+                body.innerHTML = `
+                    <div style="background: rgba(255, 193, 7, 0.08); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 10px; padding: 15px 20px; margin-bottom: 20px;">
+                        <div style="color:#ffc107; font-weight:700; font-size:13px; margin-bottom:6px;">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Mandado órfão — aguardando vinculação
+                        </div>
+                        <div style="color:rgba(255,193,7,0.7); font-size:12px;">
+                            Mandado <strong>${m.numero_mandado}</strong> foi cadastrado sem suspeito vinculado. Escolha abaixo:
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-top:0;">
+                        <i class="fas fa-user-secret"></i> Nome que veio no mandado
+                    </div>
+                    <div class="detalhe-campo mb-3">
+                        <span class="label">Nome do Suspeito (texto livre)</span>
+                        <span class="valor"><strong style="color:#ffc107;">${m.nome_suspeito_texto || '-'}</strong></span>
+                    </div>
+
+                    <div class="section-title">
+                        <i class="fas fa-search"></i> Opção 1 — Vincular a suspeito existente
+                    </div>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="buscaSuspeitoReconciliar"
+                               placeholder="Digite nome, CPF ou parte do nome do suspeito..."
+                               oninput="buscarSuspeitosParaReconciliarDebounce()">
+                    </div>
+                    <div id="resultadoBuscaSuspeitos">
+                        <div style="text-align:center; color: rgba(0,255,136,0.3); font-size:12px; padding: 20px;">
+                            Digite para buscar suspeitos já cadastrados
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-top:25px;">
+                        <i class="fas fa-user-plus"></i> Opção 2 — Cadastrar novo suspeito
+                    </div>
+                    <div style="background: rgba(0,255,136,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 15px; margin-bottom: 20px;">
+                        <div style="color: rgba(0,255,136,0.5); font-size:12px; margin-bottom: 12px;">
+                            Se <strong style="color:#00ff88;">${m.nome_suspeito_texto}</strong> ainda não está cadastrado, clique abaixo para cadastrar agora.
+                            O nome será pré-preenchido no formulário.
+                        </div>
+                        <button type="button" class="btn-outline-gold w-100" onclick="irParaCadastroComNome('${escapeHtml(m.nome_suspeito_texto)}')">
+                            <i class="fas fa-external-link-alt me-2"></i>CADASTRAR "${m.nome_suspeito_texto}"
+                        </button>
+                    </div>
+                `;
+
+                // Auto-busca pelo nome do mandado
+                setTimeout(() => {
+                    const input = document.getElementById('buscaSuspeitoReconciliar');
+                    if (input) {
+                        input.value = m.nome_suspeito_texto || '';
+                        buscarSuspeitosParaReconciliar();
+                    }
+                }, 100);
+
+            } catch (error) {
+                console.error('❌ Erro abrirReconciliar:', error);
+                body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        function escapeHtml(s) {
+            if (!s) return '';
+            return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        }
+
+        let _timerBuscaReconciliar = null;
+        function buscarSuspeitosParaReconciliarDebounce() {
+            if (_timerBuscaReconciliar) clearTimeout(_timerBuscaReconciliar);
+            _timerBuscaReconciliar = setTimeout(buscarSuspeitosParaReconciliar, 400);
+        }
+
+        async function buscarSuspeitosParaReconciliar() {
+            const input = document.getElementById('buscaSuspeitoReconciliar');
+            const container = document.getElementById('resultadoBuscaSuspeitos');
+            if (!input || !container) return;
+
+            const termo = input.value.trim();
+            if (termo.length < 2) {
+                container.innerHTML = '<div style="text-align:center; color: rgba(0,255,136,0.3); font-size:12px; padding: 20px;">Digite pelo menos 2 caracteres</div>';
+                return;
+            }
+
+            container.innerHTML = '<div class="text-center py-4" style="color: rgba(0,255,136,0.3);"><i class="fas fa-spinner fa-spin"></i> Buscando...</div>';
+
+            try {
+                const termoDigitos = termo.replace(/\D/g, '');
+                let query = window.supabaseClient
+                    .from('suspeito')
+                    .select('id_suspeito, nome_completo, cpf, apelido, status_atual')
+                    .eq('deletado', false)
+                    .limit(15);
+
+                if (termoDigitos.length >= 3) {
+                    query = query.or(`nome_completo.ilike.%${termo}%,cpf.ilike.%${termoDigitos}%,apelido.ilike.%${termo}%`);
+                } else {
+                    query = query.or(`nome_completo.ilike.%${termo}%,apelido.ilike.%${termo}%`);
+                }
+
+                const { data, error } = await query.order('nome_completo', { ascending: true });
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = '<div style="text-align:center; color:#ffc107; font-size:12px; padding: 20px;"><i class="fas fa-info-circle"></i> Nenhum suspeito encontrado com esse termo</div>';
+                    return;
+                }
+
+                let html = '';
+                data.forEach(s => {
+                    const inicial = (s.nome_completo || '?')[0].toUpperCase();
+                    const cpfFmt = s.cpf ? formatarCPF(s.cpf) : '-';
+                    html += `
+                        <div class="suspeito-item" onclick="vincularMandadoAoSuspeito(${s.id_suspeito})">
+                            <div class="avatar-mini">${inicial}</div>
+                            <div class="info">
+                                <div class="nome">${s.nome_completo}${s.apelido ? ' (' + s.apelido + ')' : ''}</div>
+                                <div class="meta">CPF: ${cpfFmt} · Status: ${s.status_atual || '-'}</div>
+                            </div>
+                            <i class="fas fa-link" style="color:#00ff88; font-size:16px;"></i>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+            } catch (error) {
+                console.error('Erro buscaReconciliar:', error);
+                container.innerHTML = `<div style="color:#dc3545; font-size:12px; padding:20px;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
+            }
+        }
+
+        async function vincularMandadoAoSuspeito(idSuspeito) {
+            if (!mandadoReconciliandoId) return;
+
+            const suspeito = suspeitosCachePorId[String(idSuspeito)];
+            const nomeExibicao = suspeito?.nome_completo || `ID #${idSuspeito}`;
+
+            if (!confirm(`Vincular este mandado ao suspeito:\n\n${nomeExibicao}\n\nContinuar?`)) return;
+
+            try {
+                const { error } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .update({
+                        id_suspeito: idSuspeito,
+                        data_atualizacao: new Date().toISOString()
+                    })
+                    .eq('id_mandado', mandadoReconciliandoId);
+
+                if (error) throw error;
+
+                showToast('success', 'Mandado vinculado!',
+                    `Agora está associado a <strong>${nomeExibicao}</strong>. O nome original foi mantido no histórico.`, 7000);
+                fecharReconciliar();
+                await carregarMandados();
+            } catch (error) {
+                console.error('Erro ao vincular:', error);
+                showToast('error', 'Erro ao vincular', error.message);
+            }
+        }
+
+        function irParaCadastroComNome(nome) {
+            const url = `06-cadastro-suspeito.html?nome=${encodeURIComponent(nome)}`;
+            window.open(url, '_blank');
+            showToast('info', 'Abrindo cadastro', `O nome <strong>${nome}</strong> foi pré-preenchido. Cadastre o suspeito e depois volte aqui para vincular.`, 9000);
+        }
+
+        function fecharReconciliar() {
+            const modal = document.getElementById('modalReconciliar');
+            if (modal) modal.classList.remove('open');
+            const body = document.getElementById('modalReconciliarBody');
+            if (body) body.innerHTML = '';
+            mandadoReconciliandoId = null;
+        }
+
+        // ============================================================
+        // VER DETALHES
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -2364,9 +2699,49 @@
                     } catch (e) { console.warn('⚠️', e); }
                 }
 
-                const fotoHTML = fotoUrl
-                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar"><img src="${fotoUrl}" alt="${s.nome_completo || 'Suspeito'}" class="mandado-foto" /></div>`
-                    : `<div class="mandado-foto-placeholder"><i class="fas fa-user-secret"></i><span>Sem foto cadastrada</span></div>`;
+                let fotoHTML = '';
+                let blocoSuspeitoHTML = '';
+
+                const ehOrfao = !m.id_suspeito && m.nome_suspeito_texto;
+
+                if (ehOrfao) {
+                    fotoHTML = `<div class="mandado-foto-placeholder" style="border-color: rgba(255,193,7,0.5);"><i class="fas fa-exclamation-triangle" style="color:#ffc107;"></i><span style="color:#ffc107;">Mandado órfão</span></div>`;
+                    blocoSuspeitoHTML = `
+                        <div class="col-md-8">
+                            <div class="detalhe-campo">
+                                <span class="label">Nome (como veio no mandado)</span>
+                                <span class="valor"><strong style="color:#ffc107;">${m.nome_suspeito_texto}</strong></span>
+                            </div>
+                            <div class="detalhe-campo">
+                                <span class="label">Vínculo</span>
+                                <span class="valor" style="color:#ffc107;">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    Ainda não vinculado a um suspeito no sistema
+                                </span>
+                            </div>
+                            <div class="mt-3">
+                                <button type="button" class="btn-outline-gold" onclick="fecharDetalhes(); abrirReconciliar(${m.id_mandado});">
+                                    <i class="fas fa-link me-2"></i>VINCULAR AGORA
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    fotoHTML = fotoUrl
+                        ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar"><img src="${fotoUrl}" alt="${s.nome_completo || 'Suspeito'}" class="mandado-foto" /></div>`
+                        : `<div class="mandado-foto-placeholder"><i class="fas fa-user-secret"></i><span>Sem foto cadastrada</span></div>`;
+                    blocoSuspeitoHTML = `
+                        <div class="col-md-8">
+                            <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${s.nome_completo || '-'}</strong></span></div>
+                            <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf ? formatarCPF(s.cpf) : '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Endereço do Suspeito</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
+                        </div>
+                    `;
+                }
 
                 let bnmpHTML = '';
                 if (m.validacao_bnmp_status) {
@@ -2378,7 +2753,6 @@
                                 <i class="fas ${cfg ? cfg.icone : 'fa-question-circle'} ${cfg ? cfg.classe : 'bnmp-nao-validado'}" style="margin-right:6px;"></i>
                                 <strong>${cfg ? cfg.label : m.validacao_bnmp_status}</strong>
                                 ${m.validacao_bnmp_data ? `<br><small style="color:rgba(0,255,136,0.4);">Validado em: ${new Date(m.validacao_bnmp_data).toLocaleString('pt-BR')}</small>` : ''}
-                                ${m.validacao_bnmp_observacao ? `<br><small style="color:rgba(0,255,136,0.5);">Obs: ${m.validacao_bnmp_observacao}</small>` : ''}
                             </span>
                         </div>
                     `;
@@ -2409,14 +2783,6 @@
                             'tribunal_nao_mapeado':  '❓ Tribunal desconhecido'
                         }[String(m.datajud_status_consulta || '').toLowerCase()] || m.datajud_status_consulta);
 
-                    const movs = Array.isArray(m.datajud_movimentos) ? m.datajud_movimentos : [];
-                    const codigosRelevantes = [60, 106, 985, 15032, 581];
-                    const movRelevantes = movs
-                        .filter(mv => mv && typeof mv === 'object'
-                            && mv.codigo !== undefined && mv.codigo !== null
-                            && codigosRelevantes.includes(Number(mv.codigo)))
-                        .slice(0, 5);
-
                     datajudHTML = `
                         <div class="col-md-12">
                             <div class="section-title">
@@ -2435,19 +2801,6 @@
                         <div class="col-md-12">
                             <div class="detalhe-campo"><span class="label">Assuntos</span><span class="valor">${m.datajud_assuntos}</span></div>
                         </div>` : ''}
-                        ${m.datajud_consultado_em ? `
-                        <div class="col-md-12">
-                            <div class="detalhe-campo"><span class="label">Última Consulta</span><span class="valor">${new Date(m.datajud_consultado_em).toLocaleString('pt-BR')}</span></div>
-                        </div>` : ''}
-                        ${movRelevantes.length > 0 ? `
-                        <div class="col-md-12">
-                            <div class="detalhe-campo">
-                                <span class="label">Movimentações Relevantes (${movRelevantes.length})</span>
-                                <span class="valor" style="font-size: 12px;">
-                                    ${movRelevantes.map(mv => `• <strong>${mv.nome || 'Movimento'}</strong>${mv.dataHora ? ' — ' + new Date(mv.dataHora).toLocaleDateString('pt-BR') : ''}`).join('<br>')}
-                                </span>
-                            </div>
-                        </div>` : ''}
                     `;
                 }
 
@@ -2462,15 +2815,7 @@
                             <span class="foto-label-mandado"><i class="fas fa-camera me-1"></i>Foto do Suspeito</span>
                             ${fotoHTML}
                         </div>
-                        <div class="col-md-8">
-                            <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${s.nome_completo || '-'}</strong></span></div>
-                            <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf ? formatarCPF(s.cpf) : '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">Endereço do Suspeito</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
-                        </div>
+                        ${blocoSuspeitoHTML}
 
                         <div class="col-md-12">
                             <div class="section-title">
@@ -2526,9 +2871,6 @@
             if (body) body.innerHTML = '';
         }
 
-        // ============================================================
-        // [v1.8.1] IMPRESSÃO — aguarda imagens (C2)
-        // ============================================================
         async function imprimirDetalhes() {
             const modal = document.getElementById('modalDetalhes');
             const body = document.getElementById('modalDetalhesBody');
@@ -2547,7 +2889,7 @@
         }
 
         // ============================================================
-        // EDITAR MANDADO — [v1.8.3] CPF formatado
+        // EDITAR MANDADO (mostra nome do órfão também)
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -2586,11 +2928,15 @@
                     } catch (e) { console.warn('⚠️', e); }
                 }
 
-                const fotoEdicaoHTML = fotoUrl
-                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar"><img src="${fotoUrl}" alt="${suspeito?.nome_completo || 'Suspeito'}" class="mandado-foto" /></div>`
-                    : `<div class="mandado-foto-placeholder"><i class="fas fa-user-secret"></i><span>Sem foto cadastrada</span></div>`;
+                const ehOrfao = !m.id_suspeito && m.nome_suspeito_texto;
 
-                const nomeSuspeito = suspeito?.nome_completo || 'Não vinculado';
+                const fotoEdicaoHTML = ehOrfao
+                    ? `<div class="mandado-foto-placeholder" style="border-color: rgba(255,193,7,0.5);"><i class="fas fa-exclamation-triangle" style="color:#ffc107;"></i><span style="color:#ffc107;">Mandado órfão</span></div>`
+                    : (fotoUrl
+                        ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar"><img src="${fotoUrl}" alt="${suspeito?.nome_completo || 'Suspeito'}" class="mandado-foto" /></div>`
+                        : `<div class="mandado-foto-placeholder"><i class="fas fa-user-secret"></i><span>Sem foto cadastrada</span></div>`);
+
+                const nomeSuspeito = ehOrfao ? m.nome_suspeito_texto : (suspeito?.nome_completo || 'Não vinculado');
                 const cpfSuspeitoFmt = suspeito?.cpf ? formatarCPF(suspeito.cpf) : '-';
                 const statusSuspeito = suspeito?.status_atual || '-';
 
@@ -2608,6 +2954,7 @@
                                 <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${nomeSuspeito}</strong></span></div>
                                 <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${cpfSuspeitoFmt}</span></div>
                                 <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${statusSuspeito}</span></div>
+                                ${ehOrfao ? `<div class="detalhe-campo"><span class="label">Vínculo</span><span class="valor" style="color:#ffc107;"><i class="fas fa-exclamation-triangle me-1"></i>Órfão — sem suspeito vinculado</span></div>` : ''}
                             </div>
                         </div>
 
@@ -2681,10 +3028,6 @@
                                             <i class="fas fa-lock me-1"></i> Este processo é SIGILOSO
                                         </label>
                                     </div>
-                                    <small style="display: block; color: rgba(255, 193, 7, 0.6); font-size: 11px; margin-top: 6px; margin-left: 24px;">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Ao marcar, a consulta automática do DataJud será <strong>pulada</strong> para este mandado.
-                                    </small>
                                 </div>
                             </div>
 
@@ -2859,9 +3202,6 @@
             }
         }
 
-        // ============================================================
-        // HELPERS DE ENDEREÇO / COORDENADAS
-        // ============================================================
         function mascaraCepMandado(input) {
             let v = input.value.replace(/\D/g, '').slice(0, 8);
             if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
@@ -3020,7 +3360,7 @@
         }
 
         // ============================================================
-        // VALIDAÇÃO BNMP — [v1.8.3] CPF formatado
+        // VALIDAÇÃO BNMP
         // ============================================================
         async function abrirValidacaoBNMP(id) {
             mandadoValidandoId = id;
@@ -3045,9 +3385,11 @@
                     s = sData || {};
                 }
 
+                const ehOrfao = !m.id_suspeito && m.nome_suspeito_texto;
+                const nomeExibido = ehOrfao ? m.nome_suspeito_texto : (s.nome_completo || '-');
+
                 const statusAtual = m.validacao_bnmp_status || '';
                 const obsAtual = m.validacao_bnmp_observacao || '';
-                const dataAtual = m.validacao_bnmp_data ? new Date(m.validacao_bnmp_data).toLocaleString('pt-BR') : null;
 
                 const statusOpts = ['', 'VALIDO', 'CANCELADO', 'SUSPENSO', 'CUMPRIDO', 'EXTINTO', 'NAO_ENCONTRADO'];
                 const statusLabels = {
@@ -3073,21 +3415,11 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">Número</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div></div>
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div></div>
-                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor">${s.nome_completo || '-'}</span></div></div>
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor">${nomeExibido}</span></div></div>
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf ? formatarCPF(s.cpf) : '-'}</span></div></div>
-                        ${m.processo_numero ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Nº do Processo</span><span class="valor">${m.processo_numero}</span></div></div>` : ''}
                     </div>
 
-                    <div class="section-title"><i class="fas fa-external-link-alt"></i> 1. Consultar no Portal BNMP</div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-12">
-                            <button type="button" class="btn-outline-gold w-100" onclick="abrirPortalBNMP('${(s.cpf || '').replace(/\D/g, '')}')">
-                                <i class="fas fa-external-link-alt me-2"></i>ABRIR PORTAL BNMP (CNJ)
-                            </button>
-                        </div>
-                    </div>
-
-                    <div class="section-title"><i class="fas fa-clipboard-check"></i> 2. Registrar Resultado</div>
+                    <div class="section-title"><i class="fas fa-clipboard-check"></i> Registrar Resultado</div>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label">Status no BNMP *</label>
@@ -3107,7 +3439,6 @@
                                 </label>
                             </div>
                         </div>
-                        ${dataAtual ? `<div class="col-md-12"><div class="aviso-bnmp" style="background:rgba(0,255,136,0.03); border-color:var(--border-color); color:rgba(0,255,136,0.6);"><i class="fas fa-history"></i> Última validação: <strong>${dataAtual}</strong></div></div>` : ''}
                     </div>
                 `;
             } catch (error) {
@@ -3172,6 +3503,12 @@
         // GEOCODIFICAÇÃO (form principal)
         // ============================================================
         async function geocodificarEndereco(event) {
+            const suspeitoNaoCadastrado = document.getElementById('suspeitoNaoCadastrado').checked;
+            if (suspeitoNaoCadastrado) {
+                showToast('warning', 'Suspeito não cadastrado', 'A busca de coordenadas por endereço requer um suspeito vinculado. Preencha manualmente.');
+                return;
+            }
+
             const idSuspeito = document.getElementById('idSuspeito').value;
             if (!idSuspeito) { showToast('warning', 'Selecione um suspeito', 'O endereço é buscado a partir do suspeito.'); return; }
 
@@ -3219,9 +3556,6 @@
             return `${dia}/${mes}/${ano}`;
         }
 
-        // ============================================================
-        // TOAST — [v1.8.2] com deduplicação
-        // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
@@ -3275,6 +3609,7 @@
                 fecharEdicao();
                 fecharCumprir();
                 fecharValidacaoBNMP();
+                fecharReconciliar();
             }
         });
 
@@ -3311,7 +3646,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.8.4 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.9.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
