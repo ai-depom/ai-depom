@@ -1,32 +1,28 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.7.0
-     Data: 21/09/2026 - 15:30
+     Versão: 1.8.0
+     Data: 21/09/2026 - 22:30
      ============================================================
+     ALTERAÇÕES v1.8.0 (21/09/2026 22:30):
+     - ✨ NOVO: Coluna "DataJud" na tabela de mandados
+       - Badge colorido com status (OK/Sigiloso/Não achado/Erro/Pendente)
+       - Tooltip com detalhes ao passar o mouse
+     - ✨ NOVO: Filtro "Status DataJud" na barra de filtros
+       - Pendente / Encontrado / Sigiloso / Não encontrado / Erro
+     - ✨ NOVO: Seção "DATAJUD (CNJ)" no modal de Detalhes
+       - Status, tribunal, classe, órgão, assuntos, movimentos relevantes
+     - ✅ Preservadas TODAS as funcionalidades da v1.7.0
+
      ALTERAÇÕES v1.7.0 (21/09/2026 15:30):
-     - ✨ NOVO: Validação de tribunal (ramo + código)
-       - Mapa completo dos 90+ tribunais brasileiros
-       - Mostra nome do tribunal (TJBA, TRF1, etc.)
-       - Bloqueia números com tribunal inexistente
-     - ✨ NOVO: Toggle "Sigiloso" no cadastro e edição
-       - Marca datajud_sigiloso_manual no banco
-       - Processos sigilosos pulam consulta automática DataJud
-     - ✅ Preservadas TODAS as funcionalidades da v1.6.0
+     - ✨ Validação de tribunal (ramo + código)
+     - ✨ Toggle "Sigiloso" no cadastro e edição
 
      ALTERAÇÕES v1.6.0 (21/09/2026 14:30):
-     - ✨ NOVO: Validação de número de processo (padrão CNJ)
-       - Máscara automática: NNNNNNN-DD.AAAA.J.TR.OOOO
-       - Feedback visual em tempo real
-       - Valida segmento da Justiça (posição 14)
-     - ✅ Preservadas TODAS as funcionalidades da v1.5.0
+     - ✨ Validação de número de processo (padrão CNJ)
 
      ALTERAÇÕES v1.5.0 (18/09/2026 07:45):
      - 🔒 SEGURANÇA: lista migrada para RPC buscar_mandado
-     - 🐛 FIX: verDetalhes() e abrirValidacaoBNMP() sem embed
-
-     ALTERAÇÕES v1.4.4 (18/09/2026 03:30):
-     - ✨ NOVO: Foto do suspeito no modal de EDIÇÃO
      ============================================================
 -->
 <!DOCTYPE html>
@@ -606,6 +602,50 @@
             font-size: 12px;
         }
 
+        /* ============================================================
+           [v1.8.0] COLUNA DATAJUD — Status do processo
+           ============================================================ */
+        .badge-datajud {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            cursor: help;
+        }
+        .badge-datajud.encontrado {
+            background: rgba(0, 255, 136, 0.12);
+            color: #00ff88;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        .badge-datajud.sigiloso_provavel,
+        .badge-datajud.sigiloso_manual {
+            background: rgba(255, 193, 7, 0.12);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.35);
+        }
+        .badge-datajud.nao_encontrado {
+            background: rgba(220, 53, 69, 0.12);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+        .badge-datajud.erro_tecnico,
+        .badge-datajud.numero_invalido,
+        .badge-datajud.tribunal_nao_mapeado {
+            background: rgba(108, 117, 125, 0.15);
+            color: #adb5bd;
+            border: 1px solid rgba(108, 117, 125, 0.3);
+        }
+        .badge-datajud.nunca_consultado {
+            background: rgba(0, 255, 136, 0.03);
+            color: rgba(0, 255, 136, 0.35);
+            border: 1px dashed var(--border-color);
+        }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -786,7 +826,6 @@
                         <input type="date" class="form-control" id="dataValidade">
                     </div>
 
-                    <!-- [v1.7.0] Toggle Sigiloso -->
                     <div class="col-md-12">
                         <div style="background: rgba(255, 193, 7, 0.04); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 10px; padding: 12px 16px; margin-top: 5px;">
                             <div class="form-check">
@@ -931,9 +970,9 @@
                         <option value="URGENTE">Urgente</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <select class="form-select" id="filtroBnmpLista">
-                        <option value="">Todas as validações BNMP</option>
+                        <option value="">BNMP: Todos</option>
                         <option value="__NAO_VALIDADO__">⏳ Não validados</option>
                         <option value="VALIDO">🟢 Válidos</option>
                         <option value="NOVO">🔴 Novos</option>
@@ -944,7 +983,17 @@
                         <option value="NAO_ENCONTRADO">🟠 Não encontrados</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <select class="form-select" id="filtroDataJudLista">
+                        <option value="">DataJud: Todos</option>
+                        <option value="PENDENTE">⏳ Pendente</option>
+                        <option value="encontrado">🟢 Encontrado</option>
+                        <option value="sigiloso">🟡 Sigiloso</option>
+                        <option value="nao_encontrado">🔴 Não encontrado</option>
+                        <option value="erro">⚠️ Erro técnico</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
                     <button class="btn-gold w-100" onclick="carregarMandados()">
                         <i class="fas fa-filter me-2"></i>FILTRAR
                     </button>
@@ -1175,7 +1224,6 @@
                 return { valido: false, digitos };
             }
 
-            // [v1.7.0] Validação do ramo e do tribunal
             const ramo = limpo[13];
             const codTrib = limpo.slice(14, 16);
             const chave = `${ramo}.${codTrib}`;
@@ -1201,10 +1249,69 @@
         }
 
         // ============================================================
+        // [v1.8.0] BADGE DE STATUS DATAJUD
+        // ============================================================
+        function gerarBadgeDataJud(statusConsulta, sigilosoManual, tribunal) {
+            if (sigilosoManual === true) {
+                return `<span class="badge-datajud sigiloso_manual" title="Marcado manualmente como sigiloso">
+                            <i class="fas fa-lock"></i> Sigiloso
+                        </span>`;
+            }
+
+            if (!statusConsulta) {
+                return `<span class="badge-datajud nunca_consultado" title="Ainda não consultado pelo DataJud">
+                            <i class="fas fa-clock"></i> Pendente
+                        </span>`;
+            }
+
+            const cfg = {
+                'encontrado':           { icone: 'fa-check-circle',         label: 'OK',          titulo: 'Processo encontrado no DataJud' },
+                'sigiloso_provavel':    { icone: 'fa-lock',                 label: 'Sigiloso',    titulo: 'Provavelmente sigiloso — não indexado no DataJud público' },
+                'nao_encontrado':       { icone: 'fa-search-minus',         label: 'Não achado',  titulo: 'Processo não encontrado no DataJud' },
+                'erro_tecnico':         { icone: 'fa-exclamation-triangle', label: 'Erro',        titulo: 'Erro técnico ao consultar' },
+                'numero_invalido':      { icone: 'fa-times-circle',         label: 'Nº inválido', titulo: 'Número do processo inválido' },
+                'tribunal_nao_mapeado': { icone: 'fa-question-circle',      label: 'Trib. ?',     titulo: 'Tribunal não reconhecido' }
+            }[statusConsulta] || { icone: 'fa-question', label: statusConsulta, titulo: statusConsulta };
+
+            const trib = tribunal ? ` (${tribunal})` : '';
+            return `<span class="badge-datajud ${statusConsulta}" title="${cfg.titulo}${trib}">
+                        <i class="fas ${cfg.icone}"></i> ${cfg.label}
+                    </span>`;
+        }
+
+        // ============================================================
+        // [v1.8.0] CARREGA O STATUS DATAJUD DOS MANDADOS VISÍVEIS
+        // ============================================================
+        async function enriquecerComDataJud(mandados) {
+            if (!mandados || mandados.length === 0) return mandados;
+
+            const ids = mandados.map(m => m.id_mandado);
+            const { data, error } = await window.supabaseClient
+                .from('mandado_prisao')
+                .select('id_mandado, datajud_status_consulta, datajud_sigiloso_manual, datajud_tribunal')
+                .in('id_mandado', ids);
+
+            if (error) {
+                console.warn('⚠️ Não foi possível buscar status DataJud:', error.message);
+                return mandados;
+            }
+
+            const porId = {};
+            (data || []).forEach(r => { porId[r.id_mandado] = r; });
+
+            return mandados.map(m => ({
+                ...m,
+                datajud_status_consulta: porId[m.id_mandado]?.datajud_status_consulta ?? null,
+                datajud_sigiloso_manual: porId[m.id_mandado]?.datajud_sigiloso_manual ?? false,
+                datajud_tribunal: porId[m.id_mandado]?.datajud_tribunal ?? null
+            }));
+        }
+
+        // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.7.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.8.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1398,7 +1505,6 @@
                 }
             }
 
-            // [v1.6.0/v1.7.0] Validação do processo
             const processoNumeroEl = document.getElementById('processoNumero');
             const processoValor = (processoNumeroEl?.value || '').trim();
             if (processoValor) {
@@ -1490,7 +1596,6 @@
                 feedback.className = 'processo-validacao vazio';
             }
 
-            // [v1.7.0] Resetar toggle sigiloso
             const toggleSigiloso = document.getElementById('datajudSigilosoManual');
             if (toggleSigiloso) toggleSigiloso.checked = false;
 
@@ -1592,7 +1697,7 @@
         }
 
         // ============================================================
-        // CARREGAR MANDADOS — via RPC
+        // CARREGAR MANDADOS — via RPC + enriquecimento DataJud
         // ============================================================
         async function carregarMandados() {
             const container = document.getElementById('listaMandados');
@@ -1607,6 +1712,7 @@
                 const tipo = document.getElementById('filtroTipoLista').value || null;
                 const prioridade = document.getElementById('filtroPrioridadeLista').value || null;
                 const filtroBnmp = document.getElementById('filtroBnmpLista').value || null;
+                const filtroDataJud = document.getElementById('filtroDataJudLista')?.value || '';
 
                 if (filtroBnmp !== '__NAO_VALIDADO__') filtroNaoValidadosAtivo = false;
 
@@ -1623,12 +1729,29 @@
                 const totalGeral = (rows && rows.length > 0) ? Number(rows[0].total_count) : 0;
                 const data = (rows || []).map(r => { const { total_count, ...rest } = r; return rest; });
 
-                mandadosAtuais = data;
+                // [v1.8.0] Enriquece com status DataJud
+                mandadosAtuais = await enriquecerComDataJud(data);
+
+                // [v1.8.0] Filtro DataJud (client-side)
+                if (filtroDataJud) {
+                    if (filtroDataJud === 'PENDENTE') {
+                        mandadosAtuais = mandadosAtuais.filter(m => !m.datajud_status_consulta && !m.datajud_sigiloso_manual);
+                    } else if (filtroDataJud === 'sigiloso') {
+                        mandadosAtuais = mandadosAtuais.filter(m => m.datajud_sigiloso_manual || m.datajud_status_consulta === 'sigiloso_provavel');
+                    } else if (filtroDataJud === 'erro') {
+                        mandadosAtuais = mandadosAtuais.filter(m =>
+                            ['erro_tecnico', 'numero_invalido', 'tribunal_nao_mapeado'].includes(m.datajud_status_consulta)
+                        );
+                    } else {
+                        mandadosAtuais = mandadosAtuais.filter(m => m.datajud_status_consulta === filtroDataJud);
+                    }
+                }
+
                 document.getElementById('totalMandadosBadge').innerHTML = '<i class="fas fa-list"></i> ' + totalGeral + ' mandado(s)';
 
                 await carregarNaoValidados();
 
-                if (data.length === 0) {
+                if (mandadosAtuais.length === 0) {
                     container.innerHTML = '<div class="empty-state"><i class="fas fa-gavel"></i>Nenhum mandado cadastrado com esses filtros</div>';
                     if (filtroNaoValidadosAtivo) {
                         filtroNaoValidadosAtivo = false;
@@ -1641,23 +1764,16 @@
                     infoContainer.innerHTML = `
                         <div class="info-lista">
                             <i class="fas fa-info-circle"></i>
-                            <span>Exibindo os <strong>${data.length}</strong> últimos cadastros de um total de <strong>${totalGeral}</strong> mandados${filtroBnmp === '__NAO_VALIDADO__' ? ' <strong style="color:#ffc107;">(filtrados por NÃO VALIDADOS)</strong>' : ''}.</span>
-                        </div>
-                    `;
-                } else if (filtroBnmp === '__NAO_VALIDADO__') {
-                    infoContainer.innerHTML = `
-                        <div class="info-lista">
-                            <i class="fas fa-filter"></i>
-                            <span>Mostrando apenas <strong>${data.length}</strong> mandado(s) <strong style="color:#ffc107;">não validado(s)</strong> no BNMP.</span>
+                            <span>Exibindo os <strong>${mandadosAtuais.length}</strong> últimos cadastros de um total de <strong>${totalGeral}</strong> mandados${filtroBnmp === '__NAO_VALIDADO__' ? ' <strong style="color:#ffc107;">(filtrados por NÃO VALIDADOS)</strong>' : ''}.</span>
                         </div>
                     `;
                 }
 
                 let html = '<div class="table-container"><table class="table-custom"><thead><tr>';
-                html += '<th>Nº Mandado</th><th>Suspeito</th><th>Tipo</th><th>Status</th><th>Prioridade</th><th>Emissão</th><th>BNMP</th><th>Ações</th>';
+                html += '<th>Nº Mandado</th><th>Suspeito</th><th>Tipo</th><th>Status</th><th>Prioridade</th><th>Emissão</th><th>DataJud</th><th>BNMP</th><th>Ações</th>';
                 html += '</tr></thead><tbody>';
 
-                data.forEach(m => {
+                mandadosAtuais.forEach(m => {
                     const statusClass = `status-${(m.status || 'ativo').toLowerCase()}`;
                     const prioridadeClass = `prioridade-${(m.prioridade || 'normal').toLowerCase()}`;
 
@@ -1668,6 +1784,7 @@
                     html += `<td><span class="badge-status ${statusClass}">${m.status || '-'}</span></td>`;
                     html += `<td><span class="badge-prioridade ${prioridadeClass}">${m.prioridade || 'NORMAL'}</span></td>`;
                     html += `<td>${formatarData(m.data_emissao)}</td>`;
+                    html += `<td style="text-align:center;">${gerarBadgeDataJud(m.datajud_status_consulta, m.datajud_sigiloso_manual, m.datajud_tribunal)}</td>`;
                     html += `<td style="text-align:center;">${iconeBNMP(m.validacao_bnmp_status, m.id_mandado)}</td>`;
                     html += `<td>
                         <button class="btn-icon" onclick="verDetalhes(${m.id_mandado})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
@@ -1688,7 +1805,7 @@
         }
 
         // ============================================================
-        // VER DETALHES
+        // VER DETALHES — com seção DataJud
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -1759,14 +1876,59 @@
                     `;
                 }
 
-                // [v1.7.0] Sigiloso badge
-                const sigilosoBadge = m.datajud_sigiloso_manual
-                    ? `<div class="detalhe-campo"><span class="label">DataJud</span><span class="valor"><i class="fas fa-lock" style="color:#ffc107;margin-right:6px;"></i><strong style="color:#ffc107;">Processo sigiloso — consulta automática pulada</strong></span></div>`
-                    : (m.datajud_status_consulta
-                        ? `<div class="detalhe-campo"><span class="label">DataJud</span><span class="valor"><i class="fas fa-check-circle" style="color:#0dcaf0;margin-right:6px;"></i>${m.datajud_status_consulta}${m.datajud_tribunal ? ' — ' + m.datajud_tribunal : ''}</span></div>`
-                        : '');
-
                 const enderecoMandado = [m.logradouro, m.numero, m.complemento, m.bairro, m.cidade, m.uf, m.cep].filter(Boolean).join(', ') || '-';
+
+                // [v1.8.0] Bloco DataJud
+                let datajudHTML = '';
+                if (m.datajud_status_consulta || m.datajud_sigiloso_manual) {
+                    const statusLabel = m.datajud_sigiloso_manual
+                        ? '🔒 Sigiloso (marcado manualmente)'
+                        : ({
+                            'encontrado':            '🟢 Encontrado',
+                            'sigiloso_provavel':     '🟡 Sigiloso provável',
+                            'nao_encontrado':        '🔴 Não encontrado',
+                            'erro_tecnico':          '⚠️ Erro técnico',
+                            'numero_invalido':       '❌ Número inválido',
+                            'tribunal_nao_mapeado':  '❓ Tribunal desconhecido'
+                        }[m.datajud_status_consulta] || m.datajud_status_consulta);
+
+                    const movRelevantes = Array.isArray(m.datajud_movimentos)
+                        ? m.datajud_movimentos.filter(mv => [60, 106, 985, 15032, 581].includes(mv.codigo)).slice(0, 5)
+                        : [];
+
+                    datajudHTML = `
+                        <div class="col-md-12">
+                            <div class="section-title">
+                                <i class="fas fa-microchip"></i> DATAJUD (CNJ)
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Status da Consulta</span><span class="valor">${statusLabel}</span></div>
+                            <div class="detalhe-campo"><span class="label">Tribunal</span><span class="valor">${m.datajud_tribunal || '-'}</span></div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="detalhe-campo"><span class="label">Classe Processual</span><span class="valor">${m.datajud_classe || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">Órgão Julgador</span><span class="valor">${m.datajud_orgao_julgador || '-'}</span></div>
+                        </div>
+                        ${m.datajud_assuntos ? `
+                        <div class="col-md-12">
+                            <div class="detalhe-campo"><span class="label">Assuntos</span><span class="valor">${m.datajud_assuntos}</span></div>
+                        </div>` : ''}
+                        ${m.datajud_consultado_em ? `
+                        <div class="col-md-12">
+                            <div class="detalhe-campo"><span class="label">Última Consulta</span><span class="valor">${new Date(m.datajud_consultado_em).toLocaleString('pt-BR')}</span></div>
+                        </div>` : ''}
+                        ${movRelevantes.length > 0 ? `
+                        <div class="col-md-12">
+                            <div class="detalhe-campo">
+                                <span class="label">Movimentações Relevantes (${movRelevantes.length})</span>
+                                <span class="valor" style="font-size: 12px;">
+                                    ${movRelevantes.map(mv => `• <strong>${mv.nome}</strong> — ${new Date(mv.dataHora).toLocaleDateString('pt-BR')}`).join('<br>')}
+                                </span>
+                            </div>
+                        </div>` : ''}
+                    `;
+                }
 
                 body.innerHTML = `
                     <div class="row g-3">
@@ -1810,7 +1972,6 @@
                             <div class="detalhe-campo"><span class="label">Juiz</span><span class="valor">${m.juiz_nome || '-'} ${m.juiz_matricula ? '(' + m.juiz_matricula + ')' : ''}</span></div>
                             <div class="detalhe-campo"><span class="label">Vara/Tribunal</span><span class="valor">${m.vara_tribunal || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Número do Processo</span><span class="valor">${m.processo_numero || '-'}</span></div>
-                            ${sigilosoBadge}
                         </div>
 
                         <div class="col-md-12">
@@ -1821,6 +1982,8 @@
                         <div class="col-md-12">
                             ${bnmpHTML}
                         </div>
+
+                        ${datajudHTML}
 
                         <div class="col-md-12">
                             <div class="detalhe-campo"><span class="label">Descrição</span><span class="valor">${m.descricao || '-'}</span></div>
@@ -1963,7 +2126,6 @@
                                 <input type="date" class="form-control" id="editDataValidade" value="${m.data_validade || ''}">
                             </div>
 
-                            <!-- [v1.7.0] Toggle Sigiloso na edição -->
                             <div class="col-md-12">
                                 <div style="background: rgba(255, 193, 7, 0.04); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 10px; padding: 12px 16px; margin-top: 5px;">
                                     <div class="form-check">
@@ -2410,7 +2572,7 @@
                 if (status === 'VALIDO') dados.status = 'ATIVO';
 
                 const { error } = await window.supabaseClient
-                    .from('mandado_prisao').update(dados).eq('id_mandado', mandandoValidandoId);
+                    .from('mandado_prisao').update(dados).eq('id_mandado', mandadoValidandoId);
 
                 if (error) throw error;
 
@@ -2567,7 +2729,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.7.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.8.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
