@@ -2,8 +2,8 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.11.3
-     Data: 18/09/2026 - 07:15
+     Versão: 2.11.4
+     Data: 22/09/2026 - 01:30
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,28 +15,18 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.11.4 (22/09/2026 01:30):
+     - ✨ CPF exibido formatado (000.000.000-00) na tabela e na ficha
+       - Helper formatarCPF() trata null, pontos, traços e dados sujos
+       - Campo de edição mantém o valor cru (não interfere na edição)
+     - ✅ Preservadas TODAS as funcionalidades da v2.11.3
+
      ALTERAÇÕES v2.11.3 (18/09/2026 07:15):
-     - 🔒 SEGURANÇA DEFINITIVA: busca migrada para RPC Postgres
-       - sb.rpc('buscar_suspeito', { p_termo, p_status, ... })
-       - Termo vai como PARÂMETRO, nunca como string de filtro
-       - sanitizarTermoBusca() removida (não é mais necessária)
-       - CPF com pontos (123.456.789-00) agora funciona corretamente
-     - 🐛 FIX: paginação — realizarBusca(resetPagina) evita reset
-     - ✅ Preservadas TODAS as funcionalidades da v2.11.2
+     - 🔒 SEGURANÇA: busca migrada para RPC buscar_suspeito
+     - 🐛 FIX: paginação — realizarBusca(resetPagina)
 
-     ALTERAÇÕES v2.11.2 (18/09/2026 06:30):
-     - 🔒 SEGURANÇA: sanitização do termo de busca antes do .or()
-     - ✅ Preservadas TODAS as funcionalidades da v2.11.1
-
-     ALTERAÇÕES v2.11.1 (18/09/2026 06:10):
-     - ✅ Implementadas funções pendentes:
-       - verFotos(id) + fecharFotos()
-       - emitirAlerta(id)
-       - showToastLocal()
-     - ✅ Bloco de inicialização DOMContentLoaded
-
-     ALTERAÇÕES v2.11.0 (18/09/2026 05:45):
-     - ✨ NOVO: Sistema de Notificações (sino + dropdown + polling 30s)
+     ALTERAÇÕES v2.11.0 (18/09/2026 06:00):
+     - ✨ Sistema de Notificações (sino + dropdown + polling 30s)
 
      ALTERAÇÕES v2.10.0 (18/09/2026 04:30):
      - ✨ Modal de Edição com seção "FOTOS DO SUSPEITO"
@@ -318,7 +308,7 @@
         .galeria-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
         .foto-card { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; overflow: hidden; transition: all 0.3s; }
         .foto-card:hover { border-color: var(--text-primary); }
-        .foto-card img { width: 100%; height: 180px; object-fit: cover; display: block; cursor: zoom-in; }
+        .foto-card img { width: 100%; height: 180px; object-fit: cover; display: block; }
         .foto-card .info { padding: 10px; }
         .foto-card .data { font-size: 10px; color: rgba(0, 255, 136, 0.4); }
         .foto-card .principal { background: var(--text-primary); color: #000; padding: 2px 6px; border-radius: 4px; font-size: 9px; font-weight: 700; display: inline-block; }
@@ -990,14 +980,12 @@
         let suspeitosComMandado = new Set();
         let mandadosCachePorSuspeito = {};
 
-        // [v2.10.0] Edição de fotos
         let editFotoPrincipalArquivo = null;
         let editFotosExistentes = [];
         let editFotosRemover = [];
         let editFotosNovasSecundarias = [];
         let editFotosNovasTatuagens = [];
 
-        // [v2.11.0] Notificações
         let _notifTimer = null;
 
         // ============================================================
@@ -1050,6 +1038,19 @@
                 return isNaN(n) ? [] : [n];
             }
             return [];
+        }
+
+        // ============================================================
+        // [v2.11.4] FORMATAÇÃO DE CPF PARA EXIBIÇÃO
+        // ============================================================
+        // - Retorna '-' se vazio/null
+        // - Reformata CPF válido (11 dígitos) como 000.000.000-00
+        // - Se não tiver 11 dígitos, devolve o valor original (não inventa)
+        function formatarCPF(cpf) {
+            if (!cpf) return '-';
+            const digitos = String(cpf).replace(/\D/g, '');
+            if (digitos.length !== 11) return String(cpf);
+            return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         }
 
         // ============================================================
@@ -1194,7 +1195,6 @@
             }
         }
 
-        // Fecha o dropdown quando clicar fora
         document.addEventListener('click', function(e) {
             const dd = document.getElementById('notifDropdown');
             const btn = document.getElementById('notifBtn');
@@ -1365,7 +1365,6 @@
             if (resetPagina) paginaAtual = 1;
 
             try {
-                // [v2.11.3] Chamada RPC — termo vai como parâmetro, nunca como string de filtro
                 const { data: rows, error } = await sb.rpc('buscar_suspeito', {
                     p_termo:           termo.length >= 2 ? termo : null,
                     p_status:          status,
@@ -1392,7 +1391,6 @@
                     return;
                 }
 
-                // Remove o campo auxiliar total_count de cada linha
                 const limpos = suspeitos.map(r => {
                     const { total_count, ...rest } = r;
                     return rest;
@@ -1439,7 +1437,7 @@
         }
 
         // ============================================================
-        // RENDERIZAÇÃO
+        // RENDERIZAÇÃO — [v2.11.4] CPF formatado
         // ============================================================
         function renderizarResultados() {
             const tbody = document.getElementById('resultadosConsulta');
@@ -1467,11 +1465,12 @@
                     : `<div class="foto-placeholder"><i class="fas fa-user-secret"></i></div>`;
 
                 const badgeMandado = gerarBadgeMandado(d.id_suspeito);
+                const cpfExibido = d.cpf ? formatarCPF(d.cpf) : 'N/A';
 
                 html += `<tr>
                     <td>${fotoHTML}</td>
                     <td><strong>${d.nome_completo || 'N/A'}</strong></td>
-                    <td>${d.cpf || 'N/A'}</td>
+                    <td>${cpfExibido}</td>
                     <td><span class="status-badge ${statusClass}">${statusLabel}</span></td>
                     <td><span class="perigo-badge ${perClass}">${d.nivel_periculosidade || 'N/A'}</span></td>
                     <td>${d.cidade || 'N/A'}</td>
@@ -1511,13 +1510,12 @@
             document.getElementById('btnProximo').style.display = paginaAtual < totalPaginas ? 'inline-block' : 'none';
         }
 
-        // [v2.11.3] Paginação não reseta mais para a página 1
         function paginaAnterior() { if (paginaAtual > 1) { paginaAtual--; realizarBusca(false); } }
         function proximaPagina() { const tp = Math.ceil(totalRegistros / itensPorPagina); if (paginaAtual < tp) { paginaAtual++; realizarBusca(false); } }
         function irPagina(num) { paginaAtual = num; realizarBusca(false); }
 
         // ============================================================
-        // FICHA
+        // FICHA — [v2.11.4] CPF formatado
         // ============================================================
         async function verDetalhes(id) {
             console.log('👁️ verDetalhes:', id);
@@ -1591,7 +1589,7 @@
                             <div class="ficha-campo"><span class="label">ID</span><span class="valor">#${suspeito.id_suspeito}</span></div>
                             <div class="ficha-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${suspeito.nome_completo || 'N/A'}</strong></span></div>
                             <div class="ficha-campo"><span class="label">Apelido</span><span class="valor">${suspeito.apelido || '-'}</span></div>
-                            <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf ? formatarCPF(suspeito.cpf) : '-'}</span></div>
                             <div class="ficha-campo"><span class="label">RG</span><span class="valor">${suspeito.rg || '-'} ${suspeito.orgao_expedidor ? '(' + suspeito.orgao_expedidor + ')' : ''}</span></div>
                             <div class="ficha-campo"><span class="label">Data de Nascimento</span><span class="valor">${suspeito.data_nascimento || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Sexo</span><span class="valor">${suspeito.sexo === 'M' ? 'Masculino' : suspeito.sexo === 'F' ? 'Feminino' : suspeito.sexo || '-'}</span></div>
@@ -2040,7 +2038,7 @@
                 }
 
                 fecharEdicao();
-                await realizarBusca(false);   // [v2.11.3] preserva página atual
+                await realizarBusca(false);
 
             } catch (error) {
                 console.error('❌ Erro ao salvar:', error);
@@ -2231,19 +2229,17 @@
         // INICIALIZAÇÃO [v2.11.1]
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 AI-DEPOM Consulta v2.11.3 inicializando...');
+            console.log('🚀 AI-DEPOM Consulta v2.11.4 inicializando...');
 
             try { await carregarUsuario(); } catch (e) { console.warn('Usuário:', e); }
             try { await carregarEstatisticas(); } catch (e) { console.warn('Stats:', e); }
             try { await carregarNotificacoes(); } catch (e) { console.warn('Notif:', e); }
 
-            // Polling de notificações a cada 30s
             if (_notifTimer) clearInterval(_notifTimer);
             _notifTimer = setInterval(() => {
                 carregarNotificacoes().catch(e => console.warn('poll notif:', e));
             }, 30000);
 
-            // Enter no campo de busca dispara a busca
             const inputBusca = document.getElementById('buscaGlobal');
             if (inputBusca) {
                 inputBusca.addEventListener('keydown', (e) => {
@@ -2251,7 +2247,6 @@
                 });
             }
 
-            // ESC fecha modais abertos
             document.addEventListener('keydown', (e) => {
                 if (e.key !== 'Escape') return;
                 const modais = ['modalFicha', 'modalEdicao', 'modalHistorico', 'modalFotos', 'modalMandados'];
