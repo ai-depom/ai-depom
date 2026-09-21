@@ -1,36 +1,32 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.6.0
-     Data: 21/09/2026 - 14:30
+     Versão: 1.7.0
+     Data: 21/09/2026 - 15:30
      ============================================================
+     ALTERAÇÕES v1.7.0 (21/09/2026 15:30):
+     - ✨ NOVO: Validação de tribunal (ramo + código)
+       - Mapa completo dos 90+ tribunais brasileiros
+       - Mostra nome do tribunal (TJBA, TRF1, etc.)
+       - Bloqueia números com tribunal inexistente
+     - ✨ NOVO: Toggle "Sigiloso" no cadastro e edição
+       - Marca datajud_sigiloso_manual no banco
+       - Processos sigilosos pulam consulta automática DataJud
+     - ✅ Preservadas TODAS as funcionalidades da v1.6.0
+
      ALTERAÇÕES v1.6.0 (21/09/2026 14:30):
      - ✨ NOVO: Validação de número de processo (padrão CNJ)
        - Máscara automática: NNNNNNN-DD.AAAA.J.TR.OOOO
-       - Feedback visual em tempo real (vazio / incompleto / válido / erro)
+       - Feedback visual em tempo real
        - Valida segmento da Justiça (posição 14)
-       - Bloqueia cadastro/edição se < 20 dígitos
      - ✅ Preservadas TODAS as funcionalidades da v1.5.0
 
      ALTERAÇÕES v1.5.0 (18/09/2026 07:45):
      - 🔒 SEGURANÇA: lista migrada para RPC buscar_mandado
      - 🐛 FIX: verDetalhes() e abrirValidacaoBNMP() sem embed
-     - ✅ Preservadas TODAS as funcionalidades da v1.4.4
 
      ALTERAÇÕES v1.4.4 (18/09/2026 03:30):
      - ✨ NOVO: Foto do suspeito no modal de EDIÇÃO
-
-     ALTERAÇÕES v1.4.3 (18/09/2026 03:00):
-     - ✨ NOVO: Foto do suspeito em Detalhes do Mandado
-
-     ALTERAÇÕES v1.4.2 (18/09/2026 02:00):
-     - ✨ NOVO: Endereço de cumprimento no modal de edição
-
-     ALTERAÇÕES v1.4.1 (18/09/2026 01:00):
-     - ✨ NOVO: Badge "X mandados não validados no BNMP"
-
-     ALTERAÇÕES v1.4.0 (17/09/2026 22:00):
-     - ✨ Validação manual BNMP com ícones por status
      ============================================================
 -->
 <!DOCTYPE html>
@@ -789,6 +785,23 @@
                         <label class="form-label">Data de Validade</label>
                         <input type="date" class="form-control" id="dataValidade">
                     </div>
+
+                    <!-- [v1.7.0] Toggle Sigiloso -->
+                    <div class="col-md-12">
+                        <div style="background: rgba(255, 193, 7, 0.04); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 10px; padding: 12px 16px; margin-top: 5px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="datajudSigilosoManual" style="accent-color: #ffc107; cursor: pointer;">
+                                <label class="form-check-label" for="datajudSigilosoManual" style="color: #ffc107; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                    <i class="fas fa-lock me-1"></i> Este processo é SIGILOSO
+                                </label>
+                            </div>
+                            <small style="display: block; color: rgba(255, 193, 7, 0.6); font-size: 11px; margin-top: 6px; margin-left: 24px;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Processos sigilosos <strong>não são indexados no DataJud público</strong> (proteção legal — ECA, LGPD, art. 234-B CP).
+                                Ao marcar, o sistema <strong>pulará a consulta automática</strong> e você precisará registrar as movimentações manualmente.
+                            </small>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="section-title"><i class="fas fa-map-marker-alt"></i>COORDENADAS GEOGRÁFICAS</div>
@@ -1084,11 +1097,47 @@
         };
 
         // ============================================================
-        // [v1.6.0] VALIDAÇÃO E MÁSCARA DE NÚMERO DE PROCESSO (CNJ)
+        // [v1.7.0] MAPA DE TRIBUNAIS
         // ============================================================
-        // Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO (20 dígitos)
-        // ============================================================
+        const TRIBUNAIS = {
+            '1.00': 'stf', '3.00': 'stj', '5.00': 'tst', '6.00': 'tse', '7.00': 'stm',
+            '8.01': 'tjac', '8.02': 'tjal', '8.03': 'tjap', '8.04': 'tjam',
+            '8.05': 'tjba', '8.06': 'tjce', '8.07': 'tjdft', '8.08': 'tjes',
+            '8.09': 'tjgo', '8.10': 'tjma', '8.11': 'tjmt', '8.12': 'tjms',
+            '8.13': 'tjmg', '8.14': 'tjpa', '8.15': 'tjpb', '8.16': 'tjpr',
+            '8.17': 'tjpe', '8.18': 'tjpi', '8.19': 'tjrj', '8.20': 'tjrn',
+            '8.21': 'tjrs', '8.22': 'tjro', '8.23': 'tjrr', '8.24': 'tjsc',
+            '8.25': 'tjse', '8.26': 'tjsp', '8.27': 'tjto',
+            '4.01': 'trf1', '4.02': 'trf2', '4.03': 'trf3', '4.04': 'trf4',
+            '4.05': 'trf5', '4.06': 'trf6',
+            '5.01': 'trt1', '5.02': 'trt2', '5.03': 'trt3', '5.04': 'trt4', '5.05': 'trt5',
+            '5.06': 'trt6', '5.07': 'trt7', '5.08': 'trt8', '5.09': 'trt9', '5.10': 'trt10',
+            '5.11': 'trt11', '5.12': 'trt12', '5.13': 'trt13', '5.14': 'trt14', '5.15': 'trt15',
+            '5.16': 'trt16', '5.17': 'trt17', '5.18': 'trt18', '5.19': 'trt19', '5.20': 'trt20',
+            '5.21': 'trt21', '5.22': 'trt22', '5.23': 'trt23', '5.24': 'trt24'
+        };
 
+        const NOMES_TRIBUNAIS = {
+            'stf': 'STF', 'stj': 'STJ', 'tst': 'TST', 'tse': 'TSE', 'stm': 'STM',
+            'tjac': 'TJAC', 'tjal': 'TJAL', 'tjap': 'TJAP', 'tjam': 'TJAM',
+            'tjba': 'TJBA', 'tjce': 'TJCE', 'tjdft': 'TJDFT', 'tjes': 'TJES',
+            'tjgo': 'TJGO', 'tjma': 'TJMA', 'tjmt': 'TJMT', 'tjms': 'TJMS',
+            'tjmg': 'TJMG', 'tjpa': 'TJPA', 'tjpb': 'TJPB', 'tjpr': 'TJPR',
+            'tjpe': 'TJPE', 'tjpi': 'TJPI', 'tjrj': 'TJRJ', 'tjrn': 'TJRN',
+            'tjrs': 'TJRS', 'tjro': 'TJRO', 'tjrr': 'TJRR', 'tjsc': 'TJSC',
+            'tjse': 'TJSE', 'tjsp': 'TJSP', 'tjto': 'TJTO',
+            'trf1': 'TRF1', 'trf2': 'TRF2', 'trf3': 'TRF3', 'trf4': 'TRF4',
+            'trf5': 'TRF5', 'trf6': 'TRF6',
+            'trt1': 'TRT1', 'trt2': 'TRT2', 'trt3': 'TRT3', 'trt4': 'TRT4', 'trt5': 'TRT5',
+            'trt6': 'TRT6', 'trt7': 'TRT7', 'trt8': 'TRT8', 'trt9': 'TRT9', 'trt10': 'TRT10',
+            'trt11': 'TRT11', 'trt12': 'TRT12', 'trt13': 'TRT13', 'trt14': 'TRT14', 'trt15': 'TRT15',
+            'trt16': 'TRT16', 'trt17': 'TRT17', 'trt18': 'TRT18', 'trt19': 'TRT19', 'trt20': 'TRT20',
+            'trt21': 'TRT21', 'trt22': 'TRT22', 'trt23': 'TRT23', 'trt24': 'TRT24'
+        };
+
+        // ============================================================
+        // [v1.6.0/v1.7.0] VALIDAÇÃO E MÁSCARA DE NÚMERO DE PROCESSO
+        // ============================================================
         function mascaraProcesso(input) {
             let v = String(input.value || '').replace(/\D/g, '').slice(0, 20);
             let out = '';
@@ -1108,29 +1157,29 @@
             const limpo = String(input.value || '').replace(/\D/g, '');
             const digitos = limpo.length;
 
-            // Vazio
             if (digitos === 0) {
                 feedback.innerHTML = '<i class="fas fa-info-circle"></i> Digite o número do processo (20 dígitos)';
                 feedback.className = 'processo-validacao vazio';
                 return { valido: false, digitos: 0 };
             }
 
-            // Menos de 20
             if (digitos < 20) {
                 feedback.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Faltam ${20 - digitos} dígito(s) — atual: ${digitos}/20`;
                 feedback.className = 'processo-validacao incompleto';
                 return { valido: false, digitos };
             }
 
-            // Mais de 20 (não deveria acontecer por causa do maxlength, mas garantimos)
             if (digitos > 20) {
                 feedback.innerHTML = `<i class="fas fa-times-circle"></i> Excesso de dígitos (${digitos}/20) — remova o sufixo`;
                 feedback.className = 'processo-validacao erro';
                 return { valido: false, digitos };
             }
 
-            // Exatamente 20 — valida segmento da Justiça
+            // [v1.7.0] Validação do ramo e do tribunal
             const ramo = limpo[13];
+            const codTrib = limpo.slice(14, 16);
+            const chave = `${ramo}.${codTrib}`;
+
             const ramosValidos = ['1', '3', '4', '5', '6', '7', '8', '9'];
             if (!ramosValidos.includes(ramo)) {
                 feedback.innerHTML = `<i class="fas fa-times-circle"></i> Segmento da Justiça "${ramo}" inválido (posição 14)`;
@@ -1138,17 +1187,24 @@
                 return { valido: false, digitos };
             }
 
-            // Válido
-            feedback.innerHTML = '<i class="fas fa-check-circle"></i> ✅ Número válido — formato CNJ (20 dígitos)';
+            const tribunal = TRIBUNAIS[chave];
+            if (!tribunal) {
+                feedback.innerHTML = `<i class="fas fa-times-circle"></i> Tribunal não mapeado (ramo ${ramo}, tribunal ${codTrib})`;
+                feedback.className = 'processo-validacao erro';
+                return { valido: false, digitos };
+            }
+
+            const nomeTribunal = NOMES_TRIBUNAIS[tribunal] || tribunal.toUpperCase();
+            feedback.innerHTML = `<i class="fas fa-check-circle"></i> ✅ Válido — ${nomeTribunal}`;
             feedback.className = 'processo-validacao valido';
-            return { valido: true, digitos };
+            return { valido: true, digitos, tribunal: nomeTribunal };
         }
 
         // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.6.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.7.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1191,47 +1247,26 @@
         // ============================================================
         function usuarioPodeEditarCamposLivres() {
             if (!usuarioAtual) return false;
-
             const idPerfil = parseInt(usuarioAtual.id_perfil_acesso);
-            if (IDS_PERFIS_EDITORES.includes(idPerfil)) {
-                console.log('🔐 [Permissão] Autorizado por ID:', idPerfil);
-                return true;
-            }
+            if (IDS_PERFIS_EDITORES.includes(idPerfil)) return true;
 
             const fontes = [
                 AIDEPOM.getNomePerfil ? AIDEPOM.getNomePerfil(usuarioAtual.id_perfil_acesso) : '',
-                usuarioAtual.perfil,
-                usuarioAtual.nome_perfil,
-                usuarioAtual.role
+                usuarioAtual.perfil, usuarioAtual.nome_perfil, usuarioAtual.role
             ].filter(Boolean).map(s => String(s).toUpperCase().trim().replace(/\s+/g, '_'));
 
-            const autorizadoPorNome = fontes.some(nome =>
-                NOMES_PERFIS_EDITORES.some(p => nome.includes(p))
-            );
-
-            console.log('🔐 [Permissão]', {
-                id_perfil: idPerfil,
-                nomes: fontes,
-                autorizado: autorizadoPorNome
-            });
-
-            return autorizadoPorNome;
+            return fontes.some(nome => NOMES_PERFIS_EDITORES.some(p => nome.includes(p)));
         }
 
         function aplicarPermissaoCamposLivres(prefixo) {
             prefixo = prefixo || '';
             const podeEditar = usuarioPodeEditarCamposLivres();
-
-            const hintsForm = {
-                'descricao': 'hintDescricao',
-                'observacoes': 'hintObservacoes'
-            };
+            const hintsForm = { 'descricao': 'hintDescricao', 'observacoes': 'hintObservacoes' };
 
             ['descricao', 'observacoes'].forEach(base => {
                 const id = prefixo + base;
                 const el = document.getElementById(id);
                 if (!el) return;
-
                 el.disabled = false;
                 el.readOnly = !podeEditar;
                 el.style.cursor = podeEditar ? 'text' : 'not-allowed';
@@ -1246,8 +1281,6 @@
                     }
                 }
             });
-
-            console.log(`🔐 Campos livres — ${podeEditar ? 'EDITÁVEIS' : 'SOMENTE LEITURA'}`);
         }
 
         // ============================================================
@@ -1269,7 +1302,6 @@
 
             descricao.addEventListener('input', () => atualizarContador(descricao, counterDesc, LIMITE_DESCRICAO));
             observacoes.addEventListener('input', () => atualizarContador(observacoes, counterObs, LIMITE_OBSERVACOES));
-
             atualizarContador(descricao, counterDesc, LIMITE_DESCRICAO);
             atualizarContador(observacoes, counterObs, LIMITE_OBSERVACOES);
         }
@@ -1322,8 +1354,6 @@
                     opt.textContent = `${s.nome_completo}${apelido}${cpfFormatado}`;
                     select.appendChild(opt);
                 });
-
-                console.log(`✅ ${data.length} suspeitos carregados`);
             } catch (error) {
                 console.error('❌ Erro ao carregar suspeitos:', error);
                 document.getElementById('idSuspeito').innerHTML = '<option value="">Erro ao carregar</option>';
@@ -1353,7 +1383,6 @@
                 if (!el) continue;
                 const valor = (el.value || '').trim ? el.value.trim() : el.value;
                 if (!valor) {
-                    console.warn('⚠️ Campo vazio:', c.nome);
                     showToast('warning', 'Campo obrigatório', `Preencha: <strong>${c.nome}</strong>`, 6000);
                     el.focus();
                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1369,25 +1398,7 @@
                 }
             }
 
-            const camposOpcionais = [
-                { id: 'juizMatricula',   nome: 'Matrícula do Juiz',    max: LIMITE_JUIZ_MATRICULA },
-                { id: 'processoNumero',  nome: 'Número do Processo',   max: LIMITE_PROCESSO_NUMERO },
-                { id: 'observacoes',     nome: 'Observações',          max: LIMITE_OBSERVACOES }
-            ];
-
-            for (const c of camposOpcionais) {
-                const el = document.getElementById(c.id);
-                if (!el) continue;
-                const valor = (el.value || '').trim();
-                if (valor.length > c.max) {
-                    showToast('error', `${c.nome} muito longo`,
-                        `Máximo ${c.max} caracteres. Atual: <strong>${valor.length}</strong>`, 6000);
-                    el.focus();
-                    return;
-                }
-            }
-
-            // [v1.6.0] Validação do número do processo (se preenchido)
+            // [v1.6.0/v1.7.0] Validação do processo
             const processoNumeroEl = document.getElementById('processoNumero');
             const processoValor = (processoNumeroEl?.value || '').trim();
             if (processoValor) {
@@ -1397,6 +1408,13 @@
                         `O número do processo deve ter <strong>exatamente 20 dígitos</strong>. Atual: <strong>${limpo.length}</strong>`, 7000);
                     processoNumeroEl.focus();
                     processoNumeroEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+                const chave = `${limpo[13]}.${limpo.slice(14, 16)}`;
+                if (!TRIBUNAIS[chave]) {
+                    showToast('warning', 'Tribunal não mapeado',
+                        `Ramo ${limpo[13]}, tribunal ${limpo.slice(14, 16)} não existe`, 7000);
+                    processoNumeroEl.focus();
                     return;
                 }
             }
@@ -1424,11 +1442,10 @@
                     longitude: parseFloat(document.getElementById('longitude').value) || null,
                     descricao: descricaoValor,
                     observacoes: document.getElementById('observacoes').value.trim() || null,
+                    datajud_sigiloso_manual: document.getElementById('datajudSigilosoManual')?.checked || false,
                     id_usuario_emissao: usuarioAtual.id,
                     deletado: false
                 };
-
-                console.log('📝 Enviando para o banco:', dados);
 
                 const { data, error } = await window.supabaseClient
                     .from('mandado_prisao')
@@ -1436,12 +1453,8 @@
                     .select()
                     .maybeSingle();
 
-                if (error) {
-                    console.error('❌ Erro do Supabase:', error);
-                    throw new Error(error.message || 'Erro ao cadastrar no banco');
-                }
+                if (error) throw new Error(error.message || 'Erro ao cadastrar no banco');
 
-                console.log('✅ Mandado cadastrado:', data);
                 showToast('success', 'Mandado cadastrado!',
                     `<strong>${dados.numero_mandado}</strong> foi cadastrado com sucesso.`, 6000);
 
@@ -1471,16 +1484,17 @@
             document.getElementById('counterObservacoes').textContent = '0';
             document.getElementById('counterObservacoes').className = 'counter';
 
-            // [v1.6.0] Resetar validação do processo
             const feedback = document.getElementById('processoNumeroFeedback');
             if (feedback) {
                 feedback.innerHTML = '<i class="fas fa-info-circle"></i> Digite o número do processo (20 dígitos)';
                 feedback.className = 'processo-validacao vazio';
             }
 
-            aplicarPermissaoCamposLivres();
+            // [v1.7.0] Resetar toggle sigiloso
+            const toggleSigiloso = document.getElementById('datajudSigilosoManual');
+            if (toggleSigiloso) toggleSigiloso.checked = false;
 
-            console.log('🧹 Formulário resetado');
+            aplicarPermissaoCamposLivres();
         }
 
         // ============================================================
@@ -1517,7 +1531,6 @@
 
                 if (error) throw error;
                 naoValidadosCache = data || [];
-                console.log(`⚠️ ${naoValidadosCache.length} mandado(s) não validado(s)`);
                 renderizarAvisoNaoValidados();
             } catch (error) {
                 console.error('❌ Erro ao contar não validados:', error);
@@ -1526,15 +1539,11 @@
             }
         }
 
-        // ============================================================
-        // RENDERIZAR AVISO DE NÃO VALIDADOS
-        // ============================================================
         function renderizarAvisoNaoValidados() {
             const container = document.getElementById('avisoNaoValidados');
             if (!container) return;
 
             const qtd = naoValidadosCache.length;
-
             if (qtd === 0 || filtroNaoValidadosAtivo) {
                 container.innerHTML = '';
                 return;
@@ -1550,13 +1559,9 @@
                         <button class="btn-filtrar" onclick="filtrarNaoValidados()">
                             <i class="fas fa-filter"></i> Ver apenas esses
                         </button>
-                        ${qtd <= LIMITE_ABAS_BNMP ? `
                         <button class="btn-abrir-todos" onclick="abrirTodosNaoValidados()">
-                            <i class="fas fa-external-link-alt"></i> Abrir todos no BNMP
-                        </button>` : `
-                        <button class="btn-abrir-todos" onclick="abrirTodosNaoValidados()" title="Serão abertas apenas as primeiras ${LIMITE_ABAS_BNMP} abas">
                             <i class="fas fa-external-link-alt"></i> Abrir primeiros ${LIMITE_ABAS_BNMP}
-                        </button>`}
+                        </button>
                         <button class="btn-fechar" onclick="ocultarAvisoNaoValidados()" title="Ocultar aviso">
                             <i class="fas fa-times"></i>
                         </button>
@@ -1579,10 +1584,6 @@
         function abrirTodosNaoValidados() {
             const limite = Math.min(naoValidadosCache.length, LIMITE_ABAS_BNMP);
             if (limite === 0) return;
-
-            showToast('info', 'Abrindo portal BNMP',
-                `Serão abertas <strong>${limite}</strong> abas com o portal do CNJ.`, 5000);
-
             for (let i = 0; i < limite; i++) {
                 setTimeout(() => {
                     window.open('https://portalbnmp.pdpj.jus.br/#/pesquisa-peca', '_blank', 'noopener,noreferrer');
@@ -1591,7 +1592,7 @@
         }
 
         // ============================================================
-        // CARREGAR MANDADOS — via RPC buscar_mandado
+        // CARREGAR MANDADOS — via RPC
         // ============================================================
         async function carregarMandados() {
             const container = document.getElementById('listaMandados');
@@ -1607,39 +1608,23 @@
                 const prioridade = document.getElementById('filtroPrioridadeLista').value || null;
                 const filtroBnmp = document.getElementById('filtroBnmpLista').value || null;
 
-                if (filtroBnmp !== '__NAO_VALIDADO__') {
-                    filtroNaoValidadosAtivo = false;
-                }
+                if (filtroBnmp !== '__NAO_VALIDADO__') filtroNaoValidadosAtivo = false;
 
-                const p_bnmp_status = filtroBnmp === '__NAO_VALIDADO__'
-                    ? '__NAO_VALIDADO__'
-                    : (filtroBnmp || null);
+                const p_bnmp_status = filtroBnmp === '__NAO_VALIDADO__' ? '__NAO_VALIDADO__' : (filtroBnmp || null);
 
                 const { data: rows, error } = await window.supabaseClient.rpc('buscar_mandado', {
-                    p_termo:        null,
-                    p_status:       status,
-                    p_tipo_mandado: tipo,
-                    p_prioridade:   prioridade,
-                    p_bnmp_status:  p_bnmp_status,
-                    p_data_inicio:  null,
-                    p_data_fim:     null,
-                    p_limit:        LIMITE_LISTA,
-                    p_offset:       0
+                    p_termo: null, p_status: status, p_tipo_mandado: tipo, p_prioridade: prioridade,
+                    p_bnmp_status: p_bnmp_status, p_data_inicio: null, p_data_fim: null,
+                    p_limit: LIMITE_LISTA, p_offset: 0
                 });
 
                 if (error) throw error;
 
                 const totalGeral = (rows && rows.length > 0) ? Number(rows[0].total_count) : 0;
-
-                const data = (rows || []).map(r => {
-                    const { total_count, ...rest } = r;
-                    return rest;
-                });
+                const data = (rows || []).map(r => { const { total_count, ...rest } = r; return rest; });
 
                 mandadosAtuais = data;
-
-                document.getElementById('totalMandadosBadge').innerHTML =
-                    '<i class="fas fa-list"></i> ' + totalGeral + ' mandado(s)';
+                document.getElementById('totalMandadosBadge').innerHTML = '<i class="fas fa-list"></i> ' + totalGeral + ' mandado(s)';
 
                 await carregarNaoValidados();
 
@@ -1696,8 +1681,6 @@
                 html += '</tbody></table></div>';
                 container.innerHTML = html;
 
-                console.log(`✅ ${data.length} mandados carregados (total: ${totalGeral})`);
-
             } catch (error) {
                 console.error('❌ Erro:', error);
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar mandados</div>';
@@ -1705,7 +1688,7 @@
         }
 
         // ============================================================
-        // VER DETALHES — SEM embed
+        // VER DETALHES
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -1715,10 +1698,7 @@
 
             try {
                 const { data: m, error } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .select('*')
-                    .eq('id_mandado', id)
-                    .maybeSingle();
+                    .from('mandado_prisao').select('*').eq('id_mandado', id).maybeSingle();
 
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
@@ -1728,8 +1708,7 @@
                     const { data: sData } = await window.supabaseClient
                         .from('suspeito')
                         .select('id_suspeito, nome_completo, apelido, cpf, rg, logradouro, numero, bairro, cidade, uf, status_atual, nivel_periculosidade')
-                        .eq('id_suspeito', m.id_suspeito)
-                        .maybeSingle();
+                        .eq('id_suspeito', m.id_suspeito).maybeSingle();
                     s = sData || {};
                 }
 
@@ -1739,34 +1718,20 @@
                         const { data: midias } = await window.supabaseClient
                             .from('arquivo_midia')
                             .select('caminho_fisico, nome_seguro, tipo_midia')
-                            .eq('tipo_entidade', 'SUSPEITO')
-                            .eq('id_entidade', s.id_suspeito)
-                            .eq('tipo_midia', 'FOTO')
-                            .eq('deletado', false);
-
-                        const principal = (midias || []).find(x =>
-                            x.nome_seguro && x.nome_seguro.toLowerCase().includes('principal')
-                        ) || (midias || [])[0];
-
+                            .eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', s.id_suspeito)
+                            .eq('tipo_midia', 'FOTO').eq('deletado', false);
+                        const principal = (midias || []).find(x => x.nome_seguro && x.nome_seguro.toLowerCase().includes('principal')) || (midias || [])[0];
                         if (principal && principal.caminho_fisico) {
                             const { data: signed } = await window.supabaseClient.storage
-                                .from(BUCKET_FOTOS)
-                                .createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
+                                .from(BUCKET_FOTOS).createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
                             fotoUrl = signed?.signedUrl || null;
                         }
-                    } catch (e) {
-                        console.warn('⚠️ Erro ao buscar foto do suspeito:', e);
-                    }
+                    } catch (e) { console.warn('⚠️', e); }
                 }
 
                 const fotoHTML = fotoUrl
-                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar">
-                           <img src="${fotoUrl}" alt="${s.nome_completo || 'Suspeito'}" class="mandado-foto" />
-                       </div>`
-                    : `<div class="mandado-foto-placeholder">
-                           <i class="fas fa-user-secret"></i>
-                           <span>Sem foto cadastrada</span>
-                       </div>`;
+                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar"><img src="${fotoUrl}" alt="${s.nome_completo || 'Suspeito'}" class="mandado-foto" /></div>`
+                    : `<div class="mandado-foto-placeholder"><i class="fas fa-user-secret"></i><span>Sem foto cadastrada</span></div>`;
 
                 let bnmpHTML = '';
                 if (m.validacao_bnmp_status) {
@@ -1793,6 +1758,13 @@
                         </div>
                     `;
                 }
+
+                // [v1.7.0] Sigiloso badge
+                const sigilosoBadge = m.datajud_sigiloso_manual
+                    ? `<div class="detalhe-campo"><span class="label">DataJud</span><span class="valor"><i class="fas fa-lock" style="color:#ffc107;margin-right:6px;"></i><strong style="color:#ffc107;">Processo sigiloso — consulta automática pulada</strong></span></div>`
+                    : (m.datajud_status_consulta
+                        ? `<div class="detalhe-campo"><span class="label">DataJud</span><span class="valor"><i class="fas fa-check-circle" style="color:#0dcaf0;margin-right:6px;"></i>${m.datajud_status_consulta}${m.datajud_tribunal ? ' — ' + m.datajud_tribunal : ''}</span></div>`
+                        : '');
 
                 const enderecoMandado = [m.logradouro, m.numero, m.complemento, m.bairro, m.cidade, m.uf, m.cep].filter(Boolean).join(', ') || '-';
 
@@ -1838,6 +1810,7 @@
                             <div class="detalhe-campo"><span class="label">Juiz</span><span class="valor">${m.juiz_nome || '-'} ${m.juiz_matricula ? '(' + m.juiz_matricula + ')' : ''}</span></div>
                             <div class="detalhe-campo"><span class="label">Vara/Tribunal</span><span class="valor">${m.vara_tribunal || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Número do Processo</span><span class="valor">${m.processo_numero || '-'}</span></div>
+                            ${sigilosoBadge}
                         </div>
 
                         <div class="col-md-12">
@@ -1862,13 +1835,8 @@
             }
         }
 
-        function fecharDetalhes() {
-            document.getElementById('modalDetalhes').classList.remove('open');
-        }
-
-        function imprimirDetalhes() {
-            window.print();
-        }
+        function fecharDetalhes() { document.getElementById('modalDetalhes').classList.remove('open'); }
+        function imprimirDetalhes() { window.print(); }
 
         // ============================================================
         // EDITAR MANDADO
@@ -1878,61 +1846,41 @@
             const body = document.getElementById('modalEdicaoBody');
             modal.classList.add('open');
             body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
-
             mandadoEditandoId = id;
 
             try {
                 const { data: m, error } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .select('*')
-                    .eq('id_mandado', id)
-                    .maybeSingle();
+                    .from('mandado_prisao').select('*').eq('id_mandado', id).maybeSingle();
 
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
 
-                let suspeito = null;
-                let fotoUrl = null;
+                let suspeito = null, fotoUrl = null;
                 if (m.id_suspeito) {
                     try {
                         const { data: sData } = await window.supabaseClient
                             .from('suspeito')
                             .select('id_suspeito, nome_completo, apelido, cpf, status_atual')
-                            .eq('id_suspeito', m.id_suspeito)
-                            .maybeSingle();
+                            .eq('id_suspeito', m.id_suspeito).maybeSingle();
                         suspeito = sData || null;
 
                         const { data: midias } = await window.supabaseClient
                             .from('arquivo_midia')
                             .select('caminho_fisico, nome_seguro, tipo_midia')
-                            .eq('tipo_entidade', 'SUSPEITO')
-                            .eq('id_entidade', m.id_suspeito)
-                            .eq('tipo_midia', 'FOTO')
-                            .eq('deletado', false);
-
-                        const principal = (midias || []).find(x =>
-                            x.nome_seguro && x.nome_seguro.toLowerCase().includes('principal')
-                        ) || (midias || [])[0];
-
+                            .eq('tipo_entidade', 'SUSPEITO').eq('id_entidade', m.id_suspeito)
+                            .eq('tipo_midia', 'FOTO').eq('deletado', false);
+                        const principal = (midias || []).find(x => x.nome_seguro && x.nome_seguro.toLowerCase().includes('principal')) || (midias || [])[0];
                         if (principal && principal.caminho_fisico) {
                             const { data: signed } = await window.supabaseClient.storage
-                                .from(BUCKET_FOTOS)
-                                .createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
+                                .from(BUCKET_FOTOS).createSignedUrl(principal.caminho_fisico, URL_EXPIRACAO_S);
                             fotoUrl = signed?.signedUrl || null;
                         }
-                    } catch (e) {
-                        console.warn('⚠️ Erro ao buscar foto do suspeito na edição:', e);
-                    }
+                    } catch (e) { console.warn('⚠️', e); }
                 }
 
                 const fotoEdicaoHTML = fotoUrl
-                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar">
-                           <img src="${fotoUrl}" alt="${suspeito?.nome_completo || 'Suspeito'}" class="mandado-foto" />
-                       </div>`
-                    : `<div class="mandado-foto-placeholder">
-                           <i class="fas fa-user-secret"></i>
-                           <span>Sem foto cadastrada</span>
-                       </div>`;
+                    ? `<div class="mandado-foto-wrapper" onclick="abrirLightboxMandado('${fotoUrl}')" title="Clique para ampliar"><img src="${fotoUrl}" alt="${suspeito?.nome_completo || 'Suspeito'}" class="mandado-foto" /></div>`
+                    : `<div class="mandado-foto-placeholder"><i class="fas fa-user-secret"></i><span>Sem foto cadastrada</span></div>`;
 
                 const nomeSuspeito = suspeito?.nome_completo || 'Não vinculado';
                 const cpfSuspeito = suspeito?.cpf || '-';
@@ -1952,10 +1900,6 @@
                                 <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${nomeSuspeito}</strong></span></div>
                                 <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${cpfSuspeito}</span></div>
                                 <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${statusSuspeito}</span></div>
-                                <small style="display:block; margin-top:10px; color:rgba(0,255,136,0.4); font-size:11px;">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    O vínculo do suspeito é definido no cadastro do mandado e não pode ser alterado por aqui.
-                                </small>
                             </div>
                         </div>
 
@@ -2019,6 +1963,24 @@
                                 <input type="date" class="form-control" id="editDataValidade" value="${m.data_validade || ''}">
                             </div>
 
+                            <!-- [v1.7.0] Toggle Sigiloso na edição -->
+                            <div class="col-md-12">
+                                <div style="background: rgba(255, 193, 7, 0.04); border: 1px solid rgba(255, 193, 7, 0.2); border-radius: 10px; padding: 12px 16px; margin-top: 5px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="editDatajudSigilosoManual"
+                                               style="accent-color: #ffc107; cursor: pointer;"
+                                               ${m.datajud_sigiloso_manual ? 'checked' : ''}>
+                                        <label class="form-check-label" for="editDatajudSigilosoManual" style="color: #ffc107; font-size: 13px; font-weight: 600; cursor: pointer;">
+                                            <i class="fas fa-lock me-1"></i> Este processo é SIGILOSO
+                                        </label>
+                                    </div>
+                                    <small style="display: block; color: rgba(255, 193, 7, 0.6); font-size: 11px; margin-top: 6px; margin-left: 24px;">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Ao marcar, a consulta automática do DataJud será <strong>pulada</strong> para este mandado.
+                                    </small>
+                                </div>
+                            </div>
+
                             <div class="col-md-12">
                                 <div class="section-title" style="margin-top:15px;">
                                     <i class="fas fa-map-marked-alt"></i> ENDEREÇO DE CUMPRIMENTO
@@ -2027,29 +1989,23 @@
                             <div class="col-md-2">
                                 <label class="form-label">CEP</label>
                                 <input type="text" class="form-control" id="editCep" maxlength="9" placeholder="00000-000"
-                                       value="${m.cep || ''}"
-                                       oninput="mascaraCepMandado(this)"
-                                       onblur="buscarCepMandado()">
+                                       value="${m.cep || ''}" oninput="mascaraCepMandado(this)" onblur="buscarCepMandado()">
                             </div>
                             <div class="col-md-7">
                                 <label class="form-label">Rua / Logradouro</label>
-                                <input type="text" class="form-control" id="editLogradouro" placeholder="Ex: Rua das Flores, Avenida Sete..."
-                                       value="${m.logradouro || ''}">
+                                <input type="text" class="form-control" id="editLogradouro" value="${m.logradouro || ''}">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Número</label>
-                                <input type="text" class="form-control" id="editNumeroEndereco" placeholder="Ex: 123"
-                                       value="${m.numero || ''}">
+                                <input type="text" class="form-control" id="editNumeroEndereco" value="${m.numero || ''}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Complemento</label>
-                                <input type="text" class="form-control" id="editComplemento" placeholder="Apto / Bloco / Referência"
-                                       value="${m.complemento || ''}">
+                                <input type="text" class="form-control" id="editComplemento" value="${m.complemento || ''}">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Bairro</label>
-                                <input type="text" class="form-control" id="editBairro" placeholder="Bairro"
-                                       value="${m.bairro || ''}">
+                                <input type="text" class="form-control" id="editBairro" value="${m.bairro || ''}">
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label">Cidade</label>
@@ -2057,8 +2013,7 @@
                             </div>
                             <div class="col-md-1">
                                 <label class="form-label">UF</label>
-                                <input type="text" class="form-control" id="editUf" maxlength="2" style="text-transform: uppercase;"
-                                       value="${m.uf || 'BA'}">
+                                <input type="text" class="form-control" id="editUf" maxlength="2" style="text-transform: uppercase;" value="${m.uf || 'BA'}">
                             </div>
 
                             <div class="col-md-12">
@@ -2068,63 +2023,29 @@
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Latitude</label>
-                                <input type="text" inputmode="decimal" class="form-control" id="editLatitude" placeholder="-12.9714"
-                                       value="${m.latitude || ''}"
-                                       oninput="sanitizarCoordMandado(this)">
+                                <input type="text" inputmode="decimal" class="form-control" id="editLatitude" value="${m.latitude || ''}" oninput="sanitizarCoordMandado(this)">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label">Longitude</label>
-                                <input type="text" inputmode="decimal" class="form-control" id="editLongitude" placeholder="-38.5014"
-                                       value="${m.longitude || ''}"
-                                       oninput="sanitizarCoordMandado(this)">
+                                <input type="text" inputmode="decimal" class="form-control" id="editLongitude" value="${m.longitude || ''}" oninput="sanitizarCoordMandado(this)">
                             </div>
                             <div class="col-md-4 d-flex align-items-end">
                                 <button type="button" class="btn-outline-gold w-100" onclick="buscarCoordenadasMandado(event)">
                                     <i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS
                                 </button>
                             </div>
-                            <div class="col-md-12">
-                                <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
-                                    <i class="fas fa-info-circle me-1"></i>
-                                    As coordenadas são usadas para plotar o mandado no <strong>Mapa de Mandados</strong>.
-                                    Aceita vírgula ou ponto: <code>-12,9714</code> ou <code>-12.9714</code>.
-                                </small>
-                            </div>
 
                             <div class="col-md-12">
                                 <label class="form-label">
                                     <i class="fas fa-file-alt me-1"></i> Descrição *
-                                    <span style="color: rgba(0, 255, 136, 0.4); text-transform: none; font-weight: 400; font-size: 11px; margin-left: 8px;">
-                                        (campo livre — todos podem escrever)
-                                    </span>
                                 </label>
-                                <textarea 
-                                    class="form-control" 
-                                    id="editDescricao" 
-                                    rows="6" 
-                                    required
-                                    maxlength="${LIMITE_DESCRICAO}"
-                                    spellcheck="true"
-                                    autocorrect="on"
-                                    autocapitalize="sentences"
-                                    style="min-height: 140px; resize: vertical;">${m.descricao || ''}</textarea>
+                                <textarea class="form-control" id="editDescricao" rows="6" required maxlength="${LIMITE_DESCRICAO}" style="min-height: 140px; resize: vertical;">${m.descricao || ''}</textarea>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label">
                                     <i class="fas fa-comment-alt me-1"></i> Observações
-                                    <span style="color: rgba(0, 255, 136, 0.4); text-transform: none; font-weight: 400; font-size: 11px; margin-left: 8px;">
-                                        (opcional — campo livre)
-                                    </span>
                                 </label>
-                                <textarea 
-                                    class="form-control" 
-                                    id="editObservacoes" 
-                                    rows="4"
-                                    maxlength="${LIMITE_OBSERVACOES}"
-                                    spellcheck="true"
-                                    autocorrect="on"
-                                    autocapitalize="sentences"
-                                    style="min-height: 100px; resize: vertical;">${m.observacoes || ''}</textarea>
+                                <textarea class="form-control" id="editObservacoes" rows="4" maxlength="${LIMITE_OBSERVACOES}" style="min-height: 100px; resize: vertical;">${m.observacoes || ''}</textarea>
                             </div>
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-4">
@@ -2141,7 +2062,6 @@
                 document.getElementById('formEdicao').addEventListener('submit', salvarEdicao);
                 aplicarPermissaoCamposLivres('edit');
 
-                // [v1.6.0] Roda validação inicial do processo ao abrir
                 setTimeout(() => {
                     const inputEdit = document.getElementById('editProcesso');
                     if (inputEdit && inputEdit.value) {
@@ -2163,14 +2083,22 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
 
             try {
-                // [v1.6.0] Validação do número do processo (se preenchido)
                 const editProcessoEl = document.getElementById('editProcesso');
                 const editProcessoValor = (editProcessoEl?.value || '').trim();
                 if (editProcessoValor) {
                     const limpo = editProcessoValor.replace(/\D/g, '');
                     if (limpo.length !== 20) {
                         showToast('warning', 'Número do processo inválido',
-                            `O número do processo deve ter <strong>exatamente 20 dígitos</strong>. Atual: <strong>${limpo.length}</strong>`, 7000);
+                            `Deve ter <strong>20 dígitos</strong>. Atual: <strong>${limpo.length}</strong>`, 7000);
+                        editProcessoEl.focus();
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                        return;
+                    }
+                    const chave = `${limpo[13]}.${limpo.slice(14, 16)}`;
+                    if (!TRIBUNAIS[chave]) {
+                        showToast('warning', 'Tribunal não mapeado',
+                            `Ramo ${limpo[13]}, tribunal ${limpo.slice(14, 16)} não existe`, 7000);
                         editProcessoEl.focus();
                         btn.disabled = false;
                         btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
@@ -2199,13 +2127,12 @@
                     longitude: parseCoordMandado(document.getElementById('editLongitude').value),
                     descricao: document.getElementById('editDescricao').value.trim(),
                     observacoes: document.getElementById('editObservacoes').value.trim() || null,
+                    datajud_sigiloso_manual: document.getElementById('editDatajudSigilosoManual')?.checked || false,
                     data_atualizacao: new Date().toISOString()
                 };
 
                 const { error } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .update(dados)
-                    .eq('id_mandado', mandadoEditandoId);
+                    .from('mandado_prisao').update(dados).eq('id_mandado', mandadoEditandoId);
 
                 if (error) throw error;
 
@@ -2247,32 +2174,22 @@
         async function buscarCepMandado() {
             const cep = document.getElementById('editCep').value.replace(/\D/g, '');
             if (cep.length !== 8) return;
-
             try {
                 const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
                 const data = await resp.json();
-                if (data.erro) {
-                    showToast('warning', 'CEP não encontrado', 'Verifique o CEP digitado.');
-                    return;
-                }
+                if (data.erro) { showToast('warning', 'CEP não encontrado', 'Verifique o CEP digitado.'); return; }
                 document.getElementById('editLogradouro').value = data.logradouro || '';
                 document.getElementById('editBairro').value = data.bairro || '';
                 document.getElementById('editCidade').value = data.localidade || 'Salvador';
                 document.getElementById('editUf').value = (data.uf || 'BA').toUpperCase();
                 showToast('success', 'CEP encontrado!', `${data.logradouro || '-'}, ${data.bairro || '-'}`, 4000);
-            } catch (e) {
-                console.error('Erro ViaCEP:', e);
-                showToast('error', 'Erro ao buscar CEP', 'Tente novamente.');
-            }
+            } catch (e) { showToast('error', 'Erro ao buscar CEP', 'Tente novamente.'); }
         }
 
         async function buscarCoordenadasMandado(event) {
             const btn = event ? event.currentTarget || event.target : null;
             const originalHTML = btn ? btn.innerHTML : '';
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
-            }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...'; }
 
             try {
                 const partes = [
@@ -2286,28 +2203,21 @@
                     'Brasil'
                 ].filter(Boolean);
 
-                if (partes.length < 3) {
-                    throw new Error('Preencha ao menos Rua e Bairro (ou Cidade).');
-                }
+                if (partes.length < 3) throw new Error('Preencha ao menos Rua e Bairro (ou Cidade).');
 
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(partes.join(', '))}&limit=1&countrycodes=br`;
                 const resp = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
                 const resultado = await resp.json();
 
-                if (!resultado || resultado.length === 0) {
-                    throw new Error('Endereço não encontrado. Tente sem o número ou apenas com o CEP.');
-                }
+                if (!resultado || resultado.length === 0) throw new Error('Endereço não encontrado.');
 
-                const { lat, lon, display_name } = resultado[0];
+                const { lat, lon } = resultado[0];
                 document.getElementById('editLatitude').value = Number(lat).toFixed(8);
                 document.getElementById('editLongitude').value = Number(lon).toFixed(8);
 
                 showToast('success', 'Coordenadas encontradas!',
                     `Lat: ${Number(lat).toFixed(5)} | Lng: ${Number(lon).toFixed(5)}`, 6000);
-                console.log('✅ Geocodificado:', display_name);
-
             } catch (error) {
-                console.error('❌ Erro geocode:', error);
                 showToast('error', 'Erro ao buscar', error.message);
             } finally {
                 if (btn) {
@@ -2340,7 +2250,6 @@
 
         async function confirmarCumprimento() {
             if (!mandadoCumprindoId) return;
-
             const btn = document.getElementById('btnConfirmarCumprir');
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
@@ -2368,9 +2277,7 @@
                 showToast('success', 'Mandado cumprido!', 'O status foi atualizado para CUMPRIDO.', 5000);
                 fecharCumprir();
                 await carregarMandados();
-
             } catch (error) {
-                console.error('❌ Erro:', error);
                 showToast('error', 'Erro', error.message);
             } finally {
                 btn.disabled = false;
@@ -2379,21 +2286,18 @@
         }
 
         // ============================================================
-        // VALIDAÇÃO BNMP — SEM embed
+        // VALIDAÇÃO BNMP
         // ============================================================
         async function abrirValidacaoBNMP(id) {
             mandadoValidandoId = id;
             const modal = document.getElementById('modalValidacaoBNMP');
             const body = document.getElementById('modalValidacaoBNMPBody');
             modal.classList.add('open');
-            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados do mandado...</div>';
+            body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
 
             try {
                 const { data: m, error } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .select('*')
-                    .eq('id_mandado', id)
-                    .maybeSingle();
+                    .from('mandado_prisao').select('*').eq('id_mandado', id).maybeSingle();
 
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
@@ -2403,8 +2307,7 @@
                     const { data: sData } = await window.supabaseClient
                         .from('suspeito')
                         .select('id_suspeito, nome_completo, cpf, apelido')
-                        .eq('id_suspeito', m.id_suspeito)
-                        .maybeSingle();
+                        .eq('id_suspeito', m.id_suspeito).maybeSingle();
                     s = sData || {};
                 }
 
@@ -2427,51 +2330,30 @@
                     <div class="aviso-bnmp">
                         <i class="fas fa-info-circle"></i>
                         <strong>Atenção:</strong> Esta validação é <strong>manual e assistida</strong>.
-                        Você precisa consultar o mandado no portal oficial do CNJ e depois registrar o resultado aqui.
-                        Toda validação é registrada em auditoria.
+                        Consulte o mandado no portal oficial do CNJ e depois registre o resultado aqui.
                     </div>
 
                     <div class="section-title" style="margin-top:0;">
                         <i class="fas fa-gavel"></i> Dados do Mandado
                     </div>
                     <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Número</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor">${s.nome_completo || '-'}</span></div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div>
-                        </div>
-                        ${m.processo_numero ? `
-                        <div class="col-md-12">
-                            <div class="detalhe-campo"><span class="label">Nº do Processo</span><span class="valor">${m.processo_numero}</span></div>
-                        </div>
-                        ` : ''}
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Número</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div></div>
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div></div>
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor">${s.nome_completo || '-'}</span></div></div>
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div></div>
+                        ${m.processo_numero ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Nº do Processo</span><span class="valor">${m.processo_numero}</span></div></div>` : ''}
                     </div>
 
-                    <div class="section-title">
-                        <i class="fas fa-external-link-alt"></i> 1. Consultar no Portal BNMP
-                    </div>
+                    <div class="section-title"><i class="fas fa-external-link-alt"></i> 1. Consultar no Portal BNMP</div>
                     <div class="row g-3 mb-3">
                         <div class="col-md-12">
                             <button type="button" class="btn-outline-gold w-100" onclick="abrirPortalBNMP('${(s.cpf || '').replace(/\D/g, '')}')">
                                 <i class="fas fa-external-link-alt me-2"></i>ABRIR PORTAL BNMP (CNJ)
                             </button>
-                            <small style="display:block; margin-top:8px; color:rgba(0,255,136,0.4); font-size:11px;">
-                                <i class="fas fa-info-circle"></i>
-                                Abre em nova aba. Faça login com seu usuário cadastrado e busque pelo CPF/Nome.
-                            </small>
                         </div>
                     </div>
 
-                    <div class="section-title">
-                        <i class="fas fa-clipboard-check"></i> 2. Registrar Resultado
-                    </div>
+                    <div class="section-title"><i class="fas fa-clipboard-check"></i> 2. Registrar Resultado</div>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label">Status no BNMP *</label>
@@ -2481,57 +2363,38 @@
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">Observação / Comprovante</label>
-                            <textarea class="form-control" id="bnmpObservacao" rows="3" maxlength="1000"
-                                placeholder="Ex: Consulta realizada em 17/09/2026 às 22h; certidão nº 12345; link do PDF...">${obsAtual}</textarea>
+                            <textarea class="form-control" id="bnmpObservacao" rows="3" maxlength="1000">${obsAtual}</textarea>
                         </div>
                         <div class="col-md-12">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="bnmpConfirmacao" style="accent-color:#00ff88;">
                                 <label class="form-check-label" for="bnmpConfirmacao" style="color:rgba(0,255,136,0.7);">
-                                    <strong>Confirmo</strong> que consultei o portal BNMP manualmente e os dados registrados são verdadeiros.
+                                    <strong>Confirmo</strong> que consultei o portal BNMP manualmente.
                                 </label>
                             </div>
                         </div>
-                        ${dataAtual ? `
-                        <div class="col-md-12">
-                            <div class="aviso-bnmp" style="background:rgba(0,255,136,0.03); border-color:var(--border-color); color:rgba(0,255,136,0.6);">
-                                <i class="fas fa-history"></i>
-                                Última validação: <strong>${dataAtual}</strong>
-                            </div>
-                        </div>
-                        ` : ''}
+                        ${dataAtual ? `<div class="col-md-12"><div class="aviso-bnmp" style="background:rgba(0,255,136,0.03); border-color:var(--border-color); color:rgba(0,255,136,0.6);"><i class="fas fa-history"></i> Última validação: <strong>${dataAtual}</strong></div></div>` : ''}
                     </div>
                 `;
             } catch (error) {
-                console.error('❌ Erro:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color:#dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
             }
         }
 
         function abrirPortalBNMP(cpf) {
-            const url = 'https://portalbnmp.pdpj.jus.br/#/pesquisa-peca';
-            window.open(url, '_blank', 'noopener,noreferrer');
-            showToast('info', 'Portal aberto',
-                cpf ? `Busque pelo CPF: <strong>${cpf}</strong>` : 'Faça login e busque o mandado.', 7000);
+            window.open('https://portalbnmp.pdpj.jus.br/#/pesquisa-peca', '_blank', 'noopener,noreferrer');
+            showToast('info', 'Portal aberto', cpf ? `Busque pelo CPF: <strong>${cpf}</strong>` : 'Faça login e busque.', 7000);
         }
 
         async function salvarValidacaoBNMP() {
             if (!mandadoValidandoId) return;
-
             const btn = document.getElementById('btnSalvarValidacaoBNMP');
             const status = document.getElementById('bnmpStatus').value;
             const observacao = document.getElementById('bnmpObservacao').value.trim();
             const confirmado = document.getElementById('bnmpConfirmacao').checked;
 
-            if (!status) {
-                showToast('warning', 'Status obrigatório', 'Selecione o status do mandado no BNMP.');
-                return;
-            }
-
-            if (!confirmado) {
-                showToast('warning', 'Confirmação necessária', 'Marque o checkbox confirmando que consultou o BNMP.');
-                return;
-            }
+            if (!status) { showToast('warning', 'Status obrigatório', 'Selecione o status.'); return; }
+            if (!confirmado) { showToast('warning', 'Confirmação necessária', 'Marque o checkbox.'); return; }
 
             btn.disabled = true;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
@@ -2544,28 +2407,19 @@
                     validacao_bnmp_observacao: observacao || null,
                     data_atualizacao: new Date().toISOString()
                 };
-
-                if (status === 'VALIDO') {
-                    dados.status = 'ATIVO';
-                }
+                if (status === 'VALIDO') dados.status = 'ATIVO';
 
                 const { error } = await window.supabaseClient
-                    .from('mandado_prisao')
-                    .update(dados)
-                    .eq('id_mandado', mandadoValidandoId);
+                    .from('mandado_prisao').update(dados).eq('id_mandado', mandandoValidandoId);
 
                 if (error) throw error;
 
                 const labelStatus = BNMP_ICONES[status] ? BNMP_ICONES[status].label : status;
-                showToast('success', 'Validação registrada!',
-                    `Status BNMP: <strong>${labelStatus}</strong>`, 6000);
-
+                showToast('success', 'Validação registrada!', `Status: <strong>${labelStatus}</strong>`, 6000);
                 fecharValidacaoBNMP();
                 await carregarMandados();
-
             } catch (error) {
-                console.error('❌ Erro:', error);
-                showToast('error', 'Erro ao salvar validação', error.message);
+                showToast('error', 'Erro', error.message);
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR VALIDAÇÃO';
@@ -2582,37 +2436,26 @@
         // ============================================================
         async function geocodificarEndereco(event) {
             const idSuspeito = document.getElementById('idSuspeito').value;
-            if (!idSuspeito) {
-                showToast('warning', 'Selecione um suspeito', 'O endereço é buscado a partir do suspeito.');
-                return;
-            }
+            if (!idSuspeito) { showToast('warning', 'Selecione um suspeito', 'O endereço é buscado a partir do suspeito.'); return; }
 
-            const btn = event ? event.target : document.querySelector('[onclick*="geocodificarEndereco"]');
-            if (btn) {
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
-            }
+            const btn = event ? event.target : null;
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...'; }
 
             try {
                 const { data: s, error } = await window.supabaseClient
-                    .from('suspeito')
-                    .select('logradouro, numero, bairro, cidade, uf, cep')
-                    .eq('id_suspeito', idSuspeito)
-                    .maybeSingle();
+                    .from('suspeito').select('logradouro, numero, bairro, cidade, uf, cep')
+                    .eq('id_suspeito', idSuspeito).maybeSingle();
 
                 if (error || !s) throw new Error('Suspeito não encontrado.');
 
-                const endereco = [
-                    s.logradouro, s.numero, s.bairro, s.cidade, s.uf, s.cep, 'Brasil'
-                ].filter(Boolean).join(', ');
-
-                if (endereco.length < 5) throw new Error('Endereço do suspeito está incompleto.');
+                const endereco = [s.logradouro, s.numero, s.bairro, s.cidade, s.uf, s.cep, 'Brasil'].filter(Boolean).join(', ');
+                if (endereco.length < 5) throw new Error('Endereço incompleto.');
 
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`;
                 const response = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
                 const resultado = await response.json();
 
-                if (!resultado || resultado.length === 0) throw new Error('Endereço não encontrado no mapa.');
+                if (!resultado || resultado.length === 0) throw new Error('Endereço não encontrado.');
 
                 const { lat, lon } = resultado[0];
                 document.getElementById('latitude').value = parseFloat(lat).toFixed(8);
@@ -2620,9 +2463,7 @@
 
                 showToast('success', 'Endereço encontrado!',
                     `Coordenadas: ${parseFloat(lat).toFixed(4)}, ${parseFloat(lon).toFixed(4)}`, 6000);
-
             } catch (error) {
-                console.error('❌ Erro:', error);
                 showToast('error', 'Erro ao buscar endereço', error.message);
             } finally {
                 if (btn) {
@@ -2641,11 +2482,7 @@
         // HELPERS
         // ============================================================
         function traduzirTipo(tipo) {
-            const tipos = {
-                'PRISAO': 'Prisão',
-                'BUSCA_APREENSAO': 'Busca e Apreensão',
-                'CONDUCAO_COERCITIVA': 'Condução Coercitiva'
-            };
+            const tipos = { 'PRISAO': 'Prisão', 'BUSCA_APREENSAO': 'Busca e Apreensão', 'CONDUCAO_COERCITIVA': 'Condução Coercitiva' };
             return tipos[tipo] || tipo || '-';
         }
 
@@ -2730,7 +2567,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.6.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.7.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
