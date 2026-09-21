@@ -1,46 +1,45 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.8.2
-     Data: 21/09/2026 - 23:45
+     Versão: 1.8.4
+     Data: 22/09/2026 - 02:30
      ============================================================
+     ALTERAÇÕES v1.8.4 (22/09/2026 02:30):
+     - ✨ NOVO: Campo "CPF do Suspeito" no cadastro de mandados
+       - Máscara automática 000.000.000-00
+       - Ao digitar CPF válido, busca e auto-seleciona o suspeito
+       - Ao trocar o dropdown, preenche o CPF formatado (feedback visual)
+       - CPF não cadastrado → avisa, mas não bloqueia
+       - Dropdown de suspeitos exibe CPF formatado
+       - Cache em memória (id ↔ CPF) para busca rápida
+     - 🔒 VALIDAÇÃO: dígitos verificadores do CPF
+       - cpfValido() — algoritmo oficial (módulo 11)
+       - Rejeita sequências repetidas (111.111.111-11, ...)
+       - Bloqueia cadastro se CPF digitado for inválido
+       - Feedback visual (borda vermelha) em tempo real
+     - ✨ CPF exibido formatado (000.000.000-00) em todas as telas
+       - Tabela, Detalhes, Edição, Validação BNMP
+     - ✅ Preservadas TODAS as funcionalidades da v1.8.3
+
+     ALTERAÇÕES v1.8.3 (22/09/2026 01:30):
+     - ✨ CPF formatado na tabela e nos modais (helper formatarCPF)
+
      ALTERAÇÕES v1.8.2 (21/09/2026 23:45):
-     - ✨ NOVO (M4): Campo de busca textual na lista de mandados
-       - Busca por número, nome do suspeito, CPF, juiz ou processo
-       - Usa p_termo da RPC buscar_mandado
-       - No modo "Não validados" filtra client-side também
-     - 🔧 MELHORIA (M3): Geocodificação mais confiável
-       - Nominatim com parâmetro `email` (política de uso)
-       - Fallback automático para Photon (Komoot) se falhar
-       - Removido header User-Agent (proibido em browsers)
-     - 🔧 MELHORIA (M9): Deduplicação de toasts
-       - Toasts idênticos não empilham mais
-       - Toast existente tem sua duração renovada
+     - ✨ Campo de busca textual na lista (M4)
+     - 🔧 Geocodificação com fallback Photon (M3)
+     - 🔧 Deduplicação de toasts (M9)
 
      ALTERAÇÕES v1.8.1 (21/09/2026 23:15):
-     - 🐛 FIX (C1): @media print isola apenas o modal aberto
-     - 🐛 FIX (C2): imprimirDetalhes/imprimirMandado aguardam imagens
-     - 🐛 FIX (C3): confirmarCumprimento preserva observações anteriores
-     - 🐛 FIX (C4): abrirTodosNaoValidados trata bloqueio de pop-up
-     - 🐛 FIX (C6): filtro "Não validados" tem fallback client-side
-     - 🐛 FIX (C7): aviso claro quando colunas DataJud estão ausentes
-     - 🐛 FIX (M1): removido preventDefault do F11
-     - 🐛 FIX (M2): validação visual de coordenadas inválidas
-     - 🐛 FIX (M5): datajud_movimentos validado antes de filtrar
-     - 🐛 FIX (M8): comparação lowercase do status DataJud
-     - 🐛 FIX (m4): contadores de caracteres no modal de edição
+     - 🐛 Fixes C1–C7, M1–M5, M8, m4
 
      ALTERAÇÕES v1.8.0 (21/09/2026 22:30):
-     - ✨ Coluna "DataJud" na tabela de mandados
-     - ✨ Filtro "Status DataJud" na barra de filtros
-     - ✨ Seção "DATAJUD (CNJ)" no modal de Detalhes
+     - ✨ Coluna "DataJud" + filtro + seção no modal
 
      ALTERAÇÕES v1.7.0 (21/09/2026 15:30):
-     - ✨ Validação de tribunal (ramo + código)
-     - ✨ Toggle "Sigiloso" no cadastro e edição
+     - ✨ Validação de tribunal + toggle Sigiloso
 
      ALTERAÇÕES v1.6.0 (21/09/2026 14:30):
-     - ✨ Validação de número de processo (padrão CNJ)
+     - ✨ Validação de número de processo (CNJ)
 
      ALTERAÇÕES v1.5.0 (18/09/2026 07:45):
      - 🔒 SEGURANÇA: lista migrada para RPC buscar_mandado
@@ -834,9 +833,22 @@
 
                 <div class="section-title"><i class="fas fa-user-secret"></i>SUSPEITO VINCULADO</div>
                 <div class="row g-3">
-                    <div class="col-md-12">
+                    <div class="col-md-4">
+                        <label class="form-label">
+                            <i class="fas fa-id-card me-1"></i>CPF do Suspeito
+                        </label>
+                        <input type="text" class="form-control" id="cpfSuspeito"
+                               maxlength="14"
+                               placeholder="000.000.000-00"
+                               oninput="mascaraCPF(this); buscarSuspeitoPorCPF(this.value)"
+                               autocomplete="off">
+                        <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
+                            <i class="fas fa-info-circle"></i> Digite o CPF para buscar o suspeito automaticamente.
+                        </small>
+                    </div>
+                    <div class="col-md-8">
                         <label class="form-label">Suspeito *</label>
-                        <select class="form-select" id="idSuspeito">
+                        <select class="form-select" id="idSuspeito" onchange="preencherCPFDoSuspeito()">
                             <option value="">Carregando suspeitos...</option>
                         </select>
                         <small style="color: rgba(0, 255, 136, 0.3); font-size: 11px;">
@@ -1204,11 +1216,14 @@
         let naoValidadosCache = [];
         let filtroNaoValidadosAtivo = false;
 
-        // [v1.8.1] Flag de loading para evitar cliques duplos
+        // [v1.8.1] Flag de loading
         let _carregandoLista = false;
-
         // [v1.8.1] Flag: colunas DataJud ausentes?
         let _datajudIndisponivel = false;
+
+        // [v1.8.4] Caches de suspeitos
+        let suspeitosCachePorId = {};
+        let suspeitosCachePorCpf = {};
 
         const IDS_PERFIS_EDITORES = [1, 2, 3, 4];
         const NOMES_PERFIS_EDITORES = [
@@ -1329,8 +1344,149 @@
         }
 
         // ============================================================
+        // [v1.8.3] FORMATAÇÃO DE CPF PARA EXIBIÇÃO
+        // ============================================================
+        function formatarCPF(cpf) {
+            if (!cpf) return '-';
+            const digitos = String(cpf).replace(/\D/g, '');
+            if (digitos.length !== 11) return String(cpf);
+            return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+
+        // ============================================================
+        // [v1.8.4] MÁSCARA DE CPF EM TEMPO REAL (000.000.000-00)
+        // ============================================================
+        function mascaraCPF(input) {
+            let v = String(input.value || '').replace(/\D/g, '').slice(0, 11);
+            let out = '';
+            if (v.length > 0) out += v.slice(0, 3);
+            if (v.length > 3) out += '.' + v.slice(3, 6);
+            if (v.length > 6) out += '.' + v.slice(6, 9);
+            if (v.length > 9) out += '-' + v.slice(9, 11);
+            input.value = out;
+
+            // [v1.8.4.1] Limpa feedback visual quando o campo fica vazio
+            if (v.length === 0) {
+                input.style.borderColor = '';
+            }
+        }
+
+        // ============================================================
+        // [v1.8.4] VALIDAÇÃO DE CPF — TAMANHO + DÍGITOS VERIFICADORES
+        // ============================================================
+        function cpfTemOnzeDigitos(cpf) {
+            return String(cpf || '').replace(/\D/g, '').length === 11;
+        }
+
+        // Valida CPF com o algoritmo oficial (módulo 11).
+        // Rejeita:
+        //   - Menos/mais de 11 dígitos
+        //   - Todos os dígitos iguais (000.000.000-00, 111.111.111-11, ...)
+        //   - Dígitos verificadores que não batem
+        function cpfValido(cpf) {
+            const digitos = String(cpf || '').replace(/\D/g, '');
+            if (digitos.length !== 11) return false;
+
+            // Rejeita sequências repetidas
+            if (/^(\d)\1{10}$/.test(digitos)) return false;
+
+            // 1º dígito verificador
+            let soma = 0;
+            for (let i = 0; i < 9; i++) {
+                soma += parseInt(digitos[i], 10) * (10 - i);
+            }
+            let resto = soma % 11;
+            const dv1 = resto < 2 ? 0 : 11 - resto;
+            if (dv1 !== parseInt(digitos[9], 10)) return false;
+
+            // 2º dígito verificador
+            soma = 0;
+            for (let i = 0; i < 10; i++) {
+                soma += parseInt(digitos[i], 10) * (11 - i);
+            }
+            resto = soma % 11;
+            const dv2 = resto < 2 ? 0 : 11 - resto;
+            if (dv2 !== parseInt(digitos[10], 10)) return false;
+
+            return true;
+        }
+
+        // ============================================================
+        // [v1.8.4] PREENCHE O CPF AO SELECIONAR UM SUSPEITO
+        // ============================================================
+        function preencherCPFDoSuspeito() {
+            const select = document.getElementById('idSuspeito');
+            const campoCpf = document.getElementById('cpfSuspeito');
+            if (!select || !campoCpf) return;
+
+            const id = select.value;
+            if (!id) {
+                campoCpf.value = '';
+                return;
+            }
+
+            const suspeito = suspeitosCachePorId[String(id)];
+            if (suspeito && suspeito.cpf) {
+                campoCpf.value = formatarCPF(suspeito.cpf);
+                campoCpf.style.borderColor = '';
+            } else if (suspeito) {
+                campoCpf.value = '';
+            }
+        }
+
+        // ============================================================
+        // [v1.8.4] BUSCA SUSPEITO PELO CPF DIGITADO E AUTO-SELECIONA
+        // ============================================================
+        let _buscaCpfTimer = null;
+        function buscarSuspeitoPorCPF(cpfDigitado) {
+            if (_buscaCpfTimer) clearTimeout(_buscaCpfTimer);
+
+            const select = document.getElementById('idSuspeito');
+            const campoCpf = document.getElementById('cpfSuspeito');
+            if (!select || !campoCpf) return;
+
+            const digitos = String(cpfDigitado).replace(/\D/g, '');
+
+            // Ainda não completou 11 dígitos → não faz nada
+            if (digitos.length !== 11) {
+                campoCpf.style.borderColor = '';
+                return;
+            }
+
+            _buscaCpfTimer = setTimeout(() => {
+                // Valida dígitos verificadores antes de buscar
+                if (!cpfValido(digitos)) {
+                    campoCpf.style.borderColor = '#dc3545';
+                    showToast('error', 'CPF inválido',
+                        `O CPF <strong>${formatarCPF(digitos)}</strong> não passa na validação dos dígitos verificadores. Confira o número.`, 7000);
+                    return;
+                }
+
+                const idEncontrado = suspeitosCachePorCpf[digitos];
+
+                if (idEncontrado) {
+                    select.value = String(idEncontrado);
+                    preencherCPFDoSuspeito();
+
+                    campoCpf.style.borderColor = '#00ff88';
+                    setTimeout(() => { campoCpf.style.borderColor = ''; }, 1500);
+
+                    const suspeito = suspeitosCachePorId[String(idEncontrado)];
+                    if (suspeito) {
+                        showToast('success', 'Suspeito encontrado',
+                            `<strong>${suspeito.nome_completo}</strong> foi selecionado automaticamente.`, 4000);
+                    }
+                } else {
+                    campoCpf.style.borderColor = '#ffc107';
+                    setTimeout(() => { campoCpf.style.borderColor = ''; }, 2500);
+                    showToast('warning', 'CPF não cadastrado',
+                        `Nenhum suspeito com o CPF <strong>${formatarCPF(digitos)}</strong>. Cadastre-o em <strong>Cadastro</strong> ou selecione outro na lista.`, 7000);
+                }
+            }, 400);
+        }
+
+        // ============================================================
         // [v1.8.0] BADGE DE STATUS DATAJUD
-        // [v1.8.1] aceita flag de indisponibilidade (C7)
         // ============================================================
         function gerarBadgeDataJud(statusConsulta, sigilosoManual, tribunal, indisponivel) {
             if (indisponivel) {
@@ -1369,7 +1525,6 @@
 
         // ============================================================
         // [v1.8.0] CARREGA O STATUS DATAJUD DOS MANDADOS VISÍVEIS
-        // [v1.8.1] detecta colunas ausentes e sinaliza na UI (C7)
         // ============================================================
         async function enriquecerComDataJud(mandados) {
             if (!mandados || mandados.length === 0) return mandados;
@@ -1495,7 +1650,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.8.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.8.4 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1617,7 +1772,7 @@
         }
 
         // ============================================================
-        // CARREGAR SUSPEITOS
+        // CARREGAR SUSPEITOS — [v1.8.4] com cache
         // ============================================================
         async function carregarSuspeitos() {
             try {
@@ -1628,6 +1783,10 @@
                     .order('nome_completo', { ascending: true });
 
                 if (error) throw error;
+
+                // [v1.8.4] Reseta caches
+                suspeitosCachePorId = {};
+                suspeitosCachePorCpf = {};
 
                 const select = document.getElementById('idSuspeito');
                 select.innerHTML = '<option value="">Selecione um suspeito...</option>';
@@ -1640,11 +1799,29 @@
                 data.forEach(s => {
                     const opt = document.createElement('option');
                     opt.value = s.id_suspeito;
-                    const cpfFormatado = s.cpf ? ` - ${s.cpf}` : '';
+                    // [v1.8.4] CPF exibido FORMATADO no dropdown
+                    const cpfFormatado = s.cpf ? ` - ${formatarCPF(s.cpf)}` : '';
                     const apelido = s.apelido ? ` (${s.apelido})` : '';
                     opt.textContent = `${s.nome_completo}${apelido}${cpfFormatado}`;
                     select.appendChild(opt);
+
+                    // [v1.8.4] Popula caches
+                    suspeitosCachePorId[String(s.id_suspeito)] = {
+                        id_suspeito: s.id_suspeito,
+                        nome_completo: s.nome_completo,
+                        cpf: s.cpf,
+                        apelido: s.apelido
+                    };
+
+                    if (s.cpf) {
+                        const digitos = String(s.cpf).replace(/\D/g, '');
+                        if (digitos.length === 11) {
+                            suspeitosCachePorCpf[digitos] = s.id_suspeito;
+                        }
+                    }
                 });
+
+                console.log(`👥 ${data.length} suspeito(s) em cache | ${Object.keys(suspeitosCachePorCpf).length} com CPF`);
             } catch (error) {
                 console.error('❌ Erro ao carregar suspeitos:', error);
                 document.getElementById('idSuspeito').innerHTML = '<option value="">Erro ao carregar</option>';
@@ -1687,6 +1864,18 @@
                     el.focus();
                     return;
                 }
+            }
+
+            // [v1.8.4] Valida o CPF digitado (se preenchido)
+            const campoCpf = document.getElementById('cpfSuspeito');
+            const cpfValor = (campoCpf?.value || '').trim();
+            if (cpfValor && !cpfValido(cpfValor)) {
+                showToast('error', 'CPF inválido',
+                    `O CPF <strong>${cpfValor}</strong> não é válido. Corrija antes de cadastrar.`, 7000);
+                campoCpf.focus();
+                campoCpf.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                campoCpf.style.borderColor = '#dc3545';
+                return;
             }
 
             const processoNumeroEl = document.getElementById('processoNumero');
@@ -1761,13 +1950,20 @@
         }
 
         // ============================================================
-        // RESET FORMULÁRIO
+        // RESET FORMULÁRIO — [v1.8.4] limpa CPF
         // ============================================================
         function resetFormulario() {
             document.getElementById('formMandado').reset();
             document.getElementById('dataEmissao').value = new Date().toISOString().split('T')[0];
             document.getElementById('statusMandado').value = 'ATIVO';
             document.getElementById('prioridadeMandado').value = 'NORMAL';
+
+            // [v1.8.4] Limpa o campo CPF e reset visual
+            const campoCpf = document.getElementById('cpfSuspeito');
+            if (campoCpf) {
+                campoCpf.value = '';
+                campoCpf.style.borderColor = '';
+            }
 
             document.getElementById('counterDescricao').textContent = '0';
             document.getElementById('counterDescricao').className = 'counter';
@@ -1880,7 +2076,7 @@
         }
 
         // ============================================================
-        // [v1.8.1] ABRIR TODOS NÃO VALIDADOS — trata bloqueio de pop-up (C4)
+        // [v1.8.1] ABRIR TODOS NÃO VALIDADOS (C4)
         // ============================================================
         function abrirTodosNaoValidados() {
             const limite = Math.min(naoValidadosCache.length, LIMITE_ABAS_BNMP);
@@ -1912,8 +2108,6 @@
 
         // ============================================================
         // CARREGAR MANDADOS — via RPC + enriquecimento DataJud
-        // [v1.8.1] fallback client-side para __NAO_VALIDADO__ (C6)
-        // [v1.8.2] M4: busca textual (RPC p_termo + filtro client-side)
         // ============================================================
         async function carregarMandados() {
             if (_carregandoLista) {
@@ -1980,7 +2174,7 @@
                         cpf_suspeito: m.suspeito?.cpf || null
                     }));
 
-                    // [v1.8.2] M4: filtro textual client-side (fallback path)
+                    // Filtro textual client-side
                     if (termoBusca) {
                         data = data.filter(m => {
                             const alvo = [
@@ -2016,7 +2210,6 @@
                     totalGeral = (rows.length > 0) ? Number(rows[0].total_count) : 0;
                     data = rows.map(r => { const { total_count, ...rest } = r; return rest; });
 
-                    // [v1.8.2] M4: filtro client-side como reforço
                     if (termoBusca && data.length > 0) {
                         data = data.filter(m => {
                             const alvo = [
@@ -2035,10 +2228,9 @@
                     }
                 }
 
-                // [v1.8.0] Enriquece com status DataJud
                 mandadosAtuais = await enriquecerComDataJud(data);
 
-                // [v1.8.0] Filtro DataJud (client-side)
+                // Filtro DataJud (client-side)
                 if (filtroDataJud) {
                     if (filtroDataJud === 'pendente') {
                         mandadosAtuais = mandadosAtuais.filter(m => !m.datajud_status_consulta && !m.datajud_sigiloso_manual);
@@ -2102,7 +2294,8 @@
 
                     html += '<tr>';
                     html += `<td><strong style="color:var(--text-primary);">${m.numero_mandado || '#' + m.id_mandado}</strong></td>`;
-                    html += `<td>${m.nome_suspeito || '-'}<br><small style="color:rgba(0,255,136,0.3);">${m.cpf_suspeito || ''}</small></td>`;
+                    // [v1.8.3] CPF formatado no canto do nome do suspeito
+                    html += `<td>${m.nome_suspeito || '-'}<br><small style="color:rgba(0,255,136,0.3);">${m.cpf_suspeito ? formatarCPF(m.cpf_suspeito) : ''}</small></td>`;
                     html += `<td>${traduzirTipo(m.tipo_mandado)}</td>`;
                     html += `<td><span class="badge-status ${statusClass}">${m.status || '-'}</span></td>`;
                     html += `<td><span class="badge-prioridade ${prioridadeClass}">${m.prioridade || 'NORMAL'}</span></td>`;
@@ -2130,8 +2323,7 @@
         }
 
         // ============================================================
-        // VER DETALHES — com seção DataJud
-        // [v1.8.1] valida datajud_movimentos antes de filtrar (M5)
+        // VER DETALHES — [v1.8.3] CPF formatado
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -2273,7 +2465,7 @@
                         <div class="col-md-8">
                             <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${s.nome_completo || '-'}</strong></span></div>
                             <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
-                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf ? formatarCPF(s.cpf) : '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Endereço do Suspeito</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
@@ -2355,8 +2547,7 @@
         }
 
         // ============================================================
-        // EDITAR MANDADO
-        // [v1.8.1] adiciona contadores nos textareas (m4)
+        // EDITAR MANDADO — [v1.8.3] CPF formatado
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -2400,7 +2591,7 @@
                     : `<div class="mandado-foto-placeholder"><i class="fas fa-user-secret"></i><span>Sem foto cadastrada</span></div>`;
 
                 const nomeSuspeito = suspeito?.nome_completo || 'Não vinculado';
-                const cpfSuspeito = suspeito?.cpf || '-';
+                const cpfSuspeitoFmt = suspeito?.cpf ? formatarCPF(suspeito.cpf) : '-';
                 const statusSuspeito = suspeito?.status_atual || '-';
 
                 body.innerHTML = `
@@ -2415,7 +2606,7 @@
                             </div>
                             <div class="col-md-8">
                                 <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${nomeSuspeito}</strong></span></div>
-                                <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${cpfSuspeito}</span></div>
+                                <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${cpfSuspeitoFmt}</span></div>
                                 <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${statusSuspeito}</span></div>
                             </div>
                         </div>
@@ -2719,7 +2910,6 @@
             } catch (e) { showToast('error', 'Erro ao buscar CEP', 'Tente novamente.'); }
         }
 
-        // [v1.8.2] M3: usa helper genérico com fallback Photon
         async function buscarCoordenadasMandado(event) {
             const btn = event ? event.currentTarget || event.target : null;
             const originalHTML = btn ? btn.innerHTML : '';
@@ -2780,7 +2970,6 @@
             mandadoCumprindoId = null;
         }
 
-        // [v1.8.1] C3: preserva observações anteriores
         async function confirmarCumprimento() {
             if (!mandadoCumprindoId) return;
             const btn = document.getElementById('btnConfirmarCumprir');
@@ -2831,7 +3020,7 @@
         }
 
         // ============================================================
-        // VALIDAÇÃO BNMP
+        // VALIDAÇÃO BNMP — [v1.8.3] CPF formatado
         // ============================================================
         async function abrirValidacaoBNMP(id) {
             mandadoValidandoId = id;
@@ -2885,7 +3074,7 @@
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">Número</span><span class="valor"><strong>${m.numero_mandado || '-'}</strong></span></div></div>
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">Tipo</span><span class="valor">${traduzirTipo(m.tipo_mandado)}</span></div></div>
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">Suspeito</span><span class="valor">${s.nome_completo || '-'}</span></div></div>
-                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf || '-'}</span></div></div>
+                        <div class="col-md-6"><div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf ? formatarCPF(s.cpf) : '-'}</span></div></div>
                         ${m.processo_numero ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Nº do Processo</span><span class="valor">${m.processo_numero}</span></div></div>` : ''}
                     </div>
 
@@ -2928,7 +3117,7 @@
 
         function abrirPortalBNMP(cpf) {
             window.open('https://portalbnmp.pdpj.jus.br/#/pesquisa-peca', '_blank', 'noopener,noreferrer');
-            showToast('info', 'Portal aberto', cpf ? `Busque pelo CPF: <strong>${cpf}</strong>` : 'Faça login e busque.', 7000);
+            showToast('info', 'Portal aberto', cpf ? `Busque pelo CPF: <strong>${formatarCPF(cpf)}</strong>` : 'Faça login e busque.', 7000);
         }
 
         async function salvarValidacaoBNMP() {
@@ -2981,7 +3170,6 @@
 
         // ============================================================
         // GEOCODIFICAÇÃO (form principal)
-        // [v1.8.2] M3: usa helper genérico com fallback Photon
         // ============================================================
         async function geocodificarEndereco(event) {
             const idSuspeito = document.getElementById('idSuspeito').value;
@@ -3032,14 +3220,12 @@
         }
 
         // ============================================================
-        // TOAST — [v1.8.2] M9: com deduplicação
+        // TOAST — [v1.8.2] com deduplicação
         // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
 
-            // [v1.8.2] M9: deduplicação — se já existe toast com o mesmo título+mensagem,
-            // renova a duração em vez de empilhar
             const assinatura = tipo + '|' + (titulo || '') + '|' + (mensagem || '');
             const existente = container.querySelector(`.toast-ai[data-assinatura="${CSS.escape(assinatura)}"]`);
             if (existente) {
@@ -3125,7 +3311,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.8.2 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.8.4 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
