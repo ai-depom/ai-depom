@@ -1,30 +1,33 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.5.0
-     Data: 18/09/2026 - 07:45
+     Versão: 1.6.0
+     Data: 21/09/2026 - 14:30
      ============================================================
+     ALTERAÇÕES v1.6.0 (21/09/2026 14:30):
+     - ✨ NOVO: Validação de número de processo (padrão CNJ)
+       - Máscara automática: NNNNNNN-DD.AAAA.J.TR.OOOO
+       - Feedback visual em tempo real (vazio / incompleto / válido / erro)
+       - Valida segmento da Justiça (posição 14)
+       - Bloqueia cadastro/edição se < 20 dígitos
+     - ✅ Preservadas TODAS as funcionalidades da v1.5.0
+
      ALTERAÇÕES v1.5.0 (18/09/2026 07:45):
-     - 🔒 SEGURANÇA: lista de mandados migrada para RPC buscar_mandado
-       - sb.rpc('buscar_mandado', { p_termo, p_status, ... })
-       - Fim do erro "column reference id_suspeito is ambiguous"
-       - Filtro "__NAO_VALIDADO__" tratado via parâmetro sentinela
-     - 🐛 FIX: verDetalhes() e abrirValidacaoBNMP() SEM embed
-       - Buscam suspeito separadamente via id_suspeito
-       - Elimina ambiguidade no PostgREST
+     - 🔒 SEGURANÇA: lista migrada para RPC buscar_mandado
+     - 🐛 FIX: verDetalhes() e abrirValidacaoBNMP() sem embed
      - ✅ Preservadas TODAS as funcionalidades da v1.4.4
 
      ALTERAÇÕES v1.4.4 (18/09/2026 03:30):
-     - ✨ NOVO: Foto do suspeito também no modal de EDIÇÃO (lápis)
+     - ✨ NOVO: Foto do suspeito no modal de EDIÇÃO
 
      ALTERAÇÕES v1.4.3 (18/09/2026 03:00):
-     - ✨ NOVO: Foto do suspeito vinculado em Detalhes do Mandado
+     - ✨ NOVO: Foto do suspeito em Detalhes do Mandado
 
      ALTERAÇÕES v1.4.2 (18/09/2026 02:00):
      - ✨ NOVO: Endereço de cumprimento no modal de edição
 
      ALTERAÇÕES v1.4.1 (18/09/2026 01:00):
-     - ✨ NOVO: Badge de aviso "X mandados não validados no BNMP"
+     - ✨ NOVO: Badge "X mandados não validados no BNMP"
 
      ALTERAÇÕES v1.4.0 (17/09/2026 22:00):
      - ✨ Validação manual BNMP com ícones por status
@@ -569,6 +572,44 @@
             transform: rotate(90deg);
         }
 
+        /* ============================================================
+           [v1.6.0] VALIDAÇÃO DE NÚMERO DE PROCESSO (CNJ)
+           ============================================================ */
+        .processo-validacao {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 6px;
+            font-size: 11px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .processo-validacao.vazio {
+            color: rgba(0, 255, 136, 0.35);
+            background: rgba(0, 255, 136, 0.02);
+            border: 1px solid transparent;
+        }
+        .processo-validacao.incompleto {
+            color: #ffc107;
+            background: rgba(255, 193, 7, 0.06);
+            border: 1px solid rgba(255, 193, 7, 0.25);
+        }
+        .processo-validacao.valido {
+            color: #00ff88;
+            background: rgba(0, 255, 136, 0.06);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+        }
+        .processo-validacao.erro {
+            color: #dc3545;
+            background: rgba(220, 53, 69, 0.08);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+        .processo-validacao i {
+            font-size: 12px;
+        }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -726,8 +767,19 @@
                         <input type="text" class="form-control" id="varaTribunal" placeholder="Ex: 1ª Vara Criminal">
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Número do Processo</label>
-                        <input type="text" class="form-control" id="processoNumero" maxlength="70" placeholder="Ex: 0001234-56.2026.8.05.0001">
+                        <label class="form-label">
+                            <i class="fas fa-hashtag me-1"></i>Número do Processo (CNJ)
+                            <span style="color: rgba(0, 255, 136, 0.4); text-transform: none; font-weight: 400; font-size: 11px; margin-left: 8px;">
+                                formato: NNNNNNN-DD.AAAA.J.TR.OOOO
+                            </span>
+                        </label>
+                        <input type="text" class="form-control" id="processoNumero" maxlength="25"
+                               placeholder="Ex: 0518042-32.2017.8.05.0001"
+                               oninput="mascaraProcesso(this); validarProcessoNumero(this, 'processoNumeroFeedback')"
+                               onblur="validarProcessoNumero(this, 'processoNumeroFeedback')">
+                        <small class="processo-validacao vazio" id="processoNumeroFeedback">
+                            <i class="fas fa-info-circle"></i> Digite o número do processo (20 dígitos)
+                        </small>
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">Data de Emissão *</label>
@@ -818,7 +870,7 @@
 
                 <div class="row mt-4">
                     <div class="col-md-12 text-end">
-                        <button type="reset" class="btn-outline-gold me-2" onclick="resetFormulario()">
+                        <button type="reset" class="btn-outline-gold me-2" onclick="setTimeout(resetFormulario, 0)">
                             <i class="fas fa-times me-2"></i>CANCELAR
                         </button>
                         <button type="submit" class="btn-gold" id="btnCadastrar">
@@ -1032,10 +1084,71 @@
         };
 
         // ============================================================
+        // [v1.6.0] VALIDAÇÃO E MÁSCARA DE NÚMERO DE PROCESSO (CNJ)
+        // ============================================================
+        // Formato CNJ: NNNNNNN-DD.AAAA.J.TR.OOOO (20 dígitos)
+        // ============================================================
+
+        function mascaraProcesso(input) {
+            let v = String(input.value || '').replace(/\D/g, '').slice(0, 20);
+            let out = '';
+            if (v.length > 0)  out += v.slice(0, 7);
+            if (v.length > 7)  out += '-' + v.slice(7, 9);
+            if (v.length > 9)  out += '.' + v.slice(9, 13);
+            if (v.length > 13) out += '.' + v.slice(13, 14);
+            if (v.length > 14) out += '.' + v.slice(14, 16);
+            if (v.length > 16) out += '.' + v.slice(16, 20);
+            input.value = out;
+        }
+
+        function validarProcessoNumero(input, feedbackId) {
+            const feedback = document.getElementById(feedbackId);
+            if (!feedback) return { valido: false, digitos: 0 };
+
+            const limpo = String(input.value || '').replace(/\D/g, '');
+            const digitos = limpo.length;
+
+            // Vazio
+            if (digitos === 0) {
+                feedback.innerHTML = '<i class="fas fa-info-circle"></i> Digite o número do processo (20 dígitos)';
+                feedback.className = 'processo-validacao vazio';
+                return { valido: false, digitos: 0 };
+            }
+
+            // Menos de 20
+            if (digitos < 20) {
+                feedback.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Faltam ${20 - digitos} dígito(s) — atual: ${digitos}/20`;
+                feedback.className = 'processo-validacao incompleto';
+                return { valido: false, digitos };
+            }
+
+            // Mais de 20 (não deveria acontecer por causa do maxlength, mas garantimos)
+            if (digitos > 20) {
+                feedback.innerHTML = `<i class="fas fa-times-circle"></i> Excesso de dígitos (${digitos}/20) — remova o sufixo`;
+                feedback.className = 'processo-validacao erro';
+                return { valido: false, digitos };
+            }
+
+            // Exatamente 20 — valida segmento da Justiça
+            const ramo = limpo[13];
+            const ramosValidos = ['1', '3', '4', '5', '6', '7', '8', '9'];
+            if (!ramosValidos.includes(ramo)) {
+                feedback.innerHTML = `<i class="fas fa-times-circle"></i> Segmento da Justiça "${ramo}" inválido (posição 14)`;
+                feedback.className = 'processo-validacao erro';
+                return { valido: false, digitos };
+            }
+
+            // Válido
+            feedback.innerHTML = '<i class="fas fa-check-circle"></i> ✅ Número válido — formato CNJ (20 dígitos)';
+            feedback.className = 'processo-validacao valido';
+            return { valido: true, digitos };
+        }
+
+        // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.5.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.6.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1274,6 +1387,20 @@
                 }
             }
 
+            // [v1.6.0] Validação do número do processo (se preenchido)
+            const processoNumeroEl = document.getElementById('processoNumero');
+            const processoValor = (processoNumeroEl?.value || '').trim();
+            if (processoValor) {
+                const limpo = processoValor.replace(/\D/g, '');
+                if (limpo.length !== 20) {
+                    showToast('warning', 'Número do processo inválido',
+                        `O número do processo deve ter <strong>exatamente 20 dígitos</strong>. Atual: <strong>${limpo.length}</strong>`, 7000);
+                    processoNumeroEl.focus();
+                    processoNumeroEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return;
+                }
+            }
+
             const descricaoValor = document.getElementById('descricao').value.trim();
 
             const btn = document.getElementById('btnCadastrar');
@@ -1290,7 +1417,7 @@
                     juiz_nome: document.getElementById('juizNome').value.trim(),
                     juiz_matricula: document.getElementById('juizMatricula').value.trim() || null,
                     vara_tribunal: document.getElementById('varaTribunal').value.trim(),
-                    processo_numero: document.getElementById('processoNumero').value.trim() || null,
+                    processo_numero: processoValor || null,
                     data_emissao: document.getElementById('dataEmissao').value,
                     data_validade: document.getElementById('dataValidade').value || null,
                     latitude: parseFloat(document.getElementById('latitude').value) || null,
@@ -1343,6 +1470,13 @@
             document.getElementById('counterDescricao').className = 'counter';
             document.getElementById('counterObservacoes').textContent = '0';
             document.getElementById('counterObservacoes').className = 'counter';
+
+            // [v1.6.0] Resetar validação do processo
+            const feedback = document.getElementById('processoNumeroFeedback');
+            if (feedback) {
+                feedback.innerHTML = '<i class="fas fa-info-circle"></i> Digite o número do processo (20 dígitos)';
+                feedback.className = 'processo-validacao vazio';
+            }
 
             aplicarPermissaoCamposLivres();
 
@@ -1457,7 +1591,7 @@
         }
 
         // ============================================================
-        // CARREGAR MANDADOS  [v1.5.0 — via RPC buscar_mandado]
+        // CARREGAR MANDADOS — via RPC buscar_mandado
         // ============================================================
         async function carregarMandados() {
             const container = document.getElementById('listaMandados');
@@ -1477,7 +1611,6 @@
                     filtroNaoValidadosAtivo = false;
                 }
 
-                // [v1.5.0] RPC — termo/vínculo vai como PARÂMETRO, sem ambiguidade
                 const p_bnmp_status = filtroBnmp === '__NAO_VALIDADO__'
                     ? '__NAO_VALIDADO__'
                     : (filtroBnmp || null);
@@ -1498,7 +1631,6 @@
 
                 const totalGeral = (rows && rows.length > 0) ? Number(rows[0].total_count) : 0;
 
-                // Limpa o total_count de cada linha (não é campo da tabela)
                 const data = (rows || []).map(r => {
                     const { total_count, ...rest } = r;
                     return rest;
@@ -1573,7 +1705,7 @@
         }
 
         // ============================================================
-        // VER DETALHES  [v1.5.0 — SEM embed]
+        // VER DETALHES — SEM embed
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -1582,7 +1714,6 @@
             body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando...</div>';
 
             try {
-                // [v1.5.0] Sem embed — evita ambiguidade id_suspeito
                 const { data: m, error } = await window.supabaseClient
                     .from('mandado_prisao')
                     .select('*')
@@ -1592,7 +1723,6 @@
                 if (error) throw error;
                 if (!m) throw new Error('Mandado não encontrado');
 
-                // Busca o suspeito separadamente
                 let s = {};
                 if (m.id_suspeito) {
                     const { data: sData } = await window.supabaseClient
@@ -1869,8 +1999,16 @@
                                 <input type="text" class="form-control" id="editVara" value="${m.vara_tribunal || ''}" required>
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Processo</label>
-                                <input type="text" class="form-control" id="editProcesso" maxlength="${LIMITE_PROCESSO_NUMERO}" value="${m.processo_numero || ''}">
+                                <label class="form-label">
+                                    <i class="fas fa-hashtag me-1"></i>Processo (CNJ)
+                                </label>
+                                <input type="text" class="form-control" id="editProcesso" maxlength="25"
+                                       value="${m.processo_numero || ''}"
+                                       oninput="mascaraProcesso(this); validarProcessoNumero(this, 'editProcessoFeedback')"
+                                       onblur="validarProcessoNumero(this, 'editProcessoFeedback')">
+                                <small class="processo-validacao vazio" id="editProcessoFeedback">
+                                    <i class="fas fa-info-circle"></i> Digite o número do processo (20 dígitos)
+                                </small>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Data de Emissão *</label>
@@ -2003,6 +2141,15 @@
                 document.getElementById('formEdicao').addEventListener('submit', salvarEdicao);
                 aplicarPermissaoCamposLivres('edit');
 
+                // [v1.6.0] Roda validação inicial do processo ao abrir
+                setTimeout(() => {
+                    const inputEdit = document.getElementById('editProcesso');
+                    if (inputEdit && inputEdit.value) {
+                        mascaraProcesso(inputEdit);
+                        validarProcessoNumero(inputEdit, 'editProcessoFeedback');
+                    }
+                }, 100);
+
             } catch (error) {
                 console.error('❌ Erro:', error);
                 body.innerHTML = `<div class="text-center py-4" style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Erro: ${error.message}</div>`;
@@ -2016,6 +2163,21 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>SALVANDO...';
 
             try {
+                // [v1.6.0] Validação do número do processo (se preenchido)
+                const editProcessoEl = document.getElementById('editProcesso');
+                const editProcessoValor = (editProcessoEl?.value || '').trim();
+                if (editProcessoValor) {
+                    const limpo = editProcessoValor.replace(/\D/g, '');
+                    if (limpo.length !== 20) {
+                        showToast('warning', 'Número do processo inválido',
+                            `O número do processo deve ter <strong>exatamente 20 dígitos</strong>. Atual: <strong>${limpo.length}</strong>`, 7000);
+                        editProcessoEl.focus();
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                        return;
+                    }
+                }
+
                 const dados = {
                     numero_mandado: document.getElementById('editNumero').value.trim(),
                     tipo_mandado: document.getElementById('editTipo').value,
@@ -2023,7 +2185,7 @@
                     prioridade: document.getElementById('editPrioridade').value,
                     juiz_nome: document.getElementById('editJuiz').value.trim(),
                     vara_tribunal: document.getElementById('editVara').value.trim(),
-                    processo_numero: document.getElementById('editProcesso').value.trim() || null,
+                    processo_numero: editProcessoValor || null,
                     data_emissao: document.getElementById('editDataEmissao').value,
                     data_validade: document.getElementById('editDataValidade').value || null,
                     cep: document.getElementById('editCep').value.trim() || null,
@@ -2217,7 +2379,7 @@
         }
 
         // ============================================================
-        // VALIDAÇÃO BNMP  [v1.5.0 — SEM embed]
+        // VALIDAÇÃO BNMP — SEM embed
         // ============================================================
         async function abrirValidacaoBNMP(id) {
             mandadoValidandoId = id;
@@ -2227,7 +2389,6 @@
             body.innerHTML = '<div class="text-center py-4" style="color: rgba(0, 255, 136, 0.3);"><i class="fas fa-spinner fa-spin"></i> Carregando dados do mandado...</div>';
 
             try {
-                // [v1.5.0] Sem embed — evita ambiguidade id_suspeito
                 const { data: m, error } = await window.supabaseClient
                     .from('mandado_prisao')
                     .select('*')
@@ -2569,7 +2730,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.5.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.6.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
