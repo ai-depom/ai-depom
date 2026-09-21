@@ -2,8 +2,8 @@
    AI-DEPOM - TEMPORIZADOR DE INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-lock.js
-   Versao: 1.2.3
-   Data: 16/09/2026 - 14:30
+   Versao: 2.0.0
+   Data: 21/09/2026 - 13:00
    Autor: AI-DEPOM Team
    ============================================
    REGRA DE OURO:
@@ -14,6 +14,22 @@
    5. Todo botão DEVE ter handler real
    6. Todo módulo DEVE estar conectado
    7. Nenhuma linha deve ser removida sem substituição
+
+   ALTERAÇÕES v2.0.0 (21/09/2026 13:00):
+   - 🚨 CORRIGIDO (Furo 1): F5 / Ctrl+R / Ctrl+Shift+R / Ctrl+F5
+     agora SÃO BLOQUEADOS quando a tela está bloqueada
+   - 🚨 CORRIGIDO (Furo 2): beforeunload avisa ao tentar recarregar
+   - 🚨 CORRIGIDO (Furo 3): MutationObserver detecta remoção COMPLETA
+     do nó DOM (não só da classe .show) e recria o overlay
+   - ✨ NOVO: bloqueio de F12 / Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+U
+     quando a tela está bloqueada (anti-DevTools)
+   - ✨ NOVO: sincronização entre abas via storage event
+     - Se uma aba bloqueia, TODAS bloqueiam
+     - Se uma aba desbloqueia, TODAS desbloqueiam
+   - ✨ NOVO: guarda ativa agora usa `getElementById` a cada tick
+     (imune a nó detached)
+   - ✅ PRESERVADO: todas as proteções da v1.2.3
+     (persistência, anti-autofill, classList hook, relógio HH:MM:SS)
 
    ALTERAÇÕES v1.2.3 (16/09/2026 14:30):
    - 🐛 CORRIGIDO: relógio do lock não exibia a hora do bloqueio
@@ -60,11 +76,14 @@
     // Chaves do localStorage
     const LOCK_KEY = 'aidepom_locked';
     const LOCK_AT_KEY = 'aidepom_locked_at';
+    const LOCK_SIGNAL_KEY = 'aidepom_lock_signal';
+    const UNLOCK_SIGNAL_KEY = 'aidepom_unlock_signal';
 
     let timeoutId = null;
     let warningId = null;
     let countdownId = null;
     let lockGuardId = null;
+    let domObserver = null;
     let ultimaAtividade = Date.now();
     let bloqueado = false;
     let segundosRestantes = 0;
@@ -396,7 +415,7 @@
             const tempoDecorrido = agora - lockedAt;
 
             if (tempoDecorrido > LOCK_MAX_AGE_MS || lockedAt === 0) {
-                console.warn('🛡️ [v1.2.3] Lock expirado (>24h). Forçando logout.');
+                console.warn('🛡️ [v2.0.0] Lock expirado (>24h). Forçando logout.');
                 try {
                     localStorage.removeItem(LOCK_KEY);
                     localStorage.removeItem(LOCK_AT_KEY);
@@ -409,7 +428,7 @@
                 return false;
             }
 
-            console.log('🔒 [v1.2.3] Lock pendente detectado. Re-aplicando...');
+            console.log('🔒 [v2.0.0] Lock pendente detectado. Re-aplicando...');
             console.log('⏱️ Bloqueado há', Math.round(tempoDecorrido / 1000), 'segundos');
             return true;
 
@@ -431,6 +450,101 @@
         }
         setTimeout(() => aguardarSupabaseClient(callback, tentativas + 1), 100);
     }
+
+    // ============================================
+    // [v2.0.0] PROTEÇÃO CONTRA TECLAS DE RELOAD
+    // ============================================
+    function bloquearTeclasQuandoBloqueado() {
+        document.addEventListener('keydown', function(e) {
+            if (!bloqueado) return;
+
+            // F5
+            if (e.key === 'F5' || e.keyCode === 116) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.warn('🛡️ [v2.0.0] F5 bloqueado (tela bloqueada)');
+                return false;
+            }
+
+            // Ctrl+F5 (hard reload)
+            if (e.ctrlKey && e.key === 'F5') {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+
+            // Ctrl+R / Cmd+R
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'r' || e.key === 'R')) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.warn('🛡️ [v2.0.0] Ctrl+R bloqueado (tela bloqueada)');
+                return false;
+            }
+
+            // Ctrl+Shift+R / Cmd+Shift+R (hard reload)
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.warn('🛡️ [v2.0.0] Ctrl+Shift+R bloqueado (tela bloqueada)');
+                return false;
+            }
+
+            // F12 / Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+U (anti-DevTools)
+            if (
+                e.key === 'F12' ||
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && ['I', 'i', 'J', 'j'].includes(e.key)) ||
+                ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U'))
+            ) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.warn('🛡️ [v2.0.0] DevTools bloqueado (tela bloqueada)');
+                return false;
+            }
+        }, true); // ← fase de CAPTURA
+    }
+
+    // ============================================
+    // [v2.0.0] AVISO AO RECARREGAR BLOQUEADO
+    // ============================================
+    function registrarBeforeUnload() {
+        window.addEventListener('beforeunload', function(e) {
+            if (bloqueado) {
+                e.preventDefault();
+                e.returnValue = 'A sessão está bloqueada. Recarregar NÃO irá desbloquear.';
+                return e.returnValue;
+            }
+        });
+    }
+
+    // ============================================
+    // [v2.0.0] MUTATION OBSERVER (detecta remoção do nó DOM)
+    // ============================================
+    function registrarDomObserver() {
+        if (domObserver) return;
+
+        domObserver = new MutationObserver(function() {
+            if (!bloqueado) return;
+            const overlay = document.getElementById('lockScreen');
+            if (!overlay) {
+                console.warn('🛡️ [v2.0.0] Overlay REMOVIDO do DOM. Recriando...');
+                criarElementos();
+                const novo = document.getElementById('lockScreen');
+                if (novo) novo.classList.add('show');
+                // Re-bind dos handlers
+                rebindHandlersAposRecriar();
+            } else if (!overlay.classList.contains('show')) {
+                console.warn('🛡️ [v2.0.0] Classe .show removida. Re-aplicando...');
+                overlay.classList.add('show');
+            }
+        });
+
+        domObserver.observe(document.body, { childList: true, subtree: true });
+    }
+
+    // Placeholder — será redefinido dentro do init()
+    let rebindHandlersAposRecriar = function() {
+        console.warn('⚠️ Handlers ainda não foram bindados (init não rodou).');
+    };
 
     // ============================================
     // INICIALIZACAO
@@ -460,11 +574,11 @@
         // ============================================
         const _originalRemove = DOMTokenList.prototype.remove;
         const _originalToggle = DOMTokenList.prototype.toggle;
+        const _originalAdd = DOMTokenList.prototype.add;
 
         DOMTokenList.prototype.remove = function(...args) {
             if (this === lockScreen.classList && args.includes('show') && bloqueado) {
-                console.warn('🛡️ [lock] Tentativa de remover .show bloqueada (bloqueado=true)');
-                console.trace('Origem:');
+                console.warn('🛡️ [lock] Tentativa de remover .show bloqueada');
                 return;
             }
             return _originalRemove.apply(this, args);
@@ -479,14 +593,27 @@
         };
 
         // ============================================
-        // 🛡️ GUARDA ATIVA: re-aplica o lock se removido
+        // 🛡️ GUARDA ATIVA (re-query a cada tick)
         // ============================================
         function ativarGuarda() {
             if (lockGuardId) return;
             lockGuardId = setInterval(() => {
-                if (bloqueado && !lockScreen.classList.contains('show')) {
-                    console.warn('🛡️ [guarda] Lock removido indevidamente. Re-aplicando...');
-                    lockScreen.classList.add('show');
+                if (!bloqueado) return;
+
+                // Re-query SEMPRE (imune a nó detached)
+                const overlay = document.getElementById('lockScreen');
+
+                if (!overlay) {
+                    console.warn('🛡️ [guarda] Overlay ausente. Recriando...');
+                    criarElementos();
+                    const novo = document.getElementById('lockScreen');
+                    if (novo) novo.classList.add('show');
+                    return;
+                }
+
+                if (!overlay.classList.contains('show')) {
+                    console.warn('🛡️ [guarda] Classe .show removida. Re-aplicando...');
+                    overlay.classList.add('show');
                 }
             }, 500);
         }
@@ -512,7 +639,7 @@
             if (lockSenha.hasAttribute('readonly')) {
                 lockSenha.removeAttribute('readonly');
                 lockSenha.placeholder = 'Digite sua senha';
-                console.log('🔓 [v1.2.3] readonly removido, pode digitar');
+                console.log('🔓 [v2.0.0] readonly removido, pode digitar');
             }
         });
 
@@ -600,7 +727,9 @@
             try {
                 localStorage.setItem(LOCK_KEY, 'true');
                 localStorage.setItem(LOCK_AT_KEY, Date.now().toString());
-                console.log('🛡️ [v1.2.3] Estado de bloqueio persistido');
+                console.log('🛡️ [v2.0.0] Estado de bloqueio persistido');
+                // [v2.0.0] Sinaliza para outras abas
+                localStorage.setItem(LOCK_SIGNAL_KEY, Date.now().toString());
             } catch (e) {
                 console.warn('⚠️ Não foi possível persistir lock:', e);
             }
@@ -619,7 +748,7 @@
                 console.warn('Erro ao carregar dados do usuário:', e);
             }
 
-            // 🕐 [v1.2.3] CORREÇÃO: Preenche o relógio com a hora do bloqueio
+            // Preenche o relógio com a hora do bloqueio
             try {
                 const agora = new Date();
                 lockTime.textContent = agora.toLocaleTimeString('pt-BR', {
@@ -655,14 +784,14 @@
             lockError.textContent = '';
 
             if (lockSenha.hasAttribute('readonly')) {
-                console.warn('🛡️ [v1.2.3] Tentativa de desbloquear sem clicar no campo');
+                console.warn('🛡️ [v2.0.0] Tentativa de desbloquear sem clicar no campo');
                 lockError.textContent = 'Clique no campo de senha e digite sua senha.';
                 lockError.classList.add('show');
                 return;
             }
 
             if (!senhaDigitadaPeloUsuario) {
-                console.warn('🛡️ [v1.2.3] Tentativa de desbloquear sem digitar (autofill?)');
+                console.warn('🛡️ [v2.0.0] Tentativa de desbloquear sem digitar (autofill?)');
                 lockError.textContent = 'Digite sua senha manualmente.';
                 lockError.classList.add('show');
                 lockSenha.value = '';
@@ -734,7 +863,9 @@
                 try {
                     localStorage.removeItem(LOCK_KEY);
                     localStorage.removeItem(LOCK_AT_KEY);
-                    console.log('🛡️ [v1.2.3] Estado de bloqueio limpo');
+                    // [v2.0.0] Sinaliza para outras abas desbloquearem
+                    localStorage.setItem(UNLOCK_SIGNAL_KEY, Date.now().toString());
+                    console.log('🛡️ [v2.0.0] Estado de bloqueio limpo');
                 } catch (e) {
                     console.warn('⚠️ Erro ao limpar lock:', e);
                 }
@@ -752,6 +883,50 @@
                 lockBtn.innerHTML = '<i class="fas fa-unlock"></i> DESBLOQUEAR';
             }
         }
+
+        // ============================================
+        // [v2.0.0] Rebind de handlers após recriar overlay
+        // ============================================
+        rebindHandlersAposRecriar = function() {
+            const novoLockScreen = document.getElementById('lockScreen');
+            const novoLockBtn = document.getElementById('lockBtn');
+            const novoLockLogout = document.getElementById('lockLogout');
+            const novoLockSenha = document.getElementById('lockSenha');
+
+            if (novoLockBtn) {
+                novoLockBtn.addEventListener('click', desbloquear);
+            }
+            if (novoLockSenha) {
+                novoLockSenha.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        desbloquear();
+                    }
+                });
+                novoLockSenha.addEventListener('focus', function() {
+                    if (novoLockSenha.hasAttribute('readonly')) {
+                        novoLockSenha.removeAttribute('readonly');
+                        novoLockSenha.placeholder = 'Digite sua senha';
+                    }
+                });
+                novoLockSenha.addEventListener('input', function() {
+                    senhaDigitadaPeloUsuario = true;
+                });
+            }
+            if (novoLockLogout) {
+                novoLockLogout.addEventListener('click', function() {
+                    if (!confirm('Deseja realmente sair do sistema?')) return;
+                    try {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                    } catch (e) {}
+                    window.location.href = '02-login.html';
+                });
+            }
+
+            // Foca no campo
+            if (novoLockSenha) setTimeout(() => novoLockSenha.focus(), 100);
+        };
 
         // ============================================
         // EVENT LISTENERS
@@ -816,12 +991,37 @@
         });
 
         // ============================================
+        // [v2.0.0] SINCRONIZAÇÃO ENTRE ABAS
+        // ============================================
+        window.addEventListener('storage', function(e) {
+            if (e.key === LOCK_SIGNAL_KEY && e.newValue && !bloqueado) {
+                console.log('🔒 [v2.0.0] Outra aba bloqueou. Sincronizando...');
+                bloquearTela();
+            }
+            if (e.key === UNLOCK_SIGNAL_KEY && e.newValue && bloqueado) {
+                console.log('🔓 [v2.0.0] Outra aba desbloqueou. Sincronizando...');
+                bloqueado = false;
+                desativarGuarda();
+                lockScreen.classList.remove('show');
+                resetarFlagDigitacao();
+                resetarTimers();
+            }
+        });
+
+        // ============================================
+        // [v2.0.0] Registra proteções adicionais
+        // ============================================
+        bloquearTeclasQuandoBloqueado();
+        registrarBeforeUnload();
+        registrarDomObserver();
+
+        // ============================================
         // Inicialização: verifica lock pendente (F5)
         // ============================================
         const lockPendente = verificarLockPendente();
 
         if (lockPendente) {
-            console.log('🛡️ [v1.2.3] Re-aplicando bloqueio após reload...');
+            console.log('🛡️ [v2.0.0] Re-aplicando bloqueio após reload...');
             bloquearTela();
         } else {
             resetarTimers();
@@ -829,7 +1029,7 @@
 
         window.__AIDEPOM_INACTIVITY_LOCK_INIT__ = true;
 
-        console.log('✅ Temporizador de inatividade ativo (5 minutos) [v1.2.3]');
+        console.log('✅ Temporizador de inatividade ativo (5 minutos) [v2.0.0]');
     }
 
     function bootstrap() {
