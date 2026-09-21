@@ -1,18 +1,39 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.8.0
-     Data: 21/09/2026 - 22:30
+     Versão: 1.8.2
+     Data: 21/09/2026 - 23:45
      ============================================================
+     ALTERAÇÕES v1.8.2 (21/09/2026 23:45):
+     - ✨ NOVO (M4): Campo de busca textual na lista de mandados
+       - Busca por número, nome do suspeito, CPF, juiz ou processo
+       - Usa p_termo da RPC buscar_mandado
+       - No modo "Não validados" filtra client-side também
+     - 🔧 MELHORIA (M3): Geocodificação mais confiável
+       - Nominatim com parâmetro `email` (política de uso)
+       - Fallback automático para Photon (Komoot) se falhar
+       - Removido header User-Agent (proibido em browsers)
+     - 🔧 MELHORIA (M9): Deduplicação de toasts
+       - Toasts idênticos não empilham mais
+       - Toast existente tem sua duração renovada
+
+     ALTERAÇÕES v1.8.1 (21/09/2026 23:15):
+     - 🐛 FIX (C1): @media print isola apenas o modal aberto
+     - 🐛 FIX (C2): imprimirDetalhes/imprimirMandado aguardam imagens
+     - 🐛 FIX (C3): confirmarCumprimento preserva observações anteriores
+     - 🐛 FIX (C4): abrirTodosNaoValidados trata bloqueio de pop-up
+     - 🐛 FIX (C6): filtro "Não validados" tem fallback client-side
+     - 🐛 FIX (C7): aviso claro quando colunas DataJud estão ausentes
+     - 🐛 FIX (M1): removido preventDefault do F11
+     - 🐛 FIX (M2): validação visual de coordenadas inválidas
+     - 🐛 FIX (M5): datajud_movimentos validado antes de filtrar
+     - 🐛 FIX (M8): comparação lowercase do status DataJud
+     - 🐛 FIX (m4): contadores de caracteres no modal de edição
+
      ALTERAÇÕES v1.8.0 (21/09/2026 22:30):
-     - ✨ NOVO: Coluna "DataJud" na tabela de mandados
-       - Badge colorido com status (OK/Sigiloso/Não achado/Erro/Pendente)
-       - Tooltip com detalhes ao passar o mouse
-     - ✨ NOVO: Filtro "Status DataJud" na barra de filtros
-       - Pendente / Encontrado / Sigiloso / Não encontrado / Erro
-     - ✨ NOVO: Seção "DATAJUD (CNJ)" no modal de Detalhes
-       - Status, tribunal, classe, órgão, assuntos, movimentos relevantes
-     - ✅ Preservadas TODAS as funcionalidades da v1.7.0
+     - ✨ Coluna "DataJud" na tabela de mandados
+     - ✨ Filtro "Status DataJud" na barra de filtros
+     - ✨ Seção "DATAJUD (CNJ)" no modal de Detalhes
 
      ALTERAÇÕES v1.7.0 (21/09/2026 15:30):
      - ✨ Validação de tribunal (ramo + código)
@@ -646,6 +667,42 @@
             border: 1px dashed var(--border-color);
         }
 
+        /* ============================================================
+           [v1.8.1] IMPRESSÃO — isola apenas o modal aberto (C1)
+           ============================================================ */
+        @media print {
+            body { background: #fff !important; color: #000 !important; }
+            body > *:not(.modal-custom.open) { display: none !important; }
+            .modal-custom.open {
+                position: static !important;
+                display: block !important;
+                background: #fff !important;
+                padding: 0 !important;
+                backdrop-filter: none !important;
+            }
+            .modal-custom.open .modal-custom-content {
+                box-shadow: none !important;
+                border: 1px solid #ccc !important;
+                max-width: 100% !important;
+                max-height: none !important;
+                background: #fff !important;
+                color: #000 !important;
+                overflow: visible !important;
+            }
+            .modal-custom.open .modal-custom-header,
+            .modal-custom.open .modal-custom-footer,
+            .modal-custom.open .btn-icon { display: none !important; }
+            .modal-custom.open .modal-custom-body { color: #000 !important; }
+            .modal-custom.open .detalhe-campo .label { color: #666 !important; }
+            .modal-custom.open .detalhe-campo .valor { color: #000 !important; }
+            .modal-custom.open .section-title {
+                color: #000 !important;
+                border-color: #ccc !important;
+            }
+            .modal-custom.open .detalhe-campo { border-bottom-color: #eee !important; }
+            .toast-container, .foto-lightbox { display: none !important; }
+        }
+
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -943,6 +1000,23 @@
 
             <div id="avisoNaoValidados"></div>
 
+            <!-- [v1.8.2] M4: Busca textual -->
+            <div class="row g-3 mb-2">
+                <div class="col-md-12">
+                    <div class="input-group">
+                        <span class="input-group-text" style="background:rgba(0,0,0,0.3); border:1px solid var(--border-color); color:rgba(0,255,136,0.3);">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="buscaMandadoLista"
+                               placeholder="Buscar por número, nome, CPF, juiz ou processo..."
+                               onkeydown="if(event.key==='Enter'){event.preventDefault();carregarMandados();}">
+                        <button class="btn-outline-gold" type="button" onclick="limparBuscaMandado()" title="Limpar busca" style="border-radius:0;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="row g-3 mb-3">
                 <div class="col-md-2">
                     <select class="form-select" id="filtroStatusLista">
@@ -1130,6 +1204,12 @@
         let naoValidadosCache = [];
         let filtroNaoValidadosAtivo = false;
 
+        // [v1.8.1] Flag de loading para evitar cliques duplos
+        let _carregandoLista = false;
+
+        // [v1.8.1] Flag: colunas DataJud ausentes?
+        let _datajudIndisponivel = false;
+
         const IDS_PERFIS_EDITORES = [1, 2, 3, 4];
         const NOMES_PERFIS_EDITORES = [
             'ADMINISTRADOR_MASTER', 'ADMINISTRADOR', 'DELEGADO', 'INVESTIGADOR',
@@ -1250,8 +1330,15 @@
 
         // ============================================================
         // [v1.8.0] BADGE DE STATUS DATAJUD
+        // [v1.8.1] aceita flag de indisponibilidade (C7)
         // ============================================================
-        function gerarBadgeDataJud(statusConsulta, sigilosoManual, tribunal) {
+        function gerarBadgeDataJud(statusConsulta, sigilosoManual, tribunal, indisponivel) {
+            if (indisponivel) {
+                return `<span class="badge-datajud erro_tecnico" title="Colunas DataJud ausentes no banco — verifique a migration">
+                            <i class="fas fa-database"></i> N/D
+                        </span>`;
+            }
+
             if (sigilosoManual === true) {
                 return `<span class="badge-datajud sigiloso_manual" title="Marcado manualmente como sigiloso">
                             <i class="fas fa-lock"></i> Sigiloso
@@ -1264,6 +1351,7 @@
                         </span>`;
             }
 
+            const chave = String(statusConsulta).toLowerCase();
             const cfg = {
                 'encontrado':           { icone: 'fa-check-circle',         label: 'OK',          titulo: 'Processo encontrado no DataJud' },
                 'sigiloso_provavel':    { icone: 'fa-lock',                 label: 'Sigiloso',    titulo: 'Provavelmente sigiloso — não indexado no DataJud público' },
@@ -1271,16 +1359,17 @@
                 'erro_tecnico':         { icone: 'fa-exclamation-triangle', label: 'Erro',        titulo: 'Erro técnico ao consultar' },
                 'numero_invalido':      { icone: 'fa-times-circle',         label: 'Nº inválido', titulo: 'Número do processo inválido' },
                 'tribunal_nao_mapeado': { icone: 'fa-question-circle',      label: 'Trib. ?',     titulo: 'Tribunal não reconhecido' }
-            }[statusConsulta] || { icone: 'fa-question', label: statusConsulta, titulo: statusConsulta };
+            }[chave] || { icone: 'fa-question', label: statusConsulta, titulo: statusConsulta };
 
             const trib = tribunal ? ` (${tribunal})` : '';
-            return `<span class="badge-datajud ${statusConsulta}" title="${cfg.titulo}${trib}">
+            return `<span class="badge-datajud ${chave}" title="${cfg.titulo}${trib}">
                         <i class="fas ${cfg.icone}"></i> ${cfg.label}
                     </span>`;
         }
 
         // ============================================================
         // [v1.8.0] CARREGA O STATUS DATAJUD DOS MANDADOS VISÍVEIS
+        // [v1.8.1] detecta colunas ausentes e sinaliza na UI (C7)
         // ============================================================
         async function enriquecerComDataJud(mandados) {
             if (!mandados || mandados.length === 0) return mandados;
@@ -1292,10 +1381,23 @@
                 .in('id_mandado', ids);
 
             if (error) {
-                console.warn('⚠️ Não foi possível buscar status DataJud:', error.message);
-                return mandados;
+                const msg = String(error.message || '').toLowerCase();
+                const colunaAusente = (msg.includes('column') || msg.includes('does not exist'))
+                                      && msg.includes('datajud');
+
+                if (colunaAusente) {
+                    _datajudIndisponivel = true;
+                    console.error('❌ Colunas DataJud ausentes na tabela mandado_prisao');
+                    showToast('warning', 'DataJud indisponível',
+                        'As colunas <strong>datajud_*</strong> não existem na tabela. O status será exibido como <strong>N/D</strong> até que a migration seja aplicada.', 9000);
+                } else {
+                    console.warn('⚠️ Não foi possível buscar status DataJud:', error.message);
+                }
+
+                return mandados.map(m => ({ ...m, _datajud_indisponivel: true }));
             }
 
+            _datajudIndisponivel = false;
             const porId = {};
             (data || []).forEach(r => { porId[r.id_mandado] = r; });
 
@@ -1308,10 +1410,92 @@
         }
 
         // ============================================================
+        // [v1.8.1] AGUARDA TODAS AS IMAGENS DE UM CONTAINER (C2)
+        // ============================================================
+        function aguardarImagens(container) {
+            if (!container) return Promise.resolve();
+            const imgs = Array.from(container.querySelectorAll('img'));
+            if (imgs.length === 0) return Promise.resolve();
+
+            return Promise.all(imgs.map(img => {
+                if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+                return new Promise(resolve => {
+                    img.addEventListener('load', resolve, { once: true });
+                    img.addEventListener('error', resolve, { once: true });
+                    setTimeout(resolve, 3000);
+                });
+            }));
+        }
+
+        // ============================================================
+        // [v1.8.1] ANEXA CONTADOR DE CARACTERES EM TEXTAREA (m4)
+        // ============================================================
+        function anexarContadorTextarea(textareaEl, maxLen) {
+            if (!textareaEl || textareaEl.dataset.contadorAnexado === '1') return;
+            textareaEl.dataset.contadorAnexado = '1';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'char-counter';
+            wrapper.innerHTML = `<span class="hint"></span><span><span class="counter">${textareaEl.value.length}</span> / ${maxLen}</span>`;
+            textareaEl.parentNode.appendChild(wrapper);
+
+            const counterEl = wrapper.querySelector('.counter');
+            const atualizar = () => {
+                const len = textareaEl.value.length;
+                counterEl.textContent = len;
+                counterEl.className = 'counter';
+                if (len > maxLen * 0.9) counterEl.classList.add('danger');
+                else if (len > maxLen * 0.75) counterEl.classList.add('warn');
+            };
+            textareaEl.addEventListener('input', atualizar);
+            atualizar();
+        }
+
+        // ============================================================
+        // [v1.8.2] M3: HELPERS DE GEOCODIFICAÇÃO COM FALLBACK
+        // ============================================================
+        async function _geocodificarNominatim(endereco) {
+            const email = (usuarioAtual?.email || 'aidedom@exemplo.com');
+            const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br`
+                      + `&email=${encodeURIComponent(email)}`
+                      + `&q=${encodeURIComponent(endereco)}`;
+            const resp = await fetch(url, { referrerPolicy: 'strict-origin-when-cross-origin' });
+            if (!resp.ok) throw new Error(`Nominatim HTTP ${resp.status}`);
+            const resultado = await resp.json();
+            if (!Array.isArray(resultado) || resultado.length === 0) throw new Error('Nominatim: vazio');
+            return { lat: parseFloat(resultado[0].lat), lon: parseFloat(resultado[0].lon), fonte: 'Nominatim' };
+        }
+
+        async function _geocodificarPhoton(endereco) {
+            const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(endereco)}&limit=1&lang=pt`;
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error(`Photon HTTP ${resp.status}`);
+            const data = await resp.json();
+            const feat = data?.features?.[0];
+            if (!feat?.geometry?.coordinates) throw new Error('Photon: vazio');
+            const [lon, lat] = feat.geometry.coordinates;
+            return { lat: parseFloat(lat), lon: parseFloat(lon), fonte: 'Photon' };
+        }
+
+        async function geocodificarEnderecoGenerico(endereco) {
+            try {
+                return await _geocodificarNominatim(endereco);
+            } catch (e1) {
+                console.warn('Nominatim falhou, tentando Photon:', e1.message);
+                try {
+                    return await _geocodificarPhoton(endereco);
+                } catch (e2) {
+                    console.warn('Photon também falhou:', e2.message);
+                    throw new Error('Não foi possível localizar o endereço. Tente novamente.');
+                }
+            }
+        }
+
+        // ============================================================
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.8.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.8.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1391,7 +1575,7 @@
         }
 
         // ============================================================
-        // CONTADORES DE CARACTERES
+        // CONTADORES DE CARACTERES (form principal)
         // ============================================================
         function inicializarContadores() {
             const descricao = document.getElementById('descricao');
@@ -1686,23 +1870,61 @@
             carregarMandados();
         }
 
+        // [v1.8.2] M4: limpa o campo de busca textual
+        function limparBuscaMandado() {
+            const input = document.getElementById('buscaMandadoLista');
+            if (!input) return;
+            if (!input.value) return;
+            input.value = '';
+            carregarMandados();
+        }
+
+        // ============================================================
+        // [v1.8.1] ABRIR TODOS NÃO VALIDADOS — trata bloqueio de pop-up (C4)
+        // ============================================================
         function abrirTodosNaoValidados() {
             const limite = Math.min(naoValidadosCache.length, LIMITE_ABAS_BNMP);
             if (limite === 0) return;
+
+            const url = 'https://portalbnmp.pdpj.jus.br/#/pesquisa-peca';
+            let abertas = 0;
+            let bloqueadas = 0;
+
             for (let i = 0; i < limite; i++) {
                 setTimeout(() => {
-                    window.open('https://portalbnmp.pdpj.jus.br/#/pesquisa-peca', '_blank', 'noopener,noreferrer');
+                    const win = window.open(url, '_blank', 'noopener,noreferrer');
+                    if (!win || win.closed || typeof win.closed === 'undefined') {
+                        bloqueadas++;
+                        if (abertas === 0 && bloqueadas === 1) {
+                            showToast('warning', 'Pop-up bloqueado',
+                                'Seu navegador bloqueou a abertura. Libere pop-ups para <strong>este site</strong> e tente de novo.', 9000);
+                        }
+                    } else {
+                        abertas++;
+                    }
                 }, i * 400);
+            }
+
+            if (abertas > 0) {
+                showToast('info', 'Abas abertas', `<strong>${abertas}</strong> aba(s) do portal BNMP foram abertas.`, 5000);
             }
         }
 
         // ============================================================
         // CARREGAR MANDADOS — via RPC + enriquecimento DataJud
+        // [v1.8.1] fallback client-side para __NAO_VALIDADO__ (C6)
+        // [v1.8.2] M4: busca textual (RPC p_termo + filtro client-side)
         // ============================================================
         async function carregarMandados() {
+            if (_carregandoLista) {
+                console.log('⏳ carregarMandados() ignorado — já em andamento');
+                return;
+            }
+            _carregandoLista = true;
+
             const container = document.getElementById('listaMandados');
             const infoContainer = document.getElementById('infoLista');
-            if (!container) return;
+            if (!container) { _carregandoLista = false; return; }
 
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando mandados...</div>';
             infoContainer.innerHTML = '';
@@ -1712,38 +1934,129 @@
                 const tipo = document.getElementById('filtroTipoLista').value || null;
                 const prioridade = document.getElementById('filtroPrioridadeLista').value || null;
                 const filtroBnmp = document.getElementById('filtroBnmpLista').value || null;
-                const filtroDataJud = document.getElementById('filtroDataJudLista')?.value || '';
+                const filtroDataJudRaw = document.getElementById('filtroDataJudLista')?.value || '';
+                const filtroDataJud = String(filtroDataJudRaw).toLowerCase();
+
+                // [v1.8.2] M4: termo de busca textual
+                const termoBusca = (document.getElementById('buscaMandadoLista')?.value || '').trim();
+                const termoNormalizado = termoBusca.toLowerCase();
+                const termoDigitos = termoBusca.replace(/\D/g, '');
 
                 if (filtroBnmp !== '__NAO_VALIDADO__') filtroNaoValidadosAtivo = false;
 
                 const p_bnmp_status = filtroBnmp === '__NAO_VALIDADO__' ? '__NAO_VALIDADO__' : (filtroBnmp || null);
 
-                const { data: rows, error } = await window.supabaseClient.rpc('buscar_mandado', {
-                    p_termo: null, p_status: status, p_tipo_mandado: tipo, p_prioridade: prioridade,
-                    p_bnmp_status: p_bnmp_status, p_data_inicio: null, p_data_fim: null,
-                    p_limit: LIMITE_LISTA, p_offset: 0
-                });
+                let rows = [];
+                let data = [];
+                let totalGeral = 0;
 
-                if (error) throw error;
+                if (p_bnmp_status === '__NAO_VALIDADO__') {
+                    const { data: rawData, error: rawError, count } = await window.supabaseClient
+                        .from('mandado_prisao')
+                        .select(`
+                            id_mandado, numero_mandado, tipo_mandado, status, prioridade,
+                            data_emissao, validacao_bnmp_status, id_suspeito, juiz_nome, processo_numero,
+                            suspeito:suspeito(id_suspeito, nome_completo, cpf)
+                        `, { count: 'exact' })
+                        .eq('deletado', false)
+                        .is('validacao_bnmp_status', null)
+                        .order('id_mandado', { ascending: false })
+                        .limit(LIMITE_LISTA);
 
-                const totalGeral = (rows && rows.length > 0) ? Number(rows[0].total_count) : 0;
-                const data = (rows || []).map(r => { const { total_count, ...rest } = r; return rest; });
+                    if (rawError) throw rawError;
+                    totalGeral = count || 0;
+
+                    data = (rawData || []).map(m => ({
+                        id_mandado: m.id_mandado,
+                        numero_mandado: m.numero_mandado,
+                        tipo_mandado: m.tipo_mandado,
+                        status: m.status,
+                        prioridade: m.prioridade,
+                        data_emissao: m.data_emissao,
+                        validacao_bnmp_status: m.validacao_bnmp_status,
+                        juiz_nome: m.juiz_nome || null,
+                        processo_numero: m.processo_numero || null,
+                        nome_suspeito: m.suspeito?.nome_completo || null,
+                        cpf_suspeito: m.suspeito?.cpf || null
+                    }));
+
+                    // [v1.8.2] M4: filtro textual client-side (fallback path)
+                    if (termoBusca) {
+                        data = data.filter(m => {
+                            const alvo = [
+                                m.numero_mandado || '',
+                                m.nome_suspeito || '',
+                                m.cpf_suspeito || '',
+                                m.juiz_nome || '',
+                                m.processo_numero || ''
+                            ].join(' ').toLowerCase();
+
+                            const alvoDigitos = alvo.replace(/\D/g, '');
+                            const casaTexto = alvo.includes(termoNormalizado);
+                            const casaDigitos = termoDigitos && alvoDigitos.includes(termoDigitos);
+                            return casaTexto || casaDigitos;
+                        });
+                        totalGeral = data.length;
+                    }
+                } else {
+                    const { data: rpcRows, error: rpcError } = await window.supabaseClient.rpc('buscar_mandado', {
+                        p_termo: termoBusca || null,
+                        p_status: status,
+                        p_tipo_mandado: tipo,
+                        p_prioridade: prioridade,
+                        p_bnmp_status: p_bnmp_status,
+                        p_data_inicio: null,
+                        p_data_fim: null,
+                        p_limit: LIMITE_LISTA,
+                        p_offset: 0
+                    });
+
+                    if (rpcError) throw rpcError;
+                    rows = rpcRows || [];
+                    totalGeral = (rows.length > 0) ? Number(rows[0].total_count) : 0;
+                    data = rows.map(r => { const { total_count, ...rest } = r; return rest; });
+
+                    // [v1.8.2] M4: filtro client-side como reforço
+                    if (termoBusca && data.length > 0) {
+                        data = data.filter(m => {
+                            const alvo = [
+                                m.numero_mandado || '',
+                                m.nome_suspeito || '',
+                                m.cpf_suspeito || '',
+                                m.juiz_nome || '',
+                                m.processo_numero || ''
+                            ].join(' ').toLowerCase();
+
+                            const alvoDigitos = alvo.replace(/\D/g, '');
+                            const casaTexto = alvo.includes(termoNormalizado);
+                            const casaDigitos = termoDigitos && alvoDigitos.includes(termoDigitos);
+                            return casaTexto || casaDigitos;
+                        });
+                    }
+                }
 
                 // [v1.8.0] Enriquece com status DataJud
                 mandadosAtuais = await enriquecerComDataJud(data);
 
                 // [v1.8.0] Filtro DataJud (client-side)
                 if (filtroDataJud) {
-                    if (filtroDataJud === 'PENDENTE') {
+                    if (filtroDataJud === 'pendente') {
                         mandadosAtuais = mandadosAtuais.filter(m => !m.datajud_status_consulta && !m.datajud_sigiloso_manual);
                     } else if (filtroDataJud === 'sigiloso') {
-                        mandadosAtuais = mandadosAtuais.filter(m => m.datajud_sigiloso_manual || m.datajud_status_consulta === 'sigiloso_provavel');
+                        mandadosAtuais = mandadosAtuais.filter(m =>
+                            m.datajud_sigiloso_manual ||
+                            String(m.datajud_status_consulta || '').toLowerCase().startsWith('sigiloso')
+                        );
                     } else if (filtroDataJud === 'erro') {
                         mandadosAtuais = mandadosAtuais.filter(m =>
-                            ['erro_tecnico', 'numero_invalido', 'tribunal_nao_mapeado'].includes(m.datajud_status_consulta)
+                            ['erro_tecnico', 'numero_invalido', 'tribunal_nao_mapeado'].includes(
+                                String(m.datajud_status_consulta || '').toLowerCase()
+                            )
                         );
                     } else {
-                        mandadosAtuais = mandadosAtuais.filter(m => m.datajud_status_consulta === filtroDataJud);
+                        mandadosAtuais = mandadosAtuais.filter(m =>
+                            String(m.datajud_status_consulta || '').toLowerCase() === filtroDataJud
+                        );
                     }
                 }
 
@@ -1760,11 +2073,21 @@
                     return;
                 }
 
-                if (totalGeral > LIMITE_LISTA) {
+                const badgesInfo = [
+                    filtroBnmp === '__NAO_VALIDADO__' ? 'NÃO VALIDADOS' : null,
+                    termoBusca ? `busca: "${termoBusca}"` : null
+                ].filter(Boolean);
+
+                if (totalGeral > LIMITE_LISTA || termoBusca) {
                     infoContainer.innerHTML = `
                         <div class="info-lista">
                             <i class="fas fa-info-circle"></i>
-                            <span>Exibindo os <strong>${mandadosAtuais.length}</strong> últimos cadastros de um total de <strong>${totalGeral}</strong> mandados${filtroBnmp === '__NAO_VALIDADO__' ? ' <strong style="color:#ffc107;">(filtrados por NÃO VALIDADOS)</strong>' : ''}.</span>
+                            <span>
+                                Exibindo <strong>${mandadosAtuais.length}</strong>
+                                ${mandadosAtuais.length === totalGeral ? '' : `de <strong>${totalGeral}</strong>`}
+                                mandado(s)
+                                ${badgesInfo.length ? ` <strong style="color:#ffc107;">(${badgesInfo.join(' · ')})</strong>` : ''}.
+                            </span>
                         </div>
                     `;
                 }
@@ -1784,7 +2107,7 @@
                     html += `<td><span class="badge-status ${statusClass}">${m.status || '-'}</span></td>`;
                     html += `<td><span class="badge-prioridade ${prioridadeClass}">${m.prioridade || 'NORMAL'}</span></td>`;
                     html += `<td>${formatarData(m.data_emissao)}</td>`;
-                    html += `<td style="text-align:center;">${gerarBadgeDataJud(m.datajud_status_consulta, m.datajud_sigiloso_manual, m.datajud_tribunal)}</td>`;
+                    html += `<td style="text-align:center;">${gerarBadgeDataJud(m.datajud_status_consulta, m.datajud_sigiloso_manual, m.datajud_tribunal, m._datajud_indisponivel)}</td>`;
                     html += `<td style="text-align:center;">${iconeBNMP(m.validacao_bnmp_status, m.id_mandado)}</td>`;
                     html += `<td>
                         <button class="btn-icon" onclick="verDetalhes(${m.id_mandado})" title="Ver detalhes"><i class="fas fa-eye"></i></button>
@@ -1801,11 +2124,14 @@
             } catch (error) {
                 console.error('❌ Erro:', error);
                 container.innerHTML = '<div class="empty-state"><i class="fas fa-exclamation-triangle"></i>Erro ao carregar mandados</div>';
+            } finally {
+                _carregandoLista = false;
             }
         }
 
         // ============================================================
         // VER DETALHES — com seção DataJud
+        // [v1.8.1] valida datajud_movimentos antes de filtrar (M5)
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -1878,7 +2204,6 @@
 
                 const enderecoMandado = [m.logradouro, m.numero, m.complemento, m.bairro, m.cidade, m.uf, m.cep].filter(Boolean).join(', ') || '-';
 
-                // [v1.8.0] Bloco DataJud
                 let datajudHTML = '';
                 if (m.datajud_status_consulta || m.datajud_sigiloso_manual) {
                     const statusLabel = m.datajud_sigiloso_manual
@@ -1890,11 +2215,15 @@
                             'erro_tecnico':          '⚠️ Erro técnico',
                             'numero_invalido':       '❌ Número inválido',
                             'tribunal_nao_mapeado':  '❓ Tribunal desconhecido'
-                        }[m.datajud_status_consulta] || m.datajud_status_consulta);
+                        }[String(m.datajud_status_consulta || '').toLowerCase()] || m.datajud_status_consulta);
 
-                    const movRelevantes = Array.isArray(m.datajud_movimentos)
-                        ? m.datajud_movimentos.filter(mv => [60, 106, 985, 15032, 581].includes(mv.codigo)).slice(0, 5)
-                        : [];
+                    const movs = Array.isArray(m.datajud_movimentos) ? m.datajud_movimentos : [];
+                    const codigosRelevantes = [60, 106, 985, 15032, 581];
+                    const movRelevantes = movs
+                        .filter(mv => mv && typeof mv === 'object'
+                            && mv.codigo !== undefined && mv.codigo !== null
+                            && codigosRelevantes.includes(Number(mv.codigo)))
+                        .slice(0, 5);
 
                     datajudHTML = `
                         <div class="col-md-12">
@@ -1923,7 +2252,7 @@
                             <div class="detalhe-campo">
                                 <span class="label">Movimentações Relevantes (${movRelevantes.length})</span>
                                 <span class="valor" style="font-size: 12px;">
-                                    ${movRelevantes.map(mv => `• <strong>${mv.nome}</strong> — ${new Date(mv.dataHora).toLocaleDateString('pt-BR')}`).join('<br>')}
+                                    ${movRelevantes.map(mv => `• <strong>${mv.nome || 'Movimento'}</strong>${mv.dataHora ? ' — ' + new Date(mv.dataHora).toLocaleDateString('pt-BR') : ''}`).join('<br>')}
                                 </span>
                             </div>
                         </div>` : ''}
@@ -1998,11 +2327,36 @@
             }
         }
 
-        function fecharDetalhes() { document.getElementById('modalDetalhes').classList.remove('open'); }
-        function imprimirDetalhes() { window.print(); }
+        function fecharDetalhes() {
+            const modal = document.getElementById('modalDetalhes');
+            if (modal) modal.classList.remove('open');
+            const body = document.getElementById('modalDetalhesBody');
+            if (body) body.innerHTML = '';
+        }
+
+        // ============================================================
+        // [v1.8.1] IMPRESSÃO — aguarda imagens (C2)
+        // ============================================================
+        async function imprimirDetalhes() {
+            const modal = document.getElementById('modalDetalhes');
+            const body = document.getElementById('modalDetalhesBody');
+            if (modal && modal.classList.contains('open') && body) {
+                await aguardarImagens(body);
+            }
+            setTimeout(() => window.print(), 150);
+        }
+
+        async function imprimirMandado(id) {
+            await verDetalhes(id);
+            await new Promise(r => setTimeout(r, 200));
+            const body = document.getElementById('modalDetalhesBody');
+            if (body) await aguardarImagens(body);
+            setTimeout(() => window.print(), 150);
+        }
 
         // ============================================================
         // EDITAR MANDADO
+        // [v1.8.1] adiciona contadores nos textareas (m4)
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -2225,6 +2579,9 @@
                 aplicarPermissaoCamposLivres('edit');
 
                 setTimeout(() => {
+                    anexarContadorTextarea(document.getElementById('editDescricao'), LIMITE_DESCRICAO);
+                    anexarContadorTextarea(document.getElementById('editObservacoes'), LIMITE_OBSERVACOES);
+
                     const inputEdit = document.getElementById('editProcesso');
                     if (inputEdit && inputEdit.value) {
                         mascaraProcesso(inputEdit);
@@ -2325,6 +2682,20 @@
             const partes = v.split('.');
             if (partes.length > 2) v = partes[0] + '.' + partes.slice(1).join('');
             input.value = v;
+
+            if (!v) {
+                input.style.borderColor = '';
+                input.title = '';
+                return;
+            }
+            const num = parseFloat(v);
+            if (!Number.isFinite(num)) {
+                input.style.borderColor = '#dc3545';
+                input.title = 'Valor inválido';
+            } else {
+                input.style.borderColor = '';
+                input.title = '';
+            }
         }
 
         function parseCoordMandado(str) {
@@ -2348,6 +2719,7 @@
             } catch (e) { showToast('error', 'Erro ao buscar CEP', 'Tente novamente.'); }
         }
 
+        // [v1.8.2] M3: usa helper genérico com fallback Photon
         async function buscarCoordenadasMandado(event) {
             const btn = event ? event.currentTarget || event.target : null;
             const originalHTML = btn ? btn.innerHTML : '';
@@ -2367,18 +2739,13 @@
 
                 if (partes.length < 3) throw new Error('Preencha ao menos Rua e Bairro (ou Cidade).');
 
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(partes.join(', '))}&limit=1&countrycodes=br`;
-                const resp = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
-                const resultado = await resp.json();
+                const { lat, lon, fonte } = await geocodificarEnderecoGenerico(partes.join(', '));
 
-                if (!resultado || resultado.length === 0) throw new Error('Endereço não encontrado.');
-
-                const { lat, lon } = resultado[0];
-                document.getElementById('editLatitude').value = Number(lat).toFixed(8);
-                document.getElementById('editLongitude').value = Number(lon).toFixed(8);
+                document.getElementById('editLatitude').value = lat.toFixed(8);
+                document.getElementById('editLongitude').value = lon.toFixed(8);
 
                 showToast('success', 'Coordenadas encontradas!',
-                    `Lat: ${Number(lat).toFixed(5)} | Lng: ${Number(lon).toFixed(5)}`, 6000);
+                    `Lat: ${lat.toFixed(5)} | Lng: ${lon.toFixed(5)} <small style="opacity:0.6;">(${fonte})</small>`, 6000);
             } catch (error) {
                 showToast('error', 'Erro ao buscar', error.message);
             } finally {
@@ -2390,7 +2757,10 @@
         }
 
         function fecharEdicao() {
-            document.getElementById('modalEdicao').classList.remove('open');
+            const modal = document.getElementById('modalEdicao');
+            if (modal) modal.classList.remove('open');
+            const body = document.getElementById('modalEdicaoBody');
+            if (body) body.innerHTML = '';
             mandadoEditandoId = null;
         }
 
@@ -2410,6 +2780,7 @@
             mandadoCumprindoId = null;
         }
 
+        // [v1.8.1] C3: preserva observações anteriores
         async function confirmarCumprimento() {
             if (!mandadoCumprindoId) return;
             const btn = document.getElementById('btnConfirmarCumprir');
@@ -2423,12 +2794,24 @@
 
                 if (!dataCumprimento) throw new Error('Informe a data do cumprimento.');
 
+                const { data: atual } = await window.supabaseClient
+                    .from('mandado_prisao')
+                    .select('observacoes')
+                    .eq('id_mandado', mandadoCumprindoId)
+                    .maybeSingle();
+
+                const tagCumprimento = `[CUMPRIDO em ${dataCumprimento}${responsavel ? ' por ' + responsavel : ''}]${observacoes ? ' ' + observacoes : ''}`;
+                const obsAnterior = (atual?.observacoes || '').trim();
+                const obsFinal = obsAnterior
+                    ? `${obsAnterior}\n\n---\n${tagCumprimento}`
+                    : tagCumprimento;
+
                 const { error } = await window.supabaseClient
                     .from('mandado_prisao')
                     .update({
                         status: 'CUMPRIDO',
                         data_cumprimento: dataCumprimento,
-                        observacoes: observacoes ? `[CUMPRIDO por ${responsavel}] ${observacoes}` : `Cumprido por ${responsavel}`,
+                        observacoes: obsFinal,
                         id_usuario_cumprimento: usuarioAtual.id,
                         data_atualizacao: new Date().toISOString()
                     })
@@ -2589,12 +2972,16 @@
         }
 
         function fecharValidacaoBNMP() {
-            document.getElementById('modalValidacaoBNMP').classList.remove('open');
+            const modal = document.getElementById('modalValidacaoBNMP');
+            if (modal) modal.classList.remove('open');
+            const body = document.getElementById('modalValidacaoBNMPBody');
+            if (body) body.innerHTML = '';
             mandadoValidandoId = null;
         }
 
         // ============================================================
         // GEOCODIFICAÇÃO (form principal)
+        // [v1.8.2] M3: usa helper genérico com fallback Photon
         // ============================================================
         async function geocodificarEndereco(event) {
             const idSuspeito = document.getElementById('idSuspeito').value;
@@ -2613,18 +3000,13 @@
                 const endereco = [s.logradouro, s.numero, s.bairro, s.cidade, s.uf, s.cep, 'Brasil'].filter(Boolean).join(', ');
                 if (endereco.length < 5) throw new Error('Endereço incompleto.');
 
-                const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(endereco)}&limit=1`;
-                const response = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
-                const resultado = await response.json();
+                const { lat, lon, fonte } = await geocodificarEnderecoGenerico(endereco);
 
-                if (!resultado || resultado.length === 0) throw new Error('Endereço não encontrado.');
-
-                const { lat, lon } = resultado[0];
-                document.getElementById('latitude').value = parseFloat(lat).toFixed(8);
-                document.getElementById('longitude').value = parseFloat(lon).toFixed(8);
+                document.getElementById('latitude').value = lat.toFixed(8);
+                document.getElementById('longitude').value = lon.toFixed(8);
 
                 showToast('success', 'Endereço encontrado!',
-                    `Coordenadas: ${parseFloat(lat).toFixed(4)}, ${parseFloat(lon).toFixed(4)}`, 6000);
+                    `Lat: ${lat.toFixed(5)} | Lng: ${lon.toFixed(5)} <small style="opacity:0.6;">(${fonte})</small>`, 6000);
             } catch (error) {
                 showToast('error', 'Erro ao buscar endereço', error.message);
             } finally {
@@ -2633,11 +3015,6 @@
                     btn.innerHTML = '<i class="fas fa-search-location me-2"></i>BUSCAR PELO ENDEREÇO';
                 }
             }
-        }
-
-        async function imprimirMandado(id) {
-            await verDetalhes(id);
-            setTimeout(() => window.print(), 800);
         }
 
         // ============================================================
@@ -2655,23 +3032,42 @@
         }
 
         // ============================================================
-        // TOAST
+        // TOAST — [v1.8.2] M9: com deduplicação
         // ============================================================
         function showToast(tipo, titulo, mensagem, duracao) {
             duracao = duracao || 5000;
             const container = document.getElementById('toastContainer');
+
+            // [v1.8.2] M9: deduplicação — se já existe toast com o mesmo título+mensagem,
+            // renova a duração em vez de empilhar
+            const assinatura = tipo + '|' + (titulo || '') + '|' + (mensagem || '');
+            const existente = container.querySelector(`.toast-ai[data-assinatura="${CSS.escape(assinatura)}"]`);
+            if (existente) {
+                clearTimeout(Number(existente.dataset.timerId));
+                existente.style.animation = '';
+                const novoTimer = setTimeout(() => {
+                    existente.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => existente.remove(), 300);
+                }, duracao);
+                existente.dataset.timerId = String(novoTimer);
+                return;
+            }
+
             const toast = document.createElement('div');
             toast.className = 'toast-ai ' + tipo;
+            toast.dataset.assinatura = assinatura;
             const icones = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle', info: 'fa-info-circle' };
             toast.innerHTML = '<i class="fas ' + (icones[tipo] || icones.info) + ' toast-icon"></i>' +
                 '<div class="toast-content"><div class="toast-title">' + titulo + '</div>' +
                 '<div class="toast-message">' + mensagem + '</div></div>' +
                 '<button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></button>';
             container.appendChild(toast);
-            setTimeout(() => {
+
+            const timerId = setTimeout(() => {
                 toast.style.animation = 'slideOut 0.3s ease';
                 setTimeout(() => toast.remove(), 300);
             }, duracao);
+            toast.dataset.timerId = String(timerId);
         }
 
         // ============================================================
@@ -2685,8 +3081,8 @@
             if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(docEl);
             else cancel.call(doc);
         }
-        document.addEventListener('keydown', function(e) { 
-            if (e.key === 'F11') { e.preventDefault(); toggleFullscreen(); } 
+
+        document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 fecharLightboxMandado();
                 fecharDetalhes();
@@ -2729,7 +3125,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.8.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.8.2 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
