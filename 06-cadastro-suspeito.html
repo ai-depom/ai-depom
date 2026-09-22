@@ -2,8 +2,8 @@
      AI-DEPOM - CADASTRO DE SUSPEITOS
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.6.0
-     Data: 22/09/2026 - 03:45
+     Versão: 3.6.1
+     Data: 22/09/2026 - 04:30
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -14,6 +14,16 @@
      5. Todo botão DEVE ter handler real
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v3.6.1 (22/09/2026 04:30):
+     - 🐛 CORRIGIDO: Fotos não apareciam ao editar suspeito na Consulta
+       - uploadMidia() agora envia `formato` (NOT NULL)
+       - uploadMidia() agora envia `hash_sha256` (NOT NULL)
+       - uploadMidia() agora envia `is_principal` (marca foto principal)
+       - Novo helper calcularHashSha256() via Web Crypto API
+       - Foto principal marcada com isPrincipal: true
+       - Removida coluna inexistente `mime_type` do INSERT
+     - ✅ Preservadas TODAS as funcionalidades da v3.6.0
 
      ALTERAÇÕES v3.6.0 (22/09/2026 03:45):
      - ✨ NOVO CAMPO: "Raça/Cor (IBGE)" na seção Características Físicas
@@ -1063,7 +1073,7 @@
         }
 
         // ============================================================
-        // [v3.6.0] SALVAR COM VALIDAÇÕES (CPF + duplicidade + raça/cor)
+        // [v3.6.1] SALVAR COM VALIDAÇÕES (CPF + duplicidade + raça/cor)
         // ============================================================
         document.getElementById('formCadastro').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1195,9 +1205,16 @@
                 // ---------- UPLOADS DE FOTOS ----------
                 const errosUpload = [];
 
+                // [v3.6.1] Foto principal com isPrincipal: true
                 if (fotoPrincipalArquivo) {
                     try {
-                        await uploadMidia({ idSuspeito: novo.id_suspeito, file: fotoPrincipalArquivo, tipoMidia: 'FOTO', sufixo: 'principal' });
+                        await uploadMidia({
+                            idSuspeito: novo.id_suspeito,
+                            file: fotoPrincipalArquivo,
+                            tipoMidia: 'FOTO',
+                            sufixo: 'principal',
+                            isPrincipal: true
+                        });
                     } catch (eF) { errosUpload.push('Foto principal: ' + eF.message); }
                 }
                 if (fotoSecundariaArquivo) {
@@ -1237,31 +1254,71 @@
         });
 
         // ============================================================
-        // UPLOAD DE MÍDIA (storage + arquivo_midia)
+        // [v3.6.1] UPLOAD DE MÍDIA (storage + arquivo_midia)
+        // ------------------------------------------------------------
+        // Correções aplicadas:
+        //   - Envia `formato` (NOT NULL) → extensão em MAIÚSCULO
+        //   - Envia `hash_sha256` (NOT NULL) → SHA-256 real do arquivo
+        //   - Envia `is_principal` → true só para a foto principal
+        //   - Removeu `mime_type` (coluna não existe na tabela)
         // ============================================================
-        async function uploadMidia({ idSuspeito, file, tipoMidia, sufixo }) {
+        async function uploadMidia({ idSuspeito, file, tipoMidia, sufixo, isPrincipal = false }) {
             const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
             const nomeSeguro = `suspeito_${idSuspeito}_${sufixo}_${Date.now()}.${ext}`;
 
+            // ---------- 1) Upload pro Storage ----------
             const { error: upErr } = await sb.storage
                 .from(BUCKET_FOTOS)
                 .upload(nomeSeguro, file, { upsert: true, contentType: file.type });
             if (upErr) throw upErr;
 
-            const { error: midiaErr } = await sb.from('arquivo_midia').insert({
+            // ---------- 2) Calcula hash SHA-256 ----------
+            const hashSha256 = await calcularHashSha256(file);
+
+            // ---------- 3) Formato (extensão em maiúsculo: JPG, PNG, WEBP) ----------
+            const formato = ext.toUpperCase();
+
+            // ---------- 4) Registra na arquivo_midia ----------
+            const payload = {
                 tipo_entidade: 'SUSPEITO',
                 id_entidade: idSuspeito,
                 tipo_midia: tipoMidia,
                 caminho_fisico: nomeSeguro,
                 nome_seguro: nomeSeguro,
                 nome_original: file.name,
-                mime_type: file.type,
+                formato: formato,              // ✅ NOT NULL
+                hash_sha256: hashSha256,       // ✅ NOT NULL
                 tamanho_bytes: file.size,
+                is_principal: isPrincipal,     // ✅ marca a foto principal
                 deletado: false,
                 data_upload: new Date().toISOString()
-            });
-            if (midiaErr) throw midiaErr;
+            };
+
+            console.log('📷 Inserindo em arquivo_midia:', payload);
+            const { error: midiaErr } = await sb.from('arquivo_midia').insert(payload);
+            if (midiaErr) {
+                console.error('❌ Erro ao inserir em arquivo_midia:', midiaErr);
+                throw midiaErr;
+            }
             return nomeSeguro;
+        }
+
+        // ============================================================
+        // [v3.6.1] Helper — calcula SHA-256 de um File (Web Crypto API)
+        // ============================================================
+        async function calcularHashSha256(file) {
+            try {
+                const buffer = await file.arrayBuffer();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            } catch (e) {
+                console.warn('⚠️ Falha ao calcular hash, usando fallback:', e);
+                const s = `${file.name}_${file.size}_${Date.now()}`;
+                let h = 0;
+                for (let i = 0; i < s.length; i++) h = ((h << 5) - h + s.charCodeAt(i)) | 0;
+                return 'fallback_' + Math.abs(h).toString(16).padStart(16, '0');
+            }
         }
 
         // ============================================================
@@ -1349,7 +1406,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Cadastro v3.6.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Cadastro v3.6.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             renderizarTatuagens();
         });
