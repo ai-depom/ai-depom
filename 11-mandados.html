@@ -1,23 +1,19 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.9.0
-     Data: 22/09/2026 - 04:30
+     Versão: 1.9.1
+     Data: 22/09/2026 - 06:30
      ============================================================
+     ALTERAÇÕES v1.9.1 (22/09/2026 06:30):
+     - ✨ Telefones do suspeito exibidos no modal de Detalhes
+     - ✨ Telefones do suspeito exibidos no bloco SUSPEITO VINCULADO da edição
+     - ✅ Preservadas TODAS as funcionalidades da v1.9.0
+
      ALTERAÇÕES v1.9.0 (22/09/2026 04:30):
-     - ✨ NOVO: Suporte a mandado órfão (sem suspeito cadastrado)
-       - Coluna nova no banco: nome_suspeito_texto
-       - id_suspeito agora é OPCIONAL (constraint garante id OU nome)
-       - Checkbox "Suspeito ainda não cadastrado" no formulário
-       - Campo de texto livre para o nome quando marcado
-       - Campo "Nome do Suspeito" (readonly) quando vinculado
-     - ✨ NOVO: Filtro "Órfãos (sem vínculo)" na barra de filtros
-     - ✨ NOVO: Badge amarelo ⚠️ na lista para mandados órfãos
-     - ✨ NOVO: Modal de reconciliação
-       - Busca suspeito existente por nome/CPF
-       - Botão "Vincular" preenche id_suspeito
-       - Botão "Cadastrar novo suspeito" abre 06 com nome pré-preenchido
-     - ✅ Preservadas TODAS as funcionalidades da v1.8.4
+     - ✨ Suporte a mandado órfão (sem suspeito cadastrado)
+     - ✨ Filtro "Órfãos (sem vínculo)"
+     - ✨ Badge amarelo ⚠️ na lista para mandados órfãos
+     - ✨ Modal de reconciliação
 
      ALTERAÇÕES v1.8.4 (22/09/2026 02:30):
      - ✨ Campo "CPF do Suspeito" com máscara e validação
@@ -49,10 +45,11 @@
 
      REQUISITOS DE BANCO (aplicados):
      - Coluna nome_suspeito_texto (TEXT)
-     - id_suspeito passou a ser NULLABLE
+     - id_suspeito NULLABLE
      - Constraint chk_mandado_tem_suspeito_ou_nome
      - Índice idx_mandado_nome_texto
      - RPC buscar_mandado v3 (retorna nome_suspeito_texto)
+     - Coluna suspeito.telefone1 / telefone2 (TEXT)
      ============================================================
 -->
 <!DOCTYPE html>
@@ -287,7 +284,6 @@
         .btn-icon { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); color: rgba(0, 255, 136, 0.3); padding: 6px 10px; border-radius: 8px; transition: all 0.3s; font-size: 12px; }
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
 
-        /* [v1.9.0] Badge de mandado órfão */
         .badge-orfao {
             display: inline-flex;
             align-items: center;
@@ -412,7 +408,6 @@
             background: rgba(255, 193, 7, 0.1);
         }
 
-        /* Aviso de órfãos */
         .aviso-orfaos {
             background: rgba(255, 193, 7, 0.08);
             border: 1px solid rgba(255, 193, 7, 0.3);
@@ -699,7 +694,6 @@
         .badge-datajud.tribunal_nao_mapeado { background: rgba(108, 117, 125, 0.15); color: #adb5bd; border: 1px solid rgba(108, 117, 125, 0.3); }
         .badge-datajud.nunca_consultado { background: rgba(0, 255, 136, 0.03); color: rgba(0, 255, 136, 0.35); border: 1px dashed var(--border-color); }
 
-        /* [v1.9.0] Modal de reconciliação — lista de suspeitos */
         .suspeito-item {
             display: flex;
             align-items: center;
@@ -742,7 +736,6 @@
             font-size: 11px;
         }
 
-        /* [v1.9.0] Checkbox de "sem suspeito" */
         .check-sem-suspeito {
             background: rgba(255, 193, 7, 0.05);
             border: 1px solid rgba(255, 193, 7, 0.25);
@@ -1113,7 +1106,6 @@
             <div id="avisoNaoValidados"></div>
             <div id="avisoOrfaos"></div>
 
-            <!-- Busca textual -->
             <div class="row g-3 mb-2">
                 <div class="col-md-12">
                     <div class="input-group">
@@ -1282,7 +1274,6 @@
         </div>
     </div>
 
-    <!-- [v1.9.0] Modal de reconciliação -->
     <div class="modal-custom" id="modalReconciliar">
         <div class="modal-custom-content modal-lg">
             <div class="modal-custom-header">
@@ -1331,7 +1322,7 @@
         let mandadoEditandoId = null;
         let mandadoCumprindoId = null;
         let mandadoValidandoId = null;
-        let mandadoReconciliandoId = null;   // [v1.9.0]
+        let mandadoReconciliandoId = null;
 
         let naoValidadosCache = [];
         let filtroNaoValidadosAtivo = false;
@@ -1393,9 +1384,6 @@
             'trt21': 'TRT21', 'trt22': 'TRT22', 'trt23': 'TRT23', 'trt24': 'TRT24'
         };
 
-        // ============================================================
-        // [v1.6.0/v1.7.0] VALIDAÇÃO E MÁSCARA DE NÚMERO DE PROCESSO
-        // ============================================================
         function mascaraProcesso(input) {
             let v = String(input.value || '').replace(/\D/g, '').slice(0, 20);
             let out = '';
@@ -1455,9 +1443,6 @@
             return { valido: true, digitos, tribunal: nomeTribunal };
         }
 
-        // ============================================================
-        // FORMATAÇÃO DE CPF
-        // ============================================================
         function formatarCPF(cpf) {
             if (!cpf) return '-';
             const digitos = String(cpf).replace(/\D/g, '');
@@ -1500,7 +1485,6 @@
             return true;
         }
 
-        // [v1.9.0] Preenche CPF + Nome ao selecionar
         function preencherCPFDoSuspeito() {
             const select = document.getElementById('idSuspeito');
             const campoCpf = document.getElementById('cpfSuspeito');
@@ -1567,9 +1551,6 @@
             }, 400);
         }
 
-        // ============================================================
-        // [v1.9.0] TOGGLE "SUSPEITO NÃO CADASTRADO"
-        // ============================================================
         function toggleSuspeitoNaoCadastrado() {
             const checked = document.getElementById('suspeitoNaoCadastrado').checked;
             const blocoNome = document.getElementById('blocoNomeLivre');
@@ -1593,9 +1574,6 @@
             }
         }
 
-        // ============================================================
-        // [v1.8.0] BADGE DATAJUD
-        // ============================================================
         function gerarBadgeDataJud(statusConsulta, sigilosoManual, tribunal, indisponivel) {
             if (indisponivel) {
                 return `<span class="badge-datajud erro_tecnico" title="Colunas DataJud ausentes no banco — verifique a migration">
@@ -1740,11 +1718,8 @@
             }
         }
 
-        // ============================================================
-        // INICIALIZAÇÃO
-        // ============================================================
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.9.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.9.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -1856,9 +1831,6 @@
             if (img) img.src = '';
         }
 
-        // ============================================================
-        // CARREGAR SUSPEITOS
-        // ============================================================
         async function carregarSuspeitos() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -1910,9 +1882,6 @@
             }
         }
 
-        // ============================================================
-        // [v1.9.0] CADASTRAR MANDADO (com suporte a órfão)
-        // ============================================================
         async function cadastrarMandado(e) {
             e.preventDefault();
 
@@ -1947,7 +1916,6 @@
                 }
             }
 
-            // [v1.9.0] Verifica vínculo: id_suspeito OU nome livre
             const suspeitoNaoCadastrado = document.getElementById('suspeitoNaoCadastrado').checked;
             const idSuspeito = document.getElementById('idSuspeito').value;
             const nomeLivre = document.getElementById('nomeSuspeitoTexto').value.trim();
@@ -1970,7 +1938,6 @@
                 }
             }
 
-            // CPF válido (se informado e não for órfão)
             const campoCpf = document.getElementById('cpfSuspeito');
             const cpfValor = (campoCpf?.value || '').trim();
             if (!suspeitoNaoCadastrado && cpfValor && !cpfValido(cpfValor)) {
@@ -1982,7 +1949,6 @@
                 return;
             }
 
-            // Processo CNJ
             const processoNumeroEl = document.getElementById('processoNumero');
             const processoValor = (processoNumeroEl?.value || '').trim();
             if (processoValor) {
@@ -2060,9 +2026,6 @@
             }
         }
 
-        // ============================================================
-        // RESET
-        // ============================================================
         function resetFormulario() {
             document.getElementById('formMandado').reset();
             document.getElementById('dataEmissao').value = new Date().toISOString().split('T')[0];
@@ -2095,9 +2058,6 @@
             aplicarPermissaoCamposLivres();
         }
 
-        // ============================================================
-        // ICONE BNMP
-        // ============================================================
         function iconeBNMP(status, idMandado) {
             if (!status) {
                 return `<i class="fas fa-question-circle bnmp-badge bnmp-nao-validado"
@@ -2115,9 +2075,6 @@
                        onclick="abrirValidacaoBNMP(${idMandado})"></i>`;
         }
 
-        // ============================================================
-        // NÃO VALIDADOS
-        // ============================================================
         async function carregarNaoValidados() {
             try {
                 const { data, error } = await window.supabaseClient
@@ -2168,9 +2125,6 @@
             `;
         }
 
-        // ============================================================
-        // [v1.9.0] AVISO DE ÓRFÃOS
-        // ============================================================
         async function carregarOrfaos() {
             try {
                 const { count, error } = await window.supabaseClient
@@ -2262,9 +2216,6 @@
             }
         }
 
-        // ============================================================
-        // [v1.9.0] CARREGAR MANDADOS (com filtro de órfãos)
-        // ============================================================
         async function carregarMandados() {
             if (_carregandoLista) {
                 console.log('⏳ carregarMandados() ignorado — já em andamento');
@@ -2349,7 +2300,6 @@
                     data = rows.map(r => { const { total_count, ...rest } = r; return rest; });
                 }
 
-                // Filtro client-side de vínculo (órfão/vinculado)
                 if (filtroVinculo === '__ORFAOS__') {
                     data = data.filter(m => !m.id_suspeito && m.nome_suspeito_texto);
                     totalGeral = data.length;
@@ -2358,7 +2308,6 @@
                     totalGeral = data.length;
                 }
 
-                // Filtro textual client-side (reforço)
                 if (termoBusca && data.length > 0) {
                     data = data.filter(m => {
                         const alvo = [
@@ -2465,9 +2414,6 @@
             }
         }
 
-        // ============================================================
-        // [v1.9.0] MODAL DE RECONCILIAÇÃO
-        // ============================================================
         async function abrirReconciliar(idMandado) {
             mandadoReconciliandoId = idMandado;
             const modal = document.getElementById('modalReconciliar');
@@ -2531,7 +2477,6 @@
                     </div>
                 `;
 
-                // Auto-busca pelo nome do mandado
                 setTimeout(() => {
                     const input = document.getElementById('buscaSuspeitoReconciliar');
                     if (input) {
@@ -2658,7 +2603,7 @@
         }
 
         // ============================================================
-        // VER DETALHES
+        // [v1.9.1] VER DETALHES — com TELEFONES do suspeito
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -2677,7 +2622,7 @@
                 if (m.id_suspeito) {
                     const { data: sData } = await window.supabaseClient
                         .from('suspeito')
-                        .select('id_suspeito, nome_completo, apelido, cpf, rg, logradouro, numero, bairro, cidade, uf, status_atual, nivel_periculosidade')
+                        .select('id_suspeito, nome_completo, apelido, cpf, rg, telefone1, telefone2, logradouro, numero, bairro, cidade, uf, status_atual, nivel_periculosidade')
                         .eq('id_suspeito', m.id_suspeito).maybeSingle();
                     s = sData || {};
                 }
@@ -2736,6 +2681,8 @@
                             <div class="detalhe-campo"><span class="label">Apelido</span><span class="valor">${s.apelido || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${s.cpf ? formatarCPF(s.cpf) : '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 1</span><span class="valor">${s.telefone1 || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 2</span><span class="valor">${s.telefone2 || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Endereço do Suspeito</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
@@ -2889,7 +2836,7 @@
         }
 
         // ============================================================
-        // EDITAR MANDADO (mostra nome do órfão também)
+        // [v1.9.1] EDITAR MANDADO — com TELEFONES no bloco SUSPEITO VINCULADO
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -2910,7 +2857,7 @@
                     try {
                         const { data: sData } = await window.supabaseClient
                             .from('suspeito')
-                            .select('id_suspeito, nome_completo, apelido, cpf, status_atual')
+                            .select('id_suspeito, nome_completo, apelido, cpf, status_atual, telefone1, telefone2')
                             .eq('id_suspeito', m.id_suspeito).maybeSingle();
                         suspeito = sData || null;
 
@@ -2939,6 +2886,8 @@
                 const nomeSuspeito = ehOrfao ? m.nome_suspeito_texto : (suspeito?.nome_completo || 'Não vinculado');
                 const cpfSuspeitoFmt = suspeito?.cpf ? formatarCPF(suspeito.cpf) : '-';
                 const statusSuspeito = suspeito?.status_atual || '-';
+                const telefone1Fmt = suspeito?.telefone1 || '-';
+                const telefone2Fmt = suspeito?.telefone2 || '-';
 
                 body.innerHTML = `
                     <form id="formEdicao" novalidate>
@@ -2953,6 +2902,8 @@
                             <div class="col-md-8">
                                 <div class="detalhe-campo"><span class="label">Nome Completo</span><span class="valor"><strong>${nomeSuspeito}</strong></span></div>
                                 <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${cpfSuspeitoFmt}</span></div>
+                                <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 1</span><span class="valor">${telefone1Fmt}</span></div>
+                                <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 2</span><span class="valor">${telefone2Fmt}</span></div>
                                 <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${statusSuspeito}</span></div>
                                 ${ehOrfao ? `<div class="detalhe-campo"><span class="label">Vínculo</span><span class="valor" style="color:#ffc107;"><i class="fas fa-exclamation-triangle me-1"></i>Órfão — sem suspeito vinculado</span></div>` : ''}
                             </div>
@@ -3294,9 +3245,6 @@
             mandadoEditandoId = null;
         }
 
-        // ============================================================
-        // MARCAR COMO CUMPRIDO
-        // ============================================================
         function abrirModalCumprir(id) {
             mandadoCumprindoId = id;
             document.getElementById('dataCumprimento').value = new Date().toISOString().split('T')[0];
@@ -3359,9 +3307,6 @@
             }
         }
 
-        // ============================================================
-        // VALIDAÇÃO BNMP
-        // ============================================================
         async function abrirValidacaoBNMP(id) {
             mandadoValidandoId = id;
             const modal = document.getElementById('modalValidacaoBNMP');
@@ -3499,9 +3444,6 @@
             mandadoValidandoId = null;
         }
 
-        // ============================================================
-        // GEOCODIFICAÇÃO (form principal)
-        // ============================================================
         async function geocodificarEndereco(event) {
             const suspeitoNaoCadastrado = document.getElementById('suspeitoNaoCadastrado').checked;
             if (suspeitoNaoCadastrado) {
@@ -3542,9 +3484,6 @@
             }
         }
 
-        // ============================================================
-        // HELPERS
-        // ============================================================
         function traduzirTipo(tipo) {
             const tipos = { 'PRISAO': 'Prisão', 'BUSCA_APREENSAO': 'Busca e Apreensão', 'CONDUCAO_COERCITIVA': 'Condução Coercitiva' };
             return tipos[tipo] || tipo || '-';
@@ -3590,9 +3529,6 @@
             toast.dataset.timerId = String(timerId);
         }
 
-        // ============================================================
-        // CONTROLES
-        // ============================================================
         function toggleFullscreen() {
             const doc = window.document;
             const docEl = doc.documentElement;
@@ -3646,7 +3582,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.9.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.9.1 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
