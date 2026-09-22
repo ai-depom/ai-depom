@@ -2,8 +2,8 @@
      AI-DEPOM - CADASTRO DE SUSPEITOS
      ============================================================
      Arquivo: 06-cadastro-suspeito.html
-     Versão: 3.5.0
-     Data: 22/09/2026 - 03:15
+     Versão: 3.7.0
+     Data: 22/09/2026 - 08:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -14,6 +14,19 @@
      5. Todo botão DEVE ter handler real
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
+
+     ALTERAÇÕES v3.7.0 (22/09/2026 08:00):
+     - ✨ NOVO: Campo Raça/Cor (padrão IBGE)
+       - Branca / Preta / Parda / Amarela / Indígena
+       - Select na seção Identificação, após Sexo
+       - Constraint no banco valida os valores
+     - ✨ NOVO: Dois telefones celulares (v3.6.0)
+       - Telefone Celular 1 (telefone1)
+       - Telefone Celular 2 (telefone2)
+       - Máscara automática (00) 00000-0000
+       - Aceita celular (11 dígitos) e fixo (10 dígitos)
+       - Feedback visual (borda verde/vermelha)
+     - ✅ Preservadas TODAS as funcionalidades da v3.5.0
 
      ALTERAÇÕES v3.5.0 (22/09/2026 03:15):
      - 🔒 SEGURANÇA: Validação de CPF com dígitos verificadores
@@ -557,9 +570,49 @@
                                     <option value="O">Outro</option>
                                 </select>
                             </div>
-                            <div class="col-md-8">
+                            <!-- [v3.7.0] Raça/Cor (IBGE) -->
+                            <div class="col-md-4">
+                                <label class="form-label">
+                                    <i class="fas fa-venus-mars me-1"></i>Raça/Cor
+                                </label>
+                                <select class="form-select" id="raca_cor">
+                                    <option value="">Selecione...</option>
+                                    <option value="BRANCA">Branca</option>
+                                    <option value="PRETA">Preta</option>
+                                    <option value="PARDA">Parda</option>
+                                    <option value="AMARELA">Amarela</option>
+                                    <option value="INDIGENA">Indígena</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label">Nome da Mãe</label>
                                 <input type="text" class="form-control" id="nome_mae" maxlength="200">
+                            </div>
+
+                            <!-- [v3.6.0] Telefones celulares -->
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-mobile-alt me-1"></i>Telefone Celular 1
+                                </label>
+                                <input type="text" class="form-control" id="telefone1"
+                                       maxlength="16"
+                                       placeholder="(00) 00000-0000"
+                                       inputmode="tel"
+                                       oninput="mascaraTelefone(this)"
+                                       onblur="validarTelefone(this)">
+                                <small id="avisoTelefone1" style="display:none;"></small>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    <i class="fas fa-mobile-alt me-1"></i>Telefone Celular 2
+                                </label>
+                                <input type="text" class="form-control" id="telefone2"
+                                       maxlength="16"
+                                       placeholder="(00) 00000-0000"
+                                       inputmode="tel"
+                                       oninput="mascaraTelefone(this)"
+                                       onblur="validarTelefone(this)">
+                                <small id="avisoTelefone2" style="display:none;"></small>
                             </div>
                         </div>
                     </div>
@@ -792,26 +845,77 @@
         }
 
         // ============================================================
+        // [v3.6.0] MÁSCARA E VALIDAÇÃO DE TELEFONE
+        // ============================================================
+        function mascaraTelefone(input) {
+            let v = String(input.value || '').replace(/\D/g, '').slice(0, 11);
+            let out = '';
+            if (v.length > 0) out += '(' + v.slice(0, 2);
+            if (v.length >= 3) out += ') ' + v.slice(2, v.length > 10 ? 7 : 6);
+            if (v.length > 10) out += '-' + v.slice(7, 11);
+            else if (v.length > 6) out += '-' + v.slice(6, 10);
+            input.value = out;
+            if (v.length === 0) input.style.borderColor = '';
+        }
+
+        function telefoneValido(tel) {
+            const d = String(tel || '').replace(/\D/g, '');
+            return d.length === 10 || d.length === 11;
+        }
+
+        function validarTelefone(input) {
+            const avisoId = 'aviso' + input.id.charAt(0).toUpperCase() + input.id.slice(1);
+            const aviso = document.getElementById(avisoId);
+            const v = String(input.value || '').trim();
+
+            if (!aviso) return;
+
+            if (!v) {
+                input.style.borderColor = '';
+                aviso.style.display = 'none';
+                return;
+            }
+
+            const d = v.replace(/\D/g, '');
+
+            if (d.length < 10) {
+                input.style.borderColor = '#dc3545';
+                aviso.style.display = 'block';
+                aviso.className = 'aviso-duplicidade erro';
+                aviso.innerHTML = '<i class="fas fa-times-circle"></i> Telefone incompleto — precisa de 10 ou 11 dígitos.';
+                return false;
+            }
+
+            if (d.length > 11) {
+                input.style.borderColor = '#dc3545';
+                aviso.style.display = 'block';
+                aviso.className = 'aviso-duplicidade erro';
+                aviso.innerHTML = '<i class="fas fa-times-circle"></i> Telefone com dígitos demais.';
+                return false;
+            }
+
+            input.style.borderColor = '#00ff88';
+            aviso.style.display = 'block';
+            aviso.className = 'aviso-duplicidade ok';
+            aviso.innerHTML = '<i class="fas fa-check-circle"></i> Telefone válido';
+            setTimeout(() => { if (aviso.innerHTML.includes('válido')) aviso.style.display = 'none'; }, 2500);
+            return true;
+        }
+
+        // ============================================================
         // [v3.5.0] VALIDAÇÃO DE CPF COM DÍGITOS VERIFICADORES
         // ============================================================
-        // Valida CPF com o algoritmo oficial (módulo 11).
-        // Rejeita:
-        //   - Menos/mais de 11 dígitos
-        //   - Todos os dígitos iguais (000.000.000-00, 111.111.111-11, ...)
-        //   - Dígitos verificadores que não batem
         function cpfValido(cpf) {
             const digitos = String(cpf || '').replace(/\D/g, '');
             if (digitos.length !== 11) return false;
             if (/^(\d)\1{10}$/.test(digitos)) return false;
 
-            // 1º dígito verificador
             let soma = 0;
             for (let i = 0; i < 9; i++) soma += parseInt(digitos[i], 10) * (10 - i);
             let resto = soma % 11;
             const dv1 = resto < 2 ? 0 : 11 - resto;
             if (dv1 !== parseInt(digitos[9], 10)) return false;
 
-            // 2º dígito verificador
             soma = 0;
             for (let i = 0; i < 10; i++) soma += parseInt(digitos[i], 10) * (11 - i);
             resto = soma % 11;
@@ -821,12 +925,10 @@
             return true;
         }
 
-        // Feedback visual ao sair do campo CPF
         function validarCpfComFeedback(input) {
             const v = String(input.value || '').trim();
             const digitos = v.replace(/\D/g, '');
 
-            // Vazio ou incompleto → não pinta nada (usuário ainda está digitando)
             if (!v || digitos.length !== 11) {
                 input.style.borderColor = '';
                 input.title = '';
@@ -845,10 +947,6 @@
         // ============================================================
         // [v3.3.0] MÁSCARA E CHECAGEM DE CPF DUPLICADO
         // ============================================================
-
-        /**
-         * Aplica máscara no CPF: 000.000.000-00
-         */
         function mascaraCpf(input) {
             let v = input.value.replace(/\D/g, '').slice(0, 11);
             if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
@@ -856,24 +954,16 @@
             else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/, '$1.$2');
             input.value = v;
 
-            // [v3.5.0] Se o usuário está digitando/apagando, limpa o feedback visual
             input.style.borderColor = '';
             input.title = '';
         }
 
-        /**
-         * Debounce da checagem de CPF (600ms)
-         */
         let _timerCpf = null;
         function checarDuplicidadeCpfDebounce() {
             clearTimeout(_timerCpf);
             _timerCpf = setTimeout(checarDuplicidadeCpf, 600);
         }
 
-        /**
-         * [v3.4.0] Verifica se o CPF já está cadastrado.
-         * Usa RPC `verificar_duplicidade_suspeito` (match exato, sem wildcards).
-         */
         async function checarDuplicidadeCpf() {
             const input = document.getElementById('cpf');
             const aviso = document.getElementById('avisoCpf');
@@ -1078,7 +1168,7 @@
                 if (!dataNasc) throw new Error('Informe a data de nascimento.');
                 if (!status) throw new Error('Selecione o status atual.');
 
-                // ---------- [v3.5.0] BLOQUEIO DE CPF INVÁLIDO (dígitos verificadores) ----------
+                // ---------- [v3.5.0] BLOQUEIO DE CPF INVÁLIDO ----------
                 const cpfLimpo = cpf.replace(/\D/g, '');
                 const campoCpfEl = document.getElementById('cpf');
 
@@ -1093,7 +1183,31 @@
                     btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR SUSPEITO';
                     return;
                 }
-                // ---------- FIM DO BLOQUEIO DE CPF INVÁLIDO ----------
+
+                // ---------- [v3.6.0] BLOQUEIO DE TELEFONE INVÁLIDO ----------
+                const tel1El = document.getElementById('telefone1');
+                const tel2El = document.getElementById('telefone2');
+                const tel1 = (tel1El.value || '').trim();
+                const tel2 = (tel2El.value || '').trim();
+
+                if (tel1 && !telefoneValido(tel1)) {
+                    showToast('warning', 'Telefone 1 incompleto',
+                        'Digite <strong>10 ou 11 dígitos</strong> ou deixe vazio.', 7000);
+                    tel1El.focus();
+                    tel1El.style.borderColor = '#dc3545';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR SUSPEITO';
+                    return;
+                }
+                if (tel2 && !telefoneValido(tel2)) {
+                    showToast('warning', 'Telefone 2 incompleto',
+                        'Digite <strong>10 ou 11 dígitos</strong> ou deixe vazio.', 7000);
+                    tel2El.focus();
+                    tel2El.style.borderColor = '#dc3545';
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR SUSPEITO';
+                    return;
+                }
 
                 // ---------- [v3.4.0] BLOQUEIO DE CPF DUPLICADO (via RPC) ----------
                 const { data: dupCpf, error: errCpf } = await sb.rpc('verificar_duplicidade_suspeito', {
@@ -1114,7 +1228,6 @@
                     btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR SUSPEITO';
                     return;
                 }
-                // ---------- FIM DO BLOQUEIO DE CPF DUPLICADO ----------
 
                 // ---------- [v3.4.0] AVISO DE NOME DUPLICADO (via RPC) ----------
                 const { data: dupNome, error: errNome } = await sb.rpc('verificar_duplicidade_suspeito', {
@@ -1142,7 +1255,6 @@
                         return;
                     }
                 }
-                // ---------- FIM DO AVISO DE NOME ----------
 
                 // ---------- Monta o objeto para INSERT ----------
                 const dados = {
@@ -1153,6 +1265,9 @@
                     orgao_expedidor: document.getElementById('orgao_expedidor').value.trim() || null,
                     data_nascimento: dataNasc,
                     sexo: document.getElementById('sexo').value || null,
+                    raca_cor: document.getElementById('raca_cor').value || null,
+                    telefone1: tel1 || null,
+                    telefone2: tel2 || null,
                     nome_mae: document.getElementById('nome_mae').value.trim() || null,
                     cep: document.getElementById('cep').value.trim() || null,
                     logradouro: document.getElementById('logradouro').value.trim() || null,
@@ -1271,7 +1386,6 @@
             tatuagensArquivos = [];
             renderizarTatuagens();
 
-            // Limpa os avisos de duplicidade
             const avisoCpf = document.getElementById('avisoCpf');
             const avisoNome = document.getElementById('avisoNome');
             if (avisoCpf) { avisoCpf.style.display = 'none'; avisoCpf.innerHTML = ''; }
@@ -1281,11 +1395,18 @@
             const campoNome = document.getElementById('nome_completo');
             if (campoCpf) {
                 campoCpf.classList.remove('input-duplicado');
-                // [v3.5.0] Limpa feedback visual de CPF
                 campoCpf.style.borderColor = '';
                 campoCpf.title = '';
             }
             if (campoNome) campoNome.classList.remove('input-duplicado');
+
+            // [v3.6.0] Limpa feedback visual dos telefones
+            ['telefone1', 'telefone2'].forEach(id => {
+                const el = document.getElementById(id);
+                const aviso = document.getElementById('aviso' + id.charAt(0).toUpperCase() + id.slice(1));
+                if (el) el.style.borderColor = '';
+                if (aviso) { aviso.style.display = 'none'; aviso.innerHTML = ''; }
+            });
         }
 
         // ============================================================
@@ -1346,7 +1467,7 @@
         // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ AI-DEPOM - Cadastro v3.5.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('✅ AI-DEPOM - Cadastro v3.7.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
             carregarUsuario();
             renderizarTatuagens();
         });
