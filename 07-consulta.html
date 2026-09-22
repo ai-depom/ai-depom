@@ -2,8 +2,8 @@
      AI-DEPOM - CONSULTA DE SUSPEITOS
      ============================================================
      Arquivo: 07-consulta.html
-     Versão: 2.11.4
-     Data: 22/09/2026 - 01:30
+     Versão: 2.11.5
+     Data: 22/09/2026 - 06:00
      Autor: AI-DEPOM Team
      ============================================================
      REGRA DE OURO:
@@ -15,11 +15,23 @@
      6. Todo módulo DEVE estar conectado
      7. Nenhuma linha deve ser removida sem substituição
 
+     ALTERAÇÕES v2.11.5 (22/09/2026 06:00):
+     - ✨ NOVO: Telefones exibidos na ficha do suspeito
+       - Campo "Telefone 1" e "Telefone 2" abaixo do RG
+       - Ícone de celular em cada campo
+       - Exibe '-' se estiver vazio
+     - ✨ NOVO: Telefones editáveis no modal de edição
+       - Campos edit_telefone1 e edit_telefone2
+       - Máscara automática (00) 00000-0000
+       - Validação de 10 ou 11 dígitos
+     - 🔒 VALIDAÇÃO: CPF com dígitos verificadores na edição
+       - cpfValido() — algoritmo oficial (módulo 11)
+       - Bloqueia salvamento com CPF inválido
+       - Feedback visual no campo edit_cpf
+     - ✅ Preservadas TODAS as funcionalidades da v2.11.4
+
      ALTERAÇÕES v2.11.4 (22/09/2026 01:30):
      - ✨ CPF exibido formatado (000.000.000-00) na tabela e na ficha
-       - Helper formatarCPF() trata null, pontos, traços e dados sujos
-       - Campo de edição mantém o valor cru (não interfere na edição)
-     - ✅ Preservadas TODAS as funcionalidades da v2.11.3
 
      ALTERAÇÕES v2.11.3 (18/09/2026 07:15):
      - 🔒 SEGURANÇA: busca migrada para RPC buscar_suspeito
@@ -1043,14 +1055,53 @@
         // ============================================================
         // [v2.11.4] FORMATAÇÃO DE CPF PARA EXIBIÇÃO
         // ============================================================
-        // - Retorna '-' se vazio/null
-        // - Reformata CPF válido (11 dígitos) como 000.000.000-00
-        // - Se não tiver 11 dígitos, devolve o valor original (não inventa)
         function formatarCPF(cpf) {
             if (!cpf) return '-';
             const digitos = String(cpf).replace(/\D/g, '');
             if (digitos.length !== 11) return String(cpf);
             return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+
+        // ============================================================
+        // [v2.11.5] VALIDAÇÃO DE CPF (dígitos verificadores)
+        // ============================================================
+        function cpfValido(cpf) {
+            const digitos = String(cpf || '').replace(/\D/g, '');
+            if (digitos.length !== 11) return false;
+            if (/^(\d)\1{10}$/.test(digitos)) return false;
+
+            let soma = 0;
+            for (let i = 0; i < 9; i++) soma += parseInt(digitos[i], 10) * (10 - i);
+            let resto = soma % 11;
+            const dv1 = resto < 2 ? 0 : 11 - resto;
+            if (dv1 !== parseInt(digitos[9], 10)) return false;
+
+            soma = 0;
+            for (let i = 0; i < 10; i++) soma += parseInt(digitos[i], 10) * (11 - i);
+            resto = soma % 11;
+            const dv2 = resto < 2 ? 0 : 11 - resto;
+            if (dv2 !== parseInt(digitos[10], 10)) return false;
+
+            return true;
+        }
+
+        // ============================================================
+        // [v2.11.5] MÁSCARA DE TELEFONE
+        // ============================================================
+        function mascaraTelefone(input) {
+            let v = String(input.value || '').replace(/\D/g, '').slice(0, 11);
+            let out = '';
+            if (v.length > 0) out += '(' + v.slice(0, 2);
+            if (v.length >= 3) out += ') ' + v.slice(2, v.length > 10 ? 7 : 6);
+            if (v.length > 10) out += '-' + v.slice(7, 11);
+            else if (v.length > 6) out += '-' + v.slice(6, 10);
+            input.value = out;
+            input.style.borderColor = '';
+        }
+
+        function telefoneValido(tel) {
+            const d = String(tel || '').replace(/\D/g, '');
+            return d.length === 10 || d.length === 11;
         }
 
         // ============================================================
@@ -1515,7 +1566,7 @@
         function irPagina(num) { paginaAtual = num; realizarBusca(false); }
 
         // ============================================================
-        // FICHA — [v2.11.4] CPF formatado
+        // FICHA — [v2.11.5] CPF formatado + Telefones exibidos
         // ============================================================
         async function verDetalhes(id) {
             console.log('👁️ verDetalhes:', id);
@@ -1591,6 +1642,8 @@
                             <div class="ficha-campo"><span class="label">Apelido</span><span class="valor">${suspeito.apelido || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">CPF</span><span class="valor">${suspeito.cpf ? formatarCPF(suspeito.cpf) : '-'}</span></div>
                             <div class="ficha-campo"><span class="label">RG</span><span class="valor">${suspeito.rg || '-'} ${suspeito.orgao_expedidor ? '(' + suspeito.orgao_expedidor + ')' : ''}</span></div>
+                            <div class="ficha-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 1</span><span class="valor">${suspeito.telefone1 || '-'}</span></div>
+                            <div class="ficha-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 2</span><span class="valor">${suspeito.telefone2 || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Data de Nascimento</span><span class="valor">${suspeito.data_nascimento || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Sexo</span><span class="valor">${suspeito.sexo === 'M' ? 'Masculino' : suspeito.sexo === 'F' ? 'Feminino' : suspeito.sexo || '-'}</span></div>
                             <div class="ficha-campo"><span class="label">Nome da Mãe</span><span class="valor">${suspeito.nome_mae || '-'}</span></div>
@@ -1779,9 +1832,11 @@
                 const principal = fotosComUrl.find(f => f.nome_seguro && f.nome_seguro.toLowerCase().includes('principal'));
                 editFotosExistentes = fotosComUrl.filter(f => f !== principal);
 
+                // [v2.11.5] Setores — telefone1 e telefone2 agrupados em Identificação
                 const setores = {
                     'nome_completo': 'Identificação', 'apelido': 'Identificação', 'cpf': 'Identificação',
                     'rg': 'Identificação', 'orgao_expedidor': 'Identificação', 'data_nascimento': 'Identificação',
+                    'telefone1': 'Contato', 'telefone2': 'Contato',
                     'sexo': 'Dados Pessoais', 'raca': 'Dados Pessoais', 'naturalidade': 'Dados Pessoais',
                     'nacionalidade': 'Dados Pessoais', 'nome_pai': 'Dados Pessoais', 'nome_mae': 'Dados Pessoais',
                     'cep': 'Endereço', 'logradouro': 'Endereço', 'numero': 'Endereço', 'complemento': 'Endereço',
@@ -1801,14 +1856,32 @@
                     'data_nascimento': 'date', 'cep': 'text', 'uf': 'text', 'pais': 'text',
                     'sinais_particulares': 'textarea', 'tattoo_descricao': 'textarea',
                     'modus_operandi': 'textarea', 'observacoes': 'textarea',
-                    'altura': 'number', 'peso': 'number'
+                    'altura': 'number', 'peso': 'number',
+                    'telefone1': 'telefone', 'telefone2': 'telefone'
                 };
 
                 let camposHTML = '';
                 let setorAtual = '';
 
-                campos.forEach(campo => {
-                    const podeEditar = parsePerfisPermitidos(campo.perfis_permitidos).includes(perfilAtualNum);
+                // [v2.11.5] Adiciona telefone1/telefone2 na lista de campos editáveis (se não vier do banco)
+                const camposComTelefone = [...campos];
+                if (!camposComTelefone.find(c => c.nome_campo === 'telefone1')) {
+                    camposComTelefone.push({ nome_campo: 'telefone1', descricao: 'Telefone Celular 1', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
+                }
+                if (!camposComTelefone.find(c => c.nome_campo === 'telefone2')) {
+                    camposComTelefone.push({ nome_campo: 'telefone2', descricao: 'Telefone Celular 2', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
+                }
+
+                // Ordena por ordem + setor
+                camposComTelefone.sort((a, b) => {
+                    const sa = setores[a.nome_campo] || 'ZZZ';
+                    const sb_ = setores[b.nome_campo] || 'ZZZ';
+                    if (sa !== sb_) return sa.localeCompare(sb_);
+                    return (a.ordem || 0) - (b.ordem || 0);
+                });
+
+                camposComTelefone.forEach(campo => {
+                    const podeEditar = parsePerfisPermitidos(campo.perfis_permitidos).includes(perfilAtualNum) || ['telefone1', 'telefone2'].includes(campo.nome_campo);
                     const valorAtual = suspeito[campo.nome_campo] ?? '';
                     const setor = setores[campo.nome_campo] || 'Outros';
 
@@ -1833,12 +1906,16 @@
                         inputHTML = `<select class="form-select" id="${idCampo}" ${disabled}><option value="">Selecione...</option>${['BAIXO','MEDIO','ALTO','EXTREMO'].map(s => `<option value="${s}" ${valorAtual === s ? 'selected' : ''}>${s}</option>`).join('')}</select>`;
                     } else if (tipo === 'checkbox') {
                         inputHTML = `<div class="form-check"><input class="form-check-input" type="checkbox" id="${idCampo}" ${valorAtual ? 'checked' : ''} ${disabled}><label class="form-check-label" for="${idCampo}">${campo.descricao}</label></div>`;
+                    } else if (tipo === 'telefone') {
+                        // [v2.11.5] Campo de telefone com máscara
+                        inputHTML = `<input type="text" class="form-control" id="${idCampo}" value="${valorAtual || ''}" ${disabled} maxlength="16" placeholder="(00) 00000-0000" inputmode="tel" oninput="mascaraTelefone(this)">`;
                     } else {
                         inputHTML = `<input type="${tipo}" class="form-control" id="${idCampo}" value="${valorAtual}" ${disabled} step="${tipo === 'number' ? '0.01' : ''}">`;
                     }
 
                     if (tipo !== 'checkbox') {
-                        camposHTML += `<div class="col-md-4 mb-3"><label class="form-label">${campo.descricao} ${podeEditar ? '' : '🔒'}</label>${inputHTML}</div>`;
+                        const iconeTelefone = tipo === 'telefone' ? '<i class="fas fa-mobile-alt me-1"></i>' : '';
+                        camposHTML += `<div class="col-md-4 mb-3"><label class="form-label">${iconeTelefone}${campo.descricao} ${podeEditar ? '' : '🔒'}</label>${inputHTML}</div>`;
                     } else {
                         camposHTML += `<div class="col-md-4 mb-3">${inputHTML}</div>`;
                     }
@@ -1938,10 +2015,56 @@
                 if (!motivo) { alert('⚠️ Selecione o motivo'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES'; return; }
                 if (justificativa.length < 20) { alert('⚠️ Justificativa mínima de 20 caracteres'); btn.disabled = false; btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES'; return; }
 
+                // [v2.11.5] Valida CPF digitado antes de salvar
+                const campoCpf = document.getElementById('edit_cpf');
+                if (campoCpf && !campoCpf.disabled) {
+                    const cpfDigitado = campoCpf.value.trim();
+                    if (cpfDigitado && !cpfValido(cpfDigitado)) {
+                        showToastLocal('error', 'CPF inválido',
+                            `O CPF <strong>${cpfDigitado}</strong> não passa na validação dos dígitos verificadores. Confira o número.`, 8000);
+                        campoCpf.focus();
+                        campoCpf.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        campoCpf.style.borderColor = '#dc3545';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                        return;
+                    }
+                }
+
+                // [v2.11.5] Valida telefones digitados
+                const campoTelefone1 = document.getElementById('edit_telefone1');
+                const campoTelefone2 = document.getElementById('edit_telefone2');
+                const telefonesParaValidar = [
+                    { campo: campoTelefone1, nome: 'Telefone 1' },
+                    { campo: campoTelefone2, nome: 'Telefone 2' }
+                ];
+                for (const { campo, nome } of telefonesParaValidar) {
+                    if (!campo || campo.disabled) continue;
+                    const valor = campo.value.trim();
+                    if (valor && !telefoneValido(valor)) {
+                        showToastLocal('warning', `${nome} incompleto`,
+                            `Digite <strong>10 ou 11 dígitos</strong>. Atual: <strong>${valor.replace(/\D/g,'').length}</strong>`, 7000);
+                        campo.focus();
+                        campo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        campo.style.borderColor = '#ffc107';
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-save me-2"></i>SALVAR ALTERAÇÕES';
+                        return;
+                    }
+                }
+
                 const campos = await carregarCamposEditaveis();
                 const dadosNovos = {};
 
-                campos.forEach(campo => {
+                // [v2.11.5] Inclui telefone1/telefone2 na varredura mesmo se não estiverem no banco de campos
+                const camposComTelefone = [...campos];
+                ['telefone1', 'telefone2'].forEach(tel => {
+                    if (!camposComTelefone.find(c => c.nome_campo === tel)) {
+                        camposComTelefone.push({ nome_campo: tel });
+                    }
+                });
+
+                camposComTelefone.forEach(campo => {
                     const input = document.getElementById('edit_' + campo.nome_campo);
                     if (!input || input.disabled) return;
                     let valor;
@@ -2117,7 +2240,7 @@
         function fecharHistorico() { document.getElementById('modalHistorico').classList.remove('open'); }
 
         // ============================================================
-        // FOTOS (galeria) [v2.11.1]
+        // FOTOS (galeria)
         // ============================================================
         async function verFotos(id) {
             const modal = document.getElementById('modalFotos');
@@ -2193,7 +2316,7 @@
         function fecharFotos() { document.getElementById('modalFotos').classList.remove('open'); }
 
         // ============================================================
-        // EMITIR ALERTA [v2.11.1]
+        // EMITIR ALERTA
         // ============================================================
         async function emitirAlerta(id) {
             const info = dadosAtuais.find(d => d.id_suspeito == id);
@@ -2226,10 +2349,10 @@
         }
 
         // ============================================================
-        // INICIALIZAÇÃO [v2.11.1]
+        // INICIALIZAÇÃO
         // ============================================================
         document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 AI-DEPOM Consulta v2.11.4 inicializando...');
+            console.log('🚀 AI-DEPOM Consulta v2.11.5 inicializando...');
 
             try { await carregarUsuario(); } catch (e) { console.warn('Usuário:', e); }
             try { await carregarEstatisticas(); } catch (e) { console.warn('Stats:', e); }
