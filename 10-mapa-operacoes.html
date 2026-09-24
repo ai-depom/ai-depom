@@ -2,27 +2,29 @@
      AI-DEPOM - MAPA DE OPERAÇÕES
      ============================================================
      Arquivo: 10-mapa-operacoes.html
-     Versão: 3.1.0
-     Data: 18/09/2026 - 10:00
+     Versão: 3.2.0
+     Data: 24/09/2026 - 17:00
      ============================================================
+     ALTERAÇÕES v3.2.0 (24/09/2026 17:00):
+     - ✨ NOVO: Popup do mapa agora exibe "PESSOAS PRESAS/CAPTURADAS"
+       - Nova variável global: presosPorOperacao
+       - carregarOperacoes() busca os presos de TODAS as operações
+         em uma única query (sem N+1, sem async no popup)
+       - gerarPopupOperacao() adiciona bloco com:
+         • Nome completo de cada pessoa
+         • Tipo (PRESO / CAPTURADO)
+         • Contagem total
+       - Bloco só aparece se houver presos (zero poluição visual)
+     - ✅ PRESERVADO: TUDO da v3.1.0
+       (mapa, cluster, notificações, estatísticas, popups, LGPD)
+
      ALTERAÇÕES v3.1.0 (18/09/2026 10:00):
-     - ✨ NOVO: Sino de notificações no topo (padrão 04-dashboard, 14-operacoes)
-       - Badge com contador de não lidas
-       - Dropdown com lista
-       - Marcar como lida (individual e todas)
-       - Polling automático a cada 30s
-     - 🔍 AUDITORIA: confirmado que a consulta atual NÃO tem
-       embed ambíguo nem risco de injeção (sem .or/.ilike com input)
-       → RPC desnecessária para este arquivo
-     - ✅ Preservadas TODAS as funcionalidades da v3.0.0
-       (mapa, cluster, popups, legenda, estatísticas, cores por status)
+     - Sino de notificações no topo
+     - Auditoria confirmada: query atual é segura (sem embed/injeção)
 
      ALTERAÇÕES v3.0.0 (17/09/2026 12:00):
-     - 🗺️ SEPARADO: agora mostra APENAS OPERAÇÕES
-     - 🔀 Mandados foram movidos para 15-mapa-mandados.html
-     - 🔀 Alvos/Suspeitos removidos deste mapa
-     - ✨ Novo link "Mapa de Mandados" no menu
-     - ✨ Estatísticas só de operações
+     - Separado: mostra APENAS OPERAÇÕES
+     - Mandados movidos para 15-mapa-mandados.html
      ============================================================
 -->
 <!DOCTYPE html>
@@ -527,12 +529,14 @@
         let mapa = null;
         let clusterOperacoes = null;
         let todasOperacoes = [];
+        // [v3.2.0] Cache dos presos por operação (evita N+1 query)
+        let presosPorOperacao = {};
 
         // [v3.1.0] Notificações
         let _notifTimer = null;
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mapa de Operacoes v3.1.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mapa de Operacoes v3.2.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -722,7 +726,11 @@
         }
 
         // ============================================================
-        // CARREGAR OPERAÇÕES — query atual é SEGURA (sem embed/join)
+        // [v3.2.0] CARREGAR OPERAÇÕES + PRESOS
+        // ------------------------------------------------------------
+        // FIX CIRÚRGICO: após buscar as operações, faz UMA query
+        // adicional para buscar todos os presos das operações
+        // carregadas, e agrupa por id_operacao no cache global.
         // ============================================================
         async function carregarOperacoes() {
             console.log('📡 Carregando operacoes...');
@@ -744,11 +752,36 @@
                 }));
 
                 console.log(`💥 ${todasOperacoes.length} operacoes carregadas`);
+
+                // [v3.2.0] Busca os presos de TODAS as operações em 1 query
+                presosPorOperacao = {};
+                const ids = todasOperacoes.map(o => o.id_operacao).filter(Boolean);
+                if (ids.length > 0) {
+                    const { data: presos, error: errPresos } = await window.supabaseClient
+                        .from('operacao_preso')
+                        .select('id_operacao, nome_completo, tipo')
+                        .in('id_operacao', ids)
+                        .eq('deletado', false)
+                        .order('nome_completo');
+
+                    if (errPresos) {
+                        console.warn('⚠️ [v3.2.0] Erro ao carregar presos:', errPresos.message);
+                    } else {
+                        (presos || []).forEach(p => {
+                            if (!presosPorOperacao[p.id_operacao]) presosPorOperacao[p.id_operacao] = [];
+                            presosPorOperacao[p.id_operacao].push(p);
+                        });
+                        const totalPresos = (presos || []).length;
+                        console.log(`👥 [v3.2.0] ${totalPresos} pessoa(s) vinculada(s) a ${Object.keys(presosPorOperacao).length} operacao(oes)`);
+                    }
+                }
+
                 renderizarMapa();
                 renderizarEstatisticas();
             } catch (error) {
                 console.error('❌ Erro ao carregar operacoes:', error);
                 todasOperacoes = [];
+                presosPorOperacao = {};
                 renderizarEstatisticas();
                 showToast('error', 'Erro ao carregar operações', error.message || 'Falha na consulta.', 8000);
             }
@@ -780,8 +813,27 @@
             }
         }
 
+        // ============================================================
+        // [v3.2.0] POPUP — agora com PESSOAS PRESAS / CAPTURADAS
+        // ============================================================
         function gerarPopupOperacao(o) {
             const endereco = [o.logradouro, o.numero, o.bairro, o.cidade, o.uf].filter(Boolean).join(', ') || '-';
+            const presos = presosPorOperacao[o.id_operacao] || [];
+
+            // [v3.2.0] Bloco de presos — só aparece se houver
+            const presosHTML = presos.length > 0
+                ? `
+                    <div class="popup-row" style="margin-top:8px; padding-top:8px; border-top:1px solid var(--border-color);">
+                        <strong>🎯 Pessoas Presas/Capturadas (${presos.length}):</strong>
+                    </div>
+                    ${presos.map(p => `
+                        <div class="popup-row" style="padding-left:8px;">
+                            • ${p.nome_completo || '-'} <em style="color:rgba(0,255,136,0.5); font-style:normal;">(${p.tipo || 'PRESO'})</em>
+                        </div>
+                    `).join('')}
+                `
+                : '';
+
             return `
                 <div class="popup-title operacao"><i class="fas fa-bullseye"></i> OPERACAO</div>
                 <div class="popup-row"><strong>Nome:</strong> ${o.nome_operacao || '#' + o.id_operacao}</div>
@@ -792,6 +844,7 @@
                 <div class="popup-row"><strong>Natureza:</strong> ${o.natureza_operacao || '-'}</div>
                 <div class="popup-row"><strong>Objetivo:</strong> ${o.objetivo_pratico || '-'}</div>
                 <div class="popup-row"><strong>Status:</strong> ${o.status || '-'}</div>
+                ${presosHTML}
             `;
         }
 
@@ -887,7 +940,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Pagina Mapa de Operacoes v3.1.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina Mapa de Operacoes v3.2.0 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
