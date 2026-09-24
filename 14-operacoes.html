@@ -1,21 +1,23 @@
  <!-- ============================================================
      AI-DEPOM - OPERAÇÕES POLICIAIS
      Arquivo: 14-operacoes.html
-     Versão: 1.5.1
-     Data: 24/09/2026 - 14:00
+     Versão: 1.5.2
+     Data: 24/09/2026 - 18:00
      ============================================================
+     ALTERAÇÕES v1.5.2 (24/09/2026 18:00):
+     - 🐛 CORRIGIDO: Nome de PESSOAS PRESAS / POLICIAIS não era
+       salvo quando digitado manualmente (sem escolher autocomplete)
+       - Causa: oninput só chamava a função do autocomplete, sem
+         atualizar o array editPresos / presos / etc.
+       - Fix (4 patches):
+         1. Cadastro de presos: oninput agora chama atualizarPreso()
+         2. Cadastro de policiais: oninput chama atualizarPolicial()
+         3. Edição de presos: oninput chama atualizarPresoEdicao()
+         4. Edição de policiais: oninput chama atualizarPolicialEdicao()
+     - ✅ PRESERVADO: TUDO da v1.5.1 (coordenadas, geocodificação, etc.)
+
      ALTERAÇÕES v1.5.1 (24/09/2026 14:00):
-     - 🐛 CORRIGIDO: Coordenadas não preenchiam na EDIÇÃO
-       - IDs `editLatitude`/`editLongitude` → `editlatitude`/`editlongitude`
-       - `setCoordenadas()` agora aceita camelCase e lowercase
-       - `salvarEdicaoOperacao()` lê os IDs corretos
-     - ✨ NOVO: Duas formas de preencher coordenadas
-       1. ✍️ Digitação manual (usuário digita lat/lng)
-       2. 🔄 Automático ao buscar CEP (ViaCEP → Nominatim)
-     - ✨ NOVO: Aviso antes de sobrescrever coordenadas digitadas
-     - ✨ NOVO: Feedback visual no botão (borda amarela durante busca)
-     - ✨ NOVO: Validação de faixa válida de lat/lng (-90/90, -180/180)
-     - ✅ Preservadas TODAS as funcionalidades da v1.5.0
+     - Coordenadas na edição, preenchimento automático via CEP
 
      ALTERAÇÕES v1.5.0 (18/09/2026 09:30):
      - Sino de notificações, minimizar, tela cheia
@@ -97,7 +99,6 @@
         .btn-icon:hover { background: rgba(0, 255, 136, 0.05); border-color: var(--text-primary); color: var(--text-primary); }
         .btn-icon.edit { color: #0dcaf0; border-color: rgba(13, 202, 240, 0.3); }
         .btn-icon.edit:hover { background: rgba(13, 202, 240, 0.15); border-color: #0dcaf0; color: #0dcaf0; }
-
         .card-item { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; margin-bottom: 12px; position: relative; }
         .card-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
         .card-item-header .titulo { color: var(--text-primary); font-size: 12px; font-weight: 700; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
@@ -105,7 +106,6 @@
         .btn-remover-item { background: rgba(220, 53, 69, 0.1); border: 1px solid rgba(220, 53, 69, 0.3); color: #dc3545; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; }
         .btn-remover-item:hover { background: #dc3545; color: #fff; }
         .empty-item { text-align: center; padding: 20px; color: rgba(0, 255, 136, 0.3); background: rgba(0, 0, 0, 0.2); border: 1px dashed var(--border-color); border-radius: 12px; margin-bottom: 12px; }
-
         .status-badge { display: inline-block; padding: 3px 12px; border-radius: 12px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; }
         .status-planejada { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.3); }
         .status-andamento { background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); }
@@ -120,17 +120,14 @@
         .nat-especial { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .nat-inteligencia { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; }
         .objetivo-badge { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 10px; font-weight: 600; margin: 2px; background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
-
         .table-container { overflow-x: auto; }
         .table-custom { width: 100%; border-collapse: collapse; }
         .table-custom th { color: rgba(0, 255, 136, 0.4); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
         .table-custom td { color: var(--text-secondary); font-size: 13px; padding: 12px; border-bottom: 1px solid rgba(0, 51, 34, 0.5); vertical-align: middle; }
         .table-custom tr:hover td { background: rgba(0, 255, 136, 0.02); }
         .table-custom tr .acoes-cell { white-space: nowrap; }
-
         .empty-state { text-align: center; padding: 40px 20px; color: rgba(0, 255, 136, 0.2); }
         .empty-state i { font-size: 40px; margin-bottom: 15px; display: block; }
-
         .toast-container { position: fixed; top: 65px; right: 20px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; }
         .toast-ai { min-width: 320px; max-width: 420px; padding: 16px 20px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8); display: flex; align-items: flex-start; gap: 12px; animation: slideIn 0.3s ease; }
         .toast-ai.success { border-left: 4px solid var(--text-primary); }
@@ -147,7 +144,6 @@
         .toast-ai .toast-message { font-size: 12px; color: rgba(0, 255, 136, 0.6); line-height: 1.5; }
         .toast-ai .toast-close { background: none; border: none; color: rgba(0, 255, 136, 0.3); cursor: pointer; }
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-
         .modal-custom { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center; padding: 20px; }
         .modal-custom.open { display: flex; }
         .modal-custom-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; width: 100%; max-width: 900px; max-height: 92vh; overflow-y: auto; }
@@ -161,7 +157,6 @@
         .detalhe-campo { padding: 10px 0; border-bottom: 1px solid rgba(0, 255, 136, 0.05); }
         .detalhe-campo .label { color: rgba(0, 255, 136, 0.3); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 4px; }
         .detalhe-campo .valor { color: var(--text-primary); font-size: 14px; }
-
         .autocomplete-wrapper { position: relative; }
         .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 0 0 10px 10px; max-height: 250px; overflow-y: auto; z-index: 100; display: none; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6); }
         .autocomplete-list.show { display: block; }
@@ -169,64 +164,20 @@
         .autocomplete-item:hover, .autocomplete-item.highlighted { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .autocomplete-item .match-info { font-size: 10px; color: rgba(0, 255, 136, 0.4); margin-top: 3px; }
         .autocomplete-item .badge-match { display: inline-block; background: rgba(0, 255, 136, 0.15); color: var(--text-primary); padding: 1px 6px; border-radius: 6px; font-size: 9px; font-weight: 700; margin-left: 6px; }
-
         .badge-cadastrado { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; background: rgba(13, 202, 240, 0.15); color: #0dcaf0; border: 1px solid rgba(13, 202, 240, 0.3); margin-left: 8px; }
         .badge-nao-cadastrado { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 9px; font-weight: 700; letter-spacing: 0.5px; background: rgba(255, 193, 7, 0.15); color: #ffc107; border: 1px solid rgba(255, 193, 7, 0.3); margin-left: 8px; }
         .badge-match { display: inline-block; background: rgba(0, 255, 136, 0.15); color: var(--text-primary); padding: 1px 6px; border-radius: 6px; font-size: 9px; font-weight: 700; margin-left: 6px; }
-
         .endereco-info { background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 15px; font-size: 12px; color: rgba(0, 255, 136, 0.5); display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
         .endereco-info i { color: var(--text-primary); }
         .info-box { background: rgba(13, 202, 240, 0.03); border: 1px solid rgba(13, 202, 240, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: rgba(13, 202, 240, 0.9); }
-
-        /* v1.5.1 — Cards de opção de coordenadas */
-        .coord-opcoes {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        .coord-opcao {
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid var(--border-color);
-            border-radius: 10px;
-            padding: 12px 15px;
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            transition: all 0.3s;
-        }
-        .coord-opcao:hover {
-            border-color: var(--text-primary);
-            background: rgba(0, 255, 136, 0.03);
-        }
-        .coord-opcao .icone {
-            width: 36px; height: 36px;
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-        .coord-opcao.manual .icone {
-            background: rgba(255, 193, 7, 0.15);
-            color: #ffc107;
-        }
-        .coord-opcao.auto .icone {
-            background: rgba(13, 202, 240, 0.15);
-            color: #0dcaf0;
-        }
-        .coord-opcao .texto {
-            flex: 1;
-            font-size: 11px;
-            line-height: 1.5;
-            color: rgba(0, 255, 136, 0.5);
-        }
-        .coord-opcao .texto strong {
-            display: block;
-            color: var(--text-primary);
-            font-size: 12px;
-            margin-bottom: 3px;
-        }
-
+        .coord-opcoes { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .coord-opcao { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 15px; display: flex; align-items: flex-start; gap: 12px; transition: all 0.3s; }
+        .coord-opcao:hover { border-color: var(--text-primary); background: rgba(0, 255, 136, 0.03); }
+        .coord-opcao .icone { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+        .coord-opcao.manual .icone { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
+        .coord-opcao.auto .icone { background: rgba(13, 202, 240, 0.15); color: #0dcaf0; }
+        .coord-opcao .texto { flex: 1; font-size: 11px; line-height: 1.5; color: rgba(0, 255, 136, 0.5); }
+        .coord-opcao .texto strong { display: block; color: var(--text-primary); font-size: 12px; margin-bottom: 3px; }
         .notif-wrapper { position: relative; display: inline-flex; align-items: center; }
         .notif-btn { width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent; color: rgba(0, 255, 136, 0.4); font-size: 18px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; position: relative; }
         .notif-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
@@ -257,7 +208,6 @@
         .notif-item .notif-titulo { color: var(--text-primary); font-weight: 600; font-size: 12px; margin-bottom: 3px; }
         .notif-item .notif-mensagem { color: rgba(0, 255, 136, 0.6); font-size: 11px; line-height: 1.4; margin-bottom: 4px; word-break: break-word; }
         .notif-item .notif-data { color: rgba(0, 255, 136, 0.3); font-size: 10px; }
-
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -439,7 +389,6 @@
                     </div>
                 </div>
 
-                <!-- v1.5.1 — COORDENADAS: 2 OPÇÕES -->
                 <div class="section-title"><i class="fas fa-map-marker-alt"></i>COORDENADAS DA OPERACAO</div>
                 <div class="coord-opcoes">
                     <div class="coord-opcao manual">
@@ -672,7 +621,7 @@
         const FUNCOES_POLICIAL = ['Comandante', 'Subcomandante', 'Motorista', 'Atirador', 'Apoio', 'Negociador', 'Comunicacoes', 'Inteligencia', 'Observador', 'Outro'];
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Operacoes v1.5.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Operacoes v1.5.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -846,7 +795,7 @@
         }
 
         // ============================================================
-        // [v1.5.1] HELPERS DE ENDEREÇO / COORDENADAS
+        // HELPERS DE ENDEREÇO / COORDENADAS
         // ============================================================
         function mascaraCep(input) {
             let v = input.value.replace(/\D/g, '').slice(0, 8);
@@ -859,7 +808,6 @@
             const partes = v.split('.');
             if (partes.length > 2) v = partes[0] + '.' + partes.slice(1).join('');
             input.value = v;
-            // Limpa feedback visual ao digitar manualmente
             input.classList.remove('coord-autofill');
         }
 
@@ -869,7 +817,6 @@
             return Number.isFinite(num) ? num : null;
         }
 
-        // [v1.5.1] Validação com faixa válida
         function validarCoordFeedback(input, tipo) {
             const v = parseCoord(input.value);
             if (v === null) { input.style.borderColor = ''; return; }
@@ -885,7 +832,6 @@
             input.style.borderColor = '#00ff88';
         }
 
-        // [v1.5.1] setCoordenadas — aceita camelCase E lowercase
         function setCoordenadas(prefixo, lat, lng, autoFill = false) {
             const latEl = document.getElementById(prefixo + 'latitude') 
                        || document.getElementById(prefixo + 'Latitude');
@@ -919,7 +865,6 @@
                 document.getElementById('cidadeOperacao').value = data.localidade || 'Salvador';
                 document.getElementById('ufOperacao').value = (data.uf || 'BA').toUpperCase();
                 showToast('success', 'CEP encontrado!', `${data.logradouro || '-'}, ${data.bairro || '-'}`, 4000);
-                // [v1.5.1] Busca coordenadas automaticamente após 500ms
                 setTimeout(() => {
                     buscarCoordenadasPorEndereco({ currentTarget: document.getElementById('btnBuscarCoords') }, true);
                 }, 500);
@@ -945,7 +890,6 @@
                 document.getElementById('editCidade').value = data.localidade || 'Salvador';
                 document.getElementById('editUf').value = (data.uf || 'BA').toUpperCase();
                 showToast('success', 'CEP encontrado!', `${data.logradouro || '-'}, ${data.bairro || '-'}`, 4000);
-                // [v1.5.1] Busca coordenadas automaticamente
                 setTimeout(() => {
                     buscarCoordenadasEdicao({ currentTarget: document.getElementById('btnBuscarCoordsEdit') }, true);
                 }, 500);
@@ -956,9 +900,6 @@
             await geocodificar(event, 'editLogradouro', 'editNumero', 'editComplemento', 'editBairro', 'editCidade', 'editUf', 'editCep', 'edit', silencioso);
         }
 
-        // ============================================================
-        // [v1.5.1] GEOCODIFICAR — unificado cadastro + edição
-        // ============================================================
         async function geocodificar(event, logId, numId, compId, baiId, cidId, ufId, cepId, prefixo, silencioso = false) {
             const btn = event ? (event.currentTarget || event.target) : null;
             const originalHTML = btn ? btn.innerHTML : '';
@@ -1053,7 +994,7 @@
                     <div class="row g-3">
                         <div class="col-md-6 autocomplete-wrapper">
                             <label class="form-label">Nome do Policial *</label>
-                            <input type="text" class="form-control" placeholder="Digite o nome" value="${p.nome_completo || ''}" autocomplete="off" oninput="buscarPolicial(${i}, this.value)" onfocus="buscarPolicial(${i}, this.value)" onblur="setTimeout(() => fecharAutoPol(${i}), 200)">
+                            <input type="text" class="form-control" placeholder="Digite o nome" value="${p.nome_completo || ''}" autocomplete="off" oninput="atualizarPolicial(${i}, 'nome_completo', this.value); buscarPolicial(${i}, this.value)" onfocus="buscarPolicial(${i}, this.value)" onblur="setTimeout(() => fecharAutoPol(${i}), 200)">
                             <div class="autocomplete-list" id="autoPol_${i}"></div>
                         </div>
                         <div class="col-md-3"><label class="form-label">Matricula</label><input type="text" class="form-control" value="${p.matricula || ''}" ${p.cadastrado ? 'readonly' : ''} oninput="atualizarPolicial(${i}, 'matricula', this.value)"></div>
@@ -1120,7 +1061,7 @@
                 <div class="row g-3">
                     <div class="col-md-6 autocomplete-wrapper">
                         <label class="form-label">Nome Completo *</label>
-                        <input type="text" class="form-control" value="${p.nome_completo || ''}" autocomplete="off" oninput="buscarSuspeito(${i}, this.value)" onfocus="buscarSuspeito(${i}, this.value)" onblur="setTimeout(() => fecharAuto(${i}), 200)">
+                        <input type="text" class="form-control" value="${p.nome_completo || ''}" autocomplete="off" oninput="atualizarPreso(${i}, 'nome_completo', this.value); buscarSuspeito(${i}, this.value)" onfocus="buscarSuspeito(${i}, this.value)" onblur="setTimeout(() => fecharAuto(${i}), 200)">
                         <div class="autocomplete-list" id="auto_${i}"></div>
                     </div>
                     <div class="col-md-3"><label class="form-label">Apelido</label><input type="text" class="form-control" value="${p.apelido || ''}" oninput="atualizarPreso(${i}, 'apelido', this.value)"></div>
@@ -1342,7 +1283,7 @@
         function fecharDetalhesOperacao() { document.getElementById('modalDetalhesOperacao').classList.remove('open'); }
 
         // ============================================================
-        // [v1.5.1] EDITAR — IDs corrigidos (editlatitude / editlongitude)
+        // EDITAR
         // ============================================================
         async function editarOperacao(id) {
             const modal = document.getElementById('modalEdicaoOperacao');
@@ -1475,7 +1416,7 @@
                     <div class="row g-3">
                         <div class="col-md-6 autocomplete-wrapper">
                             <label class="form-label">Nome *</label>
-                            <input type="text" class="form-control" value="${p.nome_completo || ''}" autocomplete="off" oninput="buscarPolicialEdicao(${i}, this.value)" onfocus="buscarPolicialEdicao(${i}, this.value)" onblur="setTimeout(() => fecharAutoPolEd(${i}), 200)">
+                            <input type="text" class="form-control" value="${p.nome_completo || ''}" autocomplete="off" oninput="atualizarPolicialEdicao(${i}, 'nome_completo', this.value); buscarPolicialEdicao(${i}, this.value)" onfocus="buscarPolicialEdicao(${i}, this.value)" onblur="setTimeout(() => fecharAutoPolEd(${i}), 200)">
                             <div class="autocomplete-list" id="autoPolEd_${i}"></div>
                         </div>
                         <div class="col-md-3"><label class="form-label">Matricula</label><input type="text" class="form-control" value="${p.matricula || ''}" oninput="atualizarPolicialEdicao(${i}, 'matricula', this.value)"></div>
@@ -1526,7 +1467,7 @@
                 <div class="row g-3">
                     <div class="col-md-6 autocomplete-wrapper">
                         <label class="form-label">Nome *</label>
-                        <input type="text" class="form-control" value="${p.nome_completo || ''}" autocomplete="off" oninput="buscarSuspeitoEdicao(${i}, this.value)" onfocus="buscarSuspeitoEdicao(${i}, this.value)" onblur="setTimeout(() => fecharAutoEd(${i}), 200)">
+                        <input type="text" class="form-control" value="${p.nome_completo || ''}" autocomplete="off" oninput="atualizarPresoEdicao(${i}, 'nome_completo', this.value); buscarSuspeitoEdicao(${i}, this.value)" onfocus="buscarSuspeitoEdicao(${i}, this.value)" onblur="setTimeout(() => fecharAutoEd(${i}), 200)">
                         <div class="autocomplete-list" id="autoEd_${i}"></div>
                     </div>
                     <div class="col-md-3"><label class="form-label">Apelido</label><input type="text" class="form-control" value="${p.apelido || ''}" oninput="atualizarPresoEdicao(${i}, 'apelido', this.value)"></div>
@@ -1556,7 +1497,7 @@
         }
 
         // ============================================================
-        // [v1.5.1] SALVAR EDIÇÃO — IDs corrigidos
+        // SALVAR EDIÇÃO
         // ============================================================
         async function salvarEdicaoOperacao() {
             if (!editandoOperacaoId) return;
@@ -1574,7 +1515,6 @@
                 const pv = editPoliciais.filter(p => p.nome_completo && p.nome_completo.trim());
                 for (const p of pv) if (!p.funcao) throw new Error(`Selecione funcao de "${p.nome_completo}".`);
 
-                // [v1.5.1] Lê IDs corretos: editlatitude / editlongitude
                 const latEl = document.getElementById('editlatitude') || document.getElementById('editLatitude');
                 const lngEl = document.getElementById('editlongitude') || document.getElementById('editLongitude');
 
@@ -1681,7 +1621,7 @@
         }
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
-        console.log('✅ Pagina de Operacoes v1.5.1 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Operacoes v1.5.2 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
