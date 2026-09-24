@@ -2,8 +2,8 @@
    AI-DEPOM - TEMPORIZADOR DE INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-lock.js
-   Versao: 2.0.0
-   Data: 21/09/2026 - 13:00
+   Versao: 2.1.0
+   Data: 24/09/2026 - 15:30
    Autor: AI-DEPOM Team
    ============================================
    REGRA DE OURO:
@@ -15,43 +15,54 @@
    6. Todo módulo DEVE estar conectado
    7. Nenhuma linha deve ser removida sem substituição
 
+   ALTERAÇÕES v2.1.0 (24/09/2026 15:30):
+   - 🐛 CORRIGIDO: Bug do botão 🔄 (recarregar) do browser
+     quando a tela NÃO estava bloqueada.
+     - Causa: LOCK_KEY persistia em localStorage e era
+       re-aplicado sem validar se havia reload real.
+     - Fix: nova flag sessionStorage 'aidepom_reloading'
+       que só é marcada quando o beforeunload é acionado
+       COM bloqueio ativo.
+     - Fix: verificarLockPendente() valida a flag antes
+       de re-aplicar o lock.
+     - Fix: lock "grudado" (>5min) é ignorado e limpo.
+   - 🐛 CORRIGIDO: Aviso chato do browser em todo reload
+     (beforeunload sempre ativo). Agora só ativa quando
+     bloqueado.
+   - 🐛 CORRIGIDO: Resíduos no desbloqueio.
+     Agora limpa LOCK_KEY + LOCK_AT_KEY + aidepom_reloading.
+   - ✨ NOVO: Modo Dev (localStorage.aidepom_dev_mode)
+     libera F12 e DevTools para desenvolvimento.
+   - ✅ PRESERVADO: TUDO da v2.0.0 (F5, Ctrl+R, F12,
+     sincronização entre abas, anti-autofill, guards).
+
    ALTERAÇÕES v2.0.0 (21/09/2026 13:00):
-   - 🚨 CORRIGIDO (Furo 1): F5 / Ctrl+R / Ctrl+Shift+R / Ctrl+F5
-     agora SÃO BLOQUEADOS quando a tela está bloqueada
-   - 🚨 CORRIGIDO (Furo 2): beforeunload avisa ao tentar recarregar
-   - 🚨 CORRIGIDO (Furo 3): MutationObserver detecta remoção COMPLETA
-     do nó DOM (não só da classe .show) e recria o overlay
-   - ✨ NOVO: bloqueio de F12 / Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+U
-     quando a tela está bloqueada (anti-DevTools)
-   - ✨ NOVO: sincronização entre abas via storage event
-     - Se uma aba bloqueia, TODAS bloqueiam
-     - Se uma aba desbloqueia, TODAS desbloqueiam
-   - ✨ NOVO: guarda ativa agora usa `getElementById` a cada tick
-     (imune a nó detached)
-   - ✅ PRESERVADO: todas as proteções da v1.2.3
-     (persistência, anti-autofill, classList hook, relógio HH:MM:SS)
+   - F5 / Ctrl+R / Ctrl+Shift+R / Ctrl+F5 bloqueados
+   - beforeunload avisa ao recarregar bloqueado
+   - MutationObserver detecta remoção COMPLETA do DOM
+   - Bloqueio de F12 / Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+U
+   - Sincronização entre abas via storage event
+   - Guarda ativa com getElementById a cada tick
 
    ALTERAÇÕES v1.2.3 (16/09/2026 14:30):
-   - 🐛 CORRIGIDO: relógio do lock não exibia a hora do bloqueio
-   - ✨ NOVO: exibe hora/minuto/segundo (HH:MM:SS) no momento do bloqueio
-   - ✨ NOVO: log no console confirmando o relógio preenchido
-   - ✅ Mantidas: todas as proteções da v1.2.2
+   - Relógio do lock exibe HH:MM:SS
+   - Log no console confirmando o relógio
 
    ALTERAÇÕES v1.2.2 (16/09/2026 12:30):
-   - 🚨 CORRIGIDO: F5 burlava o lock screen (bug crítico)
-   - 🛡️ NOVO: estado de bloqueio persistido em localStorage
-   - 🛡️ NOVO: re-aplica lock automaticamente ao recarregar
-   - 🛡️ NOVO: força logout se lock ficou ativo >24h
+   - F5 burlava o lock screen (bug crítico)
+   - Estado de bloqueio persistido em localStorage
+   - Re-aplica lock automaticamente ao recarregar
+   - Força logout se lock ficou ativo >24h
 
    ALTERAÇÕES v1.2.1 (16/09/2026 09:30):
-   - 🐛 CORRIGIDO: autofill do navegador preenchia a senha
-   - 🐛 CORRIGIDO: campo exige digitação manual (readonly + flag)
-   - 🛡️ NOVO: rastreia se o usuário DIGITOU (evento input)
+   - Autofill do navegador preenchia a senha
+   - Campo exige digitação manual (readonly + flag)
+   - Rastreia se o usuário DIGITOU (evento input)
 
    ALTERAÇÕES v1.2.0 (16/09/2026 09:00):
-   - 🐛 CORRIGIDO: desbloquear() valida senha ANTES de remover lock
-   - 🛡️ NOVO: guarda ativa re-aplica o lock se removido
-   - 🛡️ NOVO: intercepta classList.remove/toggle do lockScreen
+   - desbloquear() valida senha ANTES de remover lock
+   - Guarda ativa re-aplica o lock se removido
+   - Intercepta classList.remove/toggle do lockScreen
    ============================================ */
 
 (function() {
@@ -72,12 +83,20 @@
     const WARNING_MS = 1 * 60 * 1000;      // Aviso 1 minuto antes
     const CHECK_INTERVAL_MS = 1000;
     const LOCK_MAX_AGE_MS = 24 * 60 * 60 * 1000;  // 24 horas
+    const LOCK_STUCK_MS = 5 * 60 * 1000;   // Lock "grudado" após 5min
 
     // Chaves do localStorage
     const LOCK_KEY = 'aidepom_locked';
     const LOCK_AT_KEY = 'aidepom_locked_at';
     const LOCK_SIGNAL_KEY = 'aidepom_lock_signal';
     const UNLOCK_SIGNAL_KEY = 'aidepom_unlock_signal';
+    const RELOADING_KEY = 'aidepom_reloading';
+
+    // [v2.1.0] Modo Dev — libera F12 / DevTools
+    const MODO_DEV = (function() {
+        try { return localStorage.getItem('aidepom_dev_mode') === 'true'; }
+        catch (e) { return false; }
+    })();
 
     let timeoutId = null;
     let warningId = null;
@@ -403,7 +422,7 @@
     }
 
     // ============================================
-    // Verifica se havia lock pendente (F5 bypass)
+    // [v2.1.0] Verifica lock pendente (com validação de reload)
     // ============================================
     function verificarLockPendente() {
         try {
@@ -414,8 +433,19 @@
             const agora = Date.now();
             const tempoDecorrido = agora - lockedAt;
 
+            // [v2.1.0] Lock "grudado" há mais de 5min? Ignora e limpa.
+            if (tempoDecorrido > LOCK_STUCK_MS) {
+                console.warn('🛡️ [v2.1.0] Lock antigo detectado (>5min). Limpando...');
+                try {
+                    localStorage.removeItem(LOCK_KEY);
+                    localStorage.removeItem(LOCK_AT_KEY);
+                } catch (e) { /* ignore */ }
+                return false;
+            }
+
+            // Lock expirado (>24h)? Force logout.
             if (tempoDecorrido > LOCK_MAX_AGE_MS || lockedAt === 0) {
-                console.warn('🛡️ [v2.0.0] Lock expirado (>24h). Forçando logout.');
+                console.warn('🛡️ [v2.1.0] Lock expirado (>24h). Forçando logout.');
                 try {
                     localStorage.removeItem(LOCK_KEY);
                     localStorage.removeItem(LOCK_AT_KEY);
@@ -428,7 +458,18 @@
                 return false;
             }
 
-            console.log('🔒 [v2.0.0] Lock pendente detectado. Re-aplicando...');
+            // [v2.1.0] Só re-aplica se a flag de reload estiver ativa NESTA aba
+            const estavaRecarregando = sessionStorage.getItem(RELOADING_KEY);
+            if (!estavaRecarregando) {
+                console.log('🛡️ [v2.1.0] Lock sem flag de reload. Ignorando.');
+                try {
+                    localStorage.removeItem(LOCK_KEY);
+                    localStorage.removeItem(LOCK_AT_KEY);
+                } catch (e) { /* ignore */ }
+                return false;
+            }
+
+            console.log('🔒 [v2.1.0] Lock pendente VÁLIDO. Re-aplicando...');
             console.log('⏱️ Bloqueado há', Math.round(tempoDecorrido / 1000), 'segundos');
             return true;
 
@@ -452,9 +493,15 @@
     }
 
     // ============================================
-    // [v2.0.0] PROTEÇÃO CONTRA TECLAS DE RELOAD
+    // PROTEÇÃO CONTRA TECLAS DE RELOAD
     // ============================================
     function bloquearTeclasQuandoBloqueado() {
+        // [v2.1.0] Modo Dev — libera F12 se ativado
+        if (MODO_DEV) {
+            console.log('🧪 [v2.1.0] Modo Dev ativo — DevTools liberado');
+            return;
+        }
+
         document.addEventListener('keydown', function(e) {
             if (!bloqueado) return;
 
@@ -462,12 +509,12 @@
             if (e.key === 'F5' || e.keyCode === 116) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.warn('🛡️ [v2.0.0] F5 bloqueado (tela bloqueada)');
+                console.warn('🛡️ [v2.1.0] F5 bloqueado');
                 return false;
             }
 
             // Ctrl+F5 (hard reload)
-            if (e.ctrlKey && e.key === 'F5') {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'F5') {
                 e.preventDefault();
                 e.stopPropagation();
                 return false;
@@ -477,7 +524,7 @@
             if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'r' || e.key === 'R')) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.warn('🛡️ [v2.0.0] Ctrl+R bloqueado (tela bloqueada)');
+                console.warn('🛡️ [v2.1.0] Ctrl+R bloqueado');
                 return false;
             }
 
@@ -485,7 +532,7 @@
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'r' || e.key === 'R')) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.warn('🛡️ [v2.0.0] Ctrl+Shift+R bloqueado (tela bloqueada)');
+                console.warn('🛡️ [v2.1.0] Ctrl+Shift+R bloqueado');
                 return false;
             }
 
@@ -497,27 +544,36 @@
             ) {
                 e.preventDefault();
                 e.stopPropagation();
-                console.warn('🛡️ [v2.0.0] DevTools bloqueado (tela bloqueada)');
+                console.warn('🛡️ [v2.1.0] DevTools bloqueado');
                 return false;
             }
-        }, true); // ← fase de CAPTURA
+        }, true);
     }
 
     // ============================================
-    // [v2.0.0] AVISO AO RECARREGAR BLOQUEADO
+    // [v2.1.0] AVISO AO RECARREGAR BLOQUEADO
     // ============================================
     function registrarBeforeUnload() {
         window.addEventListener('beforeunload', function(e) {
             if (bloqueado) {
+                // [v2.1.0] Marca que está saindo COM bloqueio ativo
+                try {
+                    sessionStorage.setItem(RELOADING_KEY, 'true');
+                } catch (err) { /* ignore */ }
+
                 e.preventDefault();
                 e.returnValue = 'A sessão está bloqueada. Recarregar NÃO irá desbloquear.';
                 return e.returnValue;
             }
+            // [v2.1.0] Se NÃO está bloqueado, limpa qualquer resíduo
+            try {
+                sessionStorage.removeItem(RELOADING_KEY);
+            } catch (err) { /* ignore */ }
         });
     }
 
     // ============================================
-    // [v2.0.0] MUTATION OBSERVER (detecta remoção do nó DOM)
+    // MUTATION OBSERVER (detecta remoção do nó DOM)
     // ============================================
     function registrarDomObserver() {
         if (domObserver) return;
@@ -526,14 +582,13 @@
             if (!bloqueado) return;
             const overlay = document.getElementById('lockScreen');
             if (!overlay) {
-                console.warn('🛡️ [v2.0.0] Overlay REMOVIDO do DOM. Recriando...');
+                console.warn('🛡️ [v2.1.0] Overlay REMOVIDO do DOM. Recriando...');
                 criarElementos();
                 const novo = document.getElementById('lockScreen');
                 if (novo) novo.classList.add('show');
-                // Re-bind dos handlers
                 rebindHandlersAposRecriar();
             } else if (!overlay.classList.contains('show')) {
-                console.warn('🛡️ [v2.0.0] Classe .show removida. Re-aplicando...');
+                console.warn('🛡️ [v2.1.0] Classe .show removida. Re-aplicando...');
                 overlay.classList.add('show');
             }
         });
@@ -541,7 +596,6 @@
         domObserver.observe(document.body, { childList: true, subtree: true });
     }
 
-    // Placeholder — será redefinido dentro do init()
     let rebindHandlersAposRecriar = function() {
         console.warn('⚠️ Handlers ainda não foram bindados (init não rodou).');
     };
@@ -600,7 +654,6 @@
             lockGuardId = setInterval(() => {
                 if (!bloqueado) return;
 
-                // Re-query SEMPRE (imune a nó detached)
                 const overlay = document.getElementById('lockScreen');
 
                 if (!overlay) {
@@ -639,7 +692,7 @@
             if (lockSenha.hasAttribute('readonly')) {
                 lockSenha.removeAttribute('readonly');
                 lockSenha.placeholder = 'Digite sua senha';
-                console.log('🔓 [v2.0.0] readonly removido, pode digitar');
+                console.log('🔓 [v2.1.0] readonly removido, pode digitar');
             }
         });
 
@@ -727,9 +780,11 @@
             try {
                 localStorage.setItem(LOCK_KEY, 'true');
                 localStorage.setItem(LOCK_AT_KEY, Date.now().toString());
-                console.log('🛡️ [v2.0.0] Estado de bloqueio persistido');
-                // [v2.0.0] Sinaliza para outras abas
+                // [v2.1.0] Sinaliza para outras abas
                 localStorage.setItem(LOCK_SIGNAL_KEY, Date.now().toString());
+                // [v2.1.0] Marca flag de reload (para sobreviver a recarregamentos)
+                sessionStorage.setItem(RELOADING_KEY, 'true');
+                console.log('🛡️ [v2.1.0] Estado de bloqueio persistido + flag de reload');
             } catch (e) {
                 console.warn('⚠️ Não foi possível persistir lock:', e);
             }
@@ -775,7 +830,7 @@
         }
 
         // ============================================
-        // DESBLOQUEAR — valida senha + digitação real
+        // [v2.1.0] DESBLOQUEAR — valida senha + limpa resíduos
         // ============================================
         async function desbloquear() {
             const senha = (lockSenha.value || '').trim();
@@ -784,14 +839,14 @@
             lockError.textContent = '';
 
             if (lockSenha.hasAttribute('readonly')) {
-                console.warn('🛡️ [v2.0.0] Tentativa de desbloquear sem clicar no campo');
+                console.warn('🛡️ [v2.1.0] Tentativa de desbloquear sem clicar no campo');
                 lockError.textContent = 'Clique no campo de senha e digite sua senha.';
                 lockError.classList.add('show');
                 return;
             }
 
             if (!senhaDigitadaPeloUsuario) {
-                console.warn('🛡️ [v2.0.0] Tentativa de desbloquear sem digitar (autofill?)');
+                console.warn('🛡️ [v2.1.0] Tentativa de desbloquear sem digitar (autofill?)');
                 lockError.textContent = 'Digite sua senha manualmente.';
                 lockError.classList.add('show');
                 lockSenha.value = '';
@@ -861,11 +916,12 @@
                 resetarFlagDigitacao();
 
                 try {
+                    // [v2.1.0] Limpa TUDO — lock, sinal, flag de reload
                     localStorage.removeItem(LOCK_KEY);
                     localStorage.removeItem(LOCK_AT_KEY);
-                    // [v2.0.0] Sinaliza para outras abas desbloquearem
                     localStorage.setItem(UNLOCK_SIGNAL_KEY, Date.now().toString());
-                    console.log('🛡️ [v2.0.0] Estado de bloqueio limpo');
+                    sessionStorage.removeItem(RELOADING_KEY);
+                    console.log('🛡️ [v2.1.0] Resíduos limpos');
                 } catch (e) {
                     console.warn('⚠️ Erro ao limpar lock:', e);
                 }
@@ -885,7 +941,7 @@
         }
 
         // ============================================
-        // [v2.0.0] Rebind de handlers após recriar overlay
+        // [v2.1.0] Rebind de handlers após recriar overlay
         // ============================================
         rebindHandlersAposRecriar = function() {
             const novoLockScreen = document.getElementById('lockScreen');
@@ -924,7 +980,6 @@
                 });
             }
 
-            // Foca no campo
             if (novoLockSenha) setTimeout(() => novoLockSenha.focus(), 100);
         };
 
@@ -985,21 +1040,22 @@
                 localStorage.removeItem('logado');
                 localStorage.removeItem(LOCK_KEY);
                 localStorage.removeItem(LOCK_AT_KEY);
+                sessionStorage.removeItem(RELOADING_KEY);
             } catch (e) { /* ignore */ }
 
             window.location.href = '02-login.html';
         });
 
         // ============================================
-        // [v2.0.0] SINCRONIZAÇÃO ENTRE ABAS
+        // SINCRONIZAÇÃO ENTRE ABAS
         // ============================================
         window.addEventListener('storage', function(e) {
             if (e.key === LOCK_SIGNAL_KEY && e.newValue && !bloqueado) {
-                console.log('🔒 [v2.0.0] Outra aba bloqueou. Sincronizando...');
+                console.log('🔒 [v2.1.0] Outra aba bloqueou. Sincronizando...');
                 bloquearTela();
             }
             if (e.key === UNLOCK_SIGNAL_KEY && e.newValue && bloqueado) {
-                console.log('🔓 [v2.0.0] Outra aba desbloqueou. Sincronizando...');
+                console.log('🔓 [v2.1.0] Outra aba desbloqueou. Sincronizando...');
                 bloqueado = false;
                 desativarGuarda();
                 lockScreen.classList.remove('show');
@@ -1009,19 +1065,19 @@
         });
 
         // ============================================
-        // [v2.0.0] Registra proteções adicionais
+        // Registra proteções adicionais
         // ============================================
         bloquearTeclasQuandoBloqueado();
         registrarBeforeUnload();
         registrarDomObserver();
 
         // ============================================
-        // Inicialização: verifica lock pendente (F5)
+        // Inicialização: verifica lock pendente
         // ============================================
         const lockPendente = verificarLockPendente();
 
         if (lockPendente) {
-            console.log('🛡️ [v2.0.0] Re-aplicando bloqueio após reload...');
+            console.log('🛡️ [v2.1.0] Re-aplicando bloqueio após reload...');
             bloquearTela();
         } else {
             resetarTimers();
@@ -1029,7 +1085,7 @@
 
         window.__AIDEPOM_INACTIVITY_LOCK_INIT__ = true;
 
-        console.log('✅ Temporizador de inatividade ativo (5 minutos) [v2.0.0]');
+        console.log('✅ Temporizador de inatividade ativo (5 minutos) [v2.1.0]');
     }
 
     function bootstrap() {
