@@ -1,36 +1,24 @@
  <!-- ============================================================
      AI-DEPOM - OPERAÇÕES POLICIAIS
      Arquivo: 14-operacoes.html
-     Versão: 1.5.0
-     Data: 18/09/2026 - 09:30
+     Versão: 1.5.1
+     Data: 24/09/2026 - 14:00
      ============================================================
+     ALTERAÇÕES v1.5.1 (24/09/2026 14:00):
+     - 🐛 CORRIGIDO: Coordenadas não preenchiam na EDIÇÃO
+       - IDs `editLatitude`/`editLongitude` → `editlatitude`/`editlongitude`
+       - `setCoordenadas()` agora aceita camelCase e lowercase
+       - `salvarEdicaoOperacao()` lê os IDs corretos
+     - ✨ NOVO: Duas formas de preencher coordenadas
+       1. ✍️ Digitação manual (usuário digita lat/lng)
+       2. 🔄 Automático ao buscar CEP (ViaCEP → Nominatim)
+     - ✨ NOVO: Aviso antes de sobrescrever coordenadas digitadas
+     - ✨ NOVO: Feedback visual no botão (borda amarela durante busca)
+     - ✨ NOVO: Validação de faixa válida de lat/lng (-90/90, -180/180)
+     - ✅ Preservadas TODAS as funcionalidades da v1.5.0
+
      ALTERAÇÕES v1.5.0 (18/09/2026 09:30):
-     - ✨ NOVO: Sino de notificações no topo (padrão 04-dashboard)
-       - Badge com contador de não lidas
-       - Dropdown com lista
-       - Marcar como lida (individual e todas)
-       - Polling automático a cada 30s
-     - ✨ NOVO: Botão MINIMIZAR no controls-bar
-       - minimizeWindow() implementado
-     - ✨ NOVO: Botão TELA CHEIA (F11) no controls-bar
-       - toggleFullscreen() implementado
-     - ✅ Preservadas TODAS as funcionalidades da v1.4.1
-       (formulário, autocomplete, uploads, edição completa)
-
-     ALTERAÇÕES v1.4.1 (17/09/2026 14:30):
-     - 🔗 Menu: adicionado item "Mapa de Mandados" → 15-mapa-mandados.html
-     - ✅ Mantidas todas as features da v1.4.0
-
-     ALTERAÇÕES v1.4.0 (17/09/2026 09:00):
-     - ✨ NOVO: Editar operação completa
-       - Botão de editar na lista (lápis)
-       - Modal com TODOS os campos
-       - Auto-preenchimento de CEP (ViaCEP) na edição
-       - Busca de coordenadas na edição
-
-     ALTERAÇÕES v1.3.0 (17/09/2026 08:00):
-     - ✨ NOVO: Seção ENDEREÇO DA OPERAÇÃO (CEP + ViaCEP)
-     - 🐛 FIX: Latitude/Longitude aceitam vírgula
+     - Sino de notificações, minimizar, tela cheia
      ============================================================
 -->
 <!DOCTYPE html>
@@ -59,7 +47,6 @@
         .control-btn { width: var(--control-size); height: var(--control-size); border-radius: 8px; border: none; background: transparent; color: rgba(0, 255, 136, 0.3); font-size: 16px; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; }
         .control-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .control-btn.close-btn:hover { background: rgba(220, 53, 69, 0.15); color: #dc3545; }
-        .control-btn.fullscreen-btn:hover { background: rgba(0, 255, 136, 0.15); color: var(--text-primary); }
         .control-btn.minimize-btn:hover { background: rgba(255, 193, 7, 0.15); color: #ffc107; }
         .controls-divider { width: 1px; height: 24px; background: rgba(0, 255, 136, 0.05); margin: 0 6px; }
         .user-info { display: flex; align-items: center; gap: 8px; color: rgba(0, 255, 136, 0.3); font-size: 12px; }
@@ -99,6 +86,7 @@
         .form-control:focus, .form-select:focus { background: rgba(0, 0, 0, 0.6); border-color: var(--text-primary); box-shadow: 0 0 0 4px rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .form-control::placeholder { color: rgba(0, 255, 136, 0.15); }
         .form-select option { background: #000; color: var(--text-primary); }
+        .form-control.coord-autofill { border-color: #0dcaf0 !important; box-shadow: 0 0 0 4px rgba(13, 202, 240, 0.15) !important; transition: all 0.6s ease; }
         .btn-gold { background: var(--gradient-green); color: #000; font-weight: 700; padding: 10px 28px; border-radius: 10px; border: none; transition: all 0.3s; letter-spacing: 0.5px; font-size: 14px; }
         .btn-gold:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0, 255, 136, 0.3); color: #000; }
         .btn-gold:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -190,140 +178,85 @@
         .endereco-info i { color: var(--text-primary); }
         .info-box { background: rgba(13, 202, 240, 0.03); border: 1px solid rgba(13, 202, 240, 0.2); border-radius: 10px; padding: 12px; margin-bottom: 15px; font-size: 12px; color: rgba(13, 202, 240, 0.9); }
 
-        /* ============================================================
-           [v1.5.0] SINO DE NOTIFICAÇÕES
-           ============================================================ */
-        .notif-wrapper {
-            position: relative;
-            display: inline-flex;
-            align-items: center;
+        /* v1.5.1 — Cards de opção de coordenadas */
+        .coord-opcoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
         }
-        .notif-btn {
+        .coord-opcao {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            transition: all 0.3s;
+        }
+        .coord-opcao:hover {
+            border-color: var(--text-primary);
+            background: rgba(0, 255, 136, 0.03);
+        }
+        .coord-opcao .icone {
             width: 36px; height: 36px;
-            border-radius: 8px; border: none; background: transparent;
-            color: rgba(0, 255, 136, 0.4); font-size: 18px;
-            cursor: pointer; transition: all 0.3s;
+            border-radius: 8px;
             display: flex; align-items: center; justify-content: center;
-            position: relative;
+            font-size: 16px;
+            flex-shrink: 0;
         }
+        .coord-opcao.manual .icone {
+            background: rgba(255, 193, 7, 0.15);
+            color: #ffc107;
+        }
+        .coord-opcao.auto .icone {
+            background: rgba(13, 202, 240, 0.15);
+            color: #0dcaf0;
+        }
+        .coord-opcao .texto {
+            flex: 1;
+            font-size: 11px;
+            line-height: 1.5;
+            color: rgba(0, 255, 136, 0.5);
+        }
+        .coord-opcao .texto strong {
+            display: block;
+            color: var(--text-primary);
+            font-size: 12px;
+            margin-bottom: 3px;
+        }
+
+        .notif-wrapper { position: relative; display: inline-flex; align-items: center; }
+        .notif-btn { width: 36px; height: 36px; border-radius: 8px; border: none; background: transparent; color: rgba(0, 255, 136, 0.4); font-size: 18px; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; position: relative; }
         .notif-btn:hover { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .notif-btn.tem-novas { color: var(--text-primary); animation: pulseNotif 1.5s infinite; }
-        .notif-badge {
-            position: absolute;
-            top: 2px; right: 2px;
-            min-width: 18px; height: 18px;
-            border-radius: 9px;
-            background: #dc3545; color: #fff;
-            font-size: 10px; font-weight: 700;
-            display: none;
-            align-items: center; justify-content: center;
-            padding: 0 5px;
-            border: 2px solid #000;
-        }
+        .notif-badge { position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: #dc3545; color: #fff; font-size: 10px; font-weight: 700; display: none; align-items: center; justify-content: center; padding: 0 5px; border: 2px solid #000; }
         .notif-badge.ativo { display: flex; }
-        @keyframes pulseNotif {
-            0%,100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
-        }
-        .notif-dropdown {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            width: 360px;
-            max-width: calc(100vw - 40px);
-            max-height: 480px;
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-            z-index: 9999;
-            overflow: hidden;
-            display: none;
-            flex-direction: column;
-        }
+        @keyframes pulseNotif { 0%,100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        .notif-dropdown { position: absolute; top: calc(100% + 8px); right: 0; width: 360px; max-width: calc(100vw - 40px); max-height: 480px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 12px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8); z-index: 9999; overflow: hidden; display: none; flex-direction: column; }
         .notif-dropdown.open { display: flex; }
-        .notif-dropdown-header {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.4);
-        }
-        .notif-dropdown-header .titulo {
-            color: var(--text-primary);
-            font-weight: 700;
-            font-size: 13px;
-            letter-spacing: 0.5px;
-        }
-        .notif-dropdown-header .btn-marcar-todas {
-            background: transparent;
-            border: none;
-            color: rgba(0, 255, 136, 0.4);
-            font-size: 11px;
-            cursor: pointer;
-            padding: 4px 8px;
-            border-radius: 6px;
-            transition: all 0.3s;
-        }
-        .notif-dropdown-header .btn-marcar-todas:hover {
-            color: var(--text-primary);
-            background: rgba(0, 255, 136, 0.05);
-        }
-        .notif-lista {
-            overflow-y: auto;
-            flex: 1;
-            padding: 6px 0;
-        }
-        .notif-vazio {
-            padding: 40px 20px;
-            text-align: center;
-            color: rgba(0, 255, 136, 0.2);
-            font-size: 12px;
-        }
+        .notif-dropdown-header { padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.4); }
+        .notif-dropdown-header .titulo { color: var(--text-primary); font-weight: 700; font-size: 13px; letter-spacing: 0.5px; }
+        .notif-dropdown-header .btn-marcar-todas { background: transparent; border: none; color: rgba(0, 255, 136, 0.4); font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.3s; }
+        .notif-dropdown-header .btn-marcar-todas:hover { color: var(--text-primary); background: rgba(0, 255, 136, 0.05); }
+        .notif-lista { overflow-y: auto; flex: 1; padding: 6px 0; }
+        .notif-vazio { padding: 40px 20px; text-align: center; color: rgba(0, 255, 136, 0.2); font-size: 12px; }
         .notif-vazio i { font-size: 32px; display: block; margin-bottom: 10px; }
-        .notif-item {
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(0, 51, 34, 0.5);
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            gap: 12px;
-            align-items: flex-start;
-        }
+        .notif-item { padding: 12px 16px; border-bottom: 1px solid rgba(0, 51, 34, 0.5); cursor: pointer; transition: all 0.3s; display: flex; gap: 12px; align-items: flex-start; }
         .notif-item:last-child { border-bottom: none; }
         .notif-item:hover { background: rgba(0, 255, 136, 0.03); }
         .notif-item.nao-lida { background: rgba(0, 255, 136, 0.04); border-left: 3px solid var(--text-primary); }
         .notif-item.nao-lida:hover { background: rgba(0, 255, 136, 0.08); }
-        .notif-item .notif-icon {
-            width: 34px; height: 34px;
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            font-size: 14px;
-        }
+        .notif-item .notif-icon { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 14px; }
         .notif-item .notif-icon.novo { background: rgba(0, 255, 136, 0.12); color: #00ff88; }
         .notif-item .notif-icon.alteracao { background: rgba(255, 193, 7, 0.12); color: #ffc107; }
         .notif-item .notif-icon.cumprido { background: rgba(13, 202, 240, 0.12); color: #0dcaf0; }
         .notif-item .notif-icon.padrao { background: rgba(0, 255, 136, 0.08); color: var(--text-primary); }
         .notif-item .notif-conteudo { flex: 1; min-width: 0; }
-        .notif-item .notif-titulo {
-            color: var(--text-primary);
-            font-weight: 600;
-            font-size: 12px;
-            margin-bottom: 3px;
-        }
-        .notif-item .notif-mensagem {
-            color: rgba(0, 255, 136, 0.6);
-            font-size: 11px;
-            line-height: 1.4;
-            margin-bottom: 4px;
-            word-break: break-word;
-        }
-        .notif-item .notif-data {
-            color: rgba(0, 255, 136, 0.3);
-            font-size: 10px;
-        }
+        .notif-item .notif-titulo { color: var(--text-primary); font-weight: 600; font-size: 12px; margin-bottom: 3px; }
+        .notif-item .notif-mensagem { color: rgba(0, 255, 136, 0.6); font-size: 11px; line-height: 1.4; margin-bottom: 4px; word-break: break-word; }
+        .notif-item .notif-data { color: rgba(0, 255, 136, 0.3); font-size: 10px; }
 
         @media (max-width: 992px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
@@ -331,6 +264,7 @@
             .main-content { margin-left: 0; width: 100vw; }
             .sidebar-toggle { display: flex !important; }
             .user-info .name { display: none; }
+            .coord-opcoes { grid-template-columns: 1fr; }
         }
         .sidebar-toggle { display: none; background: rgba(0, 255, 136, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 14px; border-radius: 10px; font-size: 18px; cursor: pointer; }
         @media (max-width: 768px) {
@@ -505,18 +439,35 @@
                     </div>
                 </div>
 
+                <!-- v1.5.1 — COORDENADAS: 2 OPÇÕES -->
                 <div class="section-title"><i class="fas fa-map-marker-alt"></i>COORDENADAS DA OPERACAO</div>
+                <div class="coord-opcoes">
+                    <div class="coord-opcao manual">
+                        <div class="icone"><i class="fas fa-keyboard"></i></div>
+                        <div class="texto">
+                            <strong>✍️ Digitar manualmente</strong>
+                            Cole ou digite a latitude e a longitude direto nos campos abaixo.
+                        </div>
+                    </div>
+                    <div class="coord-opcao auto">
+                        <div class="icone"><i class="fas fa-magic"></i></div>
+                        <div class="texto">
+                            <strong>🔄 Preenchimento automático</strong>
+                            Preencha o <strong>CEP</strong> acima e clique em <strong>BUSCAR</strong>. O sistema preenche sozinho.
+                        </div>
+                    </div>
+                </div>
                 <div class="row g-3">
                     <div class="col-md-4">
                         <label class="form-label">Latitude</label>
-                        <input type="text" inputmode="decimal" class="form-control" id="latitude" placeholder="-12.9714" oninput="sanitizarCoord(this)">
+                        <input type="text" inputmode="decimal" class="form-control" id="latitude" placeholder="-12.9714" oninput="sanitizarCoord(this)" onchange="validarCoordFeedback(this, 'lat')">
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Longitude</label>
-                        <input type="text" inputmode="decimal" class="form-control" id="longitude" placeholder="-38.5014" oninput="sanitizarCoord(this)">
+                        <input type="text" inputmode="decimal" class="form-control" id="longitude" placeholder="-38.5014" oninput="sanitizarCoord(this)" onchange="validarCoordFeedback(this, 'lng')">
                     </div>
                     <div class="col-md-4 d-flex align-items-end">
-                        <button type="button" class="btn-outline-gold w-100" onclick="buscarCoordenadasPorEndereco(event)">
+                        <button type="button" class="btn-outline-gold w-100" id="btnBuscarCoords" onclick="buscarCoordenadasPorEndereco(event)">
                             <i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS
                         </button>
                     </div>
@@ -714,7 +665,6 @@
         let editPresos = [];
         let editPoliciais = [];
 
-        // [v1.5.0] Notificações
         let _notifTimer = null;
 
         const NATUREZA_LABEL = { 'SIGILOSA': 'Sigilosa', 'DISCRETA': 'Discreta', 'OSTENSIVA': 'Ostensiva', 'ABERTA': 'Aberta', 'PADRAO': 'Padrao', 'ESPECIAL': 'Especial', 'INTELIGENCIA': 'Inteligencia' };
@@ -722,7 +672,7 @@
         const FUNCOES_POLICIAL = ['Comandante', 'Subcomandante', 'Motorista', 'Atirador', 'Apoio', 'Negociador', 'Comunicacoes', 'Inteligencia', 'Observador', 'Outro'];
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Operacoes v1.5.0 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Operacoes v1.5.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -742,14 +692,12 @@
             renderizarPresos();
             renderizarPoliciais();
 
-            // [v1.5.0] Notificações
             await carregarNotificacoes();
             if (_notifTimer) clearInterval(_notifTimer);
             _notifTimer = setInterval(() => {
                 carregarNotificacoes().catch(e => console.warn('poll notif:', e));
             }, 30000);
 
-            // Fecha dropdown ao clicar fora
             document.addEventListener('click', function(e) {
                 const dd = document.getElementById('notifDropdown');
                 const btn = document.getElementById('notifBtn');
@@ -759,7 +707,6 @@
                 }
             });
 
-            // [v1.5.0] ESC fecha modais e dropdown
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Escape') {
                     const dd = document.getElementById('notifDropdown');
@@ -785,7 +732,7 @@
         }
 
         // ============================================================
-        // [v1.5.0] NOTIFICAÇÕES
+        // NOTIFICAÇÕES
         // ============================================================
         async function carregarNotificacoes() {
             const lista = document.getElementById('notifLista');
@@ -899,31 +846,67 @@
         }
 
         // ============================================================
-        // HELPERS DE ENDERECO / COORDENADAS
+        // [v1.5.1] HELPERS DE ENDEREÇO / COORDENADAS
         // ============================================================
         function mascaraCep(input) {
             let v = input.value.replace(/\D/g, '').slice(0, 8);
             if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
             input.value = v;
         }
+
         function sanitizarCoord(input) {
             let v = String(input.value || '').trim().replace(/[^0-9.,\-]/g, '').replace(',', '.');
             const partes = v.split('.');
             if (partes.length > 2) v = partes[0] + '.' + partes.slice(1).join('');
             input.value = v;
+            // Limpa feedback visual ao digitar manualmente
+            input.classList.remove('coord-autofill');
         }
+
         function parseCoord(str) {
             if (str === null || str === undefined || str === '') return null;
             const num = parseFloat(String(str).trim().replace(',', '.'));
             return Number.isFinite(num) ? num : null;
         }
-        function setCoordenadas(prefixo, lat, lng) {
-            const latEl = document.getElementById(prefixo + 'latitude');
-            const lngEl = document.getElementById(prefixo + 'longitude');
-            if (latEl) latEl.value = Number(lat).toFixed(8);
-            if (lngEl) lngEl.value = Number(lng).toFixed(8);
+
+        // [v1.5.1] Validação com faixa válida
+        function validarCoordFeedback(input, tipo) {
+            const v = parseCoord(input.value);
+            if (v === null) { input.style.borderColor = ''; return; }
+            const ok = tipo === 'lat' ? (v >= -90 && v <= 90) : (v >= -180 && v <= 180);
+            if (!ok) {
+                input.style.borderColor = '#dc3545';
+                showToast('warning', 'Coordenada inválida',
+                    tipo === 'lat'
+                        ? 'Latitude deve estar entre -90 e 90.'
+                        : 'Longitude deve estar entre -180 e 180.', 5000);
+                return;
+            }
+            input.style.borderColor = '#00ff88';
         }
 
+        // [v1.5.1] setCoordenadas — aceita camelCase E lowercase
+        function setCoordenadas(prefixo, lat, lng, autoFill = false) {
+            const latEl = document.getElementById(prefixo + 'latitude') 
+                       || document.getElementById(prefixo + 'Latitude');
+            const lngEl = document.getElementById(prefixo + 'longitude') 
+                       || document.getElementById(prefixo + 'Longitude');
+            
+            if (latEl) {
+                latEl.value = Number(lat).toFixed(8);
+                if (autoFill) latEl.classList.add('coord-autofill');
+            }
+            if (lngEl) {
+                lngEl.value = Number(lng).toFixed(8);
+                if (autoFill) lngEl.classList.add('coord-autofill');
+            }
+            
+            console.log('📍 setCoordenadas:', prefixo, lat, lng, '| latEl:', !!latEl, '| lngEl:', !!lngEl);
+        }
+
+        // ============================================================
+        // BUSCA CEP — CADASTRO
+        // ============================================================
         async function buscarCepOperacao() {
             const cep = document.getElementById('cepOperacao').value.replace(/\D/g, '');
             if (cep.length !== 8) return;
@@ -936,12 +919,20 @@
                 document.getElementById('cidadeOperacao').value = data.localidade || 'Salvador';
                 document.getElementById('ufOperacao').value = (data.uf || 'BA').toUpperCase();
                 showToast('success', 'CEP encontrado!', `${data.logradouro || '-'}, ${data.bairro || '-'}`, 4000);
+                // [v1.5.1] Busca coordenadas automaticamente após 500ms
+                setTimeout(() => {
+                    buscarCoordenadasPorEndereco({ currentTarget: document.getElementById('btnBuscarCoords') }, true);
+                }, 500);
             } catch (e) { showToast('error', 'Erro ao buscar CEP', 'Tente novamente.'); }
         }
-        async function buscarCoordenadasPorEndereco(event) {
-            await geocodificar(event, 'logradouroOperacao', 'numeroOperacao', 'complementoOperacao', 'bairroOperacao', 'cidadeOperacao', 'ufOperacao', 'cepOperacao', '');
+
+        async function buscarCoordenadasPorEndereco(event, silencioso = false) {
+            await geocodificar(event, 'logradouroOperacao', 'numeroOperacao', 'complementoOperacao', 'bairroOperacao', 'cidadeOperacao', 'ufOperacao', 'cepOperacao', '', silencioso);
         }
 
+        // ============================================================
+        // BUSCA CEP — EDIÇÃO
+        // ============================================================
         async function buscarCepEdicao() {
             const cep = document.getElementById('editCep').value.replace(/\D/g, '');
             if (cep.length !== 8) return;
@@ -954,16 +945,28 @@
                 document.getElementById('editCidade').value = data.localidade || 'Salvador';
                 document.getElementById('editUf').value = (data.uf || 'BA').toUpperCase();
                 showToast('success', 'CEP encontrado!', `${data.logradouro || '-'}, ${data.bairro || '-'}`, 4000);
+                // [v1.5.1] Busca coordenadas automaticamente
+                setTimeout(() => {
+                    buscarCoordenadasEdicao({ currentTarget: document.getElementById('btnBuscarCoordsEdit') }, true);
+                }, 500);
             } catch (e) { showToast('error', 'Erro ao buscar CEP', 'Tente novamente.'); }
         }
-        async function buscarCoordenadasEdicao(event) {
-            await geocodificar(event, 'editLogradouro', 'editNumero', 'editComplemento', 'editBairro', 'editCidade', 'editUf', 'editCep', 'edit');
+
+        async function buscarCoordenadasEdicao(event, silencioso = false) {
+            await geocodificar(event, 'editLogradouro', 'editNumero', 'editComplemento', 'editBairro', 'editCidade', 'editUf', 'editCep', 'edit', silencioso);
         }
 
-        async function geocodificar(event, logId, numId, compId, baiId, cidId, ufId, cepId, prefixo) {
-            const btn = event ? event.currentTarget || event.target : null;
+        // ============================================================
+        // [v1.5.1] GEOCODIFICAR — unificado cadastro + edição
+        // ============================================================
+        async function geocodificar(event, logId, numId, compId, baiId, cidId, ufId, cepId, prefixo, silencioso = false) {
+            const btn = event ? (event.currentTarget || event.target) : null;
             const originalHTML = btn ? btn.innerHTML : '';
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...'; }
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>BUSCANDO...';
+                btn.style.borderColor = '#ffc107';
+            }
             try {
                 const partes = [
                     document.getElementById(logId).value.trim(),
@@ -975,23 +978,42 @@
                     document.getElementById(cepId).value.trim(),
                     'Brasil'
                 ].filter(Boolean);
+
                 if (partes.length < 3) throw new Error('Preencha ao menos Rua e Bairro (ou Cidade).');
 
                 const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(partes.join(', '))}&limit=1&countrycodes=br`;
                 const resp = await fetch(url, { headers: { 'User-Agent': 'AI-DEPOM/1.0' } });
                 const resultado = await resp.json();
-                if (!resultado || resultado.length === 0) throw new Error('Endereco nao encontrado. Tente sem numero ou apenas com CEP.');
 
-                const { lat, lon, display_name } = resultado[0];
-                setCoordenadas(prefixo, lat, lon);
-                showToast('success', 'Coordenadas encontradas!', `Lat: ${Number(lat).toFixed(5)} | Lng: ${Number(lon).toFixed(5)}`, 6000);
+                if (!resultado || resultado.length === 0) {
+                    throw new Error('Endereco nao encontrado. Tente sem numero ou apenas com CEP.');
+                }
+
+                const { lat, lon } = resultado[0];
+                setCoordenadas(prefixo, lat, lon, true);
+
+                if (!silencioso) {
+                    showToast('success', 'Coordenadas encontradas!',
+                        `Lat: ${Number(lat).toFixed(5)} | Lng: ${Number(lon).toFixed(5)}`, 6000);
+                } else {
+                    showToast('info', 'Coordenadas preenchidas',
+                        `Lat: ${Number(lat).toFixed(5)} | Lng: ${Number(lon).toFixed(5)} (automático)`, 4000);
+                }
             } catch (e) {
-                showToast('error', 'Erro ao buscar', e.message);
+                if (!silencioso) showToast('error', 'Erro ao buscar', e.message);
+                else console.warn('Geocodificação automática falhou:', e.message);
             } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = originalHTML || '<i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS'; }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML || '<i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS';
+                    btn.style.borderColor = '';
+                }
             }
         }
 
+        // ============================================================
+        // CACHES
+        // ============================================================
         async function carregarSuspeitosCache() {
             try {
                 const { data, error } = await window.supabaseClient.from('suspeito').select('id_suspeito, nome_completo, apelido, cpf, data_nascimento, status_atual, nivel_periculosidade').eq('deletado', false).order('nome_completo');
@@ -1009,6 +1031,9 @@
             } catch (e) { console.error('❌', e); }
         }
 
+        // ============================================================
+        // POLICIAIS
+        // ============================================================
         function adicionarPolicial() { policiais.push({ id_usuario: null, nome_completo: '', matricula: '', funcao: '', cadastrado: false }); renderizarPoliciais(); }
         function removerPolicial(i) { if (!confirm('Remover este policial?')) return; policiais.splice(i, 1); renderizarPoliciais(); }
         function atualizarPolicial(i, c, v) { if (policiais[i]) policiais[i][c] = v; }
@@ -1058,6 +1083,9 @@
             showToast('success', 'Vinculado!', `${u.nome_completo} vinculado.`);
         }
 
+        // ============================================================
+        // VIATURAS
+        // ============================================================
         function adicionarViatura() { viaturas.push({ placa: '' }); renderizarViaturas(); }
         function removerViatura(i) { viaturas.splice(i, 1); renderizarViaturas(); }
         function atualizarPlacaViatura(i, v) { if (viaturas[i]) viaturas[i].placa = v.toUpperCase(); }
@@ -1075,6 +1103,9 @@
             </div>`).join('');
         }
 
+        // ============================================================
+        // PRESOS
+        // ============================================================
         function adicionarPreso() { presos.push({ nome_completo: '', apelido: '', cpf: '', data_nascimento: '', tipo: 'PRESO', id_suspeito: null, foi_identificado: false }); renderizarPresos(); }
         function removerPreso(i) { if (!confirm('Remover?')) return; presos.splice(i, 1); renderizarPresos(); }
         function atualizarPreso(i, c, v) { if (presos[i]) presos[i][c] = v; }
@@ -1124,6 +1155,9 @@
             showToast('success', 'Vinculado!', `${s.nome_completo} ja cadastrado.`);
         }
 
+        // ============================================================
+        // CADASTRAR
+        // ============================================================
         async function cadastrarOperacao(e) {
             e.preventDefault();
             const btn = document.getElementById('btnCadastrarOperacao');
@@ -1199,10 +1233,13 @@
             viaturas = []; presos = []; policiais = [];
             renderizarViaturas(); renderizarPresos(); renderizarPoliciais();
             ['latitude', 'longitude', 'cepOperacao', 'logradouroOperacao', 'numeroOperacao', 'complementoOperacao', 'bairroOperacao'].forEach(id => {
-                const el = document.getElementById(id); if (el) el.value = '';
+                const el = document.getElementById(id); if (el) { el.value = ''; el.classList.remove('coord-autofill'); }
             });
         }
 
+        // ============================================================
+        // LISTAR
+        // ============================================================
         async function carregarOperacoes() {
             const container = document.getElementById('listaOperacoes');
             container.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i>Carregando...</div>';
@@ -1257,6 +1294,9 @@
             }
         }
 
+        // ============================================================
+        // VER DETALHES
+        // ============================================================
         async function verDetalhesOperacao(id) {
             const modal = document.getElementById('modalDetalhesOperacao');
             const body = document.getElementById('modalDetalhesOperacaoBody');
@@ -1282,7 +1322,7 @@
                         <div class="col-md-4"><div class="detalhe-campo"><span class="label">Horario</span><span class="valor">${o.horario || '-'}</span></div></div>
                         <div class="col-md-4"><div class="detalhe-campo"><span class="label">Setor</span><span class="valor">${o.setor || '-'}</span></div></div>
                         ${endLinha ? `<div class="col-md-12"><div class="detalhe-campo"><span class="label">Endereco</span><span class="valor"><i class="fas fa-map-marked-alt" style="color:#00ff88;"></i> ${endLinha}</span></div></div>` : ''}
-                        ${o.latitude && o.longitude ? `<div class="col-md-6"><div class="detalhe-campo"><span class="label">Coordenadas</span><span class="valor">${o.latitude}, ${o.longitude}</span></div></div>` : ''}
+                        ${o.latitude && o.longitude ? `<div class="col-md-6"><div class="detalhe-campo"><span class="label">Coordenadas</span><span class="valor"><i class="fas fa-map-marker-alt" style="color:#0dcaf0;"></i> ${o.latitude}, ${o.longitude}</span></div></div>` : ''}
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">Natureza</span><span class="valor">${o.natureza_operacao ? `<span class="natureza-badge ${nC}">${NATUREZA_LABEL[o.natureza_operacao]}</span>` : '-'}</span></div></div>
                         <div class="col-md-6"><div class="detalhe-campo"><span class="label">Objetivo</span><span class="valor">${o.objetivo_pratico ? `<span class="objetivo-badge">${OBJETIVO_LABEL[o.objetivo_pratico]}</span>` : '-'}</span></div></div>
                         <div class="col-md-4"><div class="detalhe-campo"><span class="label">Status</span><span class="valor"><span class="status-badge ${sC}">${o.status}</span></span></div></div>
@@ -1301,6 +1341,9 @@
         }
         function fecharDetalhesOperacao() { document.getElementById('modalDetalhesOperacao').classList.remove('open'); }
 
+        // ============================================================
+        // [v1.5.1] EDITAR — IDs corrigidos (editlatitude / editlongitude)
+        // ============================================================
         async function editarOperacao(id) {
             const modal = document.getElementById('modalEdicaoOperacao');
             const body = document.getElementById('modalEdicaoOperacaoBody');
@@ -1352,10 +1395,26 @@
                     </div>
 
                     <div class="section-title"><i class="fas fa-map-marker-alt"></i>COORDENADAS</div>
+                    <div class="coord-opcoes">
+                        <div class="coord-opcao manual">
+                            <div class="icone"><i class="fas fa-keyboard"></i></div>
+                            <div class="texto">
+                                <strong>✍️ Digitar manualmente</strong>
+                                Cole ou digite latitude e longitude direto nos campos.
+                            </div>
+                        </div>
+                        <div class="coord-opcao auto">
+                            <div class="icone"><i class="fas fa-magic"></i></div>
+                            <div class="texto">
+                                <strong>🔄 Preenchimento automático</strong>
+                                Altere o CEP ou clique em BUSCAR. O sistema preenche sozinho.
+                            </div>
+                        </div>
+                    </div>
                     <div class="row g-3">
-                        <div class="col-md-4"><label class="form-label">Latitude</label><input type="text" inputmode="decimal" class="form-control" id="editLatitude" value="${o.latitude || ''}" oninput="sanitizarCoord(this)"></div>
-                        <div class="col-md-4"><label class="form-label">Longitude</label><input type="text" inputmode="decimal" class="form-control" id="editLongitude" value="${o.longitude || ''}" oninput="sanitizarCoord(this)"></div>
-                        <div class="col-md-4 d-flex align-items-end"><button type="button" class="btn-outline-gold w-100" onclick="buscarCoordenadasEdicao(event)"><i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS</button></div>
+                        <div class="col-md-4"><label class="form-label">Latitude</label><input type="text" inputmode="decimal" class="form-control" id="editlatitude" value="${o.latitude || ''}" oninput="sanitizarCoord(this)" onchange="validarCoordFeedback(this, 'lat')"></div>
+                        <div class="col-md-4"><label class="form-label">Longitude</label><input type="text" inputmode="decimal" class="form-control" id="editlongitude" value="${o.longitude || ''}" oninput="sanitizarCoord(this)" onchange="validarCoordFeedback(this, 'lng')"></div>
+                        <div class="col-md-4 d-flex align-items-end"><button type="button" class="btn-outline-gold w-100" id="btnBuscarCoordsEdit" onclick="buscarCoordenadasEdicao(event)"><i class="fas fa-search-location me-2"></i>BUSCAR COORDENADAS</button></div>
                     </div>
 
                     <div class="section-title"><i class="fas fa-crosshairs"></i>NATUREZA E OBJETIVO</div>
@@ -1496,6 +1555,9 @@
             renderizarPresosEdicao();
         }
 
+        // ============================================================
+        // [v1.5.1] SALVAR EDIÇÃO — IDs corrigidos
+        // ============================================================
         async function salvarEdicaoOperacao() {
             if (!editandoOperacaoId) return;
             const btn = document.getElementById('btnSalvarEdicaoOperacao');
@@ -1512,6 +1574,10 @@
                 const pv = editPoliciais.filter(p => p.nome_completo && p.nome_completo.trim());
                 for (const p of pv) if (!p.funcao) throw new Error(`Selecione funcao de "${p.nome_completo}".`);
 
+                // [v1.5.1] Lê IDs corretos: editlatitude / editlongitude
+                const latEl = document.getElementById('editlatitude') || document.getElementById('editLatitude');
+                const lngEl = document.getElementById('editlongitude') || document.getElementById('editLongitude');
+
                 const dados = {
                     nome_operacao: nome,
                     data_prevista: dataPrev,
@@ -1524,8 +1590,8 @@
                     bairro: document.getElementById('editBairro').value.trim() || null,
                     cidade: document.getElementById('editCidade').value.trim() || null,
                     uf: (document.getElementById('editUf').value.trim() || '').toUpperCase() || null,
-                    latitude: parseCoord(document.getElementById('editLatitude').value),
-                    longitude: parseCoord(document.getElementById('editLongitude').value),
+                    latitude: parseCoord(latEl ? latEl.value : ''),
+                    longitude: parseCoord(lngEl ? lngEl.value : ''),
                     equipe_policial: pv,
                     viaturas_quantidade: parseInt(document.getElementById('editViaturasTotal').value) || 0,
                     viaturas_padronizadas: parseInt(document.getElementById('editViaturasPadronizadas').value) || 0,
@@ -1538,6 +1604,8 @@
                     status: document.getElementById('editStatus').value,
                     data_atualizacao: new Date().toISOString()
                 };
+
+                console.log('📝 UPDATE operacao #' + editandoOperacaoId, dados);
 
                 const { error } = await window.supabaseClient.from('operacao').update(dados).eq('id_operacao', editandoOperacaoId);
                 if (error) throw error;
@@ -1582,21 +1650,16 @@
         }
 
         // ============================================================
-        // [v1.5.0] CONTROLES DE JANELA
+        // CONTROLES DE JANELA
         // ============================================================
-        function minimizeWindow() {
-            try { window.blur(); } catch (e) { console.warn('Minimizar nao suportado:', e); }
-        }
-
+        function minimizeWindow() { try { window.blur(); } catch (e) { console.warn('Minimizar nao suportado:', e); } }
         function toggleFullscreen() {
-            const doc = window.document;
-            const docEl = doc.documentElement;
+            const doc = window.document; const docEl = doc.documentElement;
             const req = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
             const cancel = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
             if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) req.call(docEl);
             else cancel.call(doc);
         }
-
         document.addEventListener('fullscreenchange', () => {
             const btn = document.querySelector('.fullscreen-btn i');
             if (!btn) return;
@@ -1611,16 +1674,14 @@
             try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
             window.location.href = '02-login.html';
         }
-
         function closeWindow() {
             if (!confirm('Deseja realmente fechar o sistema?')) return;
             try { window.open('', '_self', ''); window.close(); } catch (e) {}
             setTimeout(function() { if (!window.closed) window.location.href = '01-apresentacao.html'; }, 300);
         }
-
         function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
 
-        console.log('✅ Pagina de Operacoes v1.5.0 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Pagina de Operacoes v1.5.1 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
     <script src="assets/js/inactivity-lock.js"></script>
 </body>
