@@ -1,4 +1,4 @@
-/* ============================================
+ /* ============================================
    AI-DEPOM - LOGOUT POR INATIVIDADE
    ============================================
    Arquivo: assets/js/inactivity-logout.js
@@ -15,40 +15,21 @@
    6. Todo módulo DEVE estar conectado
    7. Nenhuma linha deve ser removida sem substituição
    ============================================
-   COMPORTAMENTO FINAL (definido pelo Souza):
+   COMPORTAMENTO:
 
    • Usuário ativo        → timer reinicia a cada interação
-   • 4 min sem atividade  → toast amarelo com contagem + botão
-                            [Continuar logado]
+   • 4 min sem atividade  → toast amarelo + botão [Continuar logado]
    • Usuário clica        → timer reinicia, toast some
    • Usuário NÃO clica    → aos 5 min, LOGOUT AUTOMÁTICO
                             → supabaseClient.auth.signOut()
                             → window.location.href = '02-login.html'
    • Usuário loga de novo → nova sessão do zero
 
-   ALTERAÇÕES v1.2.0 (28/09/2026 12:00):
-   - ✅ COMPORTAMENTO FINAL:
-     - Toast de 4min TEM o botão "Continuar logado"
-     - Sem modal de confirmação aos 5min
-     - Logout é direto aos 5min
-   - ✅ Toast de aviso é fixo no topo, visível em qualquer página
-   - ✅ Contagem regressiva em tempo real
-   - ✅ Sincronização entre abas
-   - ✅ Redireciona para 02-login.html SEMPRE
-
-   ALTERAÇÕES v1.1.0 (28/09/2026 11:00):
-   - Logout direto (sem botão no aviso)
-
-   ALTERAÇÕES v1.0.0 (28/09/2026 10:00):
-   - Sistema inicial com modal
    ============================================ */
 
 (function() {
     'use strict';
 
-    // ============================================
-    // GUARDA — evita dupla inicialização
-    // ============================================
     if (window.__AIDEPOM_INACTIVITY_LOGOUT_INIT__) {
         console.log('ℹ️ inactivity-logout.js já foi inicializado. Ignorando.');
         return;
@@ -57,9 +38,9 @@
     // ============================================
     // CONFIGURAÇÕES
     // ============================================
-    const TIMEOUT_MS  = 5 * 60 * 1000;      // 5 minutos de inatividade
+    const TIMEOUT_MS  = 5 * 60 * 1000;      // 5 minutos
     const WARNING_MS  = 1 * 60 * 1000;      // Aviso 1 minuto antes
-    const LOGIN_URL   = '02-login.html';    // Página de destino
+    const LOGIN_URL   = '02-login.html';
 
     const LOGOUT_SIGNAL_KEY = 'aidepom_logout_signal';
     const ACTIVITY_KEY      = 'aidepom_last_activity';
@@ -86,12 +67,11 @@
     }
 
     // ============================================
-    // CRIAR ELEMENTOS (APENAS O TOAST)
+    // CRIAR TOAST
     // ============================================
     function criarElementos() {
         if (document.getElementById('logout-warning-toast')) return;
 
-        // ---------- CSS ----------
         const style = document.createElement('style');
         style.id = 'inactivity-logout-style';
         style.textContent = `
@@ -119,9 +99,7 @@
                 animation: logoutSlideDown 0.3s ease;
             }
             .logout-warning-toast.show { display: flex; }
-            .logout-warning-toast i.fa-exclamation-triangle {
-                font-size: 20px;
-            }
+            .logout-warning-toast i.fa-exclamation-triangle { font-size: 20px; }
             .logout-warning-toast .logout-btn-continuar {
                 background: rgba(255, 193, 7, 0.2);
                 border: 1px solid #ffc107;
@@ -150,7 +128,6 @@
         `;
         document.head.appendChild(style);
 
-        // ---------- TOAST ----------
         const toast = document.createElement('div');
         toast.id = 'logout-warning-toast';
         toast.className = 'logout-warning-toast';
@@ -163,7 +140,6 @@
         `;
         document.body.appendChild(toast);
 
-        // Bind do botão
         document.getElementById('logoutBtnContinuar').addEventListener('click', continuarLogado);
     }
 
@@ -173,9 +149,7 @@
     function registrarAtividade() {
         if (logoutEmAndamento) return;
         ultimaAtividade = Date.now();
-        try {
-            localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-        } catch (e) { /* ignore */ }
+        try { localStorage.setItem(ACTIVITY_KEY, Date.now().toString()); } catch (e) {}
         resetarTimers();
     }
 
@@ -183,27 +157,18 @@
         clearTimeout(timeoutId);
         clearTimeout(warningId);
         clearInterval(countdownId);
-        timeoutId   = null;
-        warningId   = null;
+        timeoutId = null;
+        warningId = null;
         countdownId = null;
     }
 
     function resetarTimers() {
         limparTimers();
-
-        // Esconde toast se estiver visível
         const toast = document.getElementById('logout-warning-toast');
         if (toast) toast.classList.remove('show');
 
-        // Aviso em 4 min
-        warningId = setTimeout(() => {
-            mostrarAviso();
-        }, TIMEOUT_MS - WARNING_MS);
-
-        // Logout em 5 min
-        timeoutId = setTimeout(() => {
-            executarLogout();
-        }, TIMEOUT_MS);
+        warningId = setTimeout(() => { mostrarAviso(); }, TIMEOUT_MS - WARNING_MS);
+        timeoutId = setTimeout(() => { executarLogout(); }, TIMEOUT_MS);
     }
 
     // ============================================
@@ -211,8 +176,7 @@
     // ============================================
     function mostrarAviso() {
         if (logoutEmAndamento) return;
-
-        const toast     = document.getElementById('logout-warning-toast');
+        const toast = document.getElementById('logout-warning-toast');
         const countdown = document.getElementById('logout-countdown');
         if (!toast || !countdown) return;
 
@@ -224,42 +188,31 @@
             const s = segundosRestantes % 60;
             countdown.textContent = `${m}:${s.toString().padStart(2, '0')}`;
         }
-
         atualizar();
 
         countdownId = setInterval(() => {
             segundosRestantes--;
-            if (segundosRestantes > 0) {
-                atualizar();
-            } else {
-                clearInterval(countdownId);
-                countdownId = null;
-            }
+            if (segundosRestantes > 0) atualizar();
+            else { clearInterval(countdownId); countdownId = null; }
         }, 1000);
     }
 
     // ============================================
-    // CONTINUAR LOGADO (BOTÃO DO TOAST)
+    // CONTINUAR LOGADO
     // ============================================
     function continuarLogado() {
         if (logoutEmAndamento) return;
         console.log('🔄 [inactivity-logout] Usuário clicou em "Continuar logado"');
-
         const toast = document.getElementById('logout-warning-toast');
         if (toast) toast.classList.remove('show');
-
-        // Reset completo: reinicia os timers e zera a contagem
         ultimaAtividade = Date.now();
-        try {
-            localStorage.setItem(ACTIVITY_KEY, Date.now().toString());
-        } catch (e) { /* ignore */ }
-
+        try { localStorage.setItem(ACTIVITY_KEY, Date.now().toString()); } catch (e) {}
         resetarTimers();
         console.log('✅ [inactivity-logout] Sessão estendida por mais 5 minutos');
     }
 
     // ============================================
-    // EXECUTAR LOGOUT (5 MIN) — SEM MODAL
+    // EXECUTAR LOGOUT
     // ============================================
     async function executarLogout() {
         if (logoutEmAndamento) return;
@@ -269,17 +222,12 @@
         console.log('🚪 [inactivity-logout] Logout automático por inatividade (5 min)...');
 
         try {
-            // 1. Sinaliza para outras abas
-            try {
-                localStorage.setItem(LOGOUT_SIGNAL_KEY, Date.now().toString());
-            } catch (e) { /* ignore */ }
+            try { localStorage.setItem(LOGOUT_SIGNAL_KEY, Date.now().toString()); } catch (e) {}
 
-            // 2. Limpa sessão do Supabase
             if (window.supabaseClient && window.supabaseClient.auth) {
                 await window.supabaseClient.auth.signOut();
             }
 
-            // 3. Limpa storage local
             try {
                 localStorage.removeItem('usuario');
                 localStorage.removeItem('authData');
@@ -288,15 +236,14 @@
                 localStorage.removeItem(LOGOUT_SIGNAL_KEY);
                 localStorage.removeItem(ACTIVITY_KEY);
                 sessionStorage.clear();
-            } catch (e) { /* ignore */ }
+            } catch (e) {}
 
-            // 4. Redireciona para login
             console.log('🔒 Redirecionando para', LOGIN_URL);
             window.location.href = LOGIN_URL;
 
         } catch (e) {
             console.error('❌ [inactivity-logout] Erro no logout:', e);
-            window.location.href = LOGIN_URL;   // fallback
+            window.location.href = LOGIN_URL;
         }
     }
 
@@ -314,7 +261,7 @@
                 localStorage.removeItem('usuarioId');
                 localStorage.removeItem('logado');
                 sessionStorage.clear();
-            } catch (err) { /* ignore */ }
+            } catch (err) {}
             window.location.href = LOGIN_URL;
         }
 
@@ -344,9 +291,7 @@
         });
 
         document.addEventListener('visibilitychange', function() {
-            if (!document.hidden && !logoutEmAndamento) {
-                registrarAtividade();
-            }
+            if (!document.hidden && !logoutEmAndamento) registrarAtividade();
         });
 
         window.__AIDEPOM_INACTIVITY_LOGOUT_INIT__ = true;
@@ -354,22 +299,13 @@
     }
 
     function aguardarSupabaseClient(callback, tentativas = 0) {
-        if (window.supabaseClient && window.supabaseClient.auth) {
-            callback();
-            return;
-        }
-        if (tentativas > 50) {
-            console.warn('⚠️ inactivity-logout: supabaseClient não disponível após 5s');
-            callback();
-            return;
-        }
+        if (window.supabaseClient && window.supabaseClient.auth) { callback(); return; }
+        if (tentativas > 50) { callback(); return; }
         setTimeout(() => aguardarSupabaseClient(callback, tentativas + 1), 100);
     }
 
     if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            aguardarSupabaseClient(init);
-        });
+        document.addEventListener('DOMContentLoaded', () => { aguardarSupabaseClient(init); });
     } else {
         aguardarSupabaseClient(init);
     }
