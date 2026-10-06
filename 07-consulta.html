@@ -1776,12 +1776,18 @@
                 let setorAtual = '';
 
                 const camposComTelefone = [...campos];
-                if (!camposComTelefone.find(c => c.nome_campo === 'telefone1')) {
-                    camposComTelefone.push({ nome_campo: 'telefone1', descricao: 'Telefone Celular 1', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
-                }
-                if (!camposComTelefone.find(c => c.nome_campo === 'telefone2')) {
-                    camposComTelefone.push({ nome_campo: 'telefone2', descricao: 'Telefone Celular 2', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
-                }
+               if (!camposComTelefone.find(c => c.nome_campo === 'telefone1')) {
+                  camposComTelefone.push({ nome_campo: 'telefone1', descricao: 'Telefone Celular 1', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
+               }
+              if (!camposComTelefone.find(c => c.nome_campo === 'telefone2')) {
+                 camposComTelefone.push({ nome_campo: 'telefone2', descricao: 'Telefone Celular 2', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
+              }
+             if (!camposComTelefone.find(c => c.nome_campo === 'telefone3')) {
+                camposComTelefone.push({ nome_campo: 'telefone3', descricao: 'Telefone Celular 3', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
+              }
+            if (!camposComTelefone.find(c => c.nome_campo === 'telefone4')) {
+               camposComTelefone.push({ nome_campo: 'telefone4', descricao: 'Telefone Celular 4', perfis_permitidos: campos[0]?.perfis_permitidos || '', ordem: 999 });
+             }
 
                 camposComTelefone.sort((a, b) => {
                     const sa = setores[a.nome_campo] || 'ZZZ';
