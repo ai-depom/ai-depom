@@ -1769,7 +1769,7 @@
                     'sinais_particulares': 'textarea', 'tattoo_descricao': 'textarea',
                     'modus_operandi': 'textarea', 'observacoes': 'textarea',
                     'altura': 'number', 'peso': 'number',
-                    'telefone1': 'telefone', 'telefone2': 'telefone'
+                    'telefone1': 'telefone', 'telefone2': 'telefone', 'telefone3': 'telefone','telefone4': 'telefone'
                 };
 
                 let camposHTML = '';
@@ -1797,7 +1797,7 @@
                 });
 
                 camposComTelefone.forEach(campo => {
-                    const podeEditar = parsePerfisPermitidos(campo.perfis_permitidos).includes(perfilAtualNum) || ['telefone1', 'telefone2'].includes(campo.nome_campo);
+                    const podeEditar = parsePerfisPermitidos(campo.perfis_permitidos).includes(perfilAtualNum) || ['telefone1', 'telefone2', 'telefone3', 'telefone4'].includes(campo.nome_campo);
                     const valorAtual = suspeito[campo.nome_campo] ?? '';
                     const setor = setores[campo.nome_campo] || 'Outros';
 
