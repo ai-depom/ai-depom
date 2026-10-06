@@ -897,7 +897,19 @@
                 input.title = 'CPF inválido — verifique os dígitos';
             }
         }
-
+        // ============================================================
+// [v3.6.2] MÁSCARA DE TELEFONE
+// ============================================================
+function mascaraTelefone(input) {
+    let v = String(input.value || '').replace(/\D/g, '').slice(0, 11);
+    let out = '';
+    if (v.length > 0) out += '(' + v.slice(0, 2);
+    if (v.length >= 3) out += ') ' + v.slice(2, v.length > 10 ? 7 : 6);
+    if (v.length > 10) out += '-' + v.slice(7, 11);
+    else if (v.length > 6) out += '-' + v.slice(6, 10);
+    input.value = out;
+    input.style.borderColor = '';
+}
         // ============================================================
         // [v3.3.0] MÁSCARA E CHECAGEM DE CPF DUPLICADO
         // ============================================================
