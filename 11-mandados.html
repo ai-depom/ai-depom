@@ -1,9 +1,14 @@
  <!-- ============================================================
      AI-DEPOM - MANDADOS DE PRISÃO
      Arquivo: 11-mandados.html
-     Versão: 1.9.1
-     Data: 22/09/2026 - 06:30
+     Versão: 1.9.2
+     Data: 06/10/2026 - 15:30
      ============================================================
+     ALTERAÇÕES v1.9.2 (06/10/2026 15:30):
+     - ✨ 4 telefones celulares exibidos em Detalhes do Mandado
+     - ✨ 4 telefones celulares exibidos no bloco SUSPEITO VINCULADO (Edição)
+     - ✅ Preservadas TODAS as funcionalidades da v1.9.1
+
      ALTERAÇÕES v1.9.1 (22/09/2026 06:30):
      - ✨ Telefones do suspeito exibidos no modal de Detalhes
      - ✨ Telefones do suspeito exibidos no bloco SUSPEITO VINCULADO da edição
@@ -49,7 +54,7 @@
      - Constraint chk_mandado_tem_suspeito_ou_nome
      - Índice idx_mandado_nome_texto
      - RPC buscar_mandado v3 (retorna nome_suspeito_texto)
-     - Coluna suspeito.telefone1 / telefone2 (TEXT)
+     - Coluna suspeito.telefone1 a telefone4 (TEXT)
      ============================================================
 -->
 <!DOCTYPE html>
@@ -1719,7 +1724,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', async function() {
-            console.log('AI-DEPOM - Mandados v1.9.1 iniciado em ' + new Date().toLocaleString('pt-BR'));
+            console.log('AI-DEPOM - Mandados v1.9.2 iniciado em ' + new Date().toLocaleString('pt-BR'));
 
             const usuario = AIDEPOM.getUsuario();
             if (!usuario) {
@@ -2603,7 +2608,7 @@
         }
 
         // ============================================================
-        // [v1.9.1] VER DETALHES — com TELEFONES do suspeito
+        // [v1.9.2] VER DETALHES — com 4 TELEFONES do suspeito
         // ============================================================
         async function verDetalhes(id) {
             const modal = document.getElementById('modalDetalhes');
@@ -2622,7 +2627,7 @@
                 if (m.id_suspeito) {
                     const { data: sData } = await window.supabaseClient
                         .from('suspeito')
-                        .select('id_suspeito, nome_completo, apelido, cpf, rg, telefone1, telefone2, logradouro, numero, bairro, cidade, uf, status_atual, nivel_periculosidade')
+                        .select('id_suspeito, nome_completo, apelido, cpf, rg, telefone1, telefone2, telefone3, telefone4, logradouro, numero, bairro, cidade, uf, status_atual, nivel_periculosidade')
                         .eq('id_suspeito', m.id_suspeito).maybeSingle();
                     s = sData || {};
                 }
@@ -2683,6 +2688,8 @@
                             <div class="detalhe-campo"><span class="label">RG</span><span class="valor">${s.rg || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 1</span><span class="valor">${s.telefone1 || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 2</span><span class="valor">${s.telefone2 || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 3</span><span class="valor">${s.telefone3 || '-'}</span></div>
+                            <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 4</span><span class="valor">${s.telefone4 || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Endereço do Suspeito</span><span class="valor">${[s.logradouro, s.numero, s.bairro, s.cidade, s.uf].filter(Boolean).join(', ') || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${s.status_atual || '-'}</span></div>
                             <div class="detalhe-campo"><span class="label">Periculosidade</span><span class="valor">${s.nivel_periculosidade || '-'}</span></div>
@@ -2836,7 +2843,7 @@
         }
 
         // ============================================================
-        // [v1.9.1] EDITAR MANDADO — com TELEFONES no bloco SUSPEITO VINCULADO
+        // [v1.9.2] EDITAR MANDADO — com 4 TELEFONES no bloco SUSPEITO VINCULADO
         // ============================================================
         async function editarMandado(id) {
             const modal = document.getElementById('modalEdicao');
@@ -2857,7 +2864,7 @@
                     try {
                         const { data: sData } = await window.supabaseClient
                             .from('suspeito')
-                            .select('id_suspeito, nome_completo, apelido, cpf, status_atual, telefone1, telefone2')
+                            .select('id_suspeito, nome_completo, apelido, cpf, status_atual, telefone1, telefone2, telefone3, telefone4')
                             .eq('id_suspeito', m.id_suspeito).maybeSingle();
                         suspeito = sData || null;
 
@@ -2888,6 +2895,8 @@
                 const statusSuspeito = suspeito?.status_atual || '-';
                 const telefone1Fmt = suspeito?.telefone1 || '-';
                 const telefone2Fmt = suspeito?.telefone2 || '-';
+                const telefone3Fmt = suspeito?.telefone3 || '-';
+                const telefone4Fmt = suspeito?.telefone4 || '-';
 
                 body.innerHTML = `
                     <form id="formEdicao" novalidate>
@@ -2904,6 +2913,8 @@
                                 <div class="detalhe-campo"><span class="label">CPF</span><span class="valor">${cpfSuspeitoFmt}</span></div>
                                 <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 1</span><span class="valor">${telefone1Fmt}</span></div>
                                 <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 2</span><span class="valor">${telefone2Fmt}</span></div>
+                                <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 3</span><span class="valor">${telefone3Fmt}</span></div>
+                                <div class="detalhe-campo"><span class="label"><i class="fas fa-mobile-alt me-1"></i>Telefone Celular 4</span><span class="valor">${telefone4Fmt}</span></div>
                                 <div class="detalhe-campo"><span class="label">Status do Suspeito</span><span class="valor">${statusSuspeito}</span></div>
                                 ${ehOrfao ? `<div class="detalhe-campo"><span class="label">Vínculo</span><span class="valor" style="color:#ffc107;"><i class="fas fa-exclamation-triangle me-1"></i>Órfão — sem suspeito vinculado</span></div>` : ''}
                             </div>
@@ -3582,7 +3593,7 @@
             document.getElementById('sidebar').classList.toggle('open');
         }
 
-        console.log('✅ Página de Mandados v1.9.1 carregada em ' + new Date().toLocaleString('pt-BR'));
+        console.log('✅ Página de Mandados v1.9.2 carregada em ' + new Date().toLocaleString('pt-BR'));
     </script>
    <script src="assets/js/inactivity-logout.js"></script>
 </body>
