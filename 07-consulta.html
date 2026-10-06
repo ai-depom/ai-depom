@@ -1970,7 +1970,7 @@
                 const dadosNovos = {};
 
                 const camposComTelefone = [...campos];
-                ['telefone1', 'telefone2'].forEach(tel => {
+                ['telefone1', 'telefone2', 'telefone3', 'telefone4'].forEach(tel => {
                     if (!camposComTelefone.find(c => c.nome_campo === tel)) {
                         camposComTelefone.push({ nome_campo: tel });
                     }
